@@ -1,0 +1,16 @@
+/*
+ * Stylesheet entry. Tailwind and Flux first, then the app's partials in cascade
+ * order: tokens, base, typography. Add feature styles after these.
+ */
+@import 'tailwindcss';
+@import '../../vendor/livewire/flux/dist/flux.css';
+
+@import './tokens.css';
+@import './base.css';
+@import './typography.css';
+
+/* flux.css already scans Flux's own stubs; these are the app's views and Laravel's pagination views. */
+@source '../views';
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+
+@custom-variant dark (&:where(.dark, .dark *));
