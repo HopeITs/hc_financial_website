@@ -1,0 +1,18 @@
+<?php
+
+return [
+    'app_name' => 'Hope Center Finance',
+    'appearance' => 'Appearance',
+    'copyright_notice' => '© :year - Hope Center - Finance',
+    'log_out' => 'Log out',
+    'password' => 'Password',
+    'please_enter_your_credentials_to_sign_in' => 'Please enter your username and password to sign in.',
+    'sign_in' => 'Sign in',
+    'switch_language' => 'Switch language',
+    'username' => 'Username',
+    'welcome' => 'Welcome, :name',
+    'home_intro' => 'Pick a screen from the menu above, or open one below.',
+    'open_menu' => 'Open menu',
+    'screen_not_built_title' => 'This screen is not built yet',
+    'screen_not_built_text' => 'It will open here once its web version is ready. Until then, use the Windows program for it.',
+];

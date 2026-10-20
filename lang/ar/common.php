@@ -1,0 +1,18 @@
+<?php
+
+return [
+    'app_name' => 'Hope Center Finance',
+    'appearance' => 'المظهر',
+    'copyright_notice' => '© :year - مركز الأمل المسيحي - المالية',
+    'log_out' => 'تسجيل الخروج',
+    'password' => 'كلمة المرور',
+    'please_enter_your_credentials_to_sign_in' => 'يرجى إدخال اسم المستخدم وكلمة المرور لتسجيل الدخول.',
+    'sign_in' => 'تسجيل الدخول',
+    'switch_language' => 'تبديل اللغة',
+    'username' => 'اسم المستخدم',
+    'welcome' => 'مرحباً، :name',
+    'home_intro' => 'اختر شاشة من القائمة أعلاه، أو افتح إحداها أدناه.',
+    'open_menu' => 'فتح القائمة',
+    'screen_not_built_title' => 'هذه الشاشة لم تُبنَ بعد',
+    'screen_not_built_text' => 'ستُفتح هنا عندما تجهز نسختها على الويب. إلى ذلك الحين استعمل برنامج ويندوز لها.',
+];
