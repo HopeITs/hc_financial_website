@@ -3,6 +3,7 @@
 namespace App\Services\Projects;
 
 use App\Contracts\ProjectBalanceSource;
+use App\Data\CashAccountBalance;
 use App\Data\ProjectBalance;
 use App\Models\Legacy\CashBalance;
 use Illuminate\Support\Collection;
@@ -24,17 +25,56 @@ class LegacyProjectBalanceSource implements ProjectBalanceSource
             ->groupBy('Account_ID')
             ->orderBy('name')
             ->get()
-            ->map(fn (CashBalance $row): ProjectBalance => new ProjectBalance(
-                accountId: (int) $row->Account_ID,
+            ->map(fn (CashBalance $row): ProjectBalance => $this->balance($row))
+            ->values();
+    }
+
+    public function balancesFor(array $accountIds): Collection
+    {
+        if ($accountIds === []) {
+            return collect();
+        }
+
+        return CashBalance::query()
+            ->where('Account_Type', 'Project')
+            ->whereIn('Account_ID', $accountIds)
+            ->selectRaw('Account_ID, MAX(Account_Name) as name, MAX(City_ID) as city_id, MAX(City_Name) as city_name,
+                MAX(Subproject_Name) as sub_project, SUM(Account_Net) as syp, SUM(Account_Net_New) as syp_new, SUM(Account_Net_USD) as usd')
+            ->groupBy('Account_ID')
+            ->get()
+            ->mapWithKeys(fn (CashBalance $row): array => [(int) $row->Account_ID => $this->balance($row)]);
+    }
+
+    public function byCashAccount(int $accountId): Collection
+    {
+        return CashBalance::query()
+            ->where('Account_ID', $accountId)
+            ->selectRaw('CashAccount_id, MAX(CashAccount_Name) as name, SUM(Account_Net) as syp, SUM(Account_Net_New) as syp_new, SUM(Account_Net_USD) as usd')
+            ->groupBy('CashAccount_id')
+            ->orderBy('name')
+            ->get()
+            ->map(fn (CashBalance $row): CashAccountBalance => new CashAccountBalance(
+                cashAccountId: (int) $row->CashAccount_id,
                 name: (string) $row->getAttribute('name'),
-                cityId: $row->getAttribute('city_id') === null ? null : (int) $row->getAttribute('city_id'),
-                cityName: $row->getAttribute('city_name'),
-                subProjectName: $row->getAttribute('sub_project'),
                 syp: $this->money($row->getAttribute('syp')),
                 sypNew: $this->money($row->getAttribute('syp_new')),
                 usd: $this->money($row->getAttribute('usd')),
             ))
             ->values();
+    }
+
+    private function balance(CashBalance $row): ProjectBalance
+    {
+        return new ProjectBalance(
+            accountId: (int) $row->Account_ID,
+            name: (string) $row->getAttribute('name'),
+            cityId: $row->getAttribute('city_id') === null ? null : (int) $row->getAttribute('city_id'),
+            cityName: $row->getAttribute('city_name'),
+            subProjectName: $row->getAttribute('sub_project'),
+            syp: $this->money($row->getAttribute('syp')),
+            sypNew: $this->money($row->getAttribute('syp_new')),
+            usd: $this->money($row->getAttribute('usd')),
+        );
     }
 
     public function cities(): Collection

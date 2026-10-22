@@ -2,6 +2,7 @@
 
 namespace App\Contracts;
 
+use App\Data\CashAccountBalance;
 use App\Data\ProjectBalance;
 use Illuminate\Support\Collection;
 
@@ -24,4 +25,20 @@ interface ProjectBalanceSource
      * @return Collection<int, string>
      */
     public function cities(): Collection;
+
+    /**
+     * The balances of the given project accounts, closed ones included, keyed by account id.
+     * An account with no money has no entry.
+     *
+     * @param  array<int, int>  $accountIds
+     * @return Collection<int, ProjectBalance>
+     */
+    public function balancesFor(array $accountIds): Collection;
+
+    /**
+     * Where one project's money is: its balance in each cash account.
+     *
+     * @return Collection<int, CashAccountBalance>
+     */
+    public function byCashAccount(int $accountId): Collection;
 }

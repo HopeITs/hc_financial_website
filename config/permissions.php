@@ -9,7 +9,8 @@ use App\Enums\RoleId;
 |
 | role id => screen slug => actions (view, create, edit, delete, approve).
 | A role sees only the screens listed for it. Slugs are those of config/navigation.php,
-| plus `home` (the landing page) and `requests` (the project managers' requests).
+| plus `home` (the landing page), `requests` (the project managers' requests) and `project-money`
+| (whether the project pages show balances and amounts).
 |
 | The accountant prepares (create, edit), the financial manager approves,
 | Head Office does both. The General Manager only approves requests, after the financial manager.
@@ -36,17 +37,17 @@ return [
 
     'roles' => [
 
-        RoleId::HeadOffice->value => $screens(['home', 'requests', ...$everyScreen], $all),
+        RoleId::HeadOffice->value => $screens(['home', 'requests', 'project-money', ...$everyScreen], $all),
 
         RoleId::FinancialManager->value => array_merge(
-            $screens(['home', 'chart', ...$projectScreens, ...$treasury, ...$reports, 'donors', 'employees', 'salaries', 'users', 'log', 'single', 'multi', 'multiatt', 'payments', 'bonds'], $view),
+            $screens(['home', 'chart', 'project-money', ...$projectScreens, ...$treasury, ...$reports, 'donors', 'employees', 'salaries', 'users', 'log', 'single', 'multi', 'multiatt', 'payments', 'bonds'], $view),
             $screens(['vouchers', 'approval', 'requests'], ['view', 'approve']),
             $screens(['limits'], ['view', 'edit']),
             $screens(['programs'], ['view', 'create']),
         ),
 
         RoleId::Accountant->value => array_merge(
-            $screens(['home', ...$projectScreens, ...$reports, 'tills', 'treasury', 'cities', 'currency', 'denoms', 'donors', 'employees', 'salaries', 'requests'], $view),
+            $screens(['home', 'project-money', ...$projectScreens, ...$reports, 'tills', 'treasury', 'cities', 'currency', 'denoms', 'donors', 'employees', 'salaries', 'requests'], $view),
             $screens(['chart', ...$entries, 'alloc'], $prepare),
         ),
 
@@ -65,7 +66,7 @@ return [
         RoleId::Donor->value => $screens(['home'], $view),
 
         RoleId::GeneralManager->value => array_merge(
-            $screens(['home', 'chart', ...$projectScreens, ...$treasury, ...$reports, 'vouchers', 'approval'], $view),
+            $screens(['home', 'chart', 'project-money', ...$projectScreens, ...$treasury, ...$reports, 'vouchers', 'approval'], $view),
             $screens(['requests'], ['view', 'approve']),
         ),
 
