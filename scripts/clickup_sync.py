@@ -50,7 +50,7 @@ def parse_plan():
         phase = [p for pos, p in phases if pos < m.start()][-1]
         owners = m.group(2).split()
         tasks[n] = dict(
-            num=n, title=title, meta=meta, prompt=prompt, body=body,
+            num=n, title=title, meta=meta, phase=phase, prompt=prompt, body=body,
             deps=re.findall(r"Task (\d+)", meta.get("Dependencies", "")),
             tags=[re.match(r"(المرحلة \d+)", phase).group(1), "Dev " + "+".join(owners)])
     return tasks
