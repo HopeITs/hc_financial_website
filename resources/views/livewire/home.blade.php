@@ -123,32 +123,34 @@
                 </div>
             </div>
 
-            <div class="overflow-x-auto rounded-xl border border-secondary-soft bg-white shadow-card dark:border-line dark:bg-surface-1">
-                <table class="w-full text-sm" data-test="projects-table">
-                    <thead class="bg-secondary-soft/40 text-start text-xs uppercase text-secondary-medium dark:bg-white/[0.04] dark:text-ink-muted">
+            <div class="fin-table-wrap">
+                <table class="fin-table" data-test="projects-table">
+                    <thead>
                         <tr>
-                            <th class="px-4 py-2 text-start font-medium">{{ __('home.project') }}</th>
-                            <th class="px-4 py-2 text-start font-medium">{{ __('home.city') }}</th>
-                            <th class="px-4 py-2 text-end font-medium">{{ __('home.balance_syp') }}</th>
-                            <th class="px-4 py-2 text-end font-medium">{{ __('home.balance_usd') }}</th>
+                            <th>{{ __('home.project') }}</th>
+                            <th>{{ __('home.city') }}</th>
+                            <th class="fin-num">{{ __('home.balance_syp') }}</th>
+                            <th class="fin-num">{{ __('home.balance_usd') }}</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-secondary-soft dark:divide-line">
+                    <tbody>
                         @forelse ($projects as $project)
                             <tr wire:key="project-{{ $project->accountId }}">
-                                <td class="px-4 py-2 font-medium text-secondary-dark dark:text-ink">{{ $project->name }}</td>
-                                <td class="px-4 py-2 text-secondary-medium dark:text-ink-muted">{{ $project->cityName }}</td>
-                                <td class="px-4 py-2 text-end tabular-nums" dir="ltr">
-                                    {{ number_format((float) $project->syp, 2) }}
+                                <td class="font-medium text-secondary-dark dark:text-ink">
+                                    <a href="{{ route('projects.show', $project->accountId) }}" wire:navigate class="hover:underline">{{ $project->name }}</a>
+                                </td>
+                                <td class="text-secondary-medium dark:text-ink-muted">{{ $project->cityName }}</td>
+                                <td class="fin-num">
+                                    <x-money :amount="$project->syp" />
                                     @if ((float) $project->sypNew !== 0.0)
-                                        <span class="block text-xs text-secondary-medium dark:text-ink-muted">{{ __('home.new_lira', ['amount' => number_format((float) $project->sypNew, 2)]) }}</span>
+                                        <span class="block text-xs text-secondary-medium dark:text-ink-muted" dir="ltr">{{ __('home.new_lira', ['amount' => number_format((float) $project->sypNew, 2)]) }}</span>
                                     @endif
                                 </td>
-                                <td class="px-4 py-2 text-end tabular-nums" dir="ltr">{{ number_format((float) $project->usd, 2) }}</td>
+                                <td class="fin-num"><x-money :amount="$project->usd" /></td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="px-4 py-8 text-center text-secondary-medium dark:text-ink-muted">{{ __('home.no_projects') }}</td>
+                                <td colspan="4" class="fin-empty">{{ __('home.no_projects') }}</td>
                             </tr>
                         @endforelse
                     </tbody>

@@ -392,8 +392,6 @@
  */
 [data-flux-modal] > dialog::backdrop {
     background-color: color-mix(in srgb, var(--color-secondary-dark) 72%, transparent) !important;
-    -webkit-backdrop-filter: blur(4px) saturate(75%);
-    backdrop-filter: blur(4px) saturate(75%);
     transition-duration: 180ms;
     transition-timing-function: ease-out;
 }
@@ -427,22 +425,8 @@
 
 [data-flux-modal] > dialog:not([data-flux-flyout]):not([data-flux-modal-overflow]),
 [data-flux-modal] [data-flux-modal-content] {
-    transform: translateY(0.5rem) scale(0.98);
-    transition-duration: 180ms;
-    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-[data-flux-modal] > dialog[open]:not([data-flux-flyout]):not([data-flux-modal-overflow]),
-[data-flux-modal] > dialog[open] [data-flux-modal-content] {
-    transform: translateY(0) scale(1);
-}
-
-@starting-style {
-
-    [data-flux-modal] > dialog[open]:not([data-flux-flyout]):not([data-flux-modal-overflow]),
-    [data-flux-modal] > dialog[open] [data-flux-modal-content] {
-        transform: translateY(0.5rem) scale(0.98);
-    }
+    transition-duration: 120ms;
+    transition-timing-function: ease-out;
 }
 
 @media (prefers-reduced-motion: reduce) {

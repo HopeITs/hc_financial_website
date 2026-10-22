@@ -1,0 +1,123 @@
+/* Financial data surfaces: tables, amounts and key figures. Static by design: no motion beyond a hover tint. */
+
+@layer components {
+    .fin-table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--color-secondary-soft);
+        border-radius: 0.75rem;
+        background-color: var(--color-white);
+        box-shadow: var(--shadow-card);
+    }
+
+    .dark .fin-table-wrap {
+        border-color: var(--color-line);
+        background-color: var(--color-surface-1);
+        box-shadow: none;
+    }
+
+    .fin-table {
+        width: 100%;
+        font-size: 0.875rem;
+        line-height: 1.4;
+    }
+
+    /* Sentence-case headers: readable in English and Arabic, no tracking tricks. */
+    .fin-table thead th {
+        padding: 0.625rem 1rem;
+        background-color: color-mix(in srgb, var(--color-secondary-soft) 40%, transparent);
+        color: var(--color-secondary-medium);
+        font-size: 0.8125rem;
+        font-weight: 600;
+        text-align: start;
+        white-space: nowrap;
+    }
+
+    .dark .fin-table thead th {
+        background-color: rgb(255 255 255 / 0.04);
+        color: var(--color-ink-muted);
+    }
+
+    .fin-table tbody tr + tr {
+        border-top: 1px solid var(--color-secondary-soft);
+    }
+
+    .dark .fin-table tbody tr + tr {
+        border-top-color: var(--color-line);
+    }
+
+    /* Rows are at least 44px tall so they are easy to hit and to scan. */
+    .fin-table tbody td {
+        padding: 0.75rem 1rem;
+        vertical-align: middle;
+    }
+
+    .fin-table tbody tr:hover {
+        background-color: color-mix(in srgb, var(--color-secondary-soft) 30%, transparent);
+    }
+
+    .dark .fin-table tbody tr:hover {
+        background-color: rgb(255 255 255 / 0.04);
+    }
+
+    .fin-table th.fin-num,
+    .fin-table td.fin-num {
+        text-align: end;
+    }
+
+    .fin-table td.fin-num,
+    .fin-money {
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .fin-table .fin-empty {
+        padding: 2rem 1rem;
+        text-align: center;
+        color: var(--color-secondary-medium);
+    }
+
+    .dark .fin-table .fin-empty {
+        color: var(--color-ink-muted);
+    }
+
+    /* Amounts: a loss is red and keeps its minus sign (never colour alone); zero recedes. */
+    .fin-money-neg {
+        color: var(--color-status-critical);
+    }
+
+    .fin-money-zero {
+        color: var(--color-secondary-light);
+    }
+
+    .dark .fin-money-zero {
+        color: var(--color-ink-faint);
+    }
+
+    /* A key figure on a detail page (a balance): label above, number below, one flat box. */
+    .fin-figure {
+        border: 1px solid var(--color-secondary-soft);
+        border-radius: 0.75rem;
+        padding: 1rem;
+    }
+
+    .dark .fin-figure {
+        border-color: var(--color-line);
+    }
+
+    .fin-figure dt {
+        font-size: 0.8125rem;
+        color: var(--color-secondary-medium);
+    }
+
+    .dark .fin-figure dt {
+        color: var(--color-ink-muted);
+    }
+
+    .fin-figure dd {
+        margin-top: 0.25rem;
+        font-size: 1.5rem;
+        line-height: 1.2;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+    }
+}

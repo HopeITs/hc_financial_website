@@ -274,3 +274,7 @@ Rules:
 - Parallel tasks (for example T1.1 and T1.4) are allowed only in separate branches that touch different files; merge them one at a time and rebase the second on `main` before merging.
 - If a merge conflicts, resolve it on the task branch (`git merge main`), re-run the checks, then merge.
 - **Prerequisite:** this repository has no `origin` remote yet. Create the remote repository (GitHub or other) and run `git remote add origin <url>; git push -u origin main` before the first task, otherwise steps 1 and 5 cannot run.
+
+## 12. UI standard (every screen, every task)
+
+The look and behaviour of data screens is fixed in `DESIGN.md` (rules and PR checklist) and `PRODUCT.md` (users and principles). In short: financial tables use `.fin-table`, every amount goes through `<x-money>`, currency is always visible, status is a badge, names are links, no new animation, and every screen is checked in Arabic (RTL), dark mode and on a 375px phone. A task that adds or changes a screen is not done until the `DESIGN.md` checklist is ticked in its pull request.
