@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Listeners;
 
+use App\Models\User;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -26,7 +27,7 @@ class LogWebLogin
                 'additionaldetails' => '',
                 'query' => '',
                 'date' => now()->toDateString(),
-                'user' => (string) $event->user->getAttribute('username'),
+                'user' => $event->user instanceof User ? $event->user->username : '',
             ]);
         } catch (Throwable $exception) {
             report($exception);

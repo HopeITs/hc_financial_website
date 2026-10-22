@@ -17,10 +17,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
  * @property string $username
  * @property string $password
  */
-#[Hidden(['password'])]
+#[Hidden(['Password', 'ProfilePicture'])]
 class User extends Authenticatable
 {
     protected $table = 'user';
+
+    protected $primaryKey = 'ID';
 
     public $timestamps = false;
 
@@ -31,7 +33,22 @@ class User extends Authenticatable
      */
     public function roleRecord(): BelongsTo
     {
-        return $this->belongsTo(Role::class, 'role');
+        return $this->belongsTo(Role::class, 'Role');
+    }
+
+    /**
+     * The test database's columns are PascalCase (`Username`, `Password`).
+     *
+     * @return Attribute<string, never>
+     */
+    protected function username(): Attribute
+    {
+        return Attribute::get(fn (): string => (string) ($this->attributes['Username'] ?? ''));
+    }
+
+    public function getAuthPassword(): ?string
+    {
+        return $this->attributes['Password'] ?? null;
     }
 
     /**
@@ -49,7 +66,7 @@ class User extends Authenticatable
      */
     public function initials(): string
     {
-        return mb_strtoupper(mb_substr((string) $this->username, 0, 2));
+        return mb_strtoupper(mb_substr($this->username, 0, 2));
     }
 
     /**
