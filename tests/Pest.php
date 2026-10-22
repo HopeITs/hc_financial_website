@@ -175,6 +175,7 @@ function createLedgerSchema(): void
 {
     (require database_path('migrations/2026_10_24_090000_create_gl_accounts_projects_budget_lines_tables.php'))->up();
     (require database_path('migrations/2026_10_24_100000_create_gl_voucher_tables.php'))->up();
+    (require database_path('migrations/2026_10_24_110000_add_request_and_transfer_columns_to_gl_vouchers.php'))->up();
     (new ChartOfAccountsSeeder)->run();
 }
 
@@ -194,6 +195,7 @@ function ledgerReceipt(array $header = [], ?array $lines = null): VoucherDraft
         description: $header['description'] ?? 'ACN grant',
         source: $header['source'] ?? VoucherSource::Web,
         legacyActionId: $header['legacyActionId'] ?? null,
+        requestId: $header['requestId'] ?? null,
     );
 }
 

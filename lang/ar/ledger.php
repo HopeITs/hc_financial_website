@@ -56,6 +56,8 @@ return [
         'month_not_clear' => 'يجب أن يكون الحساب :account صفراً قبل إقفال :month، ورصيده :balance.',
         'legacy_id_missing' => 'السند المرحَّل يجب أن يحتفظ برقم العملية في برنامج ويندوز.',
         'legacy_id_duplicate' => 'العملية :id من برنامج ويندوز رُحّلت من قبل.',
+        'request_not_approved' => 'الطلب :request ليس طلباً معتمداً.',
+        'request_required' => 'دفعة بمبلغ :amount دولار تحتاج طلباً معتمداً؛ الحد بدون طلب :limit دولار.',
         'legacy_id_on_web' => 'رقم عملية ويندوز خاص بالسندات المرحَّلة فقط.',
     ],
 ];

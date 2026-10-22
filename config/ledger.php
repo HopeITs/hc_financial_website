@@ -12,4 +12,7 @@ return [
     'in_transit_pattern' => '/^11[1-5][34]$/',
     'clearing_accounts' => ['2901'],
 
+    // A payment voucher not linked to an approved request is refused above this many USD (Financial Manager, round 2).
+    'request_limit_usd' => '500.00',
+
 ];

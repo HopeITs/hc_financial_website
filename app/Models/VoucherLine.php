@@ -25,6 +25,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $project_code
  * @property string|null $budget_line_key
  * @property FundSource|null $fund_source
+ * @property string|null $eur_amount
+ * @property string|null $eur_rate
+ * @property string $commission_usd
+ * @property bool $is_uncompensated
  */
 class VoucherLine extends Model
 {
@@ -33,7 +37,7 @@ class VoucherLine extends Model
     protected $fillable = [
         'voucher_id', 'line_no', 'account_code', 'currency', 'debit_orig', 'credit_orig', 'rate', 'debit_usd', 'credit_usd',
         'donor_currency', 'debit_donor', 'credit_donor', 'project_code', 'donor', 'budget_line_key', 'fund_source', 'city',
-        'center', 'contact', 'restriction', 'reason', 'lira_type',
+        'center', 'contact', 'restriction', 'reason', 'lira_type', 'eur_amount', 'eur_rate', 'commission_usd', 'is_uncompensated',
     ];
 
     protected function casts(): array
@@ -48,6 +52,10 @@ class VoucherLine extends Model
             'debit_donor' => 'decimal:2',
             'credit_donor' => 'decimal:2',
             'fund_source' => FundSource::class,
+            'eur_amount' => 'decimal:2',
+            'eur_rate' => 'decimal:6',
+            'commission_usd' => 'decimal:2',
+            'is_uncompensated' => 'boolean',
         ];
     }
 

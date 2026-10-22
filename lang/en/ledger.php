@@ -56,6 +56,8 @@ return [
         'month_not_clear' => 'Account :account must be zero before :month is closed; it holds :balance.',
         'legacy_id_missing' => 'A migrated voucher must keep the id of the Windows program operation it came from.',
         'legacy_id_duplicate' => 'Operation :id of the Windows program has already been migrated.',
+        'request_not_approved' => 'Request :request is not an approved request.',
+        'request_required' => 'A payment of :amount USD needs an approved request; the limit without one is :limit USD.',
         'legacy_id_on_web' => 'Only a migrated voucher carries a Windows program operation id.',
     ],
 ];

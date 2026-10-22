@@ -14,6 +14,7 @@ use App\Services\Ledger\Rules\MigratedVoucherKeepsLegacyId;
 use App\Services\Ledger\Rules\MonthIsOpen;
 use App\Services\Ledger\Rules\OnlyActivePostingAccounts;
 use App\Services\Ledger\Rules\PostingRule;
+use App\Services\Ledger\Rules\RequestRequiredAboveLimit;
 use App\Services\Ledger\Rules\RequiredTagsFilled;
 use Illuminate\Support\Facades\DB;
 
@@ -48,6 +49,8 @@ class PostVoucher
             $voucher = Voucher::query()->create([
                 'id' => $id,
                 'type' => $draft->type,
+                'transfer_kind' => $draft->transferKind,
+                'request_id' => $draft->requestId,
                 'date' => $draft->date->toDateString(),
                 'description' => $draft->description,
                 'status' => VoucherStatus::PendingApproval,
@@ -103,6 +106,7 @@ class PostVoucher
             new BudgetLineMatchesProjectAndAccount,
             new MonthIsOpen,
             new MigratedVoucherKeepsLegacyId,
+            new RequestRequiredAboveLimit,
         ];
     }
 }
