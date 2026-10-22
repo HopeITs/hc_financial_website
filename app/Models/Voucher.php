@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\VoucherSource;
 use App\Enums\VoucherStatus;
 use App\Enums\VoucherType;
 use Illuminate\Database\Eloquent\Model;
@@ -22,7 +23,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $approved_at
  * @property bool $is_carry_forward
  * @property bool $is_temporary
- * @property string $source
+ * @property VoucherSource $source
  * @property int|null $legacy_action_id
  */
 class Voucher extends Model
@@ -45,6 +46,7 @@ class Voucher extends Model
         return [
             'type' => VoucherType::class,
             'status' => VoucherStatus::class,
+            'source' => VoucherSource::class,
             'date' => 'date',
             'approved_at' => 'datetime',
             'is_carry_forward' => 'boolean',
