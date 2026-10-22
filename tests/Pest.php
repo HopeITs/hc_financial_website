@@ -14,15 +14,16 @@ pest()->extend(TestCase::class)->in('Feature');
 function createFinanceSchema(): void
 {
     Schema::create('role', function ($table) {
-        $table->integer('id')->primary();
-        $table->string('name');
+        $table->integer('ID')->primary();
+        $table->string('Name');
     });
 
     Schema::create('user', function ($table) {
-        $table->increments('id');
-        $table->string('username');
-        $table->string('password');
-        $table->integer('role')->nullable();
+        $table->increments('ID');
+        $table->string('Username');
+        $table->string('Password');
+        $table->integer('Role')->nullable();
+        $table->integer('State')->default(1);
     });
 
     Schema::create('log', function ($table) {
@@ -41,11 +42,11 @@ function createFinanceSchema(): void
 
 function createFinanceUser(string $username, string $password, string $role = 'Financial manager'): int
 {
-    DB::table('role')->insertOrIgnore(['id' => 1, 'name' => $role]);
+    DB::table('role')->insertOrIgnore(['ID' => 1, 'Name' => $role]);
 
     return DB::table('user')->insertGetId([
-        'username' => $username,
-        'password' => FinancePassword::make($password),
-        'role' => 1,
+        'Username' => $username,
+        'Password' => FinancePassword::make($password),
+        'Role' => 1,
     ]);
 }
