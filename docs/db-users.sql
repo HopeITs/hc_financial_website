@@ -23,7 +23,7 @@ GRANT SELECT ON `hcsyria_financial_test`.* TO 'hc_web'@'localhost';
 -- The one legacy write: changing a password (FinancePassword::make) updates user.password only.
 GRANT UPDATE (`password`) ON `hcsyria_financial_test`.`user` TO 'hc_web'@'localhost';
 
--- Tables the web app owns: gl_*, web_user_roles, sessions, cache*, jobs*, failed_jobs, migrations.
+-- Tables the web app owns: gl_*, web_user_roles, web_user_preferences, sessions, cache*, jobs*, failed_jobs, migrations.
 DROP PROCEDURE IF EXISTS grant_hc_web_owned_tables;
 DELIMITER $$
 CREATE PROCEDURE grant_hc_web_owned_tables()
@@ -34,7 +34,7 @@ BEGIN
         SELECT table_name FROM information_schema.tables
         WHERE table_schema = 'hcsyria_financial_test' AND table_type = 'BASE TABLE'
           AND (table_name LIKE 'gl\_%' OR table_name LIKE 'cache%' OR table_name LIKE 'jobs%'
-               OR table_name IN ('sessions', 'failed_jobs', 'migrations', 'web_user_roles'));
+               OR table_name IN ('sessions', 'failed_jobs', 'migrations', 'web_user_roles', 'web_user_preferences'));
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
     OPEN cur;
     loop_tables: LOOP
