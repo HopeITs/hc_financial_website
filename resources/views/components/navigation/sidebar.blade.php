@@ -7,7 +7,6 @@
     }
 
     $current = request()->routeIs('chart') ? (string) request()->query('account') : '';
-    $classColors = ['Assets' => 'bg-sky-500', 'Liabilities' => 'bg-amber-500', 'Net assets' => 'bg-teal-600', 'Income' => 'bg-emerald-600', 'Expenses' => 'bg-primary'];
 @endphp
 
 {{-- The main sidebar: only the chart of accounts, as a tree. The rest of the menu is in the top bar. --}}
@@ -18,8 +17,8 @@
     data-navigation-sidebar
     class="z-50! w-80! gap-0! border-e border-secondary-soft bg-white p-0! text-secondary-dark lg:top-16! lg:h-[calc(100dvh-4rem)]! lg:max-h-[calc(100dvh-4rem)]! dark:border-line dark:bg-surface-1 dark:text-ink"
     x-data="{
-        rows: @js($rows),
-        current: @js($current),
+        rows: {{ \Illuminate\Support\Js::from($rows) }},
+        current: {{ \Illuminate\Support\Js::from($current) }},
         q: '',
         open: {},
         by: {},
@@ -45,7 +44,7 @@
         },
         expandAll() { this.rows.forEach((row) => { if (row.hasChildren) this.open[row.code] = true; }); },
         collapseAll() { this.open = {}; },
-        url(code) { return @js(route('chart')) + '?account=' + encodeURIComponent(code); },
+        url(code) { return {{ \Illuminate\Support\Js::from(route('chart')) }} + '?account=' + encodeURIComponent(code); },
     }"
 >
     <div class="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-secondary-soft px-4 dark:border-line">

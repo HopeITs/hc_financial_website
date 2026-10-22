@@ -72,3 +72,11 @@ it('opens the chart for the roles that have it and refuses the others', function
 it('ignores an unknown account code', function () {
     Livewire::actingAs(chartUser())->withQueryParams(['account' => '9999'])->test(Chart::class)->assertOk();
 });
+
+it('hands the accounts to the sidebar tree as data', function () {
+    $html = $this->actingAs(chartUser())->get('/screens/chart')->getContent();
+
+    expect($html)->not->toContain('@js(')
+        ->and($html)->toContain('Aleppo main safe')
+        ->and($html)->toContain('1111');
+});
