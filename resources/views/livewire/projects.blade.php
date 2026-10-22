@@ -35,40 +35,40 @@
         </flux:select>
     </div>
 
-    <div class="overflow-x-auto rounded-xl border border-secondary-soft bg-white shadow-card dark:border-line dark:bg-surface-1">
-        <table class="w-full text-sm" data-test="projects-table">
-            <thead class="bg-secondary-soft/40 text-start text-xs uppercase text-secondary-medium dark:bg-white/[0.04] dark:text-ink-muted">
+    <div class="fin-table-wrap">
+        <table class="fin-table" data-test="projects-table">
+            <thead>
                 <tr>
-                    <th class="px-4 py-2 text-start font-medium">{{ __('home.project') }}</th>
-                    <th class="px-4 py-2 text-start font-medium">{{ __('home.city') }}</th>
-                    <th class="px-4 py-2 text-start font-medium">{{ __('programs.program') }}</th>
-                    <th class="px-4 py-2 text-start font-medium">{{ __('projects.donor') }}</th>
-                    <th class="px-4 py-2 text-start font-medium">{{ __('programs.status_label') }}</th>
+                    <th>{{ __('home.project') }}</th>
+                    <th>{{ __('home.city') }}</th>
+                    <th>{{ __('programs.program') }}</th>
+                    <th>{{ __('projects.donor') }}</th>
+                    <th>{{ __('programs.status_label') }}</th>
                     @if ($showMoney)
-                        <th class="px-4 py-2 text-end font-medium">{{ __('home.balance_syp') }}</th>
-                        <th class="px-4 py-2 text-end font-medium">{{ __('home.balance_usd') }}</th>
+                        <th class="fin-num">{{ __('home.balance_syp') }}</th>
+                        <th class="fin-num">{{ __('home.balance_usd') }}</th>
                     @endif
                 </tr>
             </thead>
-            <tbody class="divide-y divide-secondary-soft dark:divide-line">
+            <tbody>
                 @forelse ($projects as $project)
                     <tr wire:key="project-{{ $project->accountId }}">
-                        <td class="px-4 py-2 font-medium text-secondary-dark dark:text-ink">
+                        <td class="font-medium text-secondary-dark dark:text-ink">
                             <a href="{{ route('projects.show', $project->accountId) }}" wire:navigate class="hover:underline">{{ $project->name }}</a>
                         </td>
-                        <td class="px-4 py-2">{{ $project->cityName }}</td>
-                        <td class="px-4 py-2">{{ $project->programName }}</td>
-                        <td class="px-4 py-2">{{ $project->donors }}</td>
-                        <td class="px-4 py-2">{{ $project->closed ? __('projects.status.closed') : __('projects.status.active') }}</td>
+                        <td>{{ $project->cityName }}</td>
+                        <td>{{ $project->programName }}</td>
+                        <td>{{ $project->donors }}</td>
+                        <td><flux:badge size="sm" :color="$project->closed ? 'zinc' : 'green'">{{ $project->closed ? __('projects.status.closed') : __('projects.status.active') }}</flux:badge></td>
                         @if ($showMoney)
                             @php($balance = $balances->get($project->accountId))
-                            <td class="px-4 py-2 text-end tabular-nums" dir="ltr">{{ number_format((float) ($balance?->syp ?? 0), 2) }}</td>
-                            <td class="px-4 py-2 text-end tabular-nums" dir="ltr">{{ number_format((float) ($balance?->usd ?? 0), 2) }}</td>
+                            <td class="fin-num"><x-money :amount="($balance?->syp ?? 0)" /></td>
+                            <td class="fin-num"><x-money :amount="($balance?->usd ?? 0)" /></td>
                         @endif
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="{{ $showMoney ? 7 : 5 }}" class="px-4 py-8 text-center text-secondary-medium dark:text-ink-muted">{{ __('projects.none') }}</td>
+                        <td colspan="{{ $showMoney ? 7 : 5 }}" class="fin-empty">{{ __('projects.none') }}</td>
                     </tr>
                 @endforelse
             </tbody>

@@ -44,20 +44,20 @@
         </form>
     @endif
 
-    <div class="overflow-x-auto rounded-xl border border-secondary-soft bg-white shadow-card dark:border-line dark:bg-surface-1">
-        <table class="w-full text-sm" data-test="programs-table">
-            <thead class="bg-secondary-soft/40 text-start text-xs uppercase text-secondary-medium dark:bg-white/[0.04] dark:text-ink-muted">
+    <div class="fin-table-wrap">
+        <table class="fin-table" data-test="programs-table">
+            <thead>
                 <tr>
-                    <th class="px-4 py-2 text-start font-medium">{{ __('programs.program') }}</th>
-                    <th class="px-4 py-2 text-end font-medium">{{ __('programs.active_projects') }}</th>
-                    <th class="px-4 py-2 text-end font-medium">{{ __('home.balance_syp') }}</th>
-                    <th class="px-4 py-2 text-end font-medium">{{ __('home.balance_usd') }}</th>
+                    <th>{{ __('programs.program') }}</th>
+                    <th class="fin-num">{{ __('programs.active_projects') }}</th>
+                    <th class="fin-num">{{ __('home.balance_syp') }}</th>
+                    <th class="fin-num">{{ __('home.balance_usd') }}</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-secondary-soft dark:divide-line">
+            <tbody>
                 @forelse ($rows as $row)
                     <tr wire:key="program-{{ $row->key() }}">
-                        <td class="px-4 py-2 font-medium text-secondary-dark dark:text-ink">
+                        <td class="font-medium text-secondary-dark dark:text-ink">
                             {{ $row->name }}
                             @if ($row->isWeb())
                                 <flux:badge size="sm" color="blue" class="ms-2" data-test="web-badge">{{ __('programs.added_on_web') }}</flux:badge>
@@ -69,13 +69,13 @@
                                 @endif
                             @endif
                         </td>
-                        <td class="px-4 py-2 text-end tabular-nums" dir="ltr">{{ $row->activeProjects }}</td>
-                        <td class="px-4 py-2 text-end tabular-nums" dir="ltr">{{ number_format((float) $row->syp, 2) }}</td>
-                        <td class="px-4 py-2 text-end tabular-nums" dir="ltr">{{ number_format((float) $row->usd, 2) }}</td>
+                        <td class="fin-num">{{ $row->activeProjects }}</td>
+                        <td class="fin-num"><x-money :amount="$row->syp" /></td>
+                        <td class="fin-num"><x-money :amount="$row->usd" /></td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="px-4 py-8 text-center text-secondary-medium dark:text-ink-muted">{{ __('programs.none') }}</td>
+                        <td colspan="4" class="fin-empty">{{ __('programs.none') }}</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -104,21 +104,21 @@
             </form>
         @endif
 
-        <div class="overflow-x-auto rounded-xl border border-secondary-soft bg-white shadow-card dark:border-line dark:bg-surface-1">
-            <table class="w-full text-sm" data-test="projects-table">
-                <thead class="bg-secondary-soft/40 text-start text-xs uppercase text-secondary-medium dark:bg-white/[0.04] dark:text-ink-muted">
+        <div class="fin-table-wrap">
+            <table class="fin-table" data-test="projects-table">
+                <thead>
                     <tr>
-                        <th class="px-4 py-2 text-start font-medium">{{ __('programs.project') }}</th>
-                        <th class="px-4 py-2 text-start font-medium">{{ __('programs.program') }}</th>
-                        <th class="px-4 py-2"></th>
+                        <th>{{ __('programs.project') }}</th>
+                        <th>{{ __('programs.program') }}</th>
+                        <th></th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-secondary-soft dark:divide-line">
+                <tbody>
                     @foreach ($projects as $project)
                         <tr wire:key="project-{{ $project['id'] }}">
-                            <td class="px-4 py-2 text-secondary-dark dark:text-ink">{{ $project['name'] }}</td>
-                            <td class="px-4 py-2 text-secondary-medium dark:text-ink-muted">{{ $project['program'] }}</td>
-                            <td class="px-4 py-2 text-end">
+                            <td class="text-secondary-dark dark:text-ink">{{ $project['name'] }}</td>
+                            <td class="text-secondary-medium dark:text-ink-muted">{{ $project['program'] }}</td>
+                            <td class="fin-num">
                                 @if ($canCreate && $project['linked'])
                                     <button type="button" wire:click="unlink({{ $project['id'] }})" class="text-xs text-primary hover:underline dark:text-ink-muted">{{ __('programs.unlink') }}</button>
                                 @endif

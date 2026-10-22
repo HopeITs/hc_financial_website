@@ -1,4 +1,4 @@
-/* Base layer: element defaults, rem scaling on large screens, dark browser surfaces and the theme cross-fade. */
+/* Base layer: element defaults, rem scaling on large screens and dark browser surfaces. */
 
 @layer base {
 
@@ -42,21 +42,5 @@
 
     .dark img:not([data-no-dim]) {
         filter: brightness(0.9);
-    }
-}
-
-/*
- * Theme switch (resources/js, document.startViewTransition()): a short cross-fade
- * of the whole page. These pseudo-elements only exist during a transition.
- */
-::view-transition-old(root),
-::view-transition-new(root) {
-    animation-duration: 200ms;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    ::view-transition-old(root),
-    ::view-transition-new(root) {
-        animation: none;
     }
 }

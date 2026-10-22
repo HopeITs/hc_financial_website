@@ -9,6 +9,7 @@
 @import './base.css';
 @import './typography.css';
 @import './flux-overrides.css';
+@import './finance.css';
 
 /* flux.css already scans Flux's own stubs; these are the app's views and Laravel's pagination views. */
 @source '../views';
