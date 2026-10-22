@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\WithoutProfilePicture;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -18,6 +20,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
  * @property string $password
  */
 #[Hidden(['Password', 'ProfilePicture'])]
+#[ScopedBy(WithoutProfilePicture::class)]
 class User extends Authenticatable
 {
     protected $table = 'user';
