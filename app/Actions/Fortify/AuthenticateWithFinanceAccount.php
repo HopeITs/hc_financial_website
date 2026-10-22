@@ -13,8 +13,10 @@ use Laravel\Fortify\Fortify;
  * Logs people in with their account from the Windows program.
  *
  * Same rule as Login_Window2: find the `user` row by username, compare case
- * sensitively (the program uses BINARY), then verify the PBKDF2 hash. A wrong
- * username and a wrong password are indistinguishable to the caller.
+ * sensitively (the program uses BINARY), then verify the PBKDF2 hash. Only
+ * active accounts (`State` = 1) get in. A wrong username, a wrong password and
+ * an inactive account are indistinguishable to the caller, in answer and in
+ * time: the hash is always computed, against a dummy when there is no account.
  */
 class AuthenticateWithFinanceAccount
 {
@@ -30,10 +32,24 @@ class AuthenticateWithFinanceAccount
         $user = User::query()->where('username', $username)->first();
 
         // The database collation may be case insensitive; the program's is not.
-        if ($user === null || $user->username !== $username) {
-            return null;
-        }
+        $found = $user !== null && $user->username === $username;
 
-        return FinancePassword::verify($password, $user->getAuthPassword()) ? $user : null;
+        $verified = FinancePassword::verify(
+            $password,
+            $found ? $user->getAuthPassword() : self::dummyHash(),
+        );
+
+        return $found && $verified && $user->isActive() ? $user : null;
+    }
+
+    /**
+     * A well formed hash nobody knows the password of, so a missing account
+     * costs the same time as a real one.
+     */
+    private static function dummyHash(): string
+    {
+        static $hash = null;
+
+        return $hash ??= FinancePassword::make(bin2hex(random_bytes(16)));
     }
 }
