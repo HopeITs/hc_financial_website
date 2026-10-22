@@ -1,6 +1,13 @@
 <?php
 
+use App\Enums\FundSource;
+use App\Enums\VoucherSource;
+use App\Enums\VoucherType;
+use App\Services\Ledger\LineDraft;
+use App\Services\Ledger\VoucherDraft;
 use App\Support\FinancePassword;
+use Carbon\CarbonImmutable;
+use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -160,6 +167,33 @@ function createLegacyHomeSchema(): void
         $table->string('AccountName')->nullable();
         $table->integer('IsClosed')->nullable();
     });
+}
+
+/** The ledger tables of the web app with the real chart of accounts, projects and budget lines seeded. */
+function createLedgerSchema(): void
+{
+    (require database_path('migrations/2026_10_24_090000_create_gl_accounts_projects_budget_lines_tables.php'))->up();
+    (require database_path('migrations/2026_10_24_100000_create_gl_voucher_tables.php'))->up();
+    (new ChartOfAccountsSeeder)->run();
+}
+
+/** A balanced, valid receipt: 100 USD into the Aleppo USD safe from the ACN grant, project F2F. */
+function ledgerReceipt(array $header = [], ?array $lines = null): VoucherDraft
+{
+    $lines ??= [
+        new LineDraft('1111', 'USD', debit: 100, projectCode: 'F2F', fundSource: FundSource::DonorGrant),
+        new LineDraft('4101', 'USD', credit: 100, projectCode: 'F2F'),
+    ];
+
+    return new VoucherDraft(
+        type: $header['type'] ?? VoucherType::Receipt,
+        date: $header['date'] ?? CarbonImmutable::parse('2026-03-10'),
+        preparedBy: $header['preparedBy'] ?? 5,
+        lines: $lines,
+        description: $header['description'] ?? 'ACN grant',
+        source: $header['source'] ?? VoucherSource::Web,
+        legacyActionId: $header['legacyActionId'] ?? null,
+    );
 }
 
 function createFinanceUser(string $username, string $password, string $role = 'Head Office', int $roleId = 2): int
