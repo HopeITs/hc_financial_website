@@ -9,15 +9,6 @@ return [
     'collapse' => 'Collapse',
     'no_match' => 'No account matches.',
     'toggle' => 'Expand or collapse',
-    'classes' => [
-        'Assets' => 'Assets',
-        'Liabilities' => 'Liabilities',
-        'Net assets' => 'Net assets',
-        'Income' => 'Income',
-        'Expenses' => 'Expenses',
-    ],
-    'levels' => ['Header' => 'Header', 'Posting' => 'Posting'],
-    'sides' => ['Debit' => 'Debit', 'Credit' => 'Credit'],
     'any_currency' => 'Any currency',
     'tags' => [
         'Project' => 'Project',

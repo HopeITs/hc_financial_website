@@ -28,7 +28,7 @@ class Chart extends Component
         }
 
         $roots = GlAccount::query()->whereNull('parent_code')->orderBy('code')->get();
-        $postingCounts = GlAccount::query()->where('level', GlAccount::POSTING)->selectRaw('class, count(*) as total')->groupBy('class')->pluck('total', 'class');
+        $postingCounts = GlAccount::query()->where('level', 'posting')->selectRaw('class, count(*) as total')->groupBy('class')->pluck('total', 'class');
 
         return view('livewire.chart', [
             'account' => $account,

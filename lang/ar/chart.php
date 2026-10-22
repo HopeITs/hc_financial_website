@@ -9,15 +9,6 @@ return [
     'collapse' => 'طي',
     'no_match' => 'لا يوجد حساب مطابق.',
     'toggle' => 'توسيع أو طي',
-    'classes' => [
-        'Assets' => 'الأصول',
-        'Liabilities' => 'الالتزامات',
-        'Net assets' => 'صافي الأصول',
-        'Income' => 'الإيرادات',
-        'Expenses' => 'المصروفات',
-    ],
-    'levels' => ['Header' => 'رئيسي', 'Posting' => 'ترحيل'],
-    'sides' => ['Debit' => 'مدين', 'Credit' => 'دائن'],
     'any_currency' => 'أي عملة',
     'tags' => [
         'Project' => 'المشروع',

@@ -23,11 +23,11 @@ class ChartTree
                 $rows[] = [
                     'code' => $account->code,
                     'name' => $account->localizedName(),
-                    'level' => $account->level,
+                    'level' => $account->level->value,
                     'parent' => $account->parent_code,
                     'depth' => $depth,
                     'hasChildren' => $byParent->has($account->code),
-                    'class' => $account->class,
+                    'class' => $account->class->value,
                     'search' => mb_strtolower($account->code.' '.$account->name_en.' '.$account->name_ar),
                 ];
                 $walk($account->code, $depth + 1);

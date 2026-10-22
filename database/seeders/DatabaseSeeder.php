@@ -5,8 +5,8 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 
 /**
- * Accounts, roles and the Windows program's tables belong to the finance database that the program already runs on;
- * only the web-owned chart of accounts is seeded.
+ * Accounts and roles belong to the finance database that the Windows program already runs on;
+ * only the ledger's chart of accounts is seeded here.
  */
 class DatabaseSeeder extends Seeder
 {

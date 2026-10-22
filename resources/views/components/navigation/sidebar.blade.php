@@ -90,16 +90,16 @@
                     :href="url(row.code)"
                     wire:navigate
                     class="flex min-h-8 min-w-0 flex-1 items-center gap-2 py-1 pe-2 text-sm"
-                    :class="[row.level === 'Header' ? 'font-semibold' : 'text-secondary-medium dark:text-ink-muted', current === row.code && 'text-primary! dark:text-brand-text!']"
+                    :class="[row.level === 'header' ? 'font-semibold' : 'text-secondary-medium dark:text-ink-muted', current === row.code && 'text-primary! dark:text-brand-text!']"
                     :aria-current="current === row.code ? 'page' : null"
                     :title="row.name"
                 >
                     <span class="size-2 shrink-0 rounded-full" :class="{
-                        'bg-sky-500': row.class === 'Assets',
-                        'bg-amber-500': row.class === 'Liabilities',
-                        'bg-teal-600': row.class === 'Net assets',
-                        'bg-emerald-600': row.class === 'Income',
-                        'bg-primary': row.class === 'Expenses',
+                        'bg-sky-500': row.class === 'assets',
+                        'bg-amber-500': row.class === 'liabilities',
+                        'bg-teal-600': row.class === 'net_assets',
+                        'bg-emerald-600': row.class === 'income',
+                        'bg-primary': row.class === 'expenses',
                     }"></span>
                     <span class="shrink-0 tabular-nums" dir="ltr" x-text="row.code"></span>
                     <span class="min-w-0 flex-1 truncate" x-text="row.name"></span>
