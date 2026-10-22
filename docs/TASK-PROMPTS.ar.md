@@ -84,7 +84,7 @@ Target date: 2026-10-22. October items feed the end-of-October demo (Home, side 
 Prepare the sign-off pack for the Financial Manager. You write NO application code. Output: `docs/DECISIONS.md` listing every decision taken so far (rounds 1, 2 and 3 of the Financial Manager's answers, plus D1-D11 and Q-a to Q-e from the mockup) with date, owner and the task it unblocks, and a short list of what is still open. Read `docs/PLAN-hcsyria_financial_test.md` sections 6.8 and 6.9, `docs/ANSWERS-CFO-2-AR.md`, `docs/QUESTIONS-CFO-AR.md`, `docs/QUESTIONS-CFO-3-AR.md`. Never reset a decision already recorded as decided; mark each open one with the default that applies after one working day.
 
 ## Git
-Start from an up-to-date `main`, create branch `t0-1-decisions-pack`, commit with messages starting `T01:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t0-1-decisions-pack`, commit with messages starting `T01:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -168,7 +168,7 @@ Set `DB_DATABASE=hcsyria_financial_test` in `.env.example` (and tell the develop
 These tasks must be merged first: 01. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t0-2-connect-db`, commit with messages starting `T02:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t0-2-connect-db`, commit with messages starting `T02:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -254,7 +254,7 @@ with the read-only user, `DB::connection('legacy')->table('donor')->insert([...]
 These tasks must be merged first: 02. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t1-2-legacy-readonly`, commit with messages starting `T03:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t1-2-legacy-readonly`, commit with messages starting `T03:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -333,7 +333,7 @@ In `AppServiceProvider::boot`, call `DB::prohibitDestructiveCommands()` when the
 These tasks must be merged first: 02. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t1-3-block-destructive`, commit with messages starting `T04:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t1-3-block-destructive`, commit with messages starting `T04:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -409,7 +409,7 @@ Confirm `spatie/laravel-permission` is gone (composer files, `config/`, `bootstr
 `grep -ri spatie` outside `vendor` and `docs` finds nothing; tests pass.
 
 ## Git
-Start from an up-to-date `main`, create branch `t1-4-spatie-leftovers`, commit with messages starting `T05:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t1-4-spatie-leftovers`, commit with messages starting `T05:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -489,7 +489,7 @@ the command is green on the test database; a Pest test covers the failing versio
 These tasks must be merged first: 03. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t1-5-check-db`, commit with messages starting `T06:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t1-5-check-db`, commit with messages starting `T06:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -570,7 +570,7 @@ the six tables exist; login and logout still work.
 These tasks must be merged first: 03. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t1-6-framework-tables`, commit with messages starting `T07:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t1-6-framework-tables`, commit with messages starting `T07:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -651,7 +651,7 @@ tests pass.
 These tasks must be merged first: 03. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t1-7-harden-login`, commit with messages starting `T08:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t1-7-harden-login`, commit with messages starting `T08:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -733,7 +733,7 @@ a Pest test per model loads one real row and one relation; writing throws.
 These tasks must be merged first: 03. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t2-1-legacy-models`, commit with messages starting `T09:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t2-1-legacy-models`, commit with messages starting `T09:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -820,7 +820,7 @@ tests prove each role sees only its screens and the preparer cannot approve thei
 These tasks must be merged first: 08. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t2-6-roles-policies`, commit with messages starting `T14:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t2-6-roles-policies`, commit with messages starting `T14:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -903,7 +903,7 @@ Rebuild `/home` as the single landing page of the app (also the target of the lo
 These tasks must be merged first: 09, 14. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t4-5-home-and-sidebar`, commit with messages starting `T23:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t4-5-home-and-sidebar`, commit with messages starting `T23:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -984,7 +984,7 @@ Build the `programs` page. List the programs from the legacy read model (read on
 These tasks must be merged first: 09, 14. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t0-44-programs-page`, commit with messages starting `T44:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t0-44-programs-page`, commit with messages starting `T44:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -1066,7 +1066,7 @@ Build the projects pages on the legacy read models. (1) Projects list: all proje
 These tasks must be merged first: 09, 14. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t0-45-projects-pages`, commit with messages starting `T45:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t0-45-projects-pages`, commit with messages starting `T45:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -1150,7 +1150,7 @@ migrations run on a scratch schema (not the test database) and roll back.
 These tasks must be merged first: 07. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t2-2-ledger-accounts`, commit with messages starting `T10:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t2-2-ledger-accounts`, commit with messages starting `T10:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -1233,7 +1233,7 @@ migrations run and roll back on the scratch schema; the check constraint rejects
 These tasks must be merged first: 10. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t2-3-ledger-vouchers`, commit with messages starting `T11:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t2-3-ledger-vouchers`, commit with messages starting `T11:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -1316,7 +1316,7 @@ counts are 156 + 8 accounts' worth of v7 rows as in the mockup, every `parent_co
 These tasks must be merged first: 10. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t2-4-seed-chart`, commit with messages starting `T12:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t2-4-seed-chart`, commit with messages starting `T12:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -1403,7 +1403,7 @@ the rules suite is green; a failed rule leaves no rows and no consumed number.
 These tasks must be merged first: 11, 12. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t2-5-post-voucher`, commit with messages starting `T13:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t2-5-post-voucher`, commit with messages starting `T13:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -1488,7 +1488,7 @@ Pest feature tests for create, edit, deactivate and the "used account" restricti
 These tasks must be merged first: 12, 14. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t3-1-chart-screen`, commit with messages starting `T15:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t3-1-chart-screen`, commit with messages starting `T15:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -1570,7 +1570,7 @@ feature tests for approve, reject, self-approval refused, closed month refused.
 These tasks must be merged first: 13, 14. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t3-2-voucher-list`, commit with messages starting `T16:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t3-2-voucher-list`, commit with messages starting `T16:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -1653,7 +1653,7 @@ a CRV, CPV and TRF can be prepared and appear as Pending; the check list matches
 These tasks must be merged first: 16. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t3-3-voucher-builder`, commit with messages starting `T17:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t3-3-voucher-builder`, commit with messages starting `T17:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -1731,7 +1731,7 @@ the running balance equals the trial balance for the same account and date (test
 These tasks must be merged first: 13. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t3-4-account-statement`, commit with messages starting `T18:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t3-4-account-statement`, commit with messages starting `T18:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -1810,7 +1810,7 @@ As-at date, per account Dr / Cr / net, grouped by class, total Dr = total Cr che
 These tasks must be merged first: 18. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t4-1-trial-balance`, commit with messages starting `T19:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t4-1-trial-balance`, commit with messages starting `T19:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -1888,7 +1888,7 @@ Per project: income, expenses (exclude 5703 depreciation, decision D10), cash he
 These tasks must be merged first: 19. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t4-2-project-balances`, commit with messages starting `T20:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t4-2-project-balances`, commit with messages starting `T20:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -1963,7 +1963,7 @@ Statement of Financial Position and Statement of Activities grouped by `statemen
 These tasks must be merged first: 19. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t4-3-financial-statements`, commit with messages starting `T21:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t4-3-financial-statements`, commit with messages starting `T21:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -2038,7 +2038,7 @@ Rebuild on `gl_voucher_lines` with the filters of the Windows program (project, 
 These tasks must be merged first: 19. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t4-4-operational-reports`, commit with messages starting `T22:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t4-4-operational-reports`, commit with messages starting `T22:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -2115,7 +2115,7 @@ Per city: the two general accounts (GEN-<city>-USD and GEN-<city>-SYP) with SYP 
 These tasks must be merged first: 17. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t5-1-treasury-position`, commit with messages starting `T24:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t5-1-treasury-position`, commit with messages starting `T24:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -2192,7 +2192,7 @@ Rates per city with effective date: proposed by Accountant, approved by Financia
 These tasks must be merged first: 24. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t5-2-transfer-rates`, commit with messages starting `T25:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t5-2-transfer-rates`, commit with messages starting `T25:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -2282,7 +2282,7 @@ Build the `requests` module from plan section 6.9. A project manager (role 3) pr
 These tasks must be merged first: 13, 14, 17. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t5-3-requests-module`, commit with messages starting `T26:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t5-3-requests-module`, commit with messages starting `T26:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -2365,7 +2365,7 @@ Implement salary allocation (voucher type ALC): one employee's salary split over
 These tasks must be merged first: 17, 11. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t5-4-payroll-allocation`, commit with messages starting `T27:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t5-4-payroll-allocation`, commit with messages starting `T27:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -2443,7 +2443,7 @@ Build four read-only reports on `gl_voucher_lines` (approved vouchers only): (1)
 These tasks must be merged first: 20, 11. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t5-5-followup-reports`, commit with messages starting `T28:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t5-5-followup-reports`, commit with messages starting `T28:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -2523,7 +2523,7 @@ Build micro loan entry. For each beneficiary of a micro project record loan amou
 These tasks must be merged first: 11, 17. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t5-6-micro-loans`, commit with messages starting `T29:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t5-6-micro-loans`, commit with messages starting `T29:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -2603,7 +2603,7 @@ Extend the donor-receipt voucher (CRV into the hawala account 1161) with the ori
 These tasks must be merged first: 13, 12. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t5-7-hawala-receipt`, commit with messages starting `T30:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t5-7-hawala-receipt`, commit with messages starting `T30:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -2684,7 +2684,7 @@ Read distinct cash accounts (name, currency, city), project accounts, donors and
 These tasks must be merged first: 09, 12. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t6-1-dbload-mapping`, commit with messages starting `T31:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t6-1-dbload-mapping`, commit with messages starting `T31:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -2769,7 +2769,7 @@ a rehearsal on the test copy reproduces, per cash account and project, the Windo
 These tasks must be merged first: 31, 13. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t6-2-dbload-posting`, commit with messages starting `T32:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t6-2-dbload-posting`, commit with messages starting `T32:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -2852,7 +2852,7 @@ count of rows in equals files out, with a report of the exceptions.
 These tasks must be merged first: 32. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t6-3-attachment-move`, commit with messages starting `T33:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t6-3-attachment-move`, commit with messages starting `T33:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -2930,7 +2930,7 @@ OPN vouchers for 31/12/2025 from legacy balances with the 3901 balancing line pe
 These tasks must be merged first: 32. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t6-4-opening-close`, commit with messages starting `T34:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t6-4-opening-close`, commit with messages starting `T34:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -3005,7 +3005,7 @@ Operations in SYP with stored rate 0 (about 4,618): compute the dollar value at 
 These tasks must be merged first: 32. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t6-5-fix-usd`, commit with messages starting `T35:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t6-5-fix-usd`, commit with messages starting `T35:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -3081,7 +3081,7 @@ Legacy exchange groups (about 470): one rate, TRF vouchers with no 5503 line (D8
 These tasks must be merged first: 32. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t6-6-legacy-exchange-merges`, commit with messages starting `T36:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t6-6-legacy-exchange-merges`, commit with messages starting `T36:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -3160,7 +3160,7 @@ Rebuild `single`, `multi`, `multiatt`, `payments`, `approval`, `salaries`, `vouc
 These tasks must be merged first: 17. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t7-1-entry-screens`, commit with messages starting `T37:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t7-1-entry-screens`, commit with messages starting `T37:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -3235,7 +3235,7 @@ Target date: 2026-11-26. October items feed the end-of-October demo (Home, side 
 These tasks must be merged first: 14. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t7-2-master-data`, commit with messages starting `T38:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t7-2-master-data`, commit with messages starting `T38:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -3313,7 +3313,7 @@ All 14 users currently share one stored password. Add a forced password change a
 These tasks must be merged first: 08. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t8-1-reset-shared-password`, commit with messages starting `T40:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t8-1-reset-shared-password`, commit with messages starting `T40:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -3389,7 +3389,7 @@ Target date: 2026-11-25. October items feed the end-of-October demo (Home, side 
 These tasks must be merged first: 22, 32. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t8-2-performance-security`, commit with messages starting `T41:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t8-2-performance-security`, commit with messages starting `T41:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -3466,7 +3466,7 @@ Prepare and run the end-to-end test and the user acceptance test. Write a UAT sc
 These tasks must be merged first: 37, 28, 32. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t8-3-qa-uat`, commit with messages starting `T42:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t8-3-qa-uat`, commit with messages starting `T42:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -3541,7 +3541,7 @@ Write `docs/CUTOVER.md`: freeze the Windows program, backup, final import into `
 These tasks must be merged first: 42, 33, 40. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t8-4-cutover-runbook`, commit with messages starting `T43:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t8-4-cutover-runbook`, commit with messages starting `T43:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
@@ -3616,7 +3616,7 @@ Read-only pages `decisions` (D1-D11, Q-a to Q-e), `mapping` and `rules` from the
 These tasks must be merged first: 15. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t7-3-bridge-pages`, commit with messages starting `T39:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t7-3-bridge-pages`, commit with messages starting `T39:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---

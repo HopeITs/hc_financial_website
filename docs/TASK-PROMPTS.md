@@ -6,7 +6,7 @@ Common rules for every task (paste at the top of each prompt):
 
 > Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5), not the machine default 8.4. Read `CLAUDE.md`, `AGENTS.md` and `docs/PLAN-hcsyria_financial_test.md` first. The database `hcsyria_financial_test` belongs to the Windows program: **never alter or write legacy tables** (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. Do not put credentials in the repository.
 
-Git rule for every task (see section 11 of the plan): start from an up-to-date `main`, create the branch named in the task (`t<phase>-<n>-<name>`), do only that task, commit with messages starting with the task id, push the branch, merge it into `main` (pull request preferred), push `main`, delete the branch, and only then start the next task on a new branch.
+Git rule for every task (see section 11 of the plan): start from an up-to-date `main`, create the branch named in the task (`t<phase>-<n>-<name>`), do only that task, commit with messages starting with the task id, push the branch, merge it into `main` (pull request preferred), push `main`, keep the branch (never delete task branches, local or remote, yours or a co-worker's), and only then start the next task on a new branch.
 
 Status key: T = task, P = phase of the plan.
 
