@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 
 beforeEach(function () {
     createFinanceSchema();
+    createLegacyHomeSchema();
     createFinanceUser('Mai', 'correct horse');
 });
 

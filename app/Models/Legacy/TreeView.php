@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * A row of the Windows program's `tree_view` view: one leaf of the city, program, category,
  * project, account tree. A view has no key, so rows are only listed. Read only.
+ *
+ * @property int $CityID
+ * @property string|null $CityName
  */
 class TreeView extends LegacyModel
 {

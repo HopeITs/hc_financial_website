@@ -28,6 +28,7 @@ function createFinanceSchema(): void
     });
 
     (require database_path('migrations/2026_10_22_120000_create_web_user_roles_table.php'))->up();
+    (require database_path('migrations/2026_10_22_130000_create_web_user_preferences_table.php'))->up();
 
     Schema::create('log', function ($table) {
         $table->increments('id');
@@ -40,6 +41,42 @@ function createFinanceSchema(): void
         $table->string('query');
         $table->date('date');
         $table->string('user');
+    });
+}
+
+/**
+ * The `legacy` connection as an in-memory database holding the two views the home page reads
+ * (`cash_balances`, `tree_view`) as plain tables, with the columns the page uses.
+ */
+function createLegacyHomeSchema(): void
+{
+    if (config('database.connections.legacy.driver') !== 'sqlite') {
+        config(['database.connections.legacy' => ['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '']]);
+        DB::purge('legacy');
+    }
+
+    Schema::connection('legacy')->create('cash_balances', function ($table) {
+        $table->integer('CashAccount_id');
+        $table->integer('City_ID')->nullable();
+        $table->string('City_Name')->nullable();
+        $table->string('Subproject_Name')->nullable();
+        $table->integer('Account_ID');
+        $table->string('Account_Name');
+        $table->string('Account_Type')->default('Project');
+        $table->integer('account_IsClosed')->default(0);
+        $table->double('Account_Net')->default(0);
+        $table->double('Account_Net_USD')->default(0);
+        $table->double('Account_Net_New')->default(0);
+    });
+
+    Schema::connection('legacy')->create('tree_view', function ($table) {
+        $table->integer('CityID')->nullable();
+        $table->string('CityName')->nullable();
+        $table->string('ProjectName')->nullable();
+        $table->string('SubprojectName')->nullable();
+        $table->integer('AccountID')->nullable();
+        $table->string('AccountName')->nullable();
+        $table->integer('IsClosed')->nullable();
     });
 }
 

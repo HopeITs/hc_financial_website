@@ -3,9 +3,11 @@
 namespace App\Providers;
 
 use App\Contracts\Approvable;
+use App\Contracts\ProjectBalanceSource;
 use App\Enums\ScreenAction;
 use App\Models\User;
 use App\Policies\ApprovalPolicy;
+use App\Services\Projects\LegacyProjectBalanceSource;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -17,7 +19,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Task 20 swaps this for the ledger implementation; the pages only know the interface.
+        $this->app->bind(ProjectBalanceSource::class, LegacyProjectBalanceSource::class);
     }
 
     /**

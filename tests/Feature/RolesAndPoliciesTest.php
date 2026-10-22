@@ -16,6 +16,7 @@ beforeEach(function () {
 
     config(['database.connections.legacy' => ['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '']]);
     DB::purge('legacy');
+    createLegacyHomeSchema();
     Schema::connection('legacy')->create('role_currency_limit', function ($table) {
         $table->integer('Role_ID');
         $table->integer('TillType_ID');
