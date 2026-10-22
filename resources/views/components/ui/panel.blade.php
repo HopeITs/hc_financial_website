@@ -1,0 +1,25 @@
+@props(['title' => null, 'subtitle' => null, 'count' => null])
+
+{{-- The one container for a table, a list or a form: title row with a count and a toolbar, then the body. --}}
+<section data-panel {{ $attributes->class('overflow-hidden rounded-xl border border-secondary-soft bg-white shadow-card dark:border-transparent dark:bg-surface-1 dark:shadow-raised') }}>
+    @if ($title !== null || isset($toolbar))
+        <div class="flex min-h-12 flex-wrap items-center justify-between gap-2 border-b border-secondary-soft px-4 py-3 dark:border-line">
+            <div class="min-w-0">
+                @if ($title !== null)
+                    <div class="flex items-center gap-2">
+                        <h2 class="truncate text-base font-bold text-secondary-dark dark:text-ink">{{ $title }}</h2>
+                        @if ($count !== null)
+                            <span class="inline-flex min-w-6 items-center justify-center rounded-full bg-secondary-soft px-2 py-0.5 text-[11px] font-semibold tabular-nums text-secondary-dark dark:bg-surface-2 dark:text-ink">{{ $count }}</span>
+                        @endif
+                    </div>
+                @endif
+                @if ($subtitle !== null)
+                    <p class="truncate text-xs text-secondary-medium dark:text-ink-muted">{{ $subtitle }}</p>
+                @endif
+            </div>
+            {{ $toolbar ?? '' }}
+        </div>
+    @endif
+
+    {{ $slot }}
+</section>

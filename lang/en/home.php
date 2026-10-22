@@ -15,5 +15,9 @@ return [
     'resize_tree' => 'Resize the projects tree',
     'filter' => 'Filter',
     'clear_filter' => 'Clear',
+    'stat_projects' => 'Active projects',
+    'stat_cities' => 'Governorates',
+    'stat_usd' => 'Total balance (USD)',
+    'stat_syp' => 'Total balance (SYP)',
     'no_tree' => 'Nothing to show.',
 ];
