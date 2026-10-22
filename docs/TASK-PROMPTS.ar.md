@@ -145,7 +145,7 @@ Start from an up-to-date `main`, create branch `t0-1-decisions-pack`, commit wit
 
 ````text
 ## Role and goal
-You are implementing Task 02 of the HC Financial Web plan (ربط التطبيق بقاعدة hcsyria_financial_test). Branch: `t1-1-connect-db`. Do only this task.
+You are implementing Task 02 of the HC Financial Web plan (ربط التطبيق بقاعدة hcsyria_financial_test). Branch: `t0-2-connect-db`. Do only this task.
 
 ## Read before writing any code
 1. `CLAUDE.md` and `AGENTS.md`.
@@ -168,7 +168,7 @@ Set `DB_DATABASE=hcsyria_financial_test` in `.env.example` (and tell the develop
 These tasks must be merged first: 01. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `t1-1-connect-db`, commit with messages starting `T02:`, push, merge (pull request preferred), delete the branch.
+Start from an up-to-date `main`, create branch `t0-2-connect-db`, commit with messages starting `T02:`, push, merge (pull request preferred), delete the branch.
 ````
 
 ---

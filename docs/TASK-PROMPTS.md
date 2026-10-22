@@ -14,18 +14,18 @@ Status key: T = task, P = phase of the plan.
 
 ## Phase 1: Connection and foundations
 
-### T1.1 Point the app at `hcsyria_financial_test`
+### T0-2 Point the app at `hcsyria_financial_test`
 **Depends on:** none
 **Prompt:** Set `DB_DATABASE=hcsyria_financial_test` in `.env.example` (and tell the developer to do it in `.env`). In `config/database.php` remove `ONLY_FULL_GROUP_BY` from the MySQL `modes` instead of turning `strict` off; the legacy views `cash_balances` and `tree_view` currently fail with error 1055. Check the legacy tables' collation (`information_schema.tables`) and set the connection charset/collation to match so Arabic text round-trips.
 **Done when:** `.\php.cmd artisan db:show` lists the legacy tables; a tinker query `DB::table('cash_balances')->count()` works; an Arabic `donor.Name` prints correctly.
 
 ### T1.2 Read-only `legacy` connection and least-privilege user
-**Depends on:** T1.1
+**Depends on:** T0-2
 **Prompt:** Add a second connection `legacy` in `config/database.php` (same database, credentials `LEGACY_DB_USERNAME` / `LEGACY_DB_PASSWORD` from `.env`). Write `docs/db-users.sql` with the statements to create two MySQL users: `hc_web_legacy` (SELECT only on `hcsyria_financial_test.*`) and `hc_web` (SELECT on legacy tables; ALL on tables named `gl_*`, `sessions`, `cache*`, `jobs*`, `failed_jobs`, `migrations`). Do not run it against production; document how to run it locally.
 **Done when:** with the read-only user, `DB::connection('legacy')->table('donor')->insert([...])` throws; the app still logs in.
 
 ### T1.3 Block destructive commands
-**Depends on:** T1.1
+**Depends on:** T0-2
 **Prompt:** In `AppServiceProvider::boot`, call `DB::prohibitDestructiveCommands()` when the configured database name starts with `hcsyria_`, so `migrate:fresh`, `migrate:refresh`, `migrate:reset` and `db:wipe` refuse to run. Add a Pest test with a fake config proving it.
 **Done when:** `.\php.cmd artisan migrate:fresh` refuses on this database.
 

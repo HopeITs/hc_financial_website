@@ -15,7 +15,7 @@ import argparse, datetime as dt, html, json, os, re, sys, time, urllib.error, ur
 API = "https://api.clickup.com/api/v2"
 PLAN = os.path.join(os.path.dirname(__file__), "..", "docs", "2026-10-21-finance-implementation-plan.ar.html")
 
-LEGACY = {"T1.1": "02", "T1.2": "03", "T1.3": "04", "T1.4": "05", "T1.5": "06", "T1.6": "07", "T1.7": "08",
+LEGACY = {"T0-2": "02", "T1.2": "03", "T1.3": "04", "T1.4": "05", "T1.5": "06", "T1.6": "07", "T1.7": "08",
           "T2.1": "09", "T2.2": "10", "T2.3": "11", "T2.4": "12", "T2.5": "13", "T2.6": "14",
           "T3.1": "15", "T3.2": "16", "T3.3": "17", "T3.4": "18", "T4.1": "19", "T4.2": "20", "T4.3": "21",
           "T4.4": "22", "T5.1": "24", "T5.2": "25", "T7.3b": "26", "T7.3c": "27", "T7.3d": "28", "T7.3e": "29",
