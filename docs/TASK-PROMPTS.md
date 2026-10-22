@@ -60,17 +60,17 @@ Status key: T = task, P = phase of the plan.
 
 ### T2.2 Ledger migrations: accounts, projects, budget lines
 **Depends on:** T1.6
-**Prompt:** Create migrations `gl_accounts`, `gl_projects`, `gl_budget_lines` exactly as in section 3.2 of the plan (columns, types, self FK on `parent_code`, indexes, soft deletes). `gl_accounts.code` is a string primary key. Add Eloquent models `GlAccount`, `GlProject`, `GlBudgetLine` with relations and enums `AccountClass`, `AccountLevel`, `NormalSide`.
+**Prompt:** Create migrations `gl_accounts`, `gl_projects`, `gl_budget_lines` exactly as in section 3.2 of the plan (columns, types, self FK on `parent_code`, indexes, soft deletes). `gl_accounts.code` is a string primary key. Add Eloquent models `GlAccount`, `GlProject`, `GlBudgetLine` with relations and the extra project columns (`currency`, `contract_no`, `start_date`, `end_date`) and budget line versioning (`version`, `valid_from`, `is_current`) and enums `AccountClass`, `AccountLevel`, `NormalSide`.
 **Done when:** migrations run on a scratch schema (not the test database) and roll back.
 
 ### T2.3 Ledger migrations: vouchers
 **Depends on:** T2.2
-**Prompt:** Create `gl_vouchers`, `gl_voucher_lines`, `gl_voucher_audit`, `gl_voucher_sequences`, `gl_voucher_attachments`, `gl_month_closes`, `gl_allocation_rates`, `gl_legacy_map`, `gl_import_batches`, `gl_import_issues`, `gl_cash_till_merges` per the plan. Add a database check constraint on `gl_voucher_lines`: debit or credit, never both, never negative, both columns `decimal(18,2)`. Unique index on `gl_vouchers.legacy_action_id` (nullable) and on `gl_voucher_attachments.legacy_attachment_id`. Models and enums `VoucherType` (CRV, CPV, TRF, ALC, JV, OPN), `VoucherStatus` (PendingApproval, Approved, Replaced), `FundSource`.
+**Prompt:** Create `gl_vouchers`, `gl_voucher_lines`, `gl_voucher_audit`, `gl_voucher_sequences`, `gl_voucher_attachments`, `gl_month_closes`, `gl_allocation_rates`, `gl_legacy_map`, `gl_import_batches`, `gl_import_issues`, `gl_cash_till_merges`, `gl_requests`, `gl_payroll_splits`, `gl_micro_loans`, `gl_micro_instalments` per the plan (section 3.2 and 6.8), including the new voucher columns `transfer_kind`, `request_id` and the voucher line columns `eur_amount`, `eur_rate`, `commission_usd`, `is_uncompensated`. Add a database check constraint on `gl_voucher_lines`: debit or credit, never both, never negative, both columns `decimal(18,2)`. Unique index on `gl_vouchers.legacy_action_id` (nullable) and on `gl_voucher_attachments.legacy_attachment_id`. Models and enums `VoucherType` (CRV, CPV, TRF, ALC, JV, OPN), `VoucherStatus` (PendingApproval, Approved, Replaced), `FundSource`.
 **Done when:** migrations run and roll back on the scratch schema; the check constraint rejects a line with both Dr and Cr.
 
 ### T2.4 Seed the chart of accounts, projects and budget lines
 **Depends on:** T2.2
-**Prompt:** Open the mockup artifact `DbZn7RTmZyZBh2w6MqbWxM` (data object `D`: `acc`, `proj`, `bl`) and write a seeder with those 156 accounts (34 headers, 122 posting), the 8 projects (F2F, SZ, CORE, GEN-ALP, GEN-LTK, GEN-DAM, GEN-HMS, GEN-TRT) and the budget lines. Apply the v7 changes: add 4108, 4306-4308, 1125-1127, 1135, 1145-1147, 1155; rename 1115, 1171, 1172. Keep the Arabic names as UTF-8 (the artifact export shows replacement characters in two project names: use `General account - <city>` and flag it in the PR). Store the data in `database/seeders/data/*.json`, not inline.
+**Prompt:** Open the mockup artifact `DbZn7RTmZyZBh2w6MqbWxM` (data object `D`: `acc`, `proj`, `bl`) and write a seeder with those 156 accounts (34 headers, 122 posting), the 8 projects (F2F, SZ, CORE and the ten general accounts GEN-<city>-USD and GEN-<city>-SYP for ALP, LTK, DAM, HMS, TRT; the mockup has one general account per city, so split each into a USD and an SYP row, decision Q1) and the budget lines. Apply the v7 changes: add 4108, 4306-4308, 1125-1127, 1135, 1145-1147, 1155; rename 1115, 1171, 1172. Keep the Arabic names as UTF-8 (the artifact export shows replacement characters in two project names: use `General account - <city>` and flag it in the PR). Store the data in `database/seeders/data/*.json`, not inline.
 **Done when:** counts are 156 + 8 accounts' worth of v7 rows as in the mockup, every `parent_code` resolves, every posting account has a class, side and statement line.
 
 ### T2.5 Posting service and the 13 rules
@@ -133,11 +133,11 @@ Status key: T = task, P = phase of the plan.
 
 ### T5.1 Treasury position (`treasury`)
 **Depends on:** T3.3
-**Prompt:** Per city: general account (GEN-ALP, GEN-LTK, GEN-DAM, GEN-HMS, GEN-TRT) SYP held and average cost, bulk purchases (TRF into the SYP safe), cash by safe and currency, in-transit (11x3, 11x4), transfer company 1161, 5503 reserve.
+**Prompt:** Per city: the two general accounts (GEN-<city>-USD and GEN-<city>-SYP) with SYP held and average cost, bulk purchases (TRF into the SYP safe), cash by safe and currency, in-transit (11x3, 11x4), transfer company 1161, 5503 reserve.
 
-### T5.2 Allocation rates and ALC vouchers (`alloc`)
+### T5.2 Transfer rates and TRF vouchers (`alloc`)
 **Depends on:** T5.1
-**Prompt:** Rates per city with effective date: proposed by Accountant, approved by Financial Manager. Build the ALC voucher: Dr project SYP, Cr general account SYP at its average rate, USD legs on 1161, difference to 5503. Errors exactly as in the mockup (no pounds in the general account, not enough pounds, no approved rate). Optional "allocate at average cost" switch, default off (decision D9).
+**Prompt:** Rates per city with effective date: proposed by Accountant, approved by Financial Manager. Build the **transfer** voucher (TRF with `transfer_kind`; ALC now means splitting a salary or invoice over projects, see plan 6.8): Dr project SYP, Cr general account SYP at its average rate, USD legs on 1161, difference to 5503. Errors exactly as in the mockup (no pounds in the general account, not enough pounds, no approved rate). Optional "allocate at average cost" switch, default off (decision D9).
 
 ---
 
@@ -149,7 +149,7 @@ Status key: T = task, P = phase of the plan.
 
 ### T6.2 Staging and posting of operations
 **Depends on:** T6.1, T2.5
-**Prompt:** Per legacy operation produce a voucher or an issue in `gl_import_issues`: I to CRV (Dr cash, Cr donor income), E to CPV (Dr expense, Cr cash, budget line fills account), A to CPV (Dr 1201, contact tag), R to CRV (Cr 1204 if micro-loan else 1201), X to TRF (Dr SYP safe, Cr USD safe), T to ALC/JV after the allocation rule. Missing rate: use the fallback rate and flag it. Skip `action_deleted`; `action_not_approved` becomes Pending. Idempotent through `legacy_action_id`; run in chunks as a queued job with a progress bar; dry-run mode.
+**Prompt:** Per legacy operation produce a voucher or an issue in `gl_import_issues`: I to CRV (Dr cash, Cr donor income), E to CPV (Dr expense, Cr cash, budget line fills account), A to CPV (Dr 1201, contact tag), R to CRV (Cr 1204 if micro-loan else 1201), X to TRF (Dr SYP safe, Cr USD safe), T to TRF (transfer, with `transfer_kind`) or ALC/JV (split) after the allocation rule. Missing rate: use the fallback rate and flag it. Skip `action_deleted`; `action_not_approved` becomes Pending. Idempotent through `legacy_action_id`; run in chunks as a queued job with a progress bar; dry-run mode.
 **Done when:** a rehearsal on the test copy reproduces, per cash account and project, the Windows program's balances (parity test).
 
 ### T6.3 Attachment move
@@ -176,6 +176,10 @@ Status key: T = task, P = phase of the plan.
 ### T7.1 Entry screens on vouchers
 **Depends on:** T3.3
 **Prompt:** Rebuild `single`, `multi`, `multiatt`, `payments`, `approval`, `salaries`, `vouchers` print so that they post vouchers through `PostVoucher` using the mockup's operation-to-voucher rule. They never write to legacy tables. Multi entry: paste from Excel, row validation, all-or-nothing save.
+
+### T7.3b New screens from the Financial Manager's answers
+**Depends on:** T3.3, T2.3
+**Prompt:** Build, one branch each: (1) `requests` (project manager submits, Financial Manager approves or rejects, link to voucher); (2) payroll split on `salaries` from `gl_payroll_splits` producing an ALC voucher; (3) reports `recon` (hawala pool versus project and general balances), `uncomp` (uncompensated cash per city), `advances` (open advances by person), `loans` (micro loan collection and arrears); (4) micro loan and instalment entry; (5) hawala receipt fields (EUR amount, actual rate, commission to an organization expense account, no project tag); (6) soft warning when spending after a project's end date; (7) currency switch (USD / SYP) on reports. Details in plan section 6.8.
 
 ### T7.2 Master data screens
 **Depends on:** T2.6

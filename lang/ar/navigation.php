@@ -13,7 +13,6 @@ return [
 
     'screens' => [
         'chart' => 'دليل الحسابات',
-        'projmap' => 'خريطة المشاريع',
         'projwin' => 'المشاريع',
         'allaccounts' => 'كل الحسابات (المالكون)',
         'budgetlines' => 'بنود الموازنة',
