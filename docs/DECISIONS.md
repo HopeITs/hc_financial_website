@@ -2,6 +2,8 @@
 
 Prepared 2026-10-22 for the sign-off session with the Financial Manager (both developers attend). Source of truth for each row is `docs/PLAN-hcsyria_financial_test.md` (sections 3.2, 6.5-6.9, 10). Nothing already decided is reopened here.
 
+**Verified 2026-10-22** against the three answered documents (`QUESTIONS-CFO-AR-answered.docx`, `QUESTIONS-CFO-2-answered-AR.docx`, `QUESTIONS-CFO-3-answered-AR.docx`): every row in sections 1 and 2 matches the ticked answers. The documents carry no answer dates, so the date column says only the round.
+
 **Status values:** `Decided` (confirmed by the Financial Manager or the IT manager), `Default applied` (not yet confirmed; the default applies after one working day and the item is marked *reviewable*), `Open` (needs input before the task that depends on it).
 
 **Owner:** FM = Financial Manager, IT = IT manager, Dev = the two developers.
@@ -24,7 +26,7 @@ Prepared 2026-10-22 for the sign-off session with the Financial Manager (both de
 | R1-9 | Compensation at the city rate approved by the FM; difference to 5503 (this is D9) | round 1 | FM | Decided | Allocation rates screen |
 | R1-10 | General-to-project move without cash is a `TRF` | round 1 | FM | Decided | `PostVoucher` |
 | R1-11 | Project manager requests live inside the system with statuses, linked to the voucher | round 1 | FM | Decided | `requests` module |
-| R1-12 | Income-producing project has its own cash box and income account; income is unrestricted; cash to the city till by manual voucher | round 1 | FM | Decided (monthly frequency: see open item O-1) | Chart seed, `TRF` |
+| R1-12 | Income-producing project has its own cash box and income account; income is unrestricted; cash to the city till by manual voucher (the "monthly" frequency was superseded by R3-6) | round 1 | FM | Decided | Chart seed, `TRF` |
 | R1-13 | Micro projects: loan, grant, repayment schedule, collection report | round 1 | FM | Decided | `gl_micro_loans`, `gl_micro_instalments` |
 | R1-14 | Church hand-over is an expense at hand-over; church admin cost is a fixed amount per church | round 1 | FM | Decided | Budget lines, no advance tracking |
 | R1-15 | Recovered instalments: fund source "Recovered loans" tagged with the donor, still under the donor's restrictions | round 1 | FM | Decided | Voucher line rules |
@@ -44,12 +46,12 @@ Prepared 2026-10-22 for the sign-off session with the Financial Manager (both de
 | R2-4 | One personal-accounts chart account with a mandatory Contact tag, outside the statements | round 2 | FM | Decided | Chart seed |
 | R2-5 | Report "where are the project funds": balance split by cash box | round 2 | FM | Decided | Reports group |
 | R2-6 | Salary split percentages come from the monthly payroll sheet; a mid-month change applies from the next month; no day proration | round 2 | FM | Decided | `salaries` |
-| R3-1 | New account 5504 "Hawala company commission" under financial expenses, next to 5503 | round 3 | FM | Decided (number confirmation: see O-2) | Chart seed (T2.4) |
+| R3-1 | New account 5504 "Hawala company commission" (Arabic name: عمولة شركة الحوالات) under financial expenses, next to 5503; the FM approved number and name (Q6 option a) | round 3 | FM | Decided (only the check that 5504 is free in the mockup remains, O-2) | Chart seed (T2.4) |
 | R3-2 | One monthly request per project (amount per budget line); an extra amount is a separate request; 2 or 3 quotes for large maintenance, fixed assets and electronics; edits locked at approval | round 3 | FM | Decided | `requests` module |
 | R3-3 | Spending without an approved request is allowed under USD 500 per voucher (SYP at its own voucher rate); exceeding a budget line is a warning only | round 3 | FM | Decided | `PostVoucher` |
 | R3-4 | FM approves; above USD 2,000 the CEO approves after the FM; the CEO is a new role "General Manager" held in a web-only table (legacy `role` stays read-only) | round 3 | FM | Decided | `RoleId::GeneralManager`, approvals |
-| R3-5 | Personal accounts: opening balance zero, no legacy balances carried | round 3 | FM | Decided | Opening / `dbload` |
-| R3-6 | Monthly project-to-city cash transfer is an ordinary `TRF` prepared by the Accountant; rare ("only by chance"); no automatic month-end voucher | round 3 | FM | Decided (see O-1) | Nothing to build |
+| R3-5 | Personal accounts: opening balance zero; the FM confirmed (Q4 option a) that no legacy deposit or person-named account has a non-zero balance | round 3 | FM | Decided | Opening / `dbload` |
+| R3-6 | Project-to-city cash transfer is an ordinary `TRF` prepared by the Accountant (Q5 option a); the FM added that it normally happens only "by chance", so there is no monthly schedule and no automatic voucher | round 3 | FM | Decided (closes O-1) | Nothing to build |
 
 ## 3. Mockup decisions D1-D11 and Q-a to Q-e
 
@@ -87,7 +89,7 @@ The mockup's own decisions page is not in this repository. Only the decisions th
 
 | ID | Item | Default if unanswered | Blocks |
 |----|------|-----------------------|--------|
-| O-1 | Conflict: round 1 (Q12) says project cash goes to the city till **monthly**; round 3 says it happens only "by chance" | Ordinary manual `TRF`, no monthly schedule, no reminder | Nothing in week 1 |
+| O-1 | ~~Conflict: round 1 (Q12) says monthly, round 3 says "by chance"~~ **Resolved**: round 3 is later and explicit (R3-6); it is a manual `TRF`, no schedule | Closed | none |
 | O-2 | Confirm 5504 is not used by another account in the mockup chart | Use 5504; if taken, the next free number next to 5503 and update the plan | T2.4 chart seed |
 | O-3 | The two project names corrupted in the mockup export | Seed the projects with their codes and the names found in the legacy `account` table; fix the names later | Projects seed |
 | O-4 | Wording of D3-D6, Q-a, Q-d, Q-e (not in this repository) | Cannot default: someone must paste them from the mockup. No task in week 1 depends on them | Nothing identified yet |
