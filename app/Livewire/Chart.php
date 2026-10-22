@@ -113,7 +113,7 @@ class Chart extends Component
         $this->formCity = (string) $account->city;
         $this->formCash = $account->is_cash;
         $this->formStatementLine = (string) $account->statement_line;
-        $this->formTags = array_values($account->required_tags ?? []);
+        $this->formTags = $account->required_tags ?? [];
         $this->formNote = (string) $account->usage_note;
         $this->showEditor = true;
     }
@@ -127,7 +127,7 @@ class Chart extends Component
     {
         Gate::authorize('screen', ['chart', $this->editing === null ? 'create' : 'edit']);
 
-        $account = $this->editing !== null ? GlAccount::query()->findOrFail($this->editing) : null;
+        $account = $this->editing !== null ? GlAccount::query()->whereKey($this->editing)->firstOrFail() : null;
         $used = $account !== null && $balances->isUsed($account->code);
 
         $data = $this->validate([
@@ -147,7 +147,7 @@ class Chart extends Component
             'formNote' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $parent = $data['formParent'] !== '' ? GlAccount::query()->find($data['formParent']) : null;
+        $parent = $data['formParent'] !== '' ? GlAccount::query()->whereKey($data['formParent'])->first() : null;
 
         if ($parent !== null && $parent->class->value !== $data['formClass']) {
             throw ValidationException::withMessages(['formClass' => __('chart.error_class_parent')]);
