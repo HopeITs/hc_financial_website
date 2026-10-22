@@ -262,10 +262,11 @@ Rule: **every task (T1.1, T1.2, ...) gets its own branch from an up-to-date `mai
 | 4. Commit (one or more commits, message starts with the task id) | `git add -A; git commit -m "T1.1: point app at hcsyria_financial_test"` |
 | 5. Push the branch | `git push -u origin t1-1-connect-db` |
 | 6. Merge into main | Preferred: open a pull request and merge it (squash or merge commit). Without review: `git switch main; git merge --no-ff t1-1-connect-db -m "Merge T1.1"; git push origin main` |
-| 7. Clean up | `git branch -d t1-1-connect-db; git push origin --delete t1-1-connect-db` |
+| 7. Keep the branch | **Do not delete it**, neither locally nor on `origin` (no `git branch -d`, no `git push origin --delete`). Branches are the record of each task and may be used by a co-worker on the same plan. |
 | 8. Next task | go back to step 1 with the next task id |
 
 Rules:
+- Never delete a task branch after merging, local or remote, and never delete a branch you did not create.
 - Never start a task on top of an unmerged task branch. If a task depends on another, the other is merged first (the **Depends on** line in `TASK-PROMPTS.md`).
 - Never commit to `main` directly, never force-push `main`, never skip hooks.
 - Never commit `.env`, passwords, FTP credentials or database dumps.
