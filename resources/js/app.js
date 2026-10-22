@@ -4,3 +4,5 @@ import './form-fields';
 import './modal-shell';
 import './scroll-lock';
 import './section-rail';
+import './sidebar-resize';
+import './paged-table';

@@ -22,7 +22,7 @@
                     </div>
                 </x-slot:toolbar>
 
-                <div class="overflow-x-auto">
+                <x-ui.scroll-table>
                 <table class="fin-table" data-test="projects-table">
                     <thead>
                         <tr>
@@ -54,7 +54,7 @@
                         @endforelse
                     </tbody>
                 </table>
-                </div>
+                </x-ui.scroll-table>
             </x-ui.panel>
         </section>
     </div>

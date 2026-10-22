@@ -66,7 +66,7 @@
         @if ($children->isNotEmpty())
             <div>
                 <h3 class="mb-2 text-base font-semibold text-secondary-dark dark:text-ink">{{ __('chart.below') }}</h3>
-                <div class="fin-table-wrap">
+                <x-ui.scroll-table>
                     <table class="fin-table" data-test="chart-children">
                         <thead>
                             <tr>
@@ -85,7 +85,7 @@
                             @endforeach
                         </tbody>
                     </table>
-                </div>
+                </x-ui.scroll-table>
             </div>
         @endif
     @endif

@@ -39,7 +39,7 @@
                 </div>
 
                 <flux:heading level="2">{{ __('projects.where_money') }}</flux:heading>
-                <div class="fin-table-wrap">
+                <x-ui.scroll-table>
                     <table class="fin-table" data-test="cash-accounts-table">
                         <thead>
                             <tr>
@@ -62,11 +62,11 @@
                             @endforelse
                         </tbody>
                     </table>
-                </div>
+                </x-ui.scroll-table>
             @endif
         </section>
     @elseif ($tab === 'accounts')
-        <div class="fin-table-wrap" data-test="tab-accounts-content">
+        <x-ui.scroll-table data-test="tab-accounts-content">
             <table class="fin-table">
                 <thead>
                     <tr>
@@ -94,9 +94,9 @@
                     @endforeach
                 </tbody>
             </table>
-        </div>
+        </x-ui.scroll-table>
     @elseif ($tab === 'budget')
-        <div class="fin-table-wrap" data-test="tab-budget-content">
+        <x-ui.scroll-table data-test="tab-budget-content">
             <table class="fin-table">
                 <thead>
                     <tr>
@@ -127,9 +127,9 @@
                     @endforelse
                 </tbody>
             </table>
-        </div>
+        </x-ui.scroll-table>
     @else
-        <div class="fin-table-wrap" data-test="tab-lifetime-content">
+        <x-ui.scroll-table data-test="tab-lifetime-content">
             @if ($showMoney)
                 <table class="fin-table">
                     <thead>
@@ -156,6 +156,6 @@
             @else
                 <p class="px-4 py-6 text-center text-secondary-medium dark:text-ink-muted">{{ __('projects.money_hidden') }}</p>
             @endif
-        </div>
+        </x-ui.scroll-table>
     @endif
 </div>

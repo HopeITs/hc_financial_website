@@ -15,7 +15,7 @@
     stashable
     aria-label="{{ __('chart.tree') }}"
     data-navigation-sidebar
-    class="z-50! w-80! gap-0! border-e border-secondary-soft bg-white p-0! text-secondary-dark lg:top-16! lg:h-[calc(100dvh-4rem)]! lg:max-h-[calc(100dvh-4rem)]! dark:border-line dark:bg-surface-1 dark:text-ink"
+    class="z-50! w-[min(20rem,100vw)]! gap-0! lg:w-(--sidebar-w,20rem)! border-e border-secondary-soft bg-white p-0! text-secondary-dark lg:top-16! lg:h-[calc(100dvh-4rem)]! lg:max-h-[calc(100dvh-4rem)]! dark:border-line dark:bg-surface-1 dark:text-ink"
     x-data="{
         rows: {{ \Illuminate\Support\Js::from($rows) }},
         current: {{ \Illuminate\Support\Js::from($current) }},
@@ -109,4 +109,20 @@
 
         <p x-show="visible.length === 0" x-cloak class="px-2 py-3 text-sm text-secondary-medium dark:text-ink-muted">{{ __('chart.no_match') }}</p>
     </nav>
+
+    {{-- Drag (or use the arrow keys on) this edge to resize the sidebar; double-click resets it. --}}
+    <div
+        x-data="sidebarResize"
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="{{ __('chart.resize') }}"
+        tabindex="0"
+        data-test="sidebar-resizer"
+        class="absolute inset-y-0 -end-1 z-10 hidden w-2 cursor-col-resize touch-none transition-colors hover:bg-primary/30 focus-visible:bg-primary/40 focus-visible:outline-none lg:block"
+        :class="dragging && 'bg-primary/40'"
+        x-on:pointerdown="start($event)"
+        x-on:dblclick="reset()"
+        x-on:keydown.arrow-right.prevent="nudge(1)"
+        x-on:keydown.arrow-left.prevent="nudge(-1)"
+    ></div>
 </flux:sidebar>

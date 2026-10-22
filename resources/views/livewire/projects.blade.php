@@ -34,7 +34,7 @@
         </div>
     </x-ui.panel>
 
-    <div class="fin-table-wrap">
+    <x-ui.scroll-table :paginate="false">
         <table class="fin-table" data-test="projects-table">
             <thead>
                 <tr>
@@ -72,7 +72,7 @@
                 @endforelse
             </tbody>
         </table>
-    </div>
+    </x-ui.scroll-table>
 
     {{ $projects->links() }}
 </div>

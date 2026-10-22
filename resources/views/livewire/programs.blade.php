@@ -43,7 +43,7 @@
         </form>
     @endif
 
-    <div class="fin-table-wrap">
+    <x-ui.scroll-table>
         <table class="fin-table" data-test="programs-table">
             <thead>
                 <tr>
@@ -79,7 +79,7 @@
                 @endforelse
             </tbody>
         </table>
-    </div>
+    </x-ui.scroll-table>
 
     <section class="flex flex-col gap-3">
         <flux:heading level="2">{{ __('programs.link_title') }}</flux:heading>
@@ -103,7 +103,7 @@
             </form>
         @endif
 
-        <div class="fin-table-wrap">
+        <x-ui.scroll-table>
             <table class="fin-table" data-test="projects-table">
                 <thead>
                     <tr>
@@ -126,6 +126,6 @@
                     @endforeach
                 </tbody>
             </table>
-        </div>
+        </x-ui.scroll-table>
     </section>
 </div>
