@@ -62,6 +62,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Only accounts with `State` = 1 may sign in (0 or empty is deactivated in the Windows program).
+     */
+    public function isActive(): bool
+    {
+        return (int) ($this->attributes['State'] ?? 0) === 1;
+    }
+
+    /**
      * The first letters of the username, for the avatar.
      */
     public function initials(): string
