@@ -34,4 +34,5 @@ return [
     'name' => 'Name',
     'level' => 'Level',
     'home' => 'All classes',
+    'resize' => 'Resize sidebar',
 ];

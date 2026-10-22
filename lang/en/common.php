@@ -18,4 +18,6 @@ return [
     'count_selected' => ':count selected',
     'required' => 'Required',
     'fields_need_attention' => ':count field needs attention|:count fields need attention',
+    'previous' => 'Previous',
+    'next' => 'Next',
 ];

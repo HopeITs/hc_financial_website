@@ -2,7 +2,7 @@
 
 @layer components {
     .fin-table-wrap {
-        overflow-x: auto;
+        overflow: hidden;
         border: 1px solid var(--color-secondary-soft);
         border-radius: 0.75rem;
         background-color: var(--color-white);
@@ -13,6 +13,70 @@
         border-color: var(--color-line);
         background-color: var(--color-surface-1);
         box-shadow: none;
+    }
+
+    /* The card scrolls inside itself so a long table never pushes the page; the header stays visible. */
+    .fin-table-scroll {
+        max-height: min(32rem, 70dvh);
+        overflow: auto;
+        overscroll-behavior: contain;
+    }
+
+    .fin-table-scroll thead th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background-color: var(--color-white);
+        background-image: linear-gradient(color-mix(in srgb, var(--color-secondary-soft) 40%, transparent), color-mix(in srgb, var(--color-secondary-soft) 40%, transparent));
+    }
+
+    .dark .fin-table-scroll thead th {
+        background-color: var(--color-surface-1);
+        background-image: linear-gradient(rgb(255 255 255 / 0.04), rgb(255 255 255 / 0.04));
+    }
+
+    .fin-table-pager {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        border-top: 1px solid var(--color-secondary-soft);
+        padding: 0.5rem 1rem;
+        font-size: 0.8125rem;
+        color: var(--color-secondary-medium);
+    }
+
+    .dark .fin-table-pager {
+        border-top-color: var(--color-line);
+        color: var(--color-ink-muted);
+    }
+
+    .fin-pager-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.25rem;
+        height: 2.25rem;
+        border-radius: 0.5rem;
+        border: 1px solid var(--color-secondary-soft);
+        cursor: pointer;
+    }
+
+    .fin-pager-btn:hover:not(:disabled) {
+        background-color: var(--color-secondary-soft);
+    }
+
+    .fin-pager-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    .dark .fin-pager-btn {
+        border-color: var(--color-line);
+    }
+
+    .dark .fin-pager-btn:hover:not(:disabled) {
+        background-color: rgb(255 255 255 / 0.08);
     }
 
     .fin-table {
