@@ -1,5 +1,5 @@
 @php
-    $groups = config('navigation.groups');
+    $groups = \App\Support\Navigation::visibleGroups(auth()->user());
     $currentScreen = request()->route('screen');
     $triggerClasses = 'touch-manipulation text-secondary-dark! hover:bg-secondary-soft/70! dark:text-ink-muted! dark:hover:bg-white/[0.06]! dark:hover:text-ink!';
     $activeClasses = 'bg-primary! text-white! hover:bg-primary! dark:bg-surface-2! dark:text-ink!';

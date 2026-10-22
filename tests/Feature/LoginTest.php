@@ -31,7 +31,7 @@ it('signs in with the account of the Windows program and logs it', function () {
 
     expect(DB::table('log')->where('title', 'LOGIN')->where('user', 'Mai')->exists())->toBeTrue();
 
-    $this->get('/home')->assertOk()->assertSee('Mai')->assertSee('Financial manager');
+    $this->get('/home')->assertOk()->assertSee('Mai')->assertSee('Head Office');
 });
 
 it('refuses a wrong password, an unknown user and a different letter case', function (string $username, string $password) {

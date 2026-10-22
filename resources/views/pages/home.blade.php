@@ -6,7 +6,7 @@
         </div>
 
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            @foreach (config('navigation.groups') as $group => $screens)
+            @foreach (\App\Support\Navigation::visibleGroups(auth()->user()) as $group => $screens)
                 <section class="rounded-xl border border-secondary-soft bg-white p-5 shadow-card dark:border-line dark:bg-surface-1">
                     <h2 class="type-label mb-3 text-secondary-medium dark:text-ink-muted">{{ __('navigation.groups.'.$group) }}</h2>
 

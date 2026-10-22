@@ -16,6 +16,7 @@ function createFinanceSchema(): void
     Schema::create('role', function ($table) {
         $table->integer('ID')->primary();
         $table->string('Name');
+        $table->decimal('Approval_Limit', 18, 2)->default(0);
     });
 
     Schema::create('user', function ($table) {
@@ -25,6 +26,8 @@ function createFinanceSchema(): void
         $table->integer('Role')->nullable();
         $table->integer('State')->default(1);
     });
+
+    (require database_path('migrations/2026_10_22_120000_create_web_user_roles_table.php'))->up();
 
     Schema::create('log', function ($table) {
         $table->increments('id');
@@ -40,13 +43,13 @@ function createFinanceSchema(): void
     });
 }
 
-function createFinanceUser(string $username, string $password, string $role = 'Financial manager'): int
+function createFinanceUser(string $username, string $password, string $role = 'Head Office', int $roleId = 2): int
 {
-    DB::table('role')->insertOrIgnore(['ID' => 1, 'Name' => $role]);
+    DB::table('role')->insertOrIgnore(['ID' => $roleId, 'Name' => $role]);
 
     return DB::table('user')->insertGetId([
         'Username' => $username,
         'Password' => FinancePassword::make($password),
-        'Role' => 1,
+        'Role' => $roleId,
     ]);
 }

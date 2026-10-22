@@ -2,7 +2,12 @@
 
 namespace App\Providers;
 
+use App\Contracts\Approvable;
+use App\Enums\ScreenAction;
+use App\Models\User;
+use App\Policies\ApprovalPolicy;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -21,6 +26,18 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->prohibitDestructiveCommandsOnLegacyDatabase();
+        $this->defineAuthorization();
+    }
+
+    /**
+     * The `screen:<slug>` route middleware and `can:screen` check screens; `Gate::allows('approve', $voucher)` guards an approval.
+     */
+    protected function defineAuthorization(): void
+    {
+        Gate::define('screen', fn (User $user, string $slug, string $action = 'view'): bool => ($permitted = ScreenAction::tryFrom($action)) !== null
+            && $user->canOnScreen($slug, $permitted));
+
+        Gate::policy(Approvable::class, ApprovalPolicy::class);
     }
 
     /**

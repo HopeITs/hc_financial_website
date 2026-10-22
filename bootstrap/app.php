@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureScreenAccess;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
@@ -19,6 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             SetLocale::class,
         ]);
+
+        $middleware->alias(['screen' => EnsureScreenAccess::class]);
 
         // Signed-out visitors land on the sign-in page; signed-in ones on the home page.
         $middleware->redirectGuestsTo(fn () => route('login'));
