@@ -3,6 +3,8 @@
 use App\Http\Controllers\SwitchLocaleController;
 use App\Livewire\Home;
 use App\Livewire\Programs;
+use App\Livewire\ProjectPage;
+use App\Livewire\Projects;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -17,6 +19,9 @@ Route::middleware('auth')->group(function () {
 
     // A built screen is registered before the placeholder route below; `screen` keeps the menu highlight working.
     Route::get('screens/programs', Programs::class)->defaults('screen', 'programs')->middleware('screen')->name('programs');
+
+    Route::get('screens/projects', Projects::class)->defaults('screen', 'projects')->middleware('screen')->name('projects');
+    Route::get('projects/{account}', ProjectPage::class)->whereNumber('account')->defaults('screen', 'projects')->middleware('screen')->name('projects.show');
 
     // Every screen of the navigation. Until a screen is built it shows the placeholder.
     // An unknown slug is a 404 from routing, before the permission check.

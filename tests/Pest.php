@@ -30,6 +30,7 @@ function createFinanceSchema(): void
     (require database_path('migrations/2026_10_22_120000_create_web_user_roles_table.php'))->up();
     (require database_path('migrations/2026_10_22_130000_create_web_user_preferences_table.php'))->up();
     (require database_path('migrations/2026_10_23_090000_create_gl_programs_tables.php'))->up();
+    (require database_path('migrations/2026_10_23_100000_create_web_project_managers_table.php'))->up();
 
     Schema::create('log', function ($table) {
         $table->increments('id');
@@ -58,6 +59,7 @@ function createLegacyHomeSchema(): void
 
     Schema::connection('legacy')->create('cash_balances', function ($table) {
         $table->integer('CashAccount_id');
+        $table->string('CashAccount_Name')->nullable();
         $table->integer('City_ID')->nullable();
         $table->string('City_Name')->nullable();
         $table->string('Subproject_Name')->nullable();
@@ -79,11 +81,73 @@ function createLegacyHomeSchema(): void
         $table->integer('ID')->primary();
         $table->string('Name');
         $table->integer('Project_ID');
+        $table->integer('City_ID')->nullable();
     });
 
     Schema::connection('legacy')->create('account', function ($table) {
         $table->integer('ID')->primary();
         $table->integer('SubProject_ID');
+        $table->string('Name')->nullable();
+        $table->integer('IsClosed')->default(0);
+        $table->integer('city_id')->nullable();
+        $table->string('BeginDate')->nullable();
+        $table->string('EndDate')->nullable();
+    });
+
+    Schema::connection('legacy')->create('city', function ($table) {
+        $table->integer('ID')->primary();
+        $table->string('Name');
+    });
+
+    Schema::connection('legacy')->create('donor', function ($table) {
+        $table->integer('ID')->primary();
+        $table->string('Name');
+    });
+
+    Schema::connection('legacy')->create('account_donor', function ($table) {
+        $table->integer('Account_id');
+        $table->integer('Donor_id');
+    });
+
+    Schema::connection('legacy')->create('budget', function ($table) {
+        $table->integer('ID')->primary();
+        $table->string('Name');
+        $table->integer('Account_ID');
+    });
+
+    Schema::connection('legacy')->create('line', function ($table) {
+        $table->integer('ID')->primary();
+        $table->string('Name');
+    });
+
+    Schema::connection('legacy')->create('budget_line', function ($table) {
+        $table->integer('ID')->primary();
+        $table->integer('Budget_ID');
+        $table->integer('Line_ID');
+        $table->double('Unit')->default(0);
+        $table->double('Timing')->default(0);
+        $table->double('Price')->default(0);
+    });
+
+    Schema::connection('legacy')->create('tilltypes', function ($table) {
+        $table->integer('ID')->primary();
+        $table->string('Name');
+    });
+
+    Schema::connection('legacy')->create('till', function ($table) {
+        $table->integer('ID')->primary();
+        $table->integer('Type_ID');
+        $table->integer('Account_ID');
+    });
+
+    Schema::connection('legacy')->create('action', function ($table) {
+        $table->integer('ID')->primary();
+        $table->integer('Till_ID');
+        $table->integer('AType_ID');
+        $table->double('Amount');
+        $table->string('ActionDate');
+        $table->integer('IsApproved')->default(1);
+        $table->string('deleted_at')->nullable();
     });
 
     Schema::connection('legacy')->create('tree_view', function ($table) {

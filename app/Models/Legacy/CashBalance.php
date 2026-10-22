@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * cash box and of its project account. A view has no key, so rows are only listed. Read only.
  *
  * @property int $Account_ID
+ * @property int $CashAccount_id
  * @property int|null $City_ID
  */
 class CashBalance extends LegacyModel

@@ -88,7 +88,7 @@ class ProgramList
      *
      * @return array<int, string>
      */
-    private function links(): array
+    public function links(): array
     {
         return DB::table('gl_program_projects')->get()
             ->mapWithKeys(fn ($link): array => [(int) $link->sub_project_id => $link->program_source.':'.$link->program_id])
