@@ -1,36 +1,38 @@
 <div class="flex flex-col gap-6 px-4 pb-10 lg:px-8">
     <x-ui.page-header :title="__('navigation.screens.projects')" :subtitle="__('projects.intro')" :count="$projects->total()" />
 
-    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5" data-test="filters">
-        <flux:input wire:model.live.debounce.300ms="search" :placeholder="__('projects.search')" icon="magnifying-glass" />
+    <x-ui.panel class="p-4">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5" data-test="filters">
+            <x-ui.form-input wire:model.live.debounce.300ms="search" :label="__('projects.search')" :placeholder="__('projects.search')" />
 
-        <flux:select wire:model.live="cityId" :placeholder="__('home.all_cities')">
-            <flux:select.option value="">{{ __('home.all_cities') }}</flux:select.option>
-            @foreach ($cities as $id => $name)
-                <flux:select.option :value="$id">{{ $name }}</flux:select.option>
-            @endforeach
-        </flux:select>
+            <x-ui.form-select wire:model.live="cityId" :label="__('home.city')" :placeholder="__('home.all_cities')">
+                <option value="">{{ __('home.all_cities') }}</option>
+                @foreach ($cities as $id => $name)
+                    <option value="{{ $id }}">{{ $name }}</option>
+                @endforeach
+            </x-ui.form-select>
 
-        <flux:select wire:model.live="program" :placeholder="__('projects.all_programs')">
-            <flux:select.option value="">{{ __('projects.all_programs') }}</flux:select.option>
-            @foreach ($programs as $key => $name)
-                <flux:select.option :value="$key">{{ $name }}</flux:select.option>
-            @endforeach
-        </flux:select>
+            <x-ui.form-select wire:model.live="program" :label="__('programs.program')" :placeholder="__('projects.all_programs')">
+                <option value="">{{ __('projects.all_programs') }}</option>
+                @foreach ($programs as $key => $name)
+                    <option value="{{ $key }}">{{ $name }}</option>
+                @endforeach
+            </x-ui.form-select>
 
-        <flux:select wire:model.live="donorId" :placeholder="__('projects.all_donors')">
-            <flux:select.option value="">{{ __('projects.all_donors') }}</flux:select.option>
-            @foreach ($donors as $id => $name)
-                <flux:select.option :value="$id">{{ $name }}</flux:select.option>
-            @endforeach
-        </flux:select>
+            <x-ui.form-select wire:model.live="donorId" :label="__('projects.donor')" :placeholder="__('projects.all_donors')">
+                <option value="">{{ __('projects.all_donors') }}</option>
+                @foreach ($donors as $id => $name)
+                    <option value="{{ $id }}">{{ $name }}</option>
+                @endforeach
+            </x-ui.form-select>
 
-        <flux:select wire:model.live="status" :placeholder="__('projects.all_statuses')">
-            <flux:select.option value="">{{ __('projects.all_statuses') }}</flux:select.option>
-            <flux:select.option value="active">{{ __('projects.status.active') }}</flux:select.option>
-            <flux:select.option value="closed">{{ __('projects.status.closed') }}</flux:select.option>
-        </flux:select>
-    </div>
+            <x-ui.form-select wire:model.live="status" :label="__('programs.status_label')" :placeholder="__('projects.all_statuses')">
+                <option value="">{{ __('projects.all_statuses') }}</option>
+                <option value="active">{{ __('projects.status.active') }}</option>
+                <option value="closed">{{ __('projects.status.closed') }}</option>
+            </x-ui.form-select>
+        </div>
+    </x-ui.panel>
 
     <div class="fin-table-wrap">
         <table class="fin-table" data-test="projects-table">
