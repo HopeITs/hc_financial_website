@@ -13,7 +13,6 @@ return [
 
     'screens' => [
         'chart' => 'Chart of accounts',
-        'projmap' => 'Project footprint',
         'projwin' => 'Projects',
         'allaccounts' => 'All accounts (owners)',
         'budgetlines' => 'Budget lines',

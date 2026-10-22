@@ -26,7 +26,7 @@ Why: the mockup's accounts (1111 "Aleppo main safe - USD", 4101 "ACN", 5405...) 
 | `account` (project account) | **Project** (owner) with donor, restriction, city, currency, rate |
 | `donor` | Income account 4101-4602 |
 | `line` / `budget_line` | **Budget line** tag, linked to one expense account 51xx-58xx |
-| Operation I / E / X / A / R / T | Voucher CRV / CPV / TRF / CPV(1201) / CRV / ALC or JV |
+| Operation I / E / X / A / R / T | Voucher CRV / CPV / TRF / CPV(1201) / CRV / TRF (transfer) or ALC (split) or JV |
 | `IsApproved`, role limit | Voucher approval by Finance Manager; the preparer never approves |
 
 Consequence for deletes and approvals: `action_deleted` and `action_not_approved` are only read during the migration (deleted rows are skipped, not-approved rows become `Pending approval` vouchers).
@@ -58,10 +58,10 @@ Run order. Back up first (`mysqldump`), run `migrate --pretend`, never `migrate:
 | Table | Columns (from the mockup) |
 |-------|---------------------------|
 | `gl_accounts` | `code` (PK, string 4, e.g. 1111), `parent_code` (self FK), `level` (Header/Posting), `class` (Assets, Liabilities, Net assets, Income, Expenses), `name_en`, `name_ar`, `statement_line`, `normal_side` (Debit/Credit), `currency` (USD/SYP/Any/null for headers), `city`, `is_cash`, `required_tags` (set: Project, Budget line, Fund source, Contact, Center), `usage_note`, `is_active`, `timestamps`, `deleted_at`. Seeded with the 156 accounts (34 headers, 122 posting; 12 USD, 12 SYP cash accounts) plus v7 changes (4108, 4306-4308, 1125-1127, 1135, 1145-1147, 1155, renames of 1115, 1171, 1172). |
-| `gl_projects` | `code` (F2F, SZ, CORE, GEN-ALP, GEN-LTK, GEN-DAM, GEN-HMS, GEN-TRT), `name`, `donor`, `restriction` (With / Without donor restrictions), `city`, `donor_currency` (USD/EUR), `donor_rate`, `legacy_account_id` (maps to legacy `account.ID`), `is_general_account`. |
-| `gl_budget_lines` | `key` (project\|name), `project_code`, `donor`, `name`, `account_code` (51xx-58xx), `budget` amount, `currency`, `legacy_budget_line_id`. |
-| `gl_vouchers` | `id` (string, `CRV-2026-0001`), `type` (CRV, CPV, TRF, ALC, JV, OPN), `date`, `description`, `status` (Pending approval, Approved, Replaced), `prepared_by`, `approved_by`, `approved_at`, `is_carry_forward`, `is_temporary`, `source` (web / migration), `legacy_action_id`, `timestamps`, `deleted_at`. |
-| `gl_voucher_lines` | `voucher_id`, `line_no`, `account_code`, `currency`, `debit_orig`, `credit_orig`, `rate`, `debit_usd`, `credit_usd`, `donor_currency`, `debit_donor`, `credit_donor`, `project_code`, `donor`, `budget_line_key`, `fund_source` (Donor grant / CHC own funds / Treasury / Own income / Recovered loans), `city`, `center`, `contact`, `restriction`, `reason`, `lira_type` (old / new, decision D1). Check constraint: a line is a debit or a credit, never both, never negative. |
+| `gl_projects` | `code` (F2F, SZ, CORE, GEN-ALP-USD, GEN-ALP-SYP and the same for LTK, DAM, HMS, TRT: two general accounts per city, Q1), `name`, `donor`, `restriction` (With / Without donor restrictions), `city`, `donor_currency` (USD/EUR), `donor_rate` (default only, the real rate is per receipt line), `currency`, `contract_no`, `start_date`, `end_date` (spending after it is a warning, Q4), `legacy_account_id` (maps to legacy `account.ID`), `is_general_account`. |
+| `gl_budget_lines` | `version`, `valid_from`, `is_current` (all budget versions are kept, Q5), `key` (project\|name), `project_code`, `donor`, `name`, `account_code` (51xx-58xx), `budget` amount, `currency`, `legacy_budget_line_id`. |
+| `gl_vouchers` | `id` (string, `CRV-2026-0001`), `type` (CRV, CPV, TRF, ALC, JV, OPN; TRF = transfer, ALC = split of a salary or invoice over projects), `transfer_kind` (sub-type of a TRF: general USD to project, general SYP to project, project to general, project to project; null otherwise), `request_id` (nullable, links `gl_requests`), `date`, `description`, `status` (Pending approval, Approved, Replaced), `prepared_by`, `approved_by`, `approved_at`, `is_carry_forward`, `is_temporary`, `source` (web / migration), `legacy_action_id`, `timestamps`, `deleted_at`. |
+| `gl_voucher_lines` | `voucher_id`, `line_no`, `account_code`, `currency`, `debit_orig`, `credit_orig`, `rate`, `debit_usd`, `credit_usd`, `donor_currency`, `debit_donor`, `credit_donor`, `project_code`, `donor`, `budget_line_key`, `fund_source` (Donor grant / CHC own funds / Treasury / Own income / Recovered loans), `city`, `center`, `contact`, `restriction`, `reason`, `lira_type` (old / new, decision D1), `eur_amount`, `eur_rate`, `commission_usd` (hawala receipts, Q6), `is_uncompensated` (cash received without a project, Q8). The project balance is read per currency and per cash account (Q3). Check constraint: a line is a debit or a credit, never both, never negative. |
 | `gl_voucher_audit` | every change of an approved voucher: old value, new value, user, reason, date (rule 9). |
 | `gl_voucher_sequences` | `type`, `year`, `last_number`; numbers are never reused (rule 10). |
 | `gl_month_closes` | `month` (YYYY-MM), `closed_at`, `closed_by`. |
@@ -69,6 +69,9 @@ Run order. Back up first (`mysqldump`), run `migrate --pretend`, never `migrate:
 | `gl_legacy_map` | `kind` (cash, project, donor, line), `legacy_key` (name\|currency), `target` (account code or project code), `confirmed_by`. The saved result of the mapping step in "Load from test database". |
 | `gl_import_batches` / `gl_import_issues` | one row per run (type: opening, operations), counts, status; and the unmapped / skipped / rule-failure rows (see 6.3). |
 | `gl_voucher_attachments` | `voucher_id`, `original_name`, `stored_path` (private disk, never under `public`), `mime`, `size`, `sha256`, `legacy_attachment_id` (unique, from `action_attachments.id`), `uploaded_by`, `timestamps`, `deleted_at`. |
+| `gl_requests` | project manager's request (Q11): `type` (purchase / salary), `project_code`, `amount`, `currency`, `description`, `status` (Submitted / Approved / Rejected), `requested_by`, `decided_by`, `decided_at`. A voucher links to it through `request_id`. |
+| `gl_payroll_splits` | split of an employee's salary over projects (Q2-b): `legacy_employee_id`, `project_code`, `budget_line_key`, `percent`, `valid_from`. The `salaries` screen proposes the lines from it. |
+| `gl_micro_loans` / `gl_micro_instalments` | micro projects (Q13): beneficiary, project, loan amount, grant amount, currency; and per instalment `due_date`, `amount`, `paid_amount`, `paid_voucher_id`. |
 | `gl_cash_till_merges` | `from_account`, `into_account`, `voucher_id`, `confirmed_by` (decision Q-b, Q-c). |
 
 Indexes: `gl_voucher_lines(account_code, project_code)`, `(voucher_id)`, `gl_vouchers(date, status)`, `gl_vouchers(legacy_action_id)` unique when not null (makes the migration idempotent).
@@ -84,7 +87,7 @@ Indexes: `gl_voucher_lines(account_code, project_code)`, `(voucher_id)`, `gl_vou
 - Money: `decimal(18,2)` columns, `bcmath` in PHP, never floats. USD books; each line keeps its own currency and rate. A voucher must balance **exactly in USD**; cents go to 5503 (rule 4).
 - **Posting service** `PostVoucher`: validates the 13 posting rules (below), numbers the voucher, writes lines in one DB transaction, writes the audit row.
 - **Posting rules** (from the mockup "Posting rules"; enforce all, test each): only active posting accounts; cash account only in its own currency; debit or credit never both; balanced in USD; required tags filled; budget line only with its own project and fills its account; approver is never the preparer; nothing changes in a closed month; changes to approved vouchers keep old/new/who/why; numbers never reused; a used account keeps code, class and currency; month closes only when in-transit (11x3, 11x4) and suspense (2901) are zero; migrated vouchers keep their legacy id.
-- **Treasury service**: general account per city (`GEN-ALP`, ...), SYP holdings and average cost, allocation voucher builder `ALC` (errors: no pounds in general account, not enough pounds, no approved rate), 5503 for rate difference.
+- **Treasury service**: general accounts per city (`GEN-ALP-USD`, `GEN-ALP-SYP`, ...), SYP holdings and average cost, transfer builder (`TRF` general to project, with `transfer_kind`) and allocation builder `ALC` (split over projects) (errors: no pounds in general account, not enough pounds, no approved rate), 5503 for rate difference.
 - **Carry-forward / hybrid start** (decision D2): books start 1/1/2027 on temporary OPN vouchers, 2026 is loaded later, reconciled and closed, then the OPN carry-forward replaces the temporary one (status `Replaced`).
 
 ## 5. Authentication and roles (no Spatie)
@@ -94,7 +97,7 @@ Approval limits: `role_currency_limit` (per role and currency) is read from the 
 
 ## 6. Screens (windows) and functionality
 
-Navigation is `config/navigation.php` (37 slugs). The mockup renames/replaces some; the table gives the final behaviour.
+Navigation is `config/navigation.php` (36 slugs, 37 with `requests`, 41 with the four new reports). The mockup renames/replaces some; the table gives the final behaviour.
 
 ### 6.1 Chart module
 
@@ -111,14 +114,16 @@ Navigation is `config/navigation.php` (37 slugs). The mockup renames/replaces so
 | `tb` | Trial balance | Per account Dr / Cr / net as at a date (`asAt`), approved vouchers only, by class, check Dr = Cr. |
 | `projects` | Project balances | Per project (owner): income, expenses (5703 depreciation excluded, decision D10), cash held, restricted fund balance; budget versus actual per budget line; donor-currency view (EUR rate). |
 | `statements` | Financial statements | Statement of Financial Position and Statement of Activities built from `statement_line`; 5503 exchange differences under financial expenses (D11); export. |
+| `recon` , `uncomp`, `advances`, `loans` | Reconciliation and follow-up reports | Hawala pool versus project and general balances, monthly (Q7); cash received without a project and not yet compensated, per city (Q8); open advances by person, no ageing (Q16); micro loan collection and arrears (Q13). |
 | existing report slugs (`rexp`, `rcash`, `rbl`, `rrev`, `rfixed`, `rattach`) | Expense, cash, budget line, revenue, fixed assets, attachments | Rebuilt on `gl_voucher_lines` (not on `action`), same filters as the Windows program so totals can be compared. `rattach` reads `gl_voucher_attachments` only. |
 
 ### 6.3 Treasury
 
 | Slug | Window | Functionality |
 |------|--------|---------------|
-| `treasury` | Treasury position | Per city: general account (e.g. GEN-ALP) SYP held, USD paid, average rate, bulk purchases (TRF to 1112 etc.), allocations (ALC), 5503 reserve, cash by safe/currency, in-transit and transfer-company (1161) balances. |
-| `alloc` | Allocation rates | Per city rate with effective date; proposed by Accountant, **approved by Finance Manager**; allocation basis choice (approved rate or average cost, optional switch, default off). |
+| `requests` | Requests | Project manager (role 3) submits a purchase or salary request; Financial Manager approves or rejects (Q11); an approved request is linked to the transfer or payment voucher. New slug (37 slugs in total). |
+| `treasury` | Treasury position | Per city: general accounts (e.g. GEN-ALP-USD and GEN-ALP-SYP) with SYP held, USD paid, average rate, bulk purchases (TRF to 1112 etc.), transfers to projects (TRF), uncompensated cash, 5503 reserve, cash by safe/currency, in-transit and transfer-company (1161) balances. |
+| `alloc` | Transfer rates (screen kept under the slug `alloc`) | Per city rate with effective date; proposed by Accountant, **approved by Finance Manager**; allocation basis choice (approved rate or average cost, optional switch, default off). |
 | `tills`, `currency`, `denoms`, `cities`, `donors` ... | Master data | Kept as the mockup's CRUD screens, but master data of the ledger (cash accounts, donors as income accounts, cities) is edited in the chart/projects; legacy lists are read-only reference. |
 
 ### 6.4 Migration module (the heart of the cut-over)
@@ -138,18 +143,84 @@ Navigation is `config/navigation.php` (37 slugs). The mockup renames/replaces so
 ### 6.6 Other mockup screens (donors, employees, salaries, single/multi entry, payments, bonds, approval, home...)
 These stay as in the existing navigation. Rule: any screen that today writes to `action` (`single`, `multi`, `multiatt`, `payments`, `approval`, `salaries`) is rebuilt to **post a voucher** through `PostVoucher` using the mockup's "operation to voucher" rule (the posting rule for every desktop operation). They never write to legacy tables.
 
+### 6.7 Mockup review notes (UI changes)
+
+From the review of the mockup, to apply in phase 3, 4 and 7:
+- **Side tree** (kept) with a draggable resize handle; the width is remembered per user (`web_user_preferences`).
+- **Home (`/home`, and the logo)** is the landing page: all active projects with their balances in SYP and USD and a **governorate (city) filter**. This absorbs the `projects` slug (project balances), so there is one page, not several linked ones.
+- **Remove `projmap` (Project footprint)** from `config/navigation.php` and `lang/*/navigation.php`; its content is on Home.
+- **Programs page** gets an **Add program** button (editable or read-only still follows T7.2).
+- General rule: prefer one page with tabs over several pages (candidates: `projwin`, `allaccounts`, `lifetime` become tabs of the project page).
+
+Differences between this plan and `procedure.docx` are in `REVIEW-procedure-vs-plan-AR.md`; open questions for the Financial Manager are in `QUESTIONS-CFO-AR.md`. Nothing in 3.2 changes until those are answered (grant contracts, hawala commission, personal accounts, project cash box, revolving funds).
+
+### 6.8 Financial Manager's answers (`QUESTIONS-CFO-AR-answered.docx`) and what changes
+
+Answers received for all 20 questions. Decisions, and the change each one makes to this plan:
+
+| Q | Answer | Change |
+|---|--------|--------|
+| 1 | **Two general accounts per city**: one USD, one SYP | Replace the single `GEN-xxx` tag by `GEN-xxx-USD` and `GEN-xxx-SYP` in `gl_projects` (10 rows instead of 5); treasury shows both per city. |
+| 2 | **Allocation** = splitting a salary or invoice over several projects/budget lines. Moving money from a general account to a project is a **Transfer**, with a **sub-type** per operation | `ALC` now means the split (multi-line CPV/JV with project and budget line per line). The general-to-project move is `TRF` with `gl_vouchers.transfer_kind` (to be listed with the Financial Manager). Rename "Allocation rates" screen `alloc` accordingly. Task T5.2 must be re-read: it builds the *transfer*, not an allocation. |
+| 2-b | Split percentages are **fixed per employee and live with the monthly payroll**, editable | Store the split in the payroll data (new `gl_payroll_splits`: employee, project, budget line, percent, valid from); `salaries` proposes the lines from it. |
+| 3 | A project has a balance **in every currency, and may hold money in several cash accounts** | The project balance is by currency and by cash account (report "where is the project's money"). No single-currency project account. |
+| 4 | Add **start date, end date, contract number and currency** to the project; no separate grant entity | `gl_projects`: add `contract_no`, `start_date`, `end_date`, `currency`. |
+| 4-b | Spending after the end date: **warning only** | A soft warning on the voucher builder; not a posting rule. |
+| 5 | **Keep all old budget versions** | `gl_budget_lines` becomes versioned (`version`, `valid_from`, `is_current`). |
+| 6 | Hawala commission is an **expense of the organization** (general), not of the project | New expense account for transfer commissions, no project tag. Account code to be chosen (not in the 156). |
+| 6-b | Keep the **original EUR amount and the actual rate for every transfer** | New fields on the donor-receipt voucher line: `eur_amount`, `eur_rate`, `commission_usd`. The per-project `donor_rate` becomes only a default. |
+| 7 | **Monthly pool reconciliation report** | New report: hawala balance versus the sum of project and general balances (`reports` group). |
+| 8 | Cash received without a project goes **into the general account first, compensated later from projects**; report of uncompensated amounts per city | Need an "uncompensated" marker on those lines and a report. How long compensation takes (8-b) was left blank. |
+| 9 | Compensation rate is the **city rate approved by the Financial Manager**; the difference goes to **5503** | Matches the plan (decision D9 closed: approved rate, average-cost switch stays off). |
+| 10 | General-to-project move without cash is a **`TRF`** voucher | See Q2; no new voucher type. |
+| 11 | Project manager's request is **inside the system** with statuses (submitted, approved, rejected) and linked to the voucher | New tables `gl_requests` (type purchase/salary, project, amount, currency, status, requested_by, decided_by) and a link `gl_vouchers.request_id`; new screen and tasks. Role 3 creates, Financial Manager decides. |
+| 12 | Each income-producing project has its **own cash box and income account**; cash goes to the city cash **monthly by manual voucher** | Add project cash boxes to the chart (accounts under 111x/112x) and a monthly TRF; no automation. |
+| 12-b | That income is **unrestricted** | `restriction = Without donor restrictions` for project own income. |
+| 13 | Micro Projects: **loan amount, grant amount and a repayment schedule** per beneficiary with a collection report | New tables `gl_micro_loans` (beneficiary, project, loan, grant, currency) and `gl_micro_instalments` (due date, amount, paid); collection and arrears report. The legacy `MicroProject_ID` feeds this in the migration. |
+| 14 | Money handed to a church is an **expense at hand-over**; church admin costs are a **fixed amount per church** | No advance tracking for F2F. Fixed admin amount per church is a budget line amount. |
+| 15 | Recovered instalments: keep **"Recovered loans" fund source tagged with the donor** (as in the plan), **still under the donor's restrictions** | No revolving-fund account. `restriction` of the recovered amount follows the original donor. |
+| 16 | Advances: **no deadline**, report of open advances only; a difference is a **receivable from the employee or supplier** | Open-advances report (1201 by contact). No ageing. |
+| 17 | Personal accounts: **deposits held for people and organization accounts in a person's name**; **outside the financial statements** | New accounts in a memo class excluded from `statements`. Wording mixes two options; confirm exact chart accounts. |
+| 18 | Money-changer difference and commission **both to 5503** | Matches the plan. |
+| 19 | The four sheets (Balance Sheet, Revenue, Expenses, Allocation & Projects) are **only working sheets to fill the chart with examples** | No new "Allocation & Projects" report. |
+| 20 | Reports in **both currencies** | Reports and statements get a currency switch (USD / SYP at a stated rate). The SYP rate rule is still to be agreed. |
+
+Open items after round 1, closed later: Q8-b compensation period (round 2: one to three months, no fixed period), commission account code (round 3: 5504), transfer sub-types (round 2: four types), personal accounts (round 2: one account with a person tag), SYP reporting rate (round 2: typed per report). Q3 and Q17 had two options ticked together; the reading above is the one used.
+
+**Check (all 20 answers re-read against the file, no mismatch).** One tension remains: Q12 says project cash goes to city cash **monthly** by manual voucher, but in round 3 (Q5, note) the Financial Manager wrote that this transfer normally happens only "by chance". Treat the monthly TRF as optional until confirmed; it is a manual voucher either way.
+
+### 6.9 Financial Manager decisions, rounds 2 and 3
+
+Source: `ANSWERS-CFO-2-AR.md` (from `QUESTIONS-CFO-2-answered-AR.docx`). Round 3 (`QUESTIONS-CFO-3-AR.docx`) closed the open items; they are folded in below.
+
+| Topic | Decision | Change in the plan |
+|-------|----------|--------------------|
+| Transfer types | General (USD) to project; general (SYP) to project with the USD equivalent deducted; project back to general (return); between two projects. Project cash to city cash is **not** a Transfer type. | `gl_vouchers.transfer_kind` with four values (section 3.2); return and project-to-project are new voucher patterns for `PostVoucher`. |
+| Cash received without a project (01, 02) | Compensated from projects after one to three months; no fixed period; no alerts. | Report "uncompensated by city" with age buckets (under 30, 30-90, over 90 days). No alert job. |
+| Hawala commission | Organisation expense in a **new account 5504 "Hawala company commission"** under financial expenses, next to 5503 (approved; check the number is free in the mockup). | Add to the chart seed (3.2, T2.4). |
+| Monthly project-to-city cash transfer | An ordinary `TRF` voucher prepared by the Accountant; it is rare ("only by chance"), so no automatic month-end voucher. | Nothing to build. |
+| SYP reports | Reports show both currencies. The SYP rate is **typed in per report**; SYP stays SYP and only USD is converted. | Rate field on report screens (`tb`, `projects`, `statements`); no rate table. |
+| Personal accounts | One account for deposits and for organisation accounts held under a person's name, with a mandatory `Contact` tag; outside the financial statements; opening balance zero (confirmed in round 3: no legacy balances to carry). | One chart account, excluded from `statements`. |
+| Requests (project manager) | One **monthly request per project**: a list of routine expenses, an amount per budget line. An extra amount during the month is a **separate request**. Large maintenance, fixed assets and electronics need **2 or 3 price quotes** attached to the request. Spending without an approved request is allowed under **USD 500 per voucher**; an SYP voucher is compared at **its own voucher rate**. Exceeding the budget line is a **warning only**. The manager edits until approval, then it locks. The Financial Manager approves; above **USD 2,000** the **CEO approves after** the Financial Manager (two approvals in order). The CEO is a **new role** "General Manager" (not in the legacy `role` table). | New `requests` module: states draft, submitted, approved, rejected, closed; lines (budget line, amount); quote attachments for the three categories above; audit of edits. New `RoleId` case `GeneralManager` kept in a web-only table (legacy `role` stays read only). `PostVoucher`: no budget limit check, only the USD 500 rule for a voucher without a request. |
+| Where the project's money is | Separate report "where are the project funds": the project balance split by cash box. | New report in the Reports group, from `gl_voucher_lines` grouped by project and cash account. |
+| Salary allocation | Percentages come from the monthly payroll sheet; a change during the month applies from the **next month**. | No day-based proration. |
+
 ## 7. Delivery phases
 
-| Phase | Content | Exit criteria |
-|-------|---------|---------------|
-| 1 | Section 2 (connection), 3.1 framework tables, legacy read models, `finance:check-db` | Login on `hcsyria_financial_test`; `/home` loads |
-| 2 | Section 3.2 migrations + seeders (156 accounts, 8 projects, 10+ budget lines), `PostVoucher` with all 13 rules, Pest tests per rule | Every rule has a passing and a failing test |
-| 3 | `chart`, `vouchers` (builder, approval), `statement` | Accountant prepares, Finance Manager approves, balances update |
-| 4 | `tb`, `projects`, `statements`, rebuilt `r*` reports | Balances tie to the voucher lines |
-| 5 | `treasury`, `alloc` | ALC voucher posts with the right 5503 difference |
-| 6 | `dbload` (with attachment move), `opening`, `fixusd`, `legacy`, `merges` on the test copy | Imported totals per cash account and project equal the Windows program's balances (parity test); attachment count in = count out |
-| 7 | Entry screens rebuilt on vouchers, master data screens, Bridge pages | UAT |
-| 8 | Hardening (7.4); freeze the Windows program; final import into `hcsyria_financial`; point `.env` at it; archive the Windows program and old database read-only | Sign-off |
+Two developers work in parallel. **Dev A** = ledger and migration (connection, `gl_*`, `PostVoucher`, `dbload` and friends, security). **Dev B** = login, navigation, screens, reports, treasury. In the first two days Dev A fixes the `gl_*` table and column names and the `PostVoucher` interface so Dev B can build on them. The Finance Manager is closely involved (about 25-30 hours over 10 weeks; mapping and rule questions answered within a day).
+
+| Phase | Weeks | Owner | Content | Exit criteria |
+|-------|-------|-------|---------|---------------|
+| 1 | 1 | A + B | A: section 2 (connection), 3.1 framework tables, 3.2 migrations and seeders (156 accounts, 8 projects, 10+ budget lines). B: legacy read models, login on the legacy `user` table (`State = 1` check, login log), navigation, Bridge pages, `finance:check-db`. Finance Manager: decisions D1-D11, Q-a to Q-e (about 2 h). | Login on `hcsyria_financial_test`; `/home` loads |
+| 2 | 2-3 | A | `PostVoucher` with all 13 rules, Pest tests per rule | Every rule has a passing and a failing test |
+| 3 | 2-4 | B | `chart`, `statement`, `vouchers` (builder, approval) | Accountant prepares, Finance Manager approves, balances update |
+| 4 | 4-5 | B | `tb`, `projects`, `statements`, rebuilt `r*` reports | Balances tie to the voucher lines |
+| 5 | 6 | B | `treasury`, `alloc`, `requests` | Transfer voucher (TRF) posts with the right 5503 difference; a request is approved and linked to its voucher |
+| 6 | 3-7 | A | `dbload` (mapping session with the Finance Manager in week 3; staging and posting weeks 3-4; parity test from week 5), `opening` (5), attachment move (6), `fixusd` (6), `legacy` and `merges` (7) | Imported totals per cash account and project equal the Windows program's balances (parity test); attachment count in = count out |
+| 7 | 7-9 | B | Entry screens rebuilt on vouchers, master data screens, Bridge pages; UAT in week 9 with Finance Manager and Accountant | UAT passed |
+| 8 | 8-10 | A | Hardening (7.4); full rehearsal import (week 9); freeze the Windows program; final import into `hcsyria_financial`; point `.env` at it; archive the Windows program and old database read-only | Sign-off |
+
+**Total: about 10 weeks, 12 with buffer** (a second rehearsal or late parity differences). Main risks: parity differences in weeks 4-5 (run the parity test daily), the FTP items in section 10 (the attachment move is independent and does not block the rest), file conflicts between A and B (small task branches, rebase before every merge, section 11).
 
 ### 7.4 Security fixes before production
 - All 14 users share one stored password: force a reset on first web login (write with `FinancePassword::make`, which uses a fresh random salt per user; the Windows program reads the same format).
@@ -173,7 +244,11 @@ These stay as in the existing navigation. Rule: any screen that today writes to 
 - **Security finding:** the Windows source contains the FTP user and password in clear text (`Helper/Document.cs`) and the online MySQL password (`Login.cs`). They are deliberately not copied into this repository. Ask for a dedicated read-only FTP user for the migration, and rotate those credentials after go-live.
 - **Q4 closed:** the migration reads the live database directly through the read-only `legacy` connection; the Windows program is frozen before the final run.
 - **Q5 closed:** the eight new SYP tills (1125-1127, 1135, 1145-1147, 1155) and the rename of 1115 to Science Zone Aleppo are approved as listed in the mockup and go into the seed.
-- **Still open:** a read-only FTP user for the migration, and the production FTP root.
+- **What "open" means here (for the IT manager).** The FTP details are not unknown; they exist in the Windows program. Three things remain:
+  1. **Not copied into the repository on purpose.** Whoever sets up the project puts the existing values in the local `.env` (`ATTACH_FTP_HOST`, `ATTACH_FTP_USER`, `ATTACH_FTP_PASSWORD`, `ATTACH_FTP_ROOT`) and never commits them.
+  2. **The current account is probably read-write.** "The current account" is the FTP user the Windows program itself uses (hard-coded in `Helper/Document.cs`). It uploads attachments, so it very likely has write rights (inferred from the source, not checked on the server). The migration only needs to read. **IT is asked to create a read-only FTP user for the migration.** If that is not possible in time, the migration may start with the current account (development and rehearsal on the test root are fine), but its password must be changed after go-live because it sits in clear text in the program's source.
+  3. **Production root unconfirmed.** Only the test root `ftp://hcsyria.org/financial/files/test` was found in the code. The production root is probably `.../financial/files` without `/test`; IT confirms it by comparing the file names (`Action_id_<id>_<name>.pdf`) on the server with `action_attachments`. Needed before week 6.
+- **Still open (needs IT):** the read-only FTP user, the confirmed production FTP root, and the later rotation of the FTP and MySQL passwords found in the Windows source.
 
 ## 11. Git workflow: one task, one branch
 
