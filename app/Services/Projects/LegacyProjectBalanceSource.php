@@ -52,6 +52,8 @@ class LegacyProjectBalanceSource implements ProjectBalanceSource
 
     /**
      * The view's columns are doubles; money leaves here as a two-decimal string.
+     *
+     * @return numeric-string
      */
     private function money(mixed $value): string
     {
