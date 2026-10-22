@@ -9,13 +9,14 @@ Route::get('/', fn () => redirect()->route(Auth::check() ? 'home' : 'login'));
 
 Route::post('locale', SwitchLocaleController::class)->middleware('throttle:30,1')->name('locale.update');
 
+// Every signed-in route names its screen: `screen:<slug>` checks config/permissions.php.
 Route::middleware('auth')->group(function () {
-    Route::view('home', 'pages.home')->name('home');
+    Route::view('home', 'pages.home')->middleware('screen:home')->name('home');
 
     // Every screen of the navigation. Until a screen is built it shows the placeholder.
-    Route::get('screens/{screen}', function (string $screen) {
-        abort_unless(in_array($screen, Arr::flatten(config('navigation.groups')), true), 404);
-
-        return view('pages.screen', ['screen' => $screen]);
-    })->name('screens.show');
+    // An unknown slug is a 404 from routing, before the permission check.
+    Route::get('screens/{screen}', fn (string $screen) => view('pages.screen', ['screen' => $screen]))
+        ->whereIn('screen', Arr::flatten(config('navigation.groups')))
+        ->middleware('screen')
+        ->name('screens.show');
 });
