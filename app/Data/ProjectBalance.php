@@ -7,6 +7,11 @@ namespace App\Data;
  */
 final readonly class ProjectBalance
 {
+    /**
+     * @param  numeric-string  $syp
+     * @param  numeric-string  $sypNew
+     * @param  numeric-string  $usd
+     */
     public function __construct(
         public int $accountId,
         public string $name,

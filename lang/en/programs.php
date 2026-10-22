@@ -1,0 +1,30 @@
+<?php
+
+return [
+    'intro' => 'The programs of the Windows program and those added here, with their active projects and what they hold.',
+    'add' => 'Add program',
+    'name_en' => 'Name (English)',
+    'name_ar' => 'Name (Arabic)',
+    'description' => 'Description',
+    'status_label' => 'Status',
+    'status' => [
+        'active' => 'Active',
+        'inactive' => 'Inactive',
+    ],
+    'save' => 'Save',
+    'cancel' => 'Cancel',
+    'saved' => 'The program was added.',
+    'duplicate_warning' => 'A program with this name already exists. It was saved anyway; check that it is not a duplicate.',
+    'program' => 'Program',
+    'project' => 'Project',
+    'active_projects' => 'Active projects',
+    'added_on_web' => 'Added on the web',
+    'none' => 'No programs.',
+    'link_title' => 'File a project under a program',
+    'link_intro' => 'Choose the program a project belongs to. The Windows program is not changed; the choice is kept here.',
+    'choose' => 'Choose…',
+    'link' => 'Link',
+    'unlink' => 'Reset',
+    'linked' => 'The project was filed under the program.',
+    'unlinked' => 'The project is back under its original program.',
+];

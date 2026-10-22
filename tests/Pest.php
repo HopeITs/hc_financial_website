@@ -29,6 +29,7 @@ function createFinanceSchema(): void
 
     (require database_path('migrations/2026_10_22_120000_create_web_user_roles_table.php'))->up();
     (require database_path('migrations/2026_10_22_130000_create_web_user_preferences_table.php'))->up();
+    (require database_path('migrations/2026_10_23_090000_create_gl_programs_tables.php'))->up();
 
     Schema::create('log', function ($table) {
         $table->increments('id');
@@ -46,7 +47,7 @@ function createFinanceSchema(): void
 
 /**
  * The `legacy` connection as an in-memory database holding the two views the home page reads
- * (`cash_balances`, `tree_view`) as plain tables, with the columns the page uses.
+ * (`cash_balances`, `tree_view`) and the programs page reads (`project`, `subproject`, `account`) as plain tables, with the columns the page uses.
  */
 function createLegacyHomeSchema(): void
 {
@@ -67,6 +68,22 @@ function createLegacyHomeSchema(): void
         $table->double('Account_Net')->default(0);
         $table->double('Account_Net_USD')->default(0);
         $table->double('Account_Net_New')->default(0);
+    });
+
+    Schema::connection('legacy')->create('project', function ($table) {
+        $table->integer('ID')->primary();
+        $table->string('Name');
+    });
+
+    Schema::connection('legacy')->create('subproject', function ($table) {
+        $table->integer('ID')->primary();
+        $table->string('Name');
+        $table->integer('Project_ID');
+    });
+
+    Schema::connection('legacy')->create('account', function ($table) {
+        $table->integer('ID')->primary();
+        $table->integer('SubProject_ID');
     });
 
     Schema::connection('legacy')->create('tree_view', function ($table) {
