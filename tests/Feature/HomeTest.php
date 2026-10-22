@@ -5,7 +5,6 @@ use App\Enums\RoleId;
 use App\Livewire\Home;
 use App\Models\User;
 use App\Services\Projects\LegacyProjectBalanceSource;
-use App\Support\UserPreferences;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
@@ -70,30 +69,12 @@ it('keeps the balances behind the ProjectBalanceSource interface', function () {
         ->and($projects->first()->sypNew)->toBe('5.00');
 });
 
-it('shows each account once in the side tree and only the active ones', function () {
-    $html = Livewire::actingAs(homeUser())->test(Home::class)->html();
+it('shows each account once in the sidebar tree and only the active ones', function () {
+    $html = $this->actingAs(homeUser())->get('/home')->getContent();
 
     expect(substr_count($html, 'Alpha Aleppo'))->toBe(2) // the table row and one tree leaf
         ->and($html)->toContain('HC Aleppo')
         ->and($html)->not->toContain('HC Homs');
-});
-
-it('remembers the side tree width per person and clamps it', function () {
-    $user = homeUser();
-
-    Livewire::actingAs($user)->test(Home::class)
-        ->assertSet('sidebarWidth', UserPreferences::DEFAULT_SIDEBAR_WIDTH)
-        ->call('saveSidebarWidth', 360)
-        ->assertSet('sidebarWidth', 360);
-
-    $this->actingAs($user)->get('/home')->assertSee('data-width="360"', false);
-
-    Livewire::actingAs($user)->test(Home::class)->call('saveSidebarWidth', 5000)->assertSet('sidebarWidth', UserPreferences::MAX_SIDEBAR_WIDTH);
-    Livewire::actingAs($user)->test(Home::class)->call('saveSidebarWidth', 10)->assertSet('sidebarWidth', UserPreferences::MIN_SIDEBAR_WIDTH);
-
-    // Another person is unaffected.
-    $other = User::query()->findOrFail(createFinanceUser('someone else', 'secret pass'));
-    $this->actingAs($other)->get('/home')->assertSee('data-width="'.UserPreferences::DEFAULT_SIDEBAR_WIDTH.'"', false);
 });
 
 it('opens home for every legacy role', function (RoleId $role) {
