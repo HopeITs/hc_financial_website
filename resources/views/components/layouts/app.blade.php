@@ -4,6 +4,7 @@
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-white antialiased dark:bg-surface-0">
+        <x-navigation.topbar />
         <x-navigation.sidebar />
 
         <flux:main class="bg-white text-secondary-dark dark:bg-surface-0 dark:text-ink">

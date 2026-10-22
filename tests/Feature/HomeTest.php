@@ -69,12 +69,12 @@ it('keeps the balances behind the ProjectBalanceSource interface', function () {
         ->and($projects->first()->sypNew)->toBe('5.00');
 });
 
-it('shows each account once in the sidebar tree and only the active ones', function () {
+it('keeps the projects tree out of the sidebar, which holds only the chart of accounts', function () {
     $html = $this->actingAs(homeUser())->get('/home')->getContent();
 
-    expect(substr_count($html, 'Alpha Aleppo'))->toBe(2) // the table row and one tree leaf
-        ->and($html)->toContain('HC Aleppo')
-        ->and($html)->not->toContain('HC Homs');
+    expect(substr_count($html, 'Alpha Aleppo'))->toBe(1) // the table row only
+        ->and($html)->not->toContain('HC Aleppo')
+        ->and($html)->toContain('data-test="chart-tree"');
 });
 
 it('opens home for every legacy role', function (RoleId $role) {

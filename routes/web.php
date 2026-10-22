@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\SwitchLocaleController;
+use App\Livewire\Chart;
 use App\Livewire\Home;
 use App\Livewire\Programs;
 use App\Livewire\ProjectPage;
@@ -18,6 +19,8 @@ Route::middleware('auth')->group(function () {
     Route::get('home', Home::class)->middleware('screen:home')->name('home');
 
     // A built screen is registered before the placeholder route below; `screen` keeps the menu highlight working.
+    Route::get('screens/chart', Chart::class)->defaults('screen', 'chart')->middleware('screen')->name('chart');
+
     Route::get('screens/programs', Programs::class)->defaults('screen', 'programs')->middleware('screen')->name('programs');
 
     Route::get('screens/projects', Projects::class)->defaults('screen', 'projects')->middleware('screen')->name('projects');
