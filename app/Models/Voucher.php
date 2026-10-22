@@ -14,6 +14,8 @@ use Illuminate\Support\Carbon;
  *
  * @property string $id
  * @property VoucherType $type
+ * @property string|null $transfer_kind
+ * @property int|null $request_id
  * @property Carbon $date
  * @property string|null $description
  * @property VoucherStatus $status
@@ -36,7 +38,7 @@ class Voucher extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'id', 'type', 'date', 'description', 'status', 'prepared_by', 'approved_by', 'approved_at',
+        'id', 'type', 'transfer_kind', 'request_id', 'date', 'description', 'status', 'prepared_by', 'approved_by', 'approved_at',
         'is_carry_forward', 'is_temporary', 'source', 'legacy_action_id',
     ];
 
@@ -50,6 +52,7 @@ class Voucher extends Model
             'is_carry_forward' => 'boolean',
             'is_temporary' => 'boolean',
             'legacy_action_id' => 'integer',
+            'request_id' => 'integer',
         ];
     }
 

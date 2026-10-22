@@ -13,4 +13,7 @@ return [
 
     'legacy_views' => ['cash_balances', 'tree_view'],
 
+    // A payment voucher not linked to an approved request is refused above this many USD (Financial Manager, round 2).
+    'request_limit_usd' => '500.00',
+
 ];
