@@ -3,15 +3,13 @@
 namespace App\Livewire;
 
 use App\Contracts\ProjectBalanceSource;
-use App\Services\Projects\SideTree;
-use App\Support\UserPreferences;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
 /**
- * The landing page: active projects with their balances in SYP and USD, a city filter and the side tree.
+ * The landing page: active projects with their balances in SYP and USD, a city filter and the key totals; the projects tree lives in the main sidebar.
  */
 #[Layout('components.layouts.app')]
 class Home extends Component
@@ -19,24 +17,12 @@ class Home extends Component
     #[Url(as: 'city')]
     public ?int $cityId = null;
 
-    public int $sidebarWidth = UserPreferences::DEFAULT_SIDEBAR_WIDTH;
-
-    public function mount(UserPreferences $preferences): void
-    {
-        $this->sidebarWidth = $preferences->sidebarWidth((int) auth()->id());
-    }
-
     public function filterCity(?int $cityId): void
     {
         $this->cityId = $cityId === $this->cityId ? null : $cityId;
     }
 
-    public function saveSidebarWidth(int $width, UserPreferences $preferences): void
-    {
-        $this->sidebarWidth = $preferences->setSidebarWidth((int) auth()->id(), $width);
-    }
-
-    public function render(ProjectBalanceSource $balances, SideTree $tree): View
+    public function render(ProjectBalanceSource $balances): View
     {
         $cities = $balances->cities();
 
@@ -47,9 +33,6 @@ class Home extends Component
             'projects' => $balances->activeProjects($cityId),
             'cities' => $cities,
             'cityId' => $cityId,
-            'tree' => $tree->cities(),
-            'minWidth' => UserPreferences::MIN_SIDEBAR_WIDTH,
-            'maxWidth' => UserPreferences::MAX_SIDEBAR_WIDTH,
         ]);
     }
 }
