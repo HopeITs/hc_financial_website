@@ -117,12 +117,12 @@
             <x-ui.panel :title="__('home.active_projects')" :count="$projects->count()">
                 <x-slot:toolbar>
                     <div class="w-full sm:w-56">
-                        <flux:select wire:model.live="cityId" :aria-label="__('home.city')" data-test="city-filter">
-                            <flux:select.option value="">{{ __('home.all_cities') }}</flux:select.option>
+                        <x-ui.form-select wire:model.live="cityId" :label="__('home.city')" :placeholder="__('home.all_cities')" data-test="city-filter">
+                            <option value="">{{ __('home.all_cities') }}</option>
                             @foreach ($cities as $id => $name)
-                                <flux:select.option :value="$id">{{ $name }}</flux:select.option>
+                                <option value="{{ $id }}">{{ $name }}</option>
                             @endforeach
-                        </flux:select>
+                        </x-ui.form-select>
                     </div>
                 </x-slot:toolbar>
 

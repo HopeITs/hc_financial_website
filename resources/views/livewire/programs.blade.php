@@ -2,7 +2,7 @@
     <x-ui.page-header :title="__('navigation.screens.programs')" :subtitle="__('programs.intro')" :count="count($rows)">
         @if ($canCreate)
             <x-slot:actions>
-                <flux:button variant="primary" icon="plus" wire:click="openForm" data-test="add-program">{{ __('programs.add') }}</flux:button>
+                <x-ui.button tone="primary" icon="plus" wire:click="openForm" data-test="add-program">{{ __('programs.add') }}</x-ui.button>
             </x-slot:actions>
         @endif
     </x-ui.page-header>
@@ -16,28 +16,30 @@
     @endif
 
     @if ($showForm && $canCreate)
-        <form wire:submit="save" class="flex flex-col gap-4 rounded-xl border border-secondary-soft bg-white p-4 shadow-card dark:border-line dark:bg-surface-1" data-test="program-form">
-            <flux:heading level="2">{{ __('programs.add') }}</flux:heading>
+        <form wire:submit="save" data-test="program-form">
+            <x-ui.panel :title="__('programs.add')" class="p-0">
+                <div class="flex flex-col gap-4 p-4">
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <x-ui.form-input wire:model="nameEn" :label="__('programs.name_en')" dir="ltr" required />
+                        <x-ui.form-input wire:model="nameAr" :label="__('programs.name_ar')" dir="rtl" required />
+                    </div>
 
-            <div class="grid gap-4 sm:grid-cols-2">
-                <flux:input wire:model="nameEn" :label="__('programs.name_en')" dir="ltr" required />
-                <flux:input wire:model="nameAr" :label="__('programs.name_ar')" dir="rtl" required />
-            </div>
+                    <x-ui.form-textarea wire:model="description" :label="__('programs.description')" />
 
-            <flux:textarea wire:model="description" :label="__('programs.description')" rows="3" />
+                    <div class="w-full sm:w-64">
+                        <x-ui.form-select wire:model="status" :label="__('programs.status_label')">
+                            @foreach ($statuses as $status)
+                                <option value="{{ $status->value }}">{{ $status->label() }}</option>
+                            @endforeach
+                        </x-ui.form-select>
+                    </div>
 
-            <div class="w-full sm:w-64">
-                <flux:select wire:model="status" :label="__('programs.status_label')">
-                    @foreach ($statuses as $status)
-                        <flux:select.option :value="$status->value">{{ $status->label() }}</flux:select.option>
-                    @endforeach
-                </flux:select>
-            </div>
-
-            <div class="flex gap-2">
-                <flux:button type="submit" variant="primary">{{ __('programs.save') }}</flux:button>
-                <flux:button type="button" wire:click="cancel">{{ __('programs.cancel') }}</flux:button>
-            </div>
+                    <div class="flex gap-2">
+                        <x-ui.button type="submit" tone="primary">{{ __('programs.save') }}</x-ui.button>
+                        <x-ui.button type="button" wire:click="cancel">{{ __('programs.cancel') }}</x-ui.button>
+                    </div>
+                </div>
+            </x-ui.panel>
         </form>
     @endif
 
@@ -85,19 +87,19 @@
 
         @if ($canCreate)
             <form wire:submit="link" class="grid items-end gap-4 sm:grid-cols-[1fr_1fr_auto]" data-test="link-form">
-                <flux:select wire:model="linkProject" :label="__('programs.project')" placeholder="{{ __('programs.choose') }}">
+                <x-ui.form-select wire:model="linkProject" :label="__('programs.project')" :placeholder="__('programs.choose')">
                     @foreach ($projects as $project)
-                        <flux:select.option :value="$project['id']">{{ $project['name'] }}</flux:select.option>
+                        <option value="{{ $project['id'] }}">{{ $project['name'] }}</option>
                     @endforeach
-                </flux:select>
+                </x-ui.form-select>
 
-                <flux:select wire:model="linkProgram" :label="__('programs.program')" placeholder="{{ __('programs.choose') }}">
+                <x-ui.form-select wire:model="linkProgram" :label="__('programs.program')" :placeholder="__('programs.choose')">
                     @foreach ($options as $key => $name)
-                        <flux:select.option :value="$key">{{ $name }}</flux:select.option>
+                        <option value="{{ $key }}">{{ $name }}</option>
                     @endforeach
-                </flux:select>
+                </x-ui.form-select>
 
-                <flux:button type="submit" variant="primary">{{ __('programs.link') }}</flux:button>
+                <x-ui.button type="submit" tone="primary">{{ __('programs.link') }}</x-ui.button>
             </form>
         @endif
 

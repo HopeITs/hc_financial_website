@@ -13,4 +13,9 @@ return [
     'open_menu' => 'Open menu',
     'screen_not_built_title' => 'This screen is not built yet',
     'screen_not_built_text' => 'It will open here once its web version is ready. Until then, use the Windows program for it.',
+    'cancel' => 'Cancel',
+    'close' => 'Close',
+    'count_selected' => ':count selected',
+    'required' => 'Required',
+    'fields_need_attention' => ':count field needs attention|:count fields need attention',
 ];
