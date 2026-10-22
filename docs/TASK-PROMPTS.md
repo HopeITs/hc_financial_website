@@ -70,17 +70,17 @@ Status key: T = task, P = phase of the plan.
 
 ### T2.4 Seed the chart of accounts, projects and budget lines
 **Depends on:** T2.2
-**Prompt:** Open the mockup artifact `DbZn7RTmZyZBh2w6MqbWxM` (data object `D`: `acc`, `proj`, `bl`) and write a seeder with those 156 accounts (34 headers, 122 posting), the 8 projects (F2F, SZ, CORE and the ten general accounts GEN-<city>-USD and GEN-<city>-SYP for ALP, LTK, DAM, HMS, TRT; the mockup has one general account per city, so split each into a USD and an SYP row, decision Q1) and the budget lines. Apply the v7 changes: add 4108, 4306-4308, 1125-1127, 1135, 1145-1147, 1155; rename 1115, 1171, 1172. Keep the Arabic names as UTF-8 (the artifact export shows replacement characters in two project names: use `General account - <city>` and flag it in the PR). Store the data in `database/seeders/data/*.json`, not inline.
+**Prompt:** Open the mockup artifact `DbZn7RTmZyZBh2w6MqbWxM` (data object `D`: `acc`, `proj`, `bl`) and write a seeder with those 156 accounts (34 headers, 122 posting), the 8 projects (F2F, SZ, CORE and the ten general accounts GEN-<city>-USD and GEN-<city>-SYP for ALP, LTK, DAM, HMS, TRT; the mockup has one general account per city, so split each into a USD and an SYP row, decision Q1) and the budget lines. Apply the v7 changes: add 4108, 4306-4308, 1125-1127, 1135, 1145-1147, 1155; rename 1115, 1171, 1172. Keep the Arabic names as UTF-8 (the artifact export shows replacement characters in two project names: use `General account - <city>` and flag it in the PR). Store the data in `database/seeders/data/*.json`, not inline. Also add the new expense account `5504` "Hawala company commission" under the financial expenses next to 5503 (confirm the number is free in the mockup; if not, use the next free code and flag it in the PR), and one account for personal accounts (deposits held for people and organization accounts in a person's name): mandatory `Contact` tag, excluded from `statements`, opening balance zero (Financial Manager, rounds 2 and 3).
 **Done when:** counts are 156 + 8 accounts' worth of v7 rows as in the mockup, every `parent_code` resolves, every posting account has a class, side and statement line.
 
 ### T2.5 Posting service and the 13 rules
 **Depends on:** T2.3, T2.4
-**Prompt:** Create `app/Services/Ledger/PostVoucher.php`. Input: voucher header and lines. In one DB transaction it validates, numbers (`CRV-2026-0001`, from `gl_voucher_sequences` with a row lock, never reused), saves with status `PendingApproval`, and writes an audit row. Implement and unit-test each rule separately (one class per rule, one passing and one failing test each): only active posting accounts; cash account only in its own currency; debit or credit never both and never negative; balanced exactly in USD (cents go to 5503); required tags filled; budget line belongs to the line's project and fills its account; approver is never the preparer; nothing changes in a closed month; changes to an approved voucher keep old value, new value, user and reason; numbers never reused; a used account keeps code, class and currency; month closes only when 11x3, 11x4 and 2901 are zero; migrated vouchers keep their legacy id.
+**Prompt:** Create `app/Services/Ledger/PostVoucher.php`. Input: voucher header and lines. In one DB transaction it validates, numbers (`CRV-2026-0001`, from `gl_voucher_sequences` with a row lock, never reused), saves with status `PendingApproval`, and writes an audit row. Implement and unit-test each rule separately (one class per rule, one passing and one failing test each): only active posting accounts; cash account only in its own currency; debit or credit never both and never negative; balanced exactly in USD (cents go to 5503); required tags filled; budget line belongs to the line's project and fills its account; approver is never the preparer; nothing changes in a closed month; changes to an approved voucher keep old value, new value, user and reason; numbers never reused; a used account keeps code, class and currency; month closes only when 11x3, 11x4 and 2901 are zero; migrated vouchers keep their legacy id. Two decisions from the Financial Manager (plan 6.9): the budget line limit is NOT a posting rule (exceeding it is only a warning shown in the builder and at approval); and a voucher that is not linked to an approved request (`request_id`) is refused above USD 500 per voucher, an SYP voucher being compared at its own voucher rate.
 **Done when:** the rules suite is green; a failed rule leaves no rows and no consumed number.
 
 ### T2.6 Roles and policies (no Spatie)
 **Depends on:** T1.7
-**Prompt:** Create enum `RoleId` (2 Head Office, 3 Project Manager, 4 Financial Manager, 5 Accountant, 6 Cashier, 7 Employee, 8 Donor), `config/permissions.php` (role to screen to action: view, create, edit, delete, approve) and Laravel Policies/Gates. Accountant prepares, Financial Manager approves, Head Office both. Approval limits come from legacy `role_currency_limit` (fallback `role.Approval_Limit`). Add a Livewire/route middleware `can:screen,<slug>` applied to every route in `routes/web.php`.
+**Prompt:** Create enum `RoleId` (2 Head Office, 3 Project Manager, 4 Financial Manager, 5 Accountant, 6 Cashier, 7 Employee, 8 Donor), `config/permissions.php` (role to screen to action: view, create, edit, delete, approve) and Laravel Policies/Gates. Accountant prepares, Financial Manager approves, Head Office both. Approval limits come from legacy `role_currency_limit` (fallback `role.Approval_Limit`). Add a Livewire/route middleware `can:screen,<slug>` applied to every route in `routes/web.php`. Also add the web-only role `GeneralManager` (the CEO; it is not in the legacy `role` table, so keep it in a web table such as `web_user_roles` and leave `role` read only). The General Manager approves requests above USD 2,000 AFTER the Financial Manager (two approvals in order).
 **Done when:** tests prove each role sees only its screens and the preparer cannot approve their own voucher.
 
 ---
@@ -99,7 +99,7 @@ Status key: T = task, P = phase of the plan.
 
 ### T3.3 Voucher builder
 **Depends on:** T3.2
-**Prompt:** Build the modal/page to create a voucher: header (type, date, description) and a lines grid (account, currency, Dr/Cr, original amount, rate, USD, project, budget line, fund source, contact, center, lira type old/new). Choosing a budget line fills its account; choosing a cash account fixes the currency; SYP payments take the project average rate; show the live check list (balanced, tags, currency, open month). Save through `PostVoucher`. Attachment upload to the private disk (`gl_voucher_attachments`).
+**Prompt:** Build the modal/page to create a voucher: header (type, date, description) and a lines grid (account, currency, Dr/Cr, original amount, rate, USD, project, budget line, fund source, contact, center, lira type old/new). Choosing a budget line fills its account; choosing a cash account fixes the currency; SYP payments take the project average rate; show the live check list (balanced, tags, currency, open month). Save through `PostVoucher`. Attachment upload to the private disk (`gl_voucher_attachments`). Show two soft warnings, never blocks: spending after the project's end date, and exceeding the remaining amount of the budget line.
 **Done when:** a CRV, CPV and TRF can be prepared and appear as Pending; the check list matches the server-side rules.
 
 ### T3.4 Account statement (`statement`)
@@ -113,11 +113,11 @@ Status key: T = task, P = phase of the plan.
 
 ### T4.1 Trial balance (`tb`)
 **Depends on:** T3.4
-**Prompt:** As-at date, per account Dr / Cr / net, grouped by class, total Dr = total Cr check, approved vouchers only, export.
+**Prompt:** As-at date, per account Dr / Cr / net, grouped by class, total Dr = total Cr check, approved vouchers only, export. Reports show both currencies: the SYP rate is typed in per report (no rate table), SYP stays SYP and only USD is converted. Build one shared currency-switch component and reuse it in every later report (`projects`, `statements`, `r*`).
 
 ### T4.2 Project balances (`projects`)
 **Depends on:** T4.1
-**Prompt:** Per project: income, expenses (exclude 5703 depreciation, decision D10), cash held, restricted fund balance, budget versus actual per budget line, donor-currency (EUR) view using the project rate.
+**Prompt:** Per project: income, expenses (exclude 5703 depreciation, decision D10), cash held, restricted fund balance, budget versus actual per budget line, donor-currency (EUR) view using the project rate. Also add the report "where are the project funds": the project balance split by cash account, per currency (a project may hold money in several cash accounts). Home and the project pages read balances through a `ProjectBalanceSource` interface so the source can move from the legacy tables to the ledger without changing the screens.
 
 ### T4.3 Financial statements (`statements`)
 **Depends on:** T4.1
@@ -137,7 +137,7 @@ Status key: T = task, P = phase of the plan.
 
 ### T5.2 Transfer rates and TRF vouchers (`alloc`)
 **Depends on:** T5.1
-**Prompt:** Rates per city with effective date: proposed by Accountant, approved by Financial Manager. Build the **transfer** voucher (TRF with `transfer_kind`; ALC now means splitting a salary or invoice over projects, see plan 6.8): Dr project SYP, Cr general account SYP at its average rate, USD legs on 1161, difference to 5503. Errors exactly as in the mockup (no pounds in the general account, not enough pounds, no approved rate). Optional "allocate at average cost" switch, default off (decision D9).
+**Prompt:** Rates per city with effective date: proposed by Accountant, approved by Financial Manager. Build the **transfer** voucher (TRF with `transfer_kind`; ALC now means splitting a salary or invoice over projects, see plan 6.8): Dr project SYP, Cr general account SYP at its average rate, USD legs on 1161, difference to 5503. Errors exactly as in the mockup (no pounds in the general account, not enough pounds, no approved rate). Optional "allocate at average cost" switch, default off (decision D9). The four transfer kinds are: general USD to project; general SYP to project with the USD equivalent deducted; project back to general (return); between two projects. Moving project cash to city cash is NOT a transfer kind (it is an ordinary manual `TRF`, rare). The rate is the city rate approved by the Financial Manager and the difference goes to 5503.
 
 ---
 
@@ -149,7 +149,7 @@ Status key: T = task, P = phase of the plan.
 
 ### T6.2 Staging and posting of operations
 **Depends on:** T6.1, T2.5
-**Prompt:** Per legacy operation produce a voucher or an issue in `gl_import_issues`: I to CRV (Dr cash, Cr donor income), E to CPV (Dr expense, Cr cash, budget line fills account), A to CPV (Dr 1201, contact tag), R to CRV (Cr 1204 if micro-loan else 1201), X to TRF (Dr SYP safe, Cr USD safe), T to TRF (transfer, with `transfer_kind`) or ALC/JV (split) after the allocation rule. Missing rate: use the fallback rate and flag it. Skip `action_deleted`; `action_not_approved` becomes Pending. Idempotent through `legacy_action_id`; run in chunks as a queued job with a progress bar; dry-run mode.
+**Prompt:** Per legacy operation produce a voucher or an issue in `gl_import_issues`: I to CRV (Dr cash, Cr donor income), E to CPV (Dr expense, Cr cash, budget line fills account), A to CPV (Dr 1201, contact tag), R to CRV (Cr 1204 if micro-loan else 1201), X to TRF (Dr SYP safe, Cr USD safe), T to TRF (transfer, with `transfer_kind`) or ALC/JV (split) after the allocation rule. Missing rate: use the fallback rate and flag it. Skip `action_deleted`; `action_not_approved` becomes Pending. Idempotent through `legacy_action_id`; run in chunks as a queued job with a progress bar; dry-run mode. Also feed `gl_micro_loans` and `gl_micro_instalments` from the legacy `MicroProject_ID`, and mark cash received without a project as `is_uncompensated`.
 **Done when:** a rehearsal on the test copy reproduces, per cash account and project, the Windows program's balances (parity test).
 
 ### T6.3 Attachment move
@@ -177,9 +177,30 @@ Status key: T = task, P = phase of the plan.
 **Depends on:** T3.3
 **Prompt:** Rebuild `single`, `multi`, `multiatt`, `payments`, `approval`, `salaries`, `vouchers` print so that they post vouchers through `PostVoucher` using the mockup's operation-to-voucher rule. They never write to legacy tables. Multi entry: paste from Excel, row validation, all-or-nothing save.
 
-### T7.3b New screens from the Financial Manager's answers
+### T7.3b Requests module (`requests`)
+**Depends on:** T3.3, T2.3, T2.6
+**Prompt:** Build the `requests` module (plan 6.9). A project manager (role 3) prepares ONE monthly request per project: lines (budget line, amount) for the routine monthly expenses; an extra amount during the month is a separate request. States: draft, submitted, approved, rejected, closed. The manager edits until approval, then it locks (every edit audited). The Financial Manager approves or rejects; above USD 2,000 (SYP compared at the line rate) the General Manager also approves AFTER the Financial Manager. Large maintenance, fixed assets and electronics need 2 or 3 price quotes attached before submit (SecureUpload, private disk). Tables `gl_requests`, `gl_request_lines` and an approvals table; `gl_vouchers.request_id` links the voucher. Exceeding a budget line is only a warning. Pest tests: state machine, two-step approval, lock, 403 on foreign requests, quote requirement.
+**Done when:** a request goes draft to approved with both approvals and is linked to a transfer voucher.
+
+### T7.3c Salary allocation (ALC) from the payroll split
 **Depends on:** T3.3, T2.3
-**Prompt:** Build, one branch each: (1) `requests` (project manager submits, Financial Manager approves or rejects, link to voucher); (2) payroll split on `salaries` from `gl_payroll_splits` producing an ALC voucher; (3) reports `recon` (hawala pool versus project and general balances), `uncomp` (uncompensated cash per city), `advances` (open advances by person), `loans` (micro loan collection and arrears); (4) micro loan and instalment entry; (5) hawala receipt fields (EUR amount, actual rate, commission to an organization expense account, no project tag); (6) soft warning when spending after a project's end date; (7) currency switch (USD / SYP) on reports. Details in plan section 6.8.
+**Prompt:** On the `salaries` screen build the ALC voucher: one employee's salary split over several projects and budget lines from `gl_payroll_splits` (employee, project, budget line, percent, valid_from), which follows the monthly payroll sheet; a change during a month applies from the next month (no day proration). Percentages of one employee sum to 100 per valid_from; cents go to the last line; the accountant can adjust the proposed lines. The same ALC serves a shared invoice with manual lines. Salaries are visible only to finance roles and Head Office. Pest tests: percent sum, month boundary, rounding, SYP rate.
+**Done when:** the lines sum to the salary in USD.
+
+### T7.3d Follow-up reports (`recon`, `uncomp`, `advances`, `loans`)
+**Depends on:** T4.2, T2.3
+**Prompt:** Four read-only reports on `gl_voucher_lines` (approved vouchers only): `recon` (hawala pool 1161 versus project and city general balances, monthly), `uncomp` (cash received without a project and not yet compensated, per city, age buckets under 30 / 30-90 / over 90 days, no alerts), `advances` (open advances 1201 by person, no ageing, a settlement difference is a receivable from the employee or supplier), `loans` (micro loan collection and arrears). One shared filter bar (date, city, project) and CSV export; project managers see their own projects only.
+**Done when:** each report matches the fixture vouchers.
+
+### T7.3e Micro loans (`gl_micro_loans`)
+**Depends on:** T2.3, T3.3
+**Prompt:** Micro loan entry: per beneficiary loan amount, grant amount, currency and a repayment schedule (`gl_micro_instalments`: due_date, amount, paid_amount, paid_voucher_id). Disbursement posts through PostVoucher (loan to 1204, grant to the budget line's expense account); each instalment received posts a CRV crediting 1204 with fund source `Recovered loans` tagged with the original donor, which keeps that donor's restrictions (no separate revolving fund). Schedule generator (equal monthly instalments, SYP or USD) and an arrears indicator for the `loans` report. Pest tests: rounding, partial payment, overpayment.
+**Done when:** the 1204 balance equals loans minus paid instalments.
+
+### T7.3f Hawala receipt fields
+**Depends on:** T2.5, T2.4
+**Prompt:** Extend the donor-receipt voucher (CRV into 1161) with the original EUR amount (`eur_amount`), the actual rate of that transfer (`eur_rate`) and the commission (`commission_usd`). The project is credited with the net USD received; the commission is an organization expense posted to 5504 with no project tag. The per-project `donor_rate` is only a default. Validate `eur_amount x eur_rate - commission` equals the USD received within one cent. Pest tests: EUR and USD receipts, commission posting, rounding.
+**Done when:** a EUR receipt posts the project credit and the 5504 expense correctly.
 
 ### T7.2 Master data screens
 **Depends on:** T2.6
