@@ -121,3 +121,29 @@
         font-variant-numeric: tabular-nums;
     }
 }
+
+@layer components {
+    .fin-currency {
+        margin-inline-start: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--color-secondary-medium);
+    }
+
+    .dark .fin-currency {
+        color: var(--color-ink-muted);
+    }
+
+    /* Header cells use the small uppercase label role, like the tracking app's tables. */
+    .fin-table thead th {
+        font-size: 0.6875rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .fin-table thead th:lang(ar) {
+        font-size: 0.8125rem;
+        letter-spacing: normal;
+        text-transform: none;
+    }
+}

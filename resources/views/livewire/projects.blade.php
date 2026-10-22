@@ -1,8 +1,5 @@
 <div class="flex flex-col gap-6 px-4 pb-10 lg:px-8">
-    <div>
-        <flux:heading size="xl" level="1">{{ __('navigation.screens.projects') }}</flux:heading>
-        <flux:subheading>{{ __('projects.intro') }}</flux:subheading>
-    </div>
+    <x-ui.page-header :title="__('navigation.screens.projects')" :subtitle="__('projects.intro')" :count="$projects->total()" />
 
     <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5" data-test="filters">
         <flux:input wire:model.live.debounce.300ms="search" :placeholder="__('projects.search')" icon="magnifying-glass" />

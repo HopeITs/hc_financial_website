@@ -4,8 +4,8 @@ Mode: **Operate**. Financial staff complete tasks; clarity beats expression. Thi
 
 ## Rules
 1. **Tables**: wrap in `.fin-table-wrap`, use `<table class="fin-table">`. Plain `<th>` and `<td>`; number columns get `class="fin-num"` on both. Empty state: `<td colspan="N" class="fin-empty">`. No `px-*`/`py-*` utilities on cells.
-2. **Amounts**: always `<x-money :amount="$value" />`. It right-aligns with tabular digits, shows the minus sign, colours losses red and dims zero. Never `number_format` in a view. Always show the currency in the column header or next to the value (USD, SYP, SYP new).
-3. **Key figures** (a balance on a detail page): `<dl>` of `.fin-figure` boxes with `<dt>` label and `<dd>` value. Do not nest cards.
+2. **Amounts**: always `<x-money :amount="$value" />`. It right-aligns with tabular digits, shows the minus sign, colours losses red and dims zero. Never `number_format` in a view. Pass `currency="USD"`/`"SYP"` to print the code beside the number, or put it in the column header.
+3. **Same spirit as HC Tracking**: every page starts with `<x-ui.page-header>` (bold title, count badge, one-line subtitle, actions). Key figures are `<x-ui.stat-tile>` (label, number, currency unit, icon) in a grid at the top. A table, list or form lives in `<x-ui.panel>` (title, count, toolbar) or `.fin-table-wrap`. Empty lists use `<x-ui.empty-state>`. These components are copied from the tracking app and are static: no hover lift. Do not nest panels.
 4. **Status**: `<flux:badge size="sm">`, green = active, zinc = closed/inactive, amber = needs attention. Text is always present.
 5. **Names are links**: a project or account name in a list links to its page.
 6. **Forms**: one column on phones, labels above fields, the primary action is one `variant="primary"` button, then Cancel. Errors name the problem and the fix.

@@ -1,8 +1,8 @@
 <div class="flex flex-col gap-6 px-4 pb-10 lg:px-8">
     <div>
         <a href="{{ route('projects') }}" wire:navigate class="text-sm text-secondary-medium hover:underline dark:text-ink-muted">{{ __('projects.back') }}</a>
-        <flux:heading size="xl" level="1">{{ $project->name }}</flux:heading>
-        <flux:subheading>
+        <flux:heading size="xl" level="1" class="mt-1 text-3xl! font-bold! leading-none!">{{ $project->name }}</flux:heading>
+        <flux:subheading class="mt-2">
             {{ collect([$project->cityName, $project->programName, $project->donors ?: null])->filter()->implode(' · ') }}
             <flux:badge size="sm" :color="$project->closed ? 'zinc' : 'green'" class="ms-2">{{ $project->closed ? __('projects.status.closed') : __('projects.status.active') }}</flux:badge>
         </flux:subheading>
@@ -32,11 +32,11 @@
             </dl>
 
             @if ($showMoney)
-                <dl class="grid gap-3 sm:grid-cols-3" data-test="balances">
-                    <div class="fin-figure"><dt>{{ __('home.balance_syp') }}</dt><dd><x-money :amount="($balance?->syp ?? 0)" /></dd></div>
-                    <div class="fin-figure"><dt>{{ __('projects.balance_syp_new') }}</dt><dd><x-money :amount="($balance?->sypNew ?? 0)" /></dd></div>
-                    <div class="fin-figure"><dt>{{ __('home.balance_usd') }}</dt><dd><x-money :amount="($balance?->usd ?? 0)" /></dd></div>
-                </dl>
+                <div class="grid gap-3 sm:grid-cols-3" data-test="balances">
+                    <x-ui.stat-tile :label="__('home.balance_syp')" :value="number_format((float) ($balance?->syp ?? 0), 2)" unit="SYP" icon="banknotes" />
+                    <x-ui.stat-tile :label="__('projects.balance_syp_new')" :value="number_format((float) ($balance?->sypNew ?? 0), 2)" unit="SYP" icon="banknotes" />
+                    <x-ui.stat-tile :label="__('home.balance_usd')" :value="number_format((float) ($balance?->usd ?? 0), 2)" unit="USD" icon="banknotes" />
+                </div>
 
                 <flux:heading level="2">{{ __('projects.where_money') }}</flux:heading>
                 <div class="fin-table-wrap">

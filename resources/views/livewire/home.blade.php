@@ -1,7 +1,11 @@
 <div class="flex flex-col gap-6 px-4 pb-10 lg:px-8">
-    <div>
-        <flux:heading size="xl" level="1">{{ __('home.title') }}</flux:heading>
-        <flux:subheading>{{ __('home.intro', ['name' => auth()->user()->name]) }}</flux:subheading>
+    <x-ui.page-header :title="__('home.title')" :subtitle="__('home.intro', ['name' => auth()->user()->name])" />
+
+    <div class="grid grid-cols-2 gap-3 lg:grid-cols-4" data-test="home-totals">
+        <x-ui.stat-tile :label="__('home.stat_projects')" :value="number_format($projects->count())" icon="folder" />
+        <x-ui.stat-tile :label="__('home.stat_cities')" :value="number_format($projects->pluck('cityName')->unique()->count())" icon="map-pin" />
+        <x-ui.stat-tile :label="__('home.stat_usd')" :value="number_format((float) $projects->sum(fn ($p) => (float) $p->usd), 2)" unit="USD" icon="banknotes" tone="good" />
+        <x-ui.stat-tile :label="__('home.stat_syp')" :value="number_format((float) $projects->sum(fn ($p) => (float) $p->syp), 2)" unit="SYP" icon="banknotes" />
     </div>
 
     <div class="flex items-stretch gap-0">
@@ -110,20 +114,19 @@
         </aside>
 
         <section class="min-w-0 flex-1 lg:ps-6">
-            <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
-                <flux:heading level="2">{{ __('home.active_projects') }}</flux:heading>
+            <x-ui.panel :title="__('home.active_projects')" :count="$projects->count()">
+                <x-slot:toolbar>
+                    <div class="w-full sm:w-56">
+                        <flux:select wire:model.live="cityId" :aria-label="__('home.city')" data-test="city-filter">
+                            <flux:select.option value="">{{ __('home.all_cities') }}</flux:select.option>
+                            @foreach ($cities as $id => $name)
+                                <flux:select.option :value="$id">{{ $name }}</flux:select.option>
+                            @endforeach
+                        </flux:select>
+                    </div>
+                </x-slot:toolbar>
 
-                <div class="w-full sm:w-64">
-                    <flux:select wire:model.live="cityId" :label="__('home.city')" data-test="city-filter">
-                        <flux:select.option value="">{{ __('home.all_cities') }}</flux:select.option>
-                        @foreach ($cities as $id => $name)
-                            <flux:select.option :value="$id">{{ $name }}</flux:select.option>
-                        @endforeach
-                    </flux:select>
-                </div>
-            </div>
-
-            <div class="fin-table-wrap">
+                <div class="overflow-x-auto">
                 <table class="fin-table" data-test="projects-table">
                     <thead>
                         <tr>
@@ -141,21 +144,22 @@
                                 </td>
                                 <td class="text-secondary-medium dark:text-ink-muted">{{ $project->cityName }}</td>
                                 <td class="fin-num">
-                                    <x-money :amount="$project->syp" />
+                                    <x-money :amount="$project->syp" currency="SYP" />
                                     @if ((float) $project->sypNew !== 0.0)
                                         <span class="block text-xs text-secondary-medium dark:text-ink-muted" dir="ltr">{{ __('home.new_lira', ['amount' => number_format((float) $project->sypNew, 2)]) }}</span>
                                     @endif
                                 </td>
-                                <td class="fin-num"><x-money :amount="$project->usd" /></td>
+                                <td class="fin-num"><x-money :amount="$project->usd" currency="USD" /></td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="fin-empty">{{ __('home.no_projects') }}</td>
+                                <td colspan="4"><x-ui.empty-state icon="folder" :heading="__('home.no_projects')" /></td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
-            </div>
+                </div>
+            </x-ui.panel>
         </section>
     </div>
 </div>

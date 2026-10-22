@@ -1,14 +1,11 @@
 <div class="flex flex-col gap-6 px-4 pb-10 lg:px-8">
-    <div class="flex flex-wrap items-end justify-between gap-3">
-        <div>
-            <flux:heading size="xl" level="1">{{ __('navigation.screens.programs') }}</flux:heading>
-            <flux:subheading>{{ __('programs.intro') }}</flux:subheading>
-        </div>
-
+    <x-ui.page-header :title="__('navigation.screens.programs')" :subtitle="__('programs.intro')" :count="count($rows)">
         @if ($canCreate)
-            <flux:button variant="primary" icon="plus" wire:click="openForm" data-test="add-program">{{ __('programs.add') }}</flux:button>
+            <x-slot:actions>
+                <flux:button variant="primary" icon="plus" wire:click="openForm" data-test="add-program">{{ __('programs.add') }}</flux:button>
+            </x-slot:actions>
         @endif
-    </div>
+    </x-ui.page-header>
 
     @if ($notice)
         <div class="rounded-lg border border-secondary-soft bg-white px-4 py-2 text-sm dark:border-line dark:bg-surface-1" role="status" data-test="notice">{{ $notice }}</div>
