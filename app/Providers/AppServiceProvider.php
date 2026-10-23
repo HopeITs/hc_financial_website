@@ -5,8 +5,10 @@ namespace App\Providers;
 use App\Contracts\Approvable;
 use App\Contracts\ProjectBalanceSource;
 use App\Enums\ScreenAction;
+use App\Models\LedgerRequest;
 use App\Models\User;
 use App\Policies\ApprovalPolicy;
+use App\Policies\RequestPolicy;
 use App\Services\Projects\LegacyProjectBalanceSource;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -41,6 +43,7 @@ class AppServiceProvider extends ServiceProvider
             && $user->canOnScreen($slug, $permitted));
 
         Gate::policy(Approvable::class, ApprovalPolicy::class);
+        Gate::policy(LedgerRequest::class, RequestPolicy::class);
     }
 
     /**

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\RequestQuoteController;
 use App\Http\Controllers\SwitchLocaleController;
 use App\Livewire\Chart;
 use App\Livewire\FinancialStatements;
@@ -9,6 +10,7 @@ use App\Livewire\Programs;
 use App\Livewire\ProjectBalances;
 use App\Livewire\ProjectPage;
 use App\Livewire\Projects;
+use App\Livewire\Requests;
 use App\Livewire\Statement;
 use App\Livewire\TrialBalance;
 use App\Livewire\VoucherBuilder;
@@ -38,6 +40,9 @@ Route::middleware('auth')->group(function () {
     Route::get('screens/vouchers/new', VoucherBuilder::class)->defaults('screen', 'vouchers')->middleware('screen:vouchers,create')->name('vouchers.create');
 
     Route::get('screens/vouchers', Vouchers::class)->defaults('screen', 'vouchers')->middleware('screen')->name('vouchers');
+
+    Route::get('screens/requests', Requests::class)->defaults('screen', 'requests')->middleware('screen')->name('requests');
+    Route::get('requests/quotes/{quote}', RequestQuoteController::class)->whereNumber('quote')->defaults('screen', 'requests')->middleware('screen')->name('requests.quote');
 
     Route::get('screens/projbal', ProjectBalances::class)->defaults('screen', 'projbal')->middleware('screen')->name('projbal');
 
