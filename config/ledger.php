@@ -15,4 +15,8 @@ return [
     // A payment voucher not linked to an approved request is refused above this many USD (Financial Manager, round 2).
     'request_limit_usd' => '500.00',
 
+    // The transfer company's dollar pool, and the name written on its lines of a transfer voucher (the account asks for a contact).
+    'transfer_company_account' => '1161',
+    'transfer_company_contact' => env('LEDGER_TRANSFER_COMPANY', 'Transfer company'),
+
 ];
