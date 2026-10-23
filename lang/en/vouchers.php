@@ -1,6 +1,9 @@
 <?php
 
 return [
+    'print' => 'Print',
+    'print_rejected' => 'This voucher was rejected.',
+    'received_by' => 'Received by',
     'intro' => 'Every voucher with its status. Open one to see its lines, files and history, and to approve or reject it.',
     'all_types' => 'All types',
     'type' => 'Type',

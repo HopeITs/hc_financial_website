@@ -87,6 +87,7 @@
 
         <x-ui.page-header :title="$voucher->id" :subtitle="$voucher->description ?: __('vouchers.no_description')">
             <x-slot:actions>
+                <a href="{{ route('vouchers.print', ['voucher' => $voucher->id]) }}" target="_blank" rel="noopener" class="page-action" data-test="print-voucher">{{ __('vouchers.print') }}</a>
                 <flux:badge size="lg" :color="$color" data-test="voucher-status">{{ __('vouchers.status.'.$badge) }}</flux:badge>
             </x-slot:actions>
         </x-ui.page-header>
