@@ -4,6 +4,7 @@ use App\Http\Controllers\RequestQuoteController;
 use App\Http\Controllers\SwitchLocaleController;
 use App\Livewire\Chart;
 use App\Livewire\FinancialStatements;
+use App\Livewire\FollowUpReport;
 use App\Livewire\Home;
 use App\Livewire\OperationalReport;
 use App\Livewire\Programs;
@@ -61,6 +62,10 @@ Route::middleware('auth')->group(function () {
 
     foreach (['rexp', 'rcash', 'rbl', 'rrev', 'rfixed', 'rattach'] as $report) {
         Route::get('screens/'.$report, OperationalReport::class)->defaults('screen', $report)->middleware('screen')->name($report);
+    }
+
+    foreach (['recon', 'uncomp', 'advances', 'loans'] as $report) {
+        Route::get('screens/'.$report, FollowUpReport::class)->defaults('screen', $report)->middleware('screen')->name($report);
     }
 
     // Every screen of the navigation. Until a screen is built it shows the placeholder.

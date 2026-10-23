@@ -43,6 +43,7 @@ function createFinanceSchema(): void
     (require database_path('migrations/2026_10_23_100000_create_web_project_managers_table.php'))->up();
     (require database_path('migrations/2026_10_24_090000_create_gl_accounts_projects_budget_lines_tables.php'))->up();
     (require database_path('migrations/2026_10_24_100000_create_gl_voucher_tables.php'))->up();
+    (require database_path('migrations/2026_10_27_090000_create_gl_micro_loans_tables.php'))->up();
 
     Schema::create('log', function ($table) {
         $table->increments('id');

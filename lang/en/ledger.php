@@ -366,4 +366,26 @@ return [
         ],
         'note' => 'Approved vouchers only. Filters apply to the lines of each voucher; the legacy sub-project filter has no ledger counterpart. In the SYP view a dollar amount is multiplied by the rate typed above and a SYP amount stays as entered.',
     ],
+    'follow' => [
+        'intro' => [
+            'recon' => 'The transfer company pool (1161) against what projects and city general accounts hold of it, at the end of each month.',
+            'uncomp' => 'Cash received without a project that has not been compensated yet, per city, by age.',
+            'advances' => 'Open operational advances (1201) by person. No deadline and no ageing.',
+            'loans' => 'Micro loans: instalments due, collected and in arrears.',
+        ],
+        'note' => [
+            'recon' => 'Approved vouchers only, in USD, balances at each month end. The difference is the part of the pool that no project or general account holds.',
+            'uncomp' => 'Approved vouchers only, in USD. Age runs from the voucher date to the To date (today when empty). There are no alerts.',
+            'advances' => 'Approved vouchers only, in USD. A negative open amount means the person settled with more than was advanced; the difference is a receivable to reconcile with them.',
+            'loans' => 'In the currency of each loan. Collected counts instalments paid by an approved voucher only; arrears are the instalments due up to the To date that are not collected. Totals are shown when every loan has the same currency.',
+        ],
+        'empty' => 'Nothing to show.',
+        'columns' => [
+            'month' => 'Month', 'pool' => 'Pool (1161)', 'projects' => 'Held by projects', 'general' => 'Held by general accounts', 'difference' => 'Difference',
+            'city' => 'City', 'under_30' => 'Under 30 days', 'days_30_90' => '30 to 90 days', 'over_90' => 'Over 90 days', 'total' => 'Total',
+            'person' => 'Person', 'advanced' => 'Advanced', 'settled' => 'Settled', 'open' => 'Open', 'last_date' => 'Last movement',
+            'beneficiary' => 'Beneficiary', 'project' => 'Project', 'currency' => 'Currency', 'loan' => 'Loan', 'grant' => 'Grant',
+            'due' => 'Due', 'collected' => 'Collected', 'arrears' => 'Arrears',
+        ],
+    ],
 ];
