@@ -20,24 +20,34 @@ class ProjectAverageRate
      */
     public function rate(string $projectCode): ?string
     {
+        $held = $this->holding($projectCode, 'SYP');
+
+        if (bccomp($held['orig'], '0', 2) <= 0 || bccomp($held['usd'], '0.01', 2) < 0) {
+            return null;
+        }
+
+        return bcdiv($held['orig'], $held['usd'], 6);
+    }
+
+    /**
+     * What a project holds in the cash accounts of one currency: the amount in that currency and the dollars it stands
+     * for in the books (approved vouchers only).
+     *
+     * @return array{orig: numeric-string, usd: numeric-string}
+     */
+    public function holding(string $projectCode, string $currency): array
+    {
         $row = DB::table('gl_voucher_lines as l')
             ->join('gl_vouchers as v', 'v.id', '=', 'l.voucher_id')
             ->join('gl_accounts as a', 'a.code', '=', 'l.account_code')
             ->where('v.status', VoucherStatus::Approved->value)
             ->whereNull('v.deleted_at')
             ->where('a.is_cash', true)
-            ->where('a.currency', 'SYP')
+            ->where('a.currency', $currency)
             ->where('l.project_code', $projectCode)
-            ->selectRaw('sum(l.debit_orig) - sum(l.credit_orig) as pounds, sum(l.debit_usd) - sum(l.credit_usd) as dollars')
+            ->selectRaw('sum(l.debit_orig) - sum(l.credit_orig) as orig, sum(l.debit_usd) - sum(l.credit_usd) as usd')
             ->first();
 
-        $pounds = Money::normalize($row->pounds ?? null);
-        $dollars = Money::normalize($row->dollars ?? null);
-
-        if (bccomp($pounds, '0', 2) <= 0 || bccomp($dollars, '0.01', 2) < 0) {
-            return null;
-        }
-
-        return bcdiv($pounds, $dollars, 6);
+        return ['orig' => Money::normalize($row->orig ?? null), 'usd' => Money::normalize($row->usd ?? null)];
     }
 }
