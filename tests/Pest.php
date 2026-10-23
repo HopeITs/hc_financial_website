@@ -174,6 +174,76 @@ function createLegacyHomeSchema(): void
     });
 }
 
+/**
+ * The tables the read-only master data screens read from the `legacy` connection, with the columns they use. Call it after
+ * createLegacyHomeSchema(), which has the donor, city, till type and account tables this adds columns to; whatever is
+ * there already is left alone.
+ */
+function createMasterDataSchema(): void
+{
+    $legacy = Schema::connection('legacy');
+
+    if (! $legacy->hasColumn('donor', 'Abb_Name')) {
+        $legacy->table('donor', fn ($table) => $table->string('Abb_Name')->nullable());
+    }
+
+    if (! $legacy->hasColumn('tilltypes', 'is_local_currency')) {
+        $legacy->table('tilltypes', function ($table) {
+            $table->integer('is_local_currency')->default(0);
+            $table->decimal('base_divisor', 18, 6)->default(1);
+        });
+    }
+
+    $create = function (string $name, callable $columns) use ($legacy) {
+        if (! $legacy->hasTable($name)) {
+            $legacy->create($name, $columns);
+        }
+    };
+
+    $create('cashaccount', function ($table) {
+        $table->integer('id')->primary();
+        $table->string('Name');
+        $table->integer('currency_tilltype_id')->nullable();
+        $table->integer('city_id')->nullable();
+    });
+    $create('denominations', function ($table) {
+        $table->integer('id')->primary();
+        $table->string('name');
+        $table->integer('currency_tilltype_id')->nullable();
+    });
+    $create('employee', function ($table) {
+        $table->integer('id')->primary();
+        $table->string('FirstName');
+        $table->string('LastName')->nullable();
+        $table->string('FatherName')->nullable();
+        $table->string('BeginDate')->nullable();
+        $table->string('EndDate')->nullable();
+    });
+    $create('fiscalbond', function ($table) {
+        $table->integer('ID')->primary();
+        $table->string('Name');
+        $table->string('Date')->nullable();
+        $table->string('Notes')->nullable();
+        $table->integer('Account_ID')->nullable();
+        $table->integer('Till_ID')->nullable();
+    });
+    $create('linecategorytype', function ($table) {
+        $table->integer('ID')->primary();
+        $table->string('Name');
+    });
+    $create('linecategory', function ($table) {
+        $table->integer('ID')->primary();
+        $table->string('Name');
+        $table->integer('Type_ID')->nullable();
+        $table->integer('Kind')->nullable();
+    });
+    $create('role_currency_limit', function ($table) {
+        $table->integer('Role_ID');
+        $table->integer('TillType_ID');
+        $table->decimal('Approval_Limit', 18, 2);
+    });
+}
+
 /** The ledger tables of the web app with the real chart of accounts, projects and budget lines seeded. */
 function createLedgerSchema(): void
 {
