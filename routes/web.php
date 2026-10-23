@@ -12,6 +12,7 @@ use App\Livewire\ProjectPage;
 use App\Livewire\Projects;
 use App\Livewire\Requests;
 use App\Livewire\Statement;
+use App\Livewire\Treasury;
 use App\Livewire\TrialBalance;
 use App\Livewire\VoucherBuilder;
 use App\Livewire\Vouchers;
@@ -47,6 +48,8 @@ Route::middleware('auth')->group(function () {
     Route::get('screens/projbal', ProjectBalances::class)->defaults('screen', 'projbal')->middleware('screen')->name('projbal');
 
     Route::get('screens/tb', TrialBalance::class)->defaults('screen', 'tb')->middleware('screen')->name('tb');
+
+    Route::get('screens/treasury', Treasury::class)->defaults('screen', 'treasury')->middleware('screen')->name('treasury');
 
     Route::get('screens/statements', FinancialStatements::class)->defaults('screen', 'statements')->middleware('screen')->name('statements');
 
