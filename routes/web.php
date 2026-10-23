@@ -11,6 +11,7 @@ use App\Livewire\ProjectBalances;
 use App\Livewire\ProjectPage;
 use App\Livewire\Projects;
 use App\Livewire\Requests;
+use App\Livewire\Salaries;
 use App\Livewire\Statement;
 use App\Livewire\Treasury;
 use App\Livewire\TrialBalance;
@@ -44,6 +45,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('screens/requests', Requests::class)->defaults('screen', 'requests')->middleware('screen')->name('requests');
     Route::get('requests/quotes/{quote}', RequestQuoteController::class)->whereNumber('quote')->defaults('screen', 'requests')->middleware('screen')->name('requests.quote');
+
+    Route::get('screens/salaries', Salaries::class)->defaults('screen', 'salaries')->middleware('screen')->name('salaries');
 
     Route::get('screens/projbal', ProjectBalances::class)->defaults('screen', 'projbal')->middleware('screen')->name('projbal');
 
