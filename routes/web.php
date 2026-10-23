@@ -6,6 +6,7 @@ use App\Livewire\Chart;
 use App\Livewire\FinancialStatements;
 use App\Livewire\FollowUpReport;
 use App\Livewire\Home;
+use App\Livewire\MicroLoans;
 use App\Livewire\OperationalReport;
 use App\Livewire\Programs;
 use App\Livewire\ProjectBalances;
@@ -49,6 +50,8 @@ Route::middleware('auth')->group(function () {
     Route::get('requests/quotes/{quote}', RequestQuoteController::class)->whereNumber('quote')->defaults('screen', 'requests')->middleware('screen')->name('requests.quote');
 
     Route::get('screens/salaries', Salaries::class)->defaults('screen', 'salaries')->middleware('screen')->name('salaries');
+
+    Route::get('screens/payments', MicroLoans::class)->defaults('screen', 'payments')->middleware('screen')->name('payments');
 
     Route::get('screens/projbal', ProjectBalances::class)->defaults('screen', 'projbal')->middleware('screen')->name('projbal');
 
