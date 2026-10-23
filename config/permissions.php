@@ -47,8 +47,8 @@ return [
         ),
 
         RoleId::Accountant->value => array_merge(
-            $screens(['home', 'project-money', ...$projectScreens, ...$reports, 'tills', 'treasury', 'cities', 'currency', 'denoms', 'donors', 'employees', 'salaries', 'requests'], $view),
-            $screens(['chart', ...$entries, 'alloc'], $prepare),
+            $screens(['home', 'project-money', ...$projectScreens, ...$reports, 'tills', 'treasury', 'cities', 'currency', 'denoms', 'donors', 'employees', 'requests'], $view),
+            $screens(['chart', ...$entries, 'alloc', 'salaries'], $prepare),
         ),
 
         RoleId::ProjectManager->value => array_merge(
