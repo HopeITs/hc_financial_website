@@ -58,6 +58,12 @@ class Vouchers extends Component
     /** @var list<string> */
     public array $failures = [];
 
+    public function mount(): void
+    {
+        $flash = session('notice');
+        $this->notice = is_string($flash) ? $flash : null;
+    }
+
     public function updated(string $name): void
     {
         if (in_array($name, ['type', 'status', 'from', 'to', 'search'], true)) {

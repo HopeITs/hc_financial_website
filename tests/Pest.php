@@ -2,8 +2,11 @@
 
 use App\Enums\FundSource;
 use App\Enums\VoucherSource;
+use App\Enums\VoucherStatus;
 use App\Enums\VoucherType;
+use App\Models\Voucher;
 use App\Services\Ledger\LineDraft;
+use App\Services\Ledger\PostVoucher;
 use App\Services\Ledger\VoucherDraft;
 use App\Support\FinancePassword;
 use Carbon\CarbonImmutable;
@@ -197,6 +200,15 @@ function ledgerReceipt(array $header = [], ?array $lines = null): VoucherDraft
         legacyActionId: $header['legacyActionId'] ?? null,
         requestId: $header['requestId'] ?? null,
     );
+}
+
+/** Posts a voucher and approves it, as the financial manager (user 9) would. */
+function ledgerApprovedVoucher(array $header = [], ?array $lines = null): Voucher
+{
+    $voucher = app(PostVoucher::class)->post(ledgerReceipt($header, $lines));
+    $voucher->update(['status' => VoucherStatus::Approved, 'approved_by' => 9, 'approved_at' => now()]);
+
+    return $voucher->refresh();
 }
 
 function createFinanceUser(string $username, string $password, string $role = 'Head Office', int $roleId = 2): int

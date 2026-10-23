@@ -11,7 +11,13 @@
     @endif
 
     @if ($current === null)
-        <x-ui.page-header :title="__('navigation.screens.vouchers')" :subtitle="__('vouchers.intro')" :count="$list->total()" />
+        <x-ui.page-header :title="__('navigation.screens.vouchers')" :subtitle="__('vouchers.intro')" :count="$list->total()">
+            @can('screen', ['vouchers', 'create'])
+                <x-slot:actions>
+                    <x-ui.button tone="primary" icon="plus" :href="route('vouchers.create')" wire:navigate data-test="new-voucher">{{ __('ledger.builder.title') }}</x-ui.button>
+                </x-slot:actions>
+            @endcan
+        </x-ui.page-header>
 
         <div class="flex flex-wrap gap-2" role="group" aria-label="{{ __('vouchers.type') }}" data-test="type-chips">
             <button type="button" wire:click="setType('')" aria-pressed="{{ $type === '' ? 'true' : 'false' }}"

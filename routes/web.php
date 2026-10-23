@@ -11,6 +11,7 @@ use App\Livewire\ProjectPage;
 use App\Livewire\Projects;
 use App\Livewire\Statement;
 use App\Livewire\TrialBalance;
+use App\Livewire\VoucherBuilder;
 use App\Livewire\Vouchers;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
@@ -33,6 +34,8 @@ Route::middleware('auth')->group(function () {
     Route::get('projects/{account}', ProjectPage::class)->whereNumber('account')->defaults('screen', 'projects')->middleware('screen')->name('projects.show');
 
     Route::get('screens/statement', Statement::class)->defaults('screen', 'statement')->middleware('screen')->name('statement');
+
+    Route::get('screens/vouchers/new', VoucherBuilder::class)->defaults('screen', 'vouchers')->middleware('screen:vouchers,create')->name('vouchers.create');
 
     Route::get('screens/vouchers', Vouchers::class)->defaults('screen', 'vouchers')->middleware('screen')->name('vouchers');
 
