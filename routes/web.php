@@ -4,6 +4,7 @@ use App\Http\Controllers\SwitchLocaleController;
 use App\Livewire\Chart;
 use App\Livewire\Home;
 use App\Livewire\Programs;
+use App\Livewire\ProjectBalances;
 use App\Livewire\ProjectPage;
 use App\Livewire\Projects;
 use App\Livewire\Statement;
@@ -29,6 +30,8 @@ Route::middleware('auth')->group(function () {
     Route::get('projects/{account}', ProjectPage::class)->whereNumber('account')->defaults('screen', 'projects')->middleware('screen')->name('projects.show');
 
     Route::get('screens/statement', Statement::class)->defaults('screen', 'statement')->middleware('screen')->name('statement');
+
+    Route::get('screens/projbal', ProjectBalances::class)->defaults('screen', 'projbal')->middleware('screen')->name('projbal');
 
     Route::get('screens/tb', TrialBalance::class)->defaults('screen', 'tb')->middleware('screen')->name('tb');
 

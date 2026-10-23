@@ -40,6 +40,7 @@ return [
         'rfixed' => 'Fixed assets',
         'rattach' => 'Attachments',
         'tb' => 'Trial balance',
+        'projbal' => 'Project balances',
         'statement' => 'Account statement',
         'statements' => 'Financial statements',
         'donors' => 'Donors',

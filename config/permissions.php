@@ -25,7 +25,7 @@ $everyScreen = array_merge(...array_values((require __DIR__.'/navigation.php')['
 
 $screens = static fn (array $slugs, array $actions): array => array_fill_keys($slugs, $actions);
 
-$reports = ['rexp', 'rcash', 'rbl', 'rrev', 'rfixed', 'rattach', 'tb', 'statement', 'statements', 'projects'];
+$reports = ['rexp', 'rcash', 'rbl', 'rrev', 'rfixed', 'rattach', 'tb', 'projbal', 'statement', 'statements', 'projects'];
 $projectScreens = ['projwin', 'allaccounts', 'budgetlines', 'blcats', 'lifetime', 'programs'];
 $treasury = ['tills', 'treasury', 'alloc', 'cities', 'currency', 'denoms'];
 $entries = ['single', 'multi', 'multiatt', 'payments', 'vouchers', 'bonds'];
