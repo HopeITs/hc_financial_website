@@ -16,6 +16,7 @@ use App\Livewire\Programs;
 use App\Livewire\ProjectBalances;
 use App\Livewire\ProjectPage;
 use App\Livewire\Projects;
+use App\Livewire\ReferenceList;
 use App\Livewire\Requests;
 use App\Livewire\Salaries;
 use App\Livewire\SingleEntry;
@@ -23,8 +24,10 @@ use App\Livewire\Statement;
 use App\Livewire\Transfers;
 use App\Livewire\Treasury;
 use App\Livewire\TrialBalance;
+use App\Livewire\Users;
 use App\Livewire\VoucherBuilder;
 use App\Livewire\Vouchers;
+use App\Services\MasterData\ReferenceData;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -85,6 +88,17 @@ Route::middleware('auth')->group(function () {
 
     foreach (['recon', 'uncomp', 'advances', 'loans'] as $report) {
         Route::get('screens/'.$report, FollowUpReport::class)->defaults('screen', $report)->middleware('screen')->name($report);
+    }
+
+    // Master data (task 38): the old program's lists are read-only references; the old project windows are the project page.
+    foreach (ReferenceData::SLUGS as $slug) {
+        Route::get('screens/'.$slug, ReferenceList::class)->defaults('screen', $slug)->middleware('screen')->name($slug);
+    }
+
+    Route::get('screens/users', Users::class)->defaults('screen', 'users')->middleware('screen')->name('users');
+
+    foreach (ReferenceData::MERGED as $slug) {
+        Route::get('screens/'.$slug, Projects::class)->defaults('screen', $slug)->middleware('screen')->name($slug);
     }
 
     // Every screen of the navigation. Until a screen is built it shows the placeholder.
