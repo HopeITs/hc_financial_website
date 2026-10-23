@@ -148,6 +148,28 @@
                                 </button>
                             </td>
                         </tr>
+                        @if ($type === 'CRV' && $line['side'] === 'debit' && ($effective['account'] ?? $line['account']) === config('ledger.transfer_company_account'))
+                            <tr wire:key="hawala-{{ $i }}" data-test="hawala-{{ $i }}">
+                                <td></td>
+                                <td colspan="12">
+                                    <div class="grid items-end gap-3 sm:grid-cols-3">
+                                        <label class="flex flex-col gap-1 text-xs text-secondary-medium dark:text-ink-muted">
+                                            {{ __('ledger.builder.hawala_eur') }}
+                                            <input type="text" inputmode="decimal" dir="ltr" wire:model.live.debounce.400ms="lines.{{ $i }}.eur_amount" class="{{ $cell }} text-end" data-test="eur-amount-{{ $i }}">
+                                        </label>
+                                        <label class="flex flex-col gap-1 text-xs text-secondary-medium dark:text-ink-muted">
+                                            {{ __('ledger.builder.hawala_rate') }}
+                                            <input type="text" inputmode="decimal" dir="ltr" wire:model.live.debounce.400ms="lines.{{ $i }}.eur_rate" placeholder="{{ $projectRates[$line['project']] ?? '' }}" class="{{ $cell }} text-end" data-test="eur-rate-{{ $i }}">
+                                        </label>
+                                        <label class="flex flex-col gap-1 text-xs text-secondary-medium dark:text-ink-muted">
+                                            {{ __('ledger.builder.hawala_commission') }}
+                                            <input type="text" inputmode="decimal" dir="ltr" wire:model.live.debounce.400ms="lines.{{ $i }}.commission" class="{{ $cell }} text-end" data-test="commission-{{ $i }}">
+                                        </label>
+                                    </div>
+                                    <p class="mt-1 text-xs text-secondary-medium dark:text-ink-muted">{{ __('ledger.builder.hawala_help') }}</p>
+                                </td>
+                            </tr>
+                        @endif
                     @endforeach
                 </tbody>
                 <tfoot>

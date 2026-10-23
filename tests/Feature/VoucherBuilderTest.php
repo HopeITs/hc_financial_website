@@ -115,7 +115,7 @@ it('has a live check list that is the posting rules: nothing ticked until the vo
     expect(array_filter(checkStates($page)))->toBe([]);
 
     fillReceipt($page);
-    expect(array_filter(checkStates($page)))->toHaveCount(8)
+    expect(array_filter(checkStates($page)))->toHaveCount(9)
         ->and($page->viewData('ready'))->toBeTrue();
     $page->assertSeeHtml('data-test="ready"');
 });
