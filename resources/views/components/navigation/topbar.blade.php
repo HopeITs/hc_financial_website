@@ -3,6 +3,7 @@
     $chartVisible = isset($groups['chart']);
     unset($groups['chart']);
     $currentScreen = request()->route('screen');
+    $badges = \App\Support\Navigation::badges(auth()->user());
 @endphp
 
 {{-- The top bar: logo, the menu groups (the chart of accounts has the sidebar), language, theme and the user. --}}
@@ -32,12 +33,21 @@
                     icon-trailing="chevron-down"
                     class="shrink-0 {{ in_array($currentScreen, $screens, true) ? 'bg-secondary-soft! font-semibold!' : '' }}"
                     data-test="menu-{{ $group }}"
-                >{{ __('navigation.groups.'.$group) }}</flux:button>
+                >
+                    {{ __('navigation.groups.'.$group) }}
+                    @php($groupCount = collect($screens)->sum(fn ($slug) => $badges[$slug] ?? 0))
+                    @if ($groupCount > 0)
+                        <span class="ms-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold tabular-nums text-white" data-test="badge-{{ $group }}">{{ $groupCount }}</span>
+                    @endif
+                </flux:button>
 
                 <flux:menu>
                     @foreach ($screens as $screen)
                         <flux:menu.item :href="route('screens.show', $screen)" wire:navigate :class="$currentScreen === $screen ? 'font-semibold text-primary' : ''">
                             {{ __('navigation.screens.'.$screen) }}
+                            @if (($badges[$screen] ?? 0) > 0)
+                                <span class="ms-2 inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold tabular-nums text-white" data-test="badge-{{ $screen }}">{{ $badges[$screen] }}</span>
+                            @endif
                         </flux:menu.item>
                     @endforeach
                 </flux:menu>

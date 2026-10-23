@@ -16,6 +16,7 @@ use App\Services\Ledger\Rules\OnlyActivePostingAccounts;
 use App\Services\Ledger\Rules\PostingRule;
 use App\Services\Ledger\Rules\RequestRequiredAboveLimit;
 use App\Services\Ledger\Rules\RequiredTagsFilled;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -79,6 +80,62 @@ class PostVoucher
     public function check(VoucherDraft $draft): array
     {
         return $this->violations($this->rounding->balance($draft));
+    }
+
+    /**
+     * The posting rules again for a voucher that is already saved, as the approver sees it: accounts, currencies,
+     * balance, tags, budget lines, the month and the request rule. Not the legacy id rule, which would find the
+     * voucher itself, and no cents are moved: a saved voucher is already balanced.
+     *
+     * @return list<Violation>
+     */
+    public function recheck(Voucher $voucher): array
+    {
+        $draft = new VoucherDraft(
+            type: $voucher->type,
+            date: CarbonImmutable::parse($voucher->date->toDateString()),
+            preparedBy: $voucher->prepared_by,
+            lines: array_values($voucher->lines->map(fn (VoucherLine $line) => new LineDraft(
+                accountCode: $line->account_code,
+                currency: $line->currency,
+                debit: $line->debit_orig,
+                credit: $line->credit_orig,
+                rate: $line->rate,
+                debitUsd: $line->debit_usd,
+                creditUsd: $line->credit_usd,
+                projectCode: $line->project_code,
+                budgetLineKey: $line->budget_line_key,
+                fundSource: $line->fund_source,
+                contact: $line->contact,
+                center: $line->center,
+                donor: $line->donor,
+                city: $line->city,
+                restriction: $line->restriction,
+                reason: $line->reason,
+                liraType: $line->lira_type,
+                donorCurrency: $line->donor_currency,
+                debitDonor: $line->debit_donor,
+                creditDonor: $line->credit_donor,
+            ))->all()),
+            description: $voucher->description,
+            source: $voucher->source,
+            legacyActionId: $voucher->legacy_action_id,
+            isCarryForward: $voucher->is_carry_forward,
+            isTemporary: $voucher->is_temporary,
+            requestId: $voucher->request_id,
+            transferKind: $voucher->transfer_kind,
+        );
+
+        $context = LedgerContext::forDraft($draft);
+        $violations = [];
+
+        foreach ($this->rules() as $rule) {
+            if (! $rule instanceof MigratedVoucherKeepsLegacyId) {
+                array_push($violations, ...$rule->check($draft, $context));
+            }
+        }
+
+        return $violations;
     }
 
     /** @return list<Violation> */

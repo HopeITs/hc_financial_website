@@ -2,13 +2,32 @@
 
 namespace App\Support;
 
+use App\Enums\VoucherStatus;
 use App\Models\User;
+use App\Models\Voucher;
 
 /**
  * The navigation groups a person may see: only the screens their roles can view, and no empty group.
  */
 class Navigation
 {
+    /**
+     * Counts to show beside a menu item, by screen slug: the vouchers waiting for approval, for anyone who can
+     * open the vouchers screen. Screens with nothing to show are left out.
+     *
+     * @return array<string, int>
+     */
+    public static function badges(?User $user): array
+    {
+        if ($user === null || ! $user->canOnScreen('vouchers')) {
+            return [];
+        }
+
+        $pending = Voucher::query()->where('status', VoucherStatus::PendingApproval->value)->count();
+
+        return $pending > 0 ? ['vouchers' => $pending] : [];
+    }
+
     /**
      * @return array<string, list<string>>
      */

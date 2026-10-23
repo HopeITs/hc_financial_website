@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Contracts\Approvable;
 use App\Enums\VoucherSource;
 use App\Enums\VoucherStatus;
 use App\Enums\VoucherType;
+use App\Models\Legacy\TillType;
+use App\Support\Money;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -28,7 +31,7 @@ use Illuminate\Support\Carbon;
  * @property VoucherSource $source
  * @property int|null $legacy_action_id
  */
-class Voucher extends Model
+class Voucher extends Model implements Approvable
 {
     use SoftDeletes;
 
@@ -56,6 +59,25 @@ class Voucher extends Model
             'legacy_action_id' => 'integer',
             'request_id' => 'integer',
         ];
+    }
+
+    public function preparedBy(): int
+    {
+        return $this->prepared_by;
+    }
+
+    /** What an approver's limit is measured against: the voucher's USD total (the sum of its debits). */
+    public function approvalAmount(): string
+    {
+        return Money::normalize($this->lines()->reorder()->sum('debit_usd'));
+    }
+
+    /** The limits are read in USD, so this is the id of the USD currency in the Windows program's `tilltypes`. */
+    public function approvalCurrencyId(): ?int
+    {
+        $id = TillType::query()->where('Name', 'USD')->value('ID');
+
+        return is_numeric($id) ? (int) $id : null;
     }
 
     /** @return HasMany<VoucherLine, $this> */
