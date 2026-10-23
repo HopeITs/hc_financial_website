@@ -40,10 +40,11 @@ class VoucherBuilder extends Component
     private const BLANK = [
         'account' => '', 'currency' => 'USD', 'side' => 'debit', 'amount' => '', 'rate' => '', 'project' => '',
         'budget_line' => '', 'fund_source' => '', 'contact' => '', 'center' => '', 'lira_type' => '',
+        'eur_amount' => '', 'eur_rate' => '', 'commission' => '',
     ];
 
     /** The rule numbers behind each item of the check list. */
-    private const CHECKS = ['accounts' => [1], 'currency' => [2], 'sides' => [3], 'balanced' => [4], 'tags' => [5], 'budget' => [6], 'month' => [8], 'request' => [14]];
+    private const CHECKS = ['accounts' => [1], 'currency' => [2], 'sides' => [3], 'balanced' => [4], 'tags' => [5], 'budget' => [6], 'month' => [8], 'request' => [14], 'hawala' => [15]];
 
     public string $type = 'CRV';
 
@@ -240,6 +241,7 @@ class VoucherBuilder extends Component
             'accountGroups' => $accounts->groupBy(fn (GlAccount $account) => $account->class->value),
             'fixedCurrency' => $accounts->filter(fn (GlAccount $account) => in_array($account->currency, ['USD', 'SYP'], true))->pluck('currency', 'code')->all(),
             'projects' => GlProject::query()->orderBy('code')->get(['code', 'name']),
+            'projectRates' => GlProject::query()->where('donor_currency', '!=', 'USD')->where('donor_rate', '>', 0)->pluck('donor_rate', 'code')->all(),
             'budgetLines' => GlBudgetLine::query()->orderBy('key')->get(['key', 'project_code', 'account_code']),
             'types' => collect(VoucherType::cases())->reject(fn (VoucherType $case) => $case === VoucherType::Opening)->values()->all(),
             'fundSources' => FundSource::cases(),

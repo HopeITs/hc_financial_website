@@ -10,6 +10,7 @@ use App\Services\Ledger\Rules\BalancedInUsd;
 use App\Services\Ledger\Rules\BudgetLineMatchesProjectAndAccount;
 use App\Services\Ledger\Rules\CashAccountInOwnCurrency;
 use App\Services\Ledger\Rules\DebitOrCreditNeverBoth;
+use App\Services\Ledger\Rules\HawalaReceiptIsConsistent;
 use App\Services\Ledger\Rules\MigratedVoucherKeepsLegacyId;
 use App\Services\Ledger\Rules\MonthIsOpen;
 use App\Services\Ledger\Rules\OnlyActivePostingAccounts;
@@ -116,6 +117,9 @@ class PostVoucher
                 donorCurrency: $line->donor_currency,
                 debitDonor: $line->debit_donor,
                 creditDonor: $line->credit_donor,
+                eurAmount: $line->eur_amount,
+                eurRate: $line->eur_rate,
+                commissionUsd: $line->commission_usd,
             ))->all()),
             description: $voucher->description,
             source: $voucher->source,
@@ -164,6 +168,7 @@ class PostVoucher
             new MonthIsOpen,
             new MigratedVoucherKeepsLegacyId,
             new RequestRequiredAboveLimit,
+            new HawalaReceiptIsConsistent,
         ];
     }
 }

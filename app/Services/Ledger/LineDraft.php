@@ -32,6 +32,16 @@ final readonly class LineDraft
     /** @var numeric-string */
     public string $creditDonor;
 
+    /** The euros a donor sent through the transfer company (hawala receipts), and the rate they were really converted at. */
+    /** @var numeric-string|null */
+    public ?string $eurAmount;
+
+    /** @var numeric-string|null */
+    public ?string $eurRate;
+
+    /** @var numeric-string */
+    public string $commissionUsd;
+
     public function __construct(
         public string $accountCode,
         public string $currency,
@@ -53,6 +63,9 @@ final readonly class LineDraft
         public ?string $donorCurrency = null,
         string|int|float|null $debitDonor = null,
         string|int|float|null $creditDonor = null,
+        string|int|float|null $eurAmount = null,
+        string|int|float|null $eurRate = null,
+        string|int|float|null $commissionUsd = null,
     ) {
         $this->debitOrig = Money::normalize($debit);
         $this->creditOrig = Money::normalize($credit);
@@ -61,6 +74,9 @@ final readonly class LineDraft
         $this->creditUsd = Money::normalize($creditUsd ?? ($currency === 'USD' ? $credit : null));
         $this->debitDonor = Money::normalize($debitDonor);
         $this->creditDonor = Money::normalize($creditDonor);
+        $this->eurAmount = $eurAmount === null || $eurAmount === '' ? null : Money::normalize($eurAmount);
+        $this->eurRate = $eurRate === null || $eurRate === '' ? null : Money::normalize($eurRate, 6);
+        $this->commissionUsd = Money::normalize($commissionUsd);
     }
 
     /** The value of one of the five tags an account can require, or null when it is not filled. */
@@ -94,6 +110,9 @@ final readonly class LineDraft
             'donor_currency' => $this->donorCurrency,
             'debit_donor' => $this->debitDonor,
             'credit_donor' => $this->creditDonor,
+            'eur_amount' => $this->eurAmount,
+            'eur_rate' => $this->eurRate,
+            'commission_usd' => $this->commissionUsd,
             'project_code' => $this->projectCode,
             'donor' => $this->donor,
             'budget_line_key' => $this->budgetLineKey,
