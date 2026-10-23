@@ -152,7 +152,7 @@
                             <tr wire:key="hawala-{{ $i }}" data-test="hawala-{{ $i }}">
                                 <td></td>
                                 <td colspan="12">
-                                    <div class="grid items-end gap-3 sm:grid-cols-3">
+                                    <div class="grid max-w-xl items-end gap-3 sm:grid-cols-3">
                                         <label class="flex flex-col gap-1 text-xs text-secondary-medium dark:text-ink-muted">
                                             {{ __('ledger.builder.hawala_eur') }}
                                             <input type="text" inputmode="decimal" dir="ltr" wire:model.live.debounce.400ms="lines.{{ $i }}.eur_amount" class="{{ $cell }} text-end" data-test="eur-amount-{{ $i }}">
@@ -166,7 +166,7 @@
                                             <input type="text" inputmode="decimal" dir="ltr" wire:model.live.debounce.400ms="lines.{{ $i }}.commission" class="{{ $cell }} text-end" data-test="commission-{{ $i }}">
                                         </label>
                                     </div>
-                                    <p class="mt-1 text-xs text-secondary-medium dark:text-ink-muted">{{ __('ledger.builder.hawala_help') }}</p>
+                                    <p class="mt-1 max-w-xl whitespace-normal text-xs text-secondary-medium dark:text-ink-muted">{{ __('ledger.builder.hawala_help') }}</p>
                                 </td>
                             </tr>
                         @endif
