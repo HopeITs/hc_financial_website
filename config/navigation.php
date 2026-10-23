@@ -17,7 +17,7 @@ return [
     'groups' => [
         'chart' => ['chart'],
         'projects' => ['projwin', 'allaccounts', 'budgetlines', 'blcats', 'lifetime', 'programs', 'projects'],
-        'entries' => ['single', 'multi', 'multiatt', 'payments', 'vouchers', 'bonds', 'approval'],
+        'entries' => ['single', 'multi', 'multiatt', 'payments', 'vouchers', 'bonds', 'approval', 'requests'],
         'treasury' => ['tills', 'treasury', 'alloc', 'cities', 'currency', 'denoms'],
         'reports' => ['rexp', 'rcash', 'rbl', 'rrev', 'rfixed', 'rattach', 'tb', 'projbal', 'statement', 'statements'],
         'people' => ['donors', 'employees', 'salaries', 'users', 'limits', 'log'],

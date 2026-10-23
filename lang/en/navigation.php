@@ -27,6 +27,7 @@ return [
         'vouchers' => 'Vouchers',
         'bonds' => 'Fiscal bonds',
         'approval' => 'Approval',
+        'requests' => 'Requests',
         'tills' => 'Cash tills',
         'treasury' => 'SYR balances',
         'alloc' => 'Rates',

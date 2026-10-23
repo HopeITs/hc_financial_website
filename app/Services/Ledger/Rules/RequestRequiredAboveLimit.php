@@ -12,7 +12,7 @@ use App\Services\Ledger\VoucherDraft;
 /**
  * Financial Manager decision (plan 6.9): a payment not linked to an approved request is refused above USD 500 per
  * voucher. The amount is the voucher's USD total, so an SYP voucher is compared at its own voucher rate.
- * Migrated vouchers are history and are not held to it. The budget line limit is not a rule (warning only).
+ * A transfer may link a request too, and then it must be an approved one. Migrated vouchers are history and are not held to it. The budget line limit is not a rule (warning only).
  */
 final class RequestRequiredAboveLimit implements PostingRule
 {
@@ -23,7 +23,7 @@ final class RequestRequiredAboveLimit implements PostingRule
 
     public function check(VoucherDraft $draft, LedgerContext $context): array
     {
-        if ($draft->type !== VoucherType::Payment || $draft->source === VoucherSource::Migration) {
+        if (! in_array($draft->type, [VoucherType::Payment, VoucherType::Transfer], true) || $draft->source === VoucherSource::Migration) {
             return [];
         }
 
@@ -33,6 +33,10 @@ final class RequestRequiredAboveLimit implements PostingRule
             return $request?->status === LedgerRequest::APPROVED
                 ? []
                 : [new Violation($this->number(), __('ledger.rules.request_not_approved', ['request' => $draft->requestId]))];
+        }
+
+        if ($draft->type !== VoucherType::Payment) {
+            return [];
         }
 
         $configured = config('ledger.request_limit_usd');
