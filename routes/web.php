@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\SwitchLocaleController;
 use App\Livewire\Chart;
+use App\Livewire\FinancialStatements;
 use App\Livewire\Home;
 use App\Livewire\Programs;
 use App\Livewire\ProjectBalances;
@@ -34,6 +35,8 @@ Route::middleware('auth')->group(function () {
     Route::get('screens/projbal', ProjectBalances::class)->defaults('screen', 'projbal')->middleware('screen')->name('projbal');
 
     Route::get('screens/tb', TrialBalance::class)->defaults('screen', 'tb')->middleware('screen')->name('tb');
+
+    Route::get('screens/statements', FinancialStatements::class)->defaults('screen', 'statements')->middleware('screen')->name('statements');
 
     // Every screen of the navigation. Until a screen is built it shows the placeholder.
     // An unknown slug is a 404 from routing, before the permission check.
