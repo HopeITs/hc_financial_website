@@ -7,6 +7,7 @@ use App\Livewire\Programs;
 use App\Livewire\ProjectPage;
 use App\Livewire\Projects;
 use App\Livewire\Statement;
+use App\Livewire\TrialBalance;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -28,6 +29,8 @@ Route::middleware('auth')->group(function () {
     Route::get('projects/{account}', ProjectPage::class)->whereNumber('account')->defaults('screen', 'projects')->middleware('screen')->name('projects.show');
 
     Route::get('screens/statement', Statement::class)->defaults('screen', 'statement')->middleware('screen')->name('statement');
+
+    Route::get('screens/tb', TrialBalance::class)->defaults('screen', 'tb')->middleware('screen')->name('tb');
 
     // Every screen of the navigation. Until a screen is built it shows the placeholder.
     // An unknown slug is a 404 from routing, before the permission check.
