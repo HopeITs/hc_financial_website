@@ -38,9 +38,7 @@
                     <option value="{{ $category->value }}">{{ $category->label() }}</option>
                 @endforeach
             </x-ui.form-select>
-            <div class="sm:col-span-2 lg:col-span-4">
-                <x-ui.form-textarea wire:model="fDescription" :label="__('requests.description')" rows="2" />
-            </div>
+            <x-ui.form-textarea wire:model="fDescription" :label="__('requests.description')" rows="2" class="w-full sm:col-span-2 lg:col-span-4" />
         </x-ui.panel>
 
         <section class="flex flex-col gap-3">
