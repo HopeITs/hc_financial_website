@@ -11,6 +11,7 @@ return [
     'switch_language' => 'Switch language',
     'username' => 'Username',
     'open_menu' => 'Open menu',
+    'close_menu' => 'Close menu',
     'screen_not_built_title' => 'This screen is not built yet',
     'screen_not_built_text' => 'It will open here once its web version is ready. Until then, use the Windows program for it.',
     'cancel' => 'Cancel',

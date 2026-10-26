@@ -3,12 +3,12 @@
     <head>
         @include('partials.head')
     </head>
-    <body class="min-h-screen bg-white antialiased dark:bg-surface-0">
-        <x-navigation.topbar />
+    <body class="min-h-screen bg-ground antialiased dark:bg-surface-0">
         <x-navigation.sidebar />
+        <x-navigation.topbar />
 
-        <flux:main class="bg-white text-secondary-dark dark:bg-surface-0 dark:text-ink">
-            <div class="mx-auto flex min-h-full w-full max-w-[90rem] min-[150rem]:max-w-[110rem] flex-1 flex-col pt-4">
+        <flux:main class="bg-ground text-secondary-dark dark:bg-surface-0 dark:text-ink">
+            <div class="mx-auto flex min-h-full w-full max-w-[90rem] min-[150rem]:max-w-[110rem] flex-1 flex-col pt-5">
                 {{ $slot }}
             </div>
         </flux:main>

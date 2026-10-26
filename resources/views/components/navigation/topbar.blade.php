@@ -1,61 +1,31 @@
 @php
     $groups = \App\Support\Navigation::visibleGroups(auth()->user());
-    $chartVisible = isset($groups['chart']);
-    unset($groups['chart']);
     $currentScreen = request()->route('screen');
-    $badges = \App\Support\Navigation::badges(auth()->user());
+    $crumbGroup = collect($groups)->filter(fn (array $screens): bool => in_array($currentScreen, $screens, true))->keys()->first();
+    $crumb = match (true) {
+        $crumbGroup !== null => __('navigation.groups.'.$crumbGroup),
+        request()->routeIs('chart') => __('navigation.groups.chart'),
+        default => __('common.app_name'),
+    };
 @endphp
 
-{{-- The top bar: logo, the menu groups (the chart of accounts has the sidebar), language, theme and the user. --}}
-<flux:header sticky class="z-40 min-h-16 gap-2 border-b border-secondary-soft bg-white px-3 py-2 lg:px-4 dark:border-line dark:bg-surface-1" data-top-bar-actions>
+{{-- The top bar: the menu button on a phone, where the person is, then language, theme and the user. The menu itself is in the sidebar. --}}
+<flux:header sticky class="shell-bar z-40 min-h-16 gap-2 border-b border-secondary-soft bg-white px-3 py-2 lg:px-6 dark:border-line dark:bg-surface-1" data-top-bar-actions>
     <flux:sidebar.toggle class="size-11! touch-manipulation lg:hidden" icon="bars-2" inset="left" :aria-label="__('common.open_menu')" />
 
-    <a href="{{ route('home') }}" wire:navigate class="me-2 shrink-0 touch-manipulation" data-test="home-link">
-        <img src="{{ asset('logo.png') }}" alt="{{ __('common.app_name') }}" class="h-9 w-auto" data-no-dim />
+    <a href="{{ route('home') }}" wire:navigate class="me-2 shrink-0 touch-manipulation lg:hidden">
+        <img src="{{ asset('logo.png') }}" alt="{{ __('common.app_name') }}" class="h-8 w-auto" data-no-dim />
     </a>
 
-    <nav class="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto" aria-label="{{ __('common.app_name') }}" data-test="top-menu">
-        @if ($chartVisible)
-            <flux:button
-                :href="route('chart')"
-                wire:navigate
-                variant="ghost"
-                size="sm"
-                class="shrink-0 {{ $currentScreen === 'chart' ? 'bg-primary! text-white!' : '' }}"
-            >{{ __('navigation.groups.chart') }}</flux:button>
+    <div class="hidden min-w-0 flex-1 text-sm text-secondary-medium lg:block dark:text-ink-muted" data-test="crumb">
+        <span>{{ $crumb }}</span>
+        @if ($currentScreen)
+            <span class="mx-1.5 text-secondary-light" aria-hidden="true">/</span>
+            <span class="font-semibold text-secondary-dark dark:text-ink">{{ __('navigation.screens.'.$currentScreen) }}</span>
         @endif
+    </div>
 
-        @foreach ($groups as $group => $screens)
-            <flux:dropdown position="bottom" align="start">
-                <flux:button
-                    variant="ghost"
-                    size="sm"
-                    icon-trailing="chevron-down"
-                    class="shrink-0 {{ in_array($currentScreen, $screens, true) ? 'bg-secondary-soft! font-semibold!' : '' }}"
-                    data-test="menu-{{ $group }}"
-                >
-                    {{ __('navigation.groups.'.$group) }}
-                    @php($groupCount = collect($screens)->sum(fn ($slug) => $badges[$slug] ?? 0))
-                    @if ($groupCount > 0)
-                        <span class="ms-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold tabular-nums text-white" data-test="badge-{{ $group }}">{{ $groupCount }}</span>
-                    @endif
-                </flux:button>
-
-                <flux:menu>
-                    @foreach ($screens as $screen)
-                        <flux:menu.item :href="route('screens.show', $screen)" wire:navigate :class="$currentScreen === $screen ? 'font-semibold text-primary' : ''">
-                            {{ __('navigation.screens.'.$screen) }}
-                            @if (($badges[$screen] ?? 0) > 0)
-                                <span class="ms-2 inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold tabular-nums text-white" data-test="badge-{{ $screen }}">{{ $badges[$screen] }}</span>
-                            @endif
-                        </flux:menu.item>
-                    @endforeach
-                </flux:menu>
-            </flux:dropdown>
-        @endforeach
-    </nav>
-
-    <div class="flex shrink-0 items-center gap-2">
+    <div class="ms-auto flex shrink-0 items-center gap-2">
         <x-locale-toggle class="hidden sm:inline-flex" />
 
         <flux:button

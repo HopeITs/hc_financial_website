@@ -26,8 +26,7 @@
         position: sticky;
         top: 0;
         z-index: 1;
-        background-color: var(--color-white);
-        background-image: linear-gradient(color-mix(in srgb, var(--color-secondary-soft) 40%, transparent), color-mix(in srgb, var(--color-secondary-soft) 40%, transparent));
+        background-color: var(--color-board-head);
     }
 
     .dark .fin-table-scroll thead th {
@@ -87,8 +86,8 @@
 
     /* Sentence-case headers: readable in English and Arabic, no tracking tricks. */
     .fin-table thead th {
-        padding: 0.625rem 1rem;
-        background-color: color-mix(in srgb, var(--color-secondary-soft) 40%, transparent);
+        padding: 0.625rem 0.75rem;
+        background-color: var(--color-board-head);
         color: var(--color-secondary-medium);
         font-size: 0.8125rem;
         font-weight: 600;
@@ -111,12 +110,12 @@
 
     /* Rows are at least 44px tall so they are easy to hit and to scan. */
     .fin-table tbody td {
-        padding: 0.75rem 1rem;
+        padding: 0.75rem 0.75rem;
         vertical-align: middle;
     }
 
     .fin-table tbody tr:hover {
-        background-color: color-mix(in srgb, var(--color-secondary-soft) 30%, transparent);
+        background-color: var(--color-board-head);
     }
 
     .dark .fin-table tbody tr:hover {
@@ -198,16 +197,13 @@
         color: var(--color-ink-muted);
     }
 
-    /* Header cells use the small uppercase label role, like the tracking app's tables. */
+    /* Header cells: small, semibold, sentence case on the board-head surface, as in the mockup. */
     .fin-table thead th {
-        font-size: 0.6875rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
+        font-size: 0.75rem;
+        font-weight: 600;
     }
 
     .fin-table thead th:lang(ar) {
         font-size: 0.8125rem;
-        letter-spacing: normal;
-        text-transform: none;
     }
 }

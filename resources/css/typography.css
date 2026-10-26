@@ -28,16 +28,9 @@
     }
 
     .type-label {
-        font-size: 0.6875rem;
+        font-size: 0.8125rem;
         line-height: 1.3;
-        font-weight: 600;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-    }
-
-    .type-label:lang(ar) {
-        text-transform: none;
-        letter-spacing: normal;
+        font-weight: 500;
     }
 }
 

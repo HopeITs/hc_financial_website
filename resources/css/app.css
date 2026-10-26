@@ -11,6 +11,7 @@
 @import './flux-overrides.css';
 @import './forms.css';
 @import './finance.css';
+@import './shell.css';
 
 /* flux.css already scans Flux's own stubs; these are the app's views and Laravel's pagination views. */
 @source '../views';
