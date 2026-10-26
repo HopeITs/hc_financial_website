@@ -12,12 +12,21 @@
     @endif
 
     @if ($account === null)
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5" data-test="chart-classes">
+        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5" data-test="chart-classes">
             @foreach ($roots as $root)
-                <a href="{{ route('chart', ['account' => $root->code]) }}" wire:navigate class="block rounded-xl border border-secondary-soft bg-white p-4 shadow-card hover:bg-secondary-soft/40 dark:border-transparent dark:bg-surface-1 dark:hover:bg-white/[0.04]">
-                    <p class="type-label text-secondary-medium dark:text-ink-muted">{{ $root->class->label() }}</p>
-                    <p class="mt-2 text-lg font-semibold text-secondary-dark dark:text-ink"><span dir="ltr">{{ $root->code }}</span> · {{ $root->localizedName() }}</p>
-                    <p class="type-meta mt-1 text-secondary-medium dark:text-ink-muted">{{ __('chart.posting_accounts', ['count' => $postingCounts[$root->class->value] ?? 0]) }}</p>
+                @php
+                    $edge = match ($root->class->value) {
+                        'assets' => 'border-t-sky-600',
+                        'liabilities' => 'border-t-amber-600',
+                        'net_assets' => 'border-t-teal-700',
+                        'income' => 'border-t-emerald-600',
+                        default => 'border-t-primary',
+                    };
+                @endphp
+                <a href="{{ route('chart', ['account' => $root->code]) }}" wire:navigate class="block min-w-0 rounded-xl border border-t-2 border-secondary-soft bg-white px-4 py-3 shadow-card hover:bg-board-head dark:border-line dark:bg-surface-1 dark:hover:bg-white/[0.04] {{ $edge }}">
+                    <p class="type-label truncate text-secondary-medium dark:text-ink-muted">{{ $root->class->label() }}</p>
+                    <p class="mt-1.5 truncate text-lg font-semibold text-secondary-dark dark:text-ink" title="{{ $root->localizedName() }}">{{ $root->localizedName() }}</p>
+                    <p class="type-meta mt-1 text-secondary-medium dark:text-ink-muted"><span class="fin-code">{{ $root->code }}</span> · {{ __('chart.posting_accounts', ['count' => $postingCounts[$root->class->value] ?? 0]) }}</p>
                 </a>
             @endforeach
         </div>

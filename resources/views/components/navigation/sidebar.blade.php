@@ -15,7 +15,7 @@
     stashable
     aria-label="{{ __('chart.tree') }}"
     data-navigation-sidebar
-    class="z-50! w-[min(20rem,100vw)]! gap-0! lg:w-(--sidebar-w,20rem)! border-e border-secondary-soft bg-white p-0! text-secondary-dark lg:top-16! lg:h-[calc(100dvh-4rem)]! lg:max-h-[calc(100dvh-4rem)]! dark:border-line dark:bg-surface-1 dark:text-ink"
+    class="z-50! w-[min(20rem,100vw)]! gap-0! lg:w-(--sidebar-w,18rem)! border-e border-secondary-soft bg-white p-0! text-secondary-dark lg:top-16! lg:h-[calc(100dvh-4rem)]! lg:max-h-[calc(100dvh-4rem)]! dark:border-line dark:bg-surface-1 dark:text-ink"
     x-data="{
         rows: {{ \Illuminate\Support\Js::from($rows) }},
         current: {{ \Illuminate\Support\Js::from($current) }},

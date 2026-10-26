@@ -1,7 +1,7 @@
 <div class="flex flex-col gap-6 px-4 pb-10 lg:px-8">
     <x-ui.page-header :title="__('home.title')" :subtitle="__('home.intro', ['name' => auth()->user()->name])" />
 
-    <div class="grid grid-cols-2 gap-3 lg:grid-cols-4" data-test="home-totals">
+    <div class="grid grid-cols-2 gap-3 xl:grid-cols-4" data-test="home-totals">
         <x-ui.stat-tile :label="__('home.stat_projects')" :value="number_format($projects->count())" icon="folder" />
         <x-ui.stat-tile :label="__('home.stat_cities')" :value="number_format($projects->pluck('cityName')->unique()->count())" icon="map-pin" />
         <x-ui.stat-tile :label="__('home.stat_usd')" :value="number_format((float) $projects->sum(fn ($p) => (float) $p->usd), 2)" unit="USD" icon="banknotes" tone="good" />
