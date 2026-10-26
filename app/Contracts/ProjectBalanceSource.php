@@ -14,17 +14,20 @@ interface ProjectBalanceSource
 {
     /**
      * Active projects with their balances, by name; only one city's when `$cityId` is given.
+     * `$limitedTo` keeps only those project account ids (null = all).
      *
+     * @param  array<int, int>|null  $limitedTo
      * @return Collection<int, ProjectBalance>
      */
-    public function activeProjects(?int $cityId = null): Collection;
+    public function activeProjects(?int $cityId = null, ?array $limitedTo = null): Collection;
 
     /**
      * The cities that have at least one active project, for the filter: id => name.
      *
+     * @param  array<int, int>|null  $limitedTo
      * @return Collection<int, string>
      */
-    public function cities(): Collection;
+    public function cities(?array $limitedTo = null): Collection;
 
     /**
      * The balances of the given project accounts, closed ones included, keyed by account id.
@@ -37,8 +40,10 @@ interface ProjectBalanceSource
 
     /**
      * Where one project's money is: its balance in each cash account.
+     * `$cashAccountIds` keeps only those cash accounts (null = all).
      *
+     * @param  array<int, int>|null  $cashAccountIds
      * @return Collection<int, CashAccountBalance>
      */
-    public function byCashAccount(int $accountId): Collection;
+    public function byCashAccount(int $accountId, ?array $cashAccountIds = null): Collection;
 }

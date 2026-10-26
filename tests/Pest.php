@@ -105,6 +105,26 @@ function createLegacyHomeSchema(): void
         $table->integer('city_id')->nullable();
         $table->string('BeginDate')->nullable();
         $table->string('EndDate')->nullable();
+        $table->integer('Accounttype_id')->nullable();
+    });
+
+    Schema::connection('legacy')->create('accounttype', function ($table) {
+        $table->integer('id')->primary();
+        $table->string('name');
+    });
+
+    Schema::connection('legacy')->create('user_accounts', function ($table) {
+        $table->increments('id');
+        $table->integer('user_id');
+        $table->integer('subproject_id')->nullable();
+        $table->integer('account_id')->nullable();
+    });
+
+    Schema::connection('legacy')->create('user_cashaccounts', function ($table) {
+        $table->increments('id');
+        $table->integer('user_id');
+        $table->integer('cashaccount_id');
+        $table->integer('Iscashier')->nullable();
     });
 
     Schema::connection('legacy')->create('city', function ($table) {

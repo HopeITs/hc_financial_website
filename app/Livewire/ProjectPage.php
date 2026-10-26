@@ -46,6 +46,8 @@ class ProjectPage extends Component
 
         /** @var ProjectRow $project */
         $project = $directory->find($this->accountId);
+        $scope = $access->scopeOf(auth()->user());
+        $siblings = $tab === 'accounts' ? $directory->siblings($project)->filter(fn (ProjectRow $row): bool => $scope->allowsProject($row->accountId))->values() : collect();
 
         return view('livewire.project-page', [
             'project' => $project,
@@ -53,9 +55,9 @@ class ProjectPage extends Component
             'tabs' => self::TABS,
             'showMoney' => $showMoney,
             'balance' => $showMoney && in_array($tab, ['overview'], true) ? $balances->balancesFor([$this->accountId])->get($this->accountId) : null,
-            'cashAccounts' => $showMoney && $tab === 'overview' ? $balances->byCashAccount($this->accountId) : collect(),
-            'siblings' => $tab === 'accounts' ? $directory->siblings($project) : collect(),
-            'siblingBalances' => $showMoney && $tab === 'accounts' ? $balances->balancesFor($directory->siblings($project)->pluck('accountId')->values()->all()) : collect(),
+            'cashAccounts' => $showMoney && $tab === 'overview' ? $balances->byCashAccount($this->accountId, $scope->cashLimit()) : collect(),
+            'siblings' => $siblings,
+            'siblingBalances' => $showMoney && $tab === 'accounts' ? $balances->balancesFor($siblings->pluck('accountId')->values()->all()) : collect(),
             'budgetLines' => $tab === 'budget' ? $details->budgetLines($this->accountId) : collect(),
             'lifetime' => $tab === 'lifetime' && $showMoney ? $details->lifetime($this->accountId) : collect(),
         ]);

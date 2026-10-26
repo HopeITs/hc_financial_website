@@ -14,12 +14,13 @@ use Illuminate\Support\Collection;
  */
 class LegacyProjectBalanceSource implements ProjectBalanceSource
 {
-    public function activeProjects(?int $cityId = null): Collection
+    public function activeProjects(?int $cityId = null, ?array $limitedTo = null): Collection
     {
         return CashBalance::query()
             ->where('account_IsClosed', 0)
             ->where('Account_Type', 'Project')
             ->when($cityId !== null, fn ($query) => $query->where('City_ID', $cityId))
+            ->when($limitedTo !== null, fn ($query) => $query->whereIn('Account_ID', $limitedTo))
             ->selectRaw('Account_ID, MAX(Account_Name) as name, MAX(City_ID) as city_id, MAX(City_Name) as city_name,
                 MAX(Subproject_Name) as sub_project, SUM(Account_Net) as syp, SUM(Account_Net_New) as syp_new, SUM(Account_Net_USD) as usd')
             ->groupBy('Account_ID')
@@ -45,10 +46,11 @@ class LegacyProjectBalanceSource implements ProjectBalanceSource
             ->mapWithKeys(fn (CashBalance $row): array => [(int) $row->Account_ID => $this->balance($row)]);
     }
 
-    public function byCashAccount(int $accountId): Collection
+    public function byCashAccount(int $accountId, ?array $cashAccountIds = null): Collection
     {
         return CashBalance::query()
             ->where('Account_ID', $accountId)
+            ->when($cashAccountIds !== null, fn ($query) => $query->whereIn('CashAccount_id', $cashAccountIds))
             ->selectRaw('CashAccount_id, MAX(CashAccount_Name) as name, SUM(Account_Net) as syp, SUM(Account_Net_New) as syp_new, SUM(Account_Net_USD) as usd')
             ->groupBy('CashAccount_id')
             ->orderBy('name')
@@ -77,11 +79,12 @@ class LegacyProjectBalanceSource implements ProjectBalanceSource
         );
     }
 
-    public function cities(): Collection
+    public function cities(?array $limitedTo = null): Collection
     {
         return CashBalance::query()
             ->where('account_IsClosed', 0)
             ->where('Account_Type', 'Project')
+            ->when($limitedTo !== null, fn ($query) => $query->whereIn('Account_ID', $limitedTo))
             ->whereNotNull('City_ID')
             ->selectRaw('City_ID, MAX(City_Name) as city_name')
             ->groupBy('City_ID')

@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Contracts\ProjectBalanceSource;
+use App\Services\Projects\ProjectAccess;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
@@ -22,15 +23,16 @@ class Home extends Component
         $this->cityId = $cityId === $this->cityId ? null : $cityId;
     }
 
-    public function render(ProjectBalanceSource $balances): View
+    public function render(ProjectBalanceSource $balances, ProjectAccess $access): View
     {
-        $cities = $balances->cities();
+        $limit = $access->limitedTo(auth()->user());
+        $cities = $balances->cities($limit);
 
         // A city that has no active project is not a filter; an unknown id shows everything.
         $cityId = $this->cityId !== null && $cities->has($this->cityId) ? $this->cityId : null;
 
         return view('livewire.home', [
-            'projects' => $balances->activeProjects($cityId),
+            'projects' => $balances->activeProjects($cityId, $limit),
             'cities' => $cities,
             'cityId' => $cityId,
         ]);

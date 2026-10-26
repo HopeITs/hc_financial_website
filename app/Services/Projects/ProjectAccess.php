@@ -2,14 +2,14 @@
 
 namespace App\Services\Projects;
 
-use App\Enums\RoleId;
+use App\Data\DataScope;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
+use App\Services\Access\LegacyDataScope;
 
 /**
  * Which projects a person may open and whether they see its money.
- * A project manager (role 3) sees only the projects linked to them in `web_project_managers`;
- * anyone who also holds another role is not limited.
+ * The limit is the Windows program's own data scope (see LegacyDataScope): every role except Head Office,
+ * General Manager and Donor sees only the projects given to them.
  */
 class ProjectAccess
 {
@@ -18,16 +18,19 @@ class ProjectAccess
      */
     public const MONEY_SCREEN = 'project-money';
 
+    public function __construct(private readonly LegacyDataScope $scope) {}
+
     /**
      * @return array<int, int>|null Account ids the person is limited to, or null when not limited.
      */
     public function limitedTo(User $user): ?array
     {
-        if ($user->roleIds() !== [RoleId::ProjectManager]) {
-            return null;
-        }
+        return $this->scope->for($user)->projectLimit();
+    }
 
-        return DB::table('web_project_managers')->where('user_id', $user->getKey())->pluck('account_id')->map(fn ($id): int => (int) $id)->values()->all();
+    public function scopeOf(User $user): DataScope
+    {
+        return $this->scope->for($user);
     }
 
     public function canOpen(User $user, int $accountId): bool
