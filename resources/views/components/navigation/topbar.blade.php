@@ -12,6 +12,7 @@
     class="shell-bar z-40 min-h-16 gap-2 border-b border-secondary-soft bg-white px-3 py-2 lg:px-4 dark:border-line dark:bg-surface-1"
     data-top-bar-actions
     x-data="{ open: null }"
+    x-bind:class="open && 'z-[60]!'"
     x-on:keydown.escape.window="open = null"
     x-on:click.outside="open = null"
 >

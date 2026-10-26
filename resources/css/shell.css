@@ -194,3 +194,17 @@
         scrollbar-color: var(--color-line-strong) transparent;
     }
 }
+
+/* Filter chips: the pressed one is the soft brand tint with a brand border, as in the mockup (not a solid red block). */
+@layer utilities {
+    button[aria-pressed='true'].rounded-full.bg-primary {
+        border-color: var(--color-primary);
+        background-color: var(--brand-soft);
+        color: var(--color-primary);
+        font-weight: 600;
+    }
+
+    .dark button[aria-pressed='true'].rounded-full.bg-primary {
+        color: var(--color-brand-text);
+    }
+}

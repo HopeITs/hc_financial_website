@@ -11,17 +11,9 @@
         display: block;
         margin-bottom: 0.375rem;
         color: var(--color-secondary-medium);
-        font-size: 0.6875rem;
-        font-weight: 600;
+        font-size: 0.75rem;
+        font-weight: 500;
         line-height: 1rem;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-    }
-
-    /* Tracking pulls Arabic letters apart, and Arabic has no capitals. */
-    .form-label:lang(ar) {
-        letter-spacing: normal;
-        text-transform: none;
     }
 
     .dark .form-label {
@@ -36,11 +28,11 @@
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        min-height: 2.75rem;
-        padding-inline: 0.875rem;
+        min-height: 2.5rem;
+        padding-inline: 0.75rem;
         border: 1px solid var(--color-secondary-soft);
         border-radius: 0.5rem;
-        background-color: color-mix(in srgb, var(--color-secondary-soft) 38%, var(--color-white));
+        background-color: var(--color-white);
         color: var(--color-secondary-dark);
         font-size: 0.875rem;
         transition: border-color 150ms ease, background-color 150ms ease;
@@ -52,9 +44,9 @@
     }
 
     .form-box:focus-within {
-        border-color: var(--color-secondary-medium);
+        border-color: var(--color-primary);
         background-color: var(--color-white);
-        outline: 2px solid var(--color-secondary-medium);
+        outline: 2px solid var(--color-primary);
         outline-offset: 2px;
     }
 
@@ -177,7 +169,7 @@
 
     .form-box[data-locked]:hover {
         border-color: var(--color-secondary-soft);
-        background-color: color-mix(in srgb, var(--color-secondary-soft) 38%, var(--color-white));
+        background-color: var(--color-white);
     }
 
     .dark .form-box[data-locked]:hover {
@@ -598,7 +590,7 @@
         padding: 3px;
         border: 1px solid var(--color-secondary-soft);
         border-radius: 0.5rem;
-        background-color: color-mix(in srgb, var(--color-secondary-soft) 38%, var(--color-white));
+        background-color: var(--color-white);
     }
 
     .form-segmented[data-invalid] {
@@ -676,7 +668,7 @@
 
     .form-file-zone {
         border: 1px dashed var(--color-secondary-light);
-        background-color: color-mix(in srgb, var(--color-secondary-soft) 38%, var(--color-white));
+        background-color: var(--color-white);
         cursor: pointer;
         transition: border-color 150ms ease, background-color 150ms ease;
     }
