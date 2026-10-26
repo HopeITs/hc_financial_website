@@ -3,6 +3,7 @@
 return [
     'intro' => 'The chart of accounts is the home of the program. Open any account in the tree on the left to see its rules and the accounts below it.',
     'posting_accounts' => ':count posting accounts',
+    'count' => ':count accounts',
     'tree' => 'Chart of accounts',
     'search' => 'Search code, English or Arabic',
     'expand' => 'Expand',

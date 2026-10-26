@@ -1,31 +1,52 @@
 @php
     $groups = \App\Support\Navigation::visibleGroups(auth()->user());
+    $chartVisible = isset($groups['chart']);
+    unset($groups['chart']);
     $currentScreen = request()->route('screen');
-    $crumbGroup = collect($groups)->filter(fn (array $screens): bool => in_array($currentScreen, $screens, true))->keys()->first();
-    $crumb = match (true) {
-        $crumbGroup !== null => __('navigation.groups.'.$crumbGroup),
-        request()->routeIs('chart') => __('navigation.groups.chart'),
-        default => __('common.app_name'),
-    };
+    $badges = \App\Support\Navigation::badges(auth()->user());
 @endphp
 
-{{-- The top bar: the menu button on a phone, where the person is, then language, theme and the user. The menu itself is in the sidebar. --}}
-<flux:header sticky class="shell-bar z-40 min-h-16 gap-2 border-b border-secondary-soft bg-white px-3 py-2 lg:px-6 dark:border-line dark:bg-surface-1" data-top-bar-actions>
+{{-- The top bar: logo, one pill per menu group (each opens a panel of screen tiles; the chart of accounts has the sidebar), language, theme and the user. --}}
+<flux:header
+    sticky
+    class="shell-bar z-40 min-h-16 gap-2 border-b border-secondary-soft bg-white px-3 py-2 lg:px-4 dark:border-line dark:bg-surface-1"
+    data-top-bar-actions
+    x-data="{ open: null }"
+    x-on:keydown.escape.window="open = null"
+    x-on:click.outside="open = null"
+>
     <flux:sidebar.toggle class="size-11! touch-manipulation lg:hidden" icon="bars-2" inset="left" :aria-label="__('common.open_menu')" />
 
-    <a href="{{ route('home') }}" wire:navigate class="me-2 shrink-0 touch-manipulation lg:hidden">
-        <img src="{{ asset('logo.png') }}" alt="{{ __('common.app_name') }}" class="h-8 w-auto" data-no-dim />
+    <a href="{{ route('home') }}" wire:navigate class="me-1 shrink-0 touch-manipulation border-e border-secondary-soft pe-4 dark:border-line" data-test="home-link">
+        <img src="{{ asset('logo.png') }}" alt="{{ __('common.app_name') }}" class="h-9 w-auto" data-no-dim />
     </a>
 
-    <div class="hidden min-w-0 flex-1 text-sm text-secondary-medium lg:block dark:text-ink-muted" data-test="crumb">
-        <span>{{ $crumb }}</span>
-        @if ($currentScreen)
-            <span class="mx-1.5 text-secondary-light" aria-hidden="true">/</span>
-            <span class="font-semibold text-secondary-dark dark:text-ink">{{ __('navigation.screens.'.$currentScreen) }}</span>
+    <nav class="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto" aria-label="{{ __('common.app_name') }}" data-test="top-menu">
+        @if ($chartVisible)
+            <a href="{{ route('chart') }}" wire:navigate class="nav-pill" x-on:click="open = null" @if ($currentScreen === 'chart' || request()->routeIs('chart')) aria-current="page" @endif>{{ __('navigation.groups.chart') }}</a>
         @endif
-    </div>
 
-    <div class="ms-auto flex shrink-0 items-center gap-2">
+        @foreach ($groups as $group => $screens)
+            @php($groupCount = collect($screens)->sum(fn ($slug) => $badges[$slug] ?? 0))
+            <button
+                type="button"
+                class="nav-pill"
+                data-test="menu-{{ $group }}"
+                @if (in_array($currentScreen, $screens, true)) aria-current="page" @endif
+                x-bind:data-open="open === '{{ $group }}'"
+                x-bind:aria-expanded="(open === '{{ $group }}').toString()"
+                x-on:click="open = open === '{{ $group }}' ? null : '{{ $group }}'"
+            >
+                {{ __('navigation.groups.'.$group) }}
+                @if ($groupCount > 0)
+                    <span class="nav-badge" data-test="badge-{{ $group }}">{{ $groupCount }}</span>
+                @endif
+                <flux:icon.chevron-down variant="micro" class="size-3 opacity-60" />
+            </button>
+        @endforeach
+    </nav>
+
+    <div class="flex shrink-0 items-center gap-2">
         <x-locale-toggle class="hidden sm:inline-flex" />
 
         <flux:button
@@ -73,4 +94,26 @@
             </flux:dropdown>
         </div>
     </div>
+
+    {{-- The mega menu: the open group's screens as tiles, each with a one-line description. --}}
+    @foreach ($groups as $group => $screens)
+        <div class="mega" x-show="open === '{{ $group }}'" x-cloak data-test="mega-{{ $group }}">
+            <p class="mega-label">{{ __('navigation.groups.'.$group) }}</p>
+            <div class="mega-grid">
+                @foreach ($screens as $screen)
+                    <a href="{{ route('screens.show', $screen) }}" wire:navigate class="mega-tile" x-on:click="open = null" @if ($currentScreen === $screen) aria-current="page" @endif>
+                        <span class="flex items-center justify-between gap-2">
+                            <span class="mega-title">{{ __('navigation.screens.'.$screen) }}</span>
+                            @if (($badges[$screen] ?? 0) > 0)
+                                <span class="nav-badge" data-test="badge-{{ $screen }}">{{ $badges[$screen] }}</span>
+                            @endif
+                        </span>
+                        @if (\Illuminate\Support\Facades\Lang::has('navigation.descriptions.'.$screen))
+                            <span class="mega-desc">{{ __('navigation.descriptions.'.$screen) }}</span>
+                        @endif
+                    </a>
+                @endforeach
+            </div>
+        </div>
+    @endforeach
 </flux:header>
