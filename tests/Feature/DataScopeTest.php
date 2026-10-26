@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
 beforeEach(function () {
+    config(['finance.scoped_roles' => ['ProjectManager', 'FinancialManager', 'Cashier', 'Accountant', 'Employee']]);
     createFinanceSchema();
     createLegacyHomeSchema();
     $legacy = DB::connection('legacy');
@@ -150,4 +151,12 @@ it('filters the balance source by the given project and cash accounts', function
         ->and($source->byCashAccount(10, [2])->pluck('cashAccountId')->all())->toBe([2])
         ->and($source->byCashAccount(10)->pluck('cashAccountId')->all())->toBe([1, 2])
         ->and($source->cities([])->all())->toBe([]);
+});
+
+it('limits only project managers until the other roles are switched on', function () {
+    config(['finance.scoped_roles' => ['ProjectManager']]);
+
+    expect(app(LegacyDataScope::class)->for(scopedUser(RoleId::FinancialManager))->unrestricted)->toBeTrue()
+        ->and(app(LegacyDataScope::class)->for(scopedUser(RoleId::Accountant, 'acc'))->unrestricted)->toBeTrue()
+        ->and(app(LegacyDataScope::class)->for(scopedUser(RoleId::ProjectManager, 'pm'))->unrestricted)->toBeFalse();
 });

@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\DB;
  *  - Employee: no project accounts.
  * All limited roles see only their cash accounts, and the exchange and personal accounts named for them.
  * A person with several roles gets the union of what each allows.
+ * Which roles are limited at all is set by config finance.scoped_roles.
  */
 class LegacyDataScope
 {
@@ -32,6 +33,15 @@ class LegacyDataScope
 
         foreach ([RoleId::HeadOffice, RoleId::GeneralManager, RoleId::Donor] as $unlimited) {
             if (in_array($unlimited, $roles, true)) {
+                return DataScope::everything();
+            }
+        }
+
+        // Switched on role by role (config finance.scoped_roles): a person with a role not listed there is not limited.
+        $scoped = (array) config('finance.scoped_roles', []);
+
+        foreach ($roles as $role) {
+            if (! in_array($role->name, $scoped, true)) {
                 return DataScope::everything();
             }
         }
