@@ -12,6 +12,11 @@ use Illuminate\Support\Carbon;
  *
  * @property int $id
  * @property string $beneficiary
+ * @property string|null $national_number
+ * @property string|null $mobile
+ * @property string|null $partners
+ * @property int $payment_interval_months
+ * @property Carbon|null $first_payment_date
  * @property string $project_code
  * @property string $loan_amount
  * @property string $grant_amount
@@ -23,11 +28,16 @@ class MicroLoan extends Model
 {
     protected $table = 'gl_micro_loans';
 
-    protected $fillable = ['beneficiary', 'project_code', 'loan_amount', 'grant_amount', 'currency', 'legacy_micro_project_id'];
+    protected $fillable = [
+        'beneficiary', 'national_number', 'mobile', 'partners', 'project_code', 'loan_amount', 'grant_amount', 'currency',
+        'payment_interval_months', 'first_payment_date', 'legacy_micro_project_id',
+    ];
 
     protected function casts(): array
     {
         return [
+            'payment_interval_months' => 'integer',
+            'first_payment_date' => 'date',
             'loan_amount' => 'decimal:2',
             'grant_amount' => 'decimal:2',
             'legacy_micro_project_id' => 'integer',

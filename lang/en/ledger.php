@@ -454,7 +454,7 @@ return [
             'city' => 'City', 'under_30' => 'Under 30 days', 'days_30_90' => '30 to 90 days', 'over_90' => 'Over 90 days', 'total' => 'Total',
             'person' => 'Person', 'advanced' => 'Advanced', 'settled' => 'Settled', 'open' => 'Open', 'last_date' => 'Last movement',
             'beneficiary' => 'Beneficiary', 'project' => 'Project', 'currency' => 'Currency', 'loan' => 'Loan', 'grant' => 'Grant',
-            'due' => 'Due', 'collected' => 'Collected', 'arrears' => 'Arrears',
+            'due' => 'Due', 'collected' => 'Collected', 'arrears' => 'Arrears', 'late' => 'Late payments',
         ],
     ],
 ];

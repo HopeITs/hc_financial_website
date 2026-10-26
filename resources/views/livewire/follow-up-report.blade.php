@@ -25,17 +25,19 @@
             <thead>
                 <tr>
                     @foreach ($data['columns'] as $column)
-                        <th @class(['fin-num' => $column['type'] === 'money'])>{{ __('ledger.follow.columns.'.$column['key']) }}</th>
+                        <th @class(['fin-num' => in_array($column['type'], ['money', 'number'], true)])>{{ __('ledger.follow.columns.'.$column['key']) }}</th>
                     @endforeach
                 </tr>
             </thead>
             <tbody>
                 @forelse ($data['rows'] as $row)
-                    <tr>
+                    <tr @if (($row['late_flag'] ?? '') !== '') class="bg-status-critical-soft" title="{{ __('loans.late_hint') }}" data-late-flag @endif>
                         @foreach ($data['columns'] as $column)
                             @php $value = $row[$column['key']] ?? null; @endphp
                             @if ($column['type'] === 'money')
                                 <td class="fin-num"><x-money :amount="$value" /></td>
+                            @elseif ($column['type'] === 'number')
+                                <td class="fin-num">{{ $value }}</td>
                             @elseif ($column['type'] === 'date' || $column['type'] === 'ltr')
                                 <td><span dir="ltr">{{ $value }}</span></td>
                             @else

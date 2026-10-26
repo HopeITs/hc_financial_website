@@ -30,6 +30,14 @@ class MicroLoans extends Component
 
     public string $beneficiary = '';
 
+    public string $nationalNumber = '';
+
+    public string $mobile = '';
+
+    public string $partners = '';
+
+    public string $intervalMonths = '1';
+
     public string $project = '';
 
     public string $loanAmount = '';
@@ -89,6 +97,7 @@ class MicroLoans extends Component
                 (int) $this->instalments, $firstDue, $this->cashAccount, $this->budgetLine,
                 FundSource::tryFrom($this->fundSource) ?? FundSource::DonorGrant, (int) $user->getAuthIdentifier(),
                 ctype_digit($this->requestId) ? (int) $this->requestId : null,
+                $this->nationalNumber, $this->mobile, $this->partners, (int) $this->intervalMonths,
             );
         } catch (LoanException $e) {
             $this->failures = $e->problems;
@@ -101,7 +110,7 @@ class MicroLoans extends Component
         }
 
         $this->notice = __('loans.opened', ['number' => $result['voucher']->id]);
-        $this->beneficiary = $this->loanAmount = $this->grantAmount = '';
+        $this->beneficiary = $this->loanAmount = $this->grantAmount = $this->nationalNumber = $this->mobile = $this->partners = '';
     }
 
     public function receive(Loans $loans): void
@@ -145,7 +154,11 @@ class MicroLoans extends Component
         }
 
         $rows = MicroLoan::query()->with('instalments')->orderBy('project_code')->orderBy('beneficiary')->orderBy('id')->get()
-            ->map(fn (MicroLoan $loan) => ['loan' => $loan, 'arrears' => $loans->arrears($loan, $today)]);
+            ->map(function (MicroLoan $loan) use ($loans, $today): array {
+                $late = $loans->latePayments($loan, $today);
+
+                return ['loan' => $loan, 'arrears' => $loans->arrears($loan, $today), 'late' => $late, 'flagged' => $late >= Loans::LATE_FLAG];
+            });
 
         return view('livewire.micro-loans', [
             'rows' => $rows,

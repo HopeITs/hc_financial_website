@@ -3,6 +3,7 @@
 namespace App\Services\Ledger;
 
 use App\Enums\VoucherStatus;
+use App\Services\Loans\MicroLoans;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Query\Builder;
@@ -182,22 +183,28 @@ class FollowUpReports
             ->whereIn('i.loan_id', $loans->pluck('id')->all())
             ->when($filters->from, fn (Builder $query, string $value) => $query->whereDate('i.due_date', '>=', $value))
             ->whereDate('i.due_date', '<=', $asAt)
-            ->get(['i.loan_id', 'i.amount', 'i.paid_amount', 'v.status', 'v.deleted_at'])
+            ->get(['i.loan_id', 'i.due_date', 'i.amount', 'i.paid_amount', 'v.status', 'v.deleted_at'])
             ->groupBy('loan_id');
 
         $rows = [];
         foreach ($loans as $loan) {
             $due = $collected = Money::zero();
+            $late = 0;
             foreach ($instalments->get($loan->id, []) as $instalment) {
+                $paid = $instalment->status === VoucherStatus::Approved->value && $instalment->deleted_at === null ? Money::normalize($instalment->paid_amount) : Money::zero();
                 $due = bcadd($due, Money::normalize($instalment->amount), 2);
-                if ($instalment->status === VoucherStatus::Approved->value && $instalment->deleted_at === null) {
-                    $collected = bcadd($collected, Money::normalize($instalment->paid_amount), 2);
+                $collected = bcadd($collected, $paid, 2);
+
+                // Late, as in the Windows program: due before the date and not fully paid.
+                if (substr((string) $instalment->due_date, 0, 10) < $asAt && bccomp(Money::normalize($instalment->amount), $paid, 2) > 0) {
+                    $late++;
                 }
             }
             $rows[] = [
                 'beneficiary' => $loan->beneficiary, 'project' => $loan->project_code, 'currency' => $loan->currency,
                 'loan' => Money::normalize($loan->loan_amount), 'grant' => Money::normalize($loan->grant_amount),
                 'due' => $due, 'collected' => $collected, 'arrears' => bcsub($due, $collected, 2),
+                'late' => (string) $late, 'late_flag' => $late >= MicroLoans::LATE_FLAG ? '1' : '',
             ];
         }
 
@@ -205,7 +212,7 @@ class FollowUpReports
         $single = count(array_unique(array_column($rows, 'currency'))) <= 1;
 
         return [
-            'columns' => [['key' => 'beneficiary', 'type' => 'text'], ['key' => 'project', 'type' => 'ltr'], ['key' => 'currency', 'type' => 'ltr'], ['key' => 'loan', 'type' => 'money'], ['key' => 'grant', 'type' => 'money'], ['key' => 'due', 'type' => 'money'], ['key' => 'collected', 'type' => 'money'], ['key' => 'arrears', 'type' => 'money']],
+            'columns' => [['key' => 'beneficiary', 'type' => 'text'], ['key' => 'project', 'type' => 'ltr'], ['key' => 'currency', 'type' => 'ltr'], ['key' => 'loan', 'type' => 'money'], ['key' => 'grant', 'type' => 'money'], ['key' => 'due', 'type' => 'money'], ['key' => 'collected', 'type' => 'money'], ['key' => 'arrears', 'type' => 'money'], ['key' => 'late', 'type' => 'number']],
             'rows' => $rows,
             'totals' => $single ? $this->sum($rows, ['loan', 'grant', 'due', 'collected', 'arrears']) : [],
         ];
