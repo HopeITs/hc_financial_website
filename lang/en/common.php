@@ -20,4 +20,8 @@ return [
     'fields_need_attention' => ':count field needs attention|:count fields need attention',
     'previous' => 'Previous',
     'next' => 'Next',
+    'month' => 'Month',
+    'selected_of' => ':selected selected of :total',
+    'page_total' => 'Total on this page',
+    'selected_total' => 'Total of the selected',
 ];

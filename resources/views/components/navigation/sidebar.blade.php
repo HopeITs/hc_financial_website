@@ -23,8 +23,11 @@
         open: {},
         by: {},
         init() {
-            this.rows.forEach((row) => { this.by[row.code] = row; if (row.depth === 0) this.open[row.code] = true; });
+            this.rows.forEach((row) => { this.by[row.code] = row; });
+            const saved = this.load();
+            if (saved) this.open = saved; else this.rows.forEach((row) => { if (row.depth === 0) this.open[row.code] = true; });
             for (let parent = this.by[this.current]?.parent; parent; parent = this.by[parent]?.parent) this.open[parent] = true;
+            this.$watch('open', () => this.save());
             this.$nextTick(() => this.$el.querySelector('[aria-current]')?.scrollIntoView({ block: 'nearest' }));
         },
         get visible() {
@@ -41,6 +44,17 @@
                 for (let parent = row.parent; parent; parent = this.by[parent].parent) if (!this.open[parent]) return false;
                 return true;
             });
+        },
+        // Which nodes are open is remembered in this browser only; storage can be missing or blocked.
+        load() {
+            try {
+                const saved = JSON.parse(localStorage.getItem('hc.chart-tree.open') ?? 'null');
+                if (! saved || typeof saved !== 'object') return null;
+                return Object.fromEntries(Object.keys(saved).filter((code) => saved[code] && this.by[code]).map((code) => [code, true]));
+            } catch (e) { return null; }
+        },
+        save() {
+            try { localStorage.setItem('hc.chart-tree.open', JSON.stringify(Object.fromEntries(Object.keys(this.open).filter((code) => this.open[code]).map((code) => [code, true])))); } catch (e) {}
         },
         expandAll() { this.rows.forEach((row) => { if (row.hasChildren) this.open[row.code] = true; }); },
         collapseAll() { this.open = {}; },

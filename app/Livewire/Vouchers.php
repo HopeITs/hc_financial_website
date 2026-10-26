@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Enums\ScreenAction;
 use App\Enums\VoucherStatus;
 use App\Enums\VoucherType;
+use App\Livewire\Concerns\HasMonthFilter;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Services\Ledger\LedgerRuleException;
@@ -27,6 +28,7 @@ use Livewire\WithPagination;
 #[Layout('components.layouts.app')]
 class Vouchers extends Component
 {
+    use HasMonthFilter;
     use WithPagination;
 
     public const PER_PAGE = 25;
@@ -49,6 +51,13 @@ class Vouchers extends Component
     #[Url(as: 'q')]
     public string $search = '';
 
+    /** Whether the list also shows rejected (soft deleted) vouchers next to the others. */
+    #[Url(as: 'rejected')]
+    public bool $withRejected = false;
+
+    /** @var list<string> Numbers ticked in the list; they stay ticked across pages. */
+    public array $selected = [];
+
     public bool $showReject = false;
 
     public string $rejectReason = '';
@@ -66,7 +75,7 @@ class Vouchers extends Component
 
     public function updated(string $name): void
     {
-        if (in_array($name, ['type', 'status', 'from', 'to', 'search'], true)) {
+        if (in_array($name, ['type', 'status', 'from', 'to', 'search', 'withRejected', 'month'], true)) {
             $this->resetPage();
         }
     }
@@ -75,6 +84,24 @@ class Vouchers extends Component
     {
         $this->type = VoucherType::tryFrom($type) !== null ? $type : '';
         $this->resetPage();
+    }
+
+    /**
+     * Ticks every voucher of the shown page, or clears them when they are all ticked already.
+     *
+     * @param  list<string>  $numbers
+     */
+    public function togglePage(array $numbers): void
+    {
+        $numbers = array_values(array_filter(array_map(strval(...), array_slice($numbers, 0, self::PER_PAGE))));
+        $allTicked = $numbers !== [] && array_diff($numbers, $this->selected) === [];
+
+        $this->selected = array_values($allTicked ? array_diff($this->selected, $numbers) : array_unique([...$this->selected, ...$numbers]));
+    }
+
+    public function clearSelection(): void
+    {
+        $this->selected = [];
     }
 
     public function approve(VoucherApprovals $approvals): void
@@ -198,6 +225,7 @@ class Vouchers extends Component
 
         $list = Voucher::query()
             ->when($this->status === 'rejected', fn ($query) => $query->onlyTrashed())
+            ->when($this->withRejected && $this->status === '', fn ($query) => $query->withTrashed())
             ->when(VoucherStatus::tryFrom($this->status) !== null, fn ($query) => $query->where('status', $this->status))
             ->when(VoucherType::tryFrom($this->type) !== null, fn ($query) => $query->where('type', $this->type))
             ->when($from !== null, fn ($query) => $query->whereDate('date', '>=', $from))
@@ -214,9 +242,16 @@ class Vouchers extends Component
             ->groupBy('voucher_id')
             ->pluck('total', 'voucher_id');
 
+        $pageIds = $list->getCollection()->pluck('id')->all();
+        $selected = array_values(array_unique($this->selected));
+
         return [
             'list' => $list,
             'amounts' => $amounts,
+            'amended' => DB::table('gl_voucher_audit')->whereIn('voucher_id', $pageIds)->where('action', 'amend')->distinct()->pluck('voucher_id')->all(),
+            'pageIds' => $pageIds,
+            'pageTotal' => $amounts->reduce(fn (string $sum, $total) => bcadd($sum, Money::normalize($total), 2), Money::zero()),
+            'selectedTotal' => $selected === [] ? Money::zero() : Money::normalize(DB::table('gl_voucher_lines')->whereIn('voucher_id', $selected)->sum('debit_usd')),
             'names' => $this->names($list->getCollection()->pluck('prepared_by')->unique()->values()),
             'types' => VoucherType::cases(),
             'statuses' => [...array_map(fn (VoucherStatus $status) => $status->value, VoucherStatus::cases()), 'rejected'],

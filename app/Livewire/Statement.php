@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\HasMonthFilter;
 use App\Models\GlAccount;
 use App\Models\GlProject;
 use App\Services\Ledger\AccountStatement;
@@ -19,6 +20,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 #[Layout('components.layouts.app')]
 class Statement extends Component
 {
+    use HasMonthFilter;
+
     #[Url(as: 'account')]
     public string $code = '';
 

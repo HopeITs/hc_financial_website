@@ -18,6 +18,7 @@
                 <option value="{{ $option->code }}">{{ $option->code }} · {{ $option->name }}</option>
             @endforeach
         </x-ui.form-select>
+        <x-ui.month-filter />
         <x-ui.form-input type="date" wire:model.live="from" :label="__('ledger.statement.from')" />
         <x-ui.form-input type="date" wire:model.live="to" :label="__('ledger.statement.to')" />
     </div>

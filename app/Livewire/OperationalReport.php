@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\HasMonthFilter;
 use App\Livewire\Concerns\HasReportCurrency;
 use App\Models\GlAccount;
 use App\Models\GlProject;
@@ -22,6 +23,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 #[Layout('components.layouts.app')]
 class OperationalReport extends Component
 {
+    use HasMonthFilter;
     use HasReportCurrency;
 
     public string $screen = '';
