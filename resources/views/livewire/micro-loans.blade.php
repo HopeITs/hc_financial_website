@@ -43,6 +43,9 @@
     @else
         <x-ui.panel class="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-4" data-test="loan-form">
             <x-ui.form-input wire:model="beneficiary" :label="__('loans.beneficiary')" required />
+            <x-ui.form-input type="text" dir="ltr" wire:model="nationalNumber" :label="__('loans.national_number')" maxlength="30" />
+            <x-ui.form-input type="tel" dir="ltr" wire:model="mobile" :label="__('loans.mobile')" maxlength="50" />
+            <x-ui.form-input wire:model="partners" :label="__('loans.partners')" maxlength="255" />
             <x-ui.form-select wire:model.live="project" :label="__('loans.project')" :placeholder="__('loans.choose')" required>
                 @foreach ($projects as $option)
                     <option value="{{ $option->code }}">{{ $option->code }} · {{ $option->name }}</option>
@@ -60,6 +63,7 @@
             <x-ui.form-input type="date" wire:model="date" :label="__('loans.date')" required />
             <x-ui.form-input type="number" min="1" max="120" wire:model="instalments" :label="__('loans.instalments')" required />
             <x-ui.form-input type="date" wire:model="firstDue" :label="__('loans.first_due')" required />
+            <x-ui.form-input type="number" min="1" max="12" wire:model="intervalMonths" :label="__('loans.interval')" required />
             <x-ui.form-select wire:model="budgetLine" :label="__('loans.budget_line')" :placeholder="__('loans.choose')" :help="__('loans.budget_line_help')">
                 @foreach ($budgetLines as $line)
                     <option value="{{ $line->key }}">{{ $line->name }} · {{ $line->account_code }}</option>
@@ -93,21 +97,23 @@
                     <th class="fin-num">{{ __('loans.grant_amount') }}</th>
                     <th class="fin-num">{{ __('loans.arrears') }}</th>
                     <th class="fin-num">{{ __('loans.days_late') }}</th>
+                    <th class="fin-num">{{ __('loans.late_payments') }}</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse ($rows as $row)
-                    <tr wire:key="loan-{{ $row['loan']->id }}">
-                        <td>{{ $row['loan']->beneficiary }}</td>
+                    <tr wire:key="loan-{{ $row['loan']->id }}" @if ($row['flagged']) class="bg-status-critical-soft" data-late-flag @endif>
+                        <td>{{ $row['loan']->beneficiary }}@if ($row['loan']->mobile) <span class="type-meta text-secondary-medium dark:text-ink-muted" dir="ltr">· {{ $row['loan']->mobile }}</span>@endif</td>
                         <td><span dir="ltr">{{ $row['loan']->project_code }}</span></td>
                         <td><span dir="ltr">{{ $row['loan']->currency }}</span></td>
                         <td class="fin-num"><x-money :amount="$row['loan']->loan_amount" /></td>
                         <td class="fin-num"><x-money :amount="$row['loan']->grant_amount" /></td>
                         <td class="fin-num" data-test="arrears"><x-money :amount="$row['arrears']['amount']" /></td>
                         <td class="fin-num">{{ $row['arrears']['days'] }}</td>
+                        <td class="fin-num" data-test="late">{{ $row['late'] }}@if ($row['flagged']) <flux:badge size="sm" color="red" title="{{ __('loans.late_hint') }}">!</flux:badge>@endif</td>
                     </tr>
                 @empty
-                    <tr><td colspan="7" class="text-center text-secondary-medium dark:text-ink-muted">{{ __('loans.none') }}</td></tr>
+                    <tr><td colspan="8" class="text-center text-secondary-medium dark:text-ink-muted">{{ __('loans.none') }}</td></tr>
                 @endforelse
             </tbody>
         </table>

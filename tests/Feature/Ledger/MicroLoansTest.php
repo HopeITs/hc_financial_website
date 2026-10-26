@@ -280,3 +280,96 @@ it('refuses a disbursement above the payment limit without an approved request',
 
     expect(MicroLoan::query()->count())->toBe(0);
 });
+
+it('spaces the instalments by the chosen number of months', function () {
+    $rows = app(ScheduleGenerator::class)->equalMonthly('300.00', 3, CarbonImmutable::parse('2026-01-31'), 'USD', 3);
+
+    expect(array_column($rows, 'due_date'))->toBe(['2026-01-31', '2026-04-30', '2026-07-31']);
+    expect(fn () => app(ScheduleGenerator::class)->equalMonthly('300.00', 3, CarbonImmutable::parse('2026-01-31'), 'USD', 0))->toThrow(LoanException::class)
+        ->and(fn () => app(ScheduleGenerator::class)->equalMonthly('300.00', 3, CarbonImmutable::parse('2026-01-31'), 'USD', 13))->toThrow(LoanException::class);
+});
+
+it('keeps the beneficiary details and the interval with the loan', function () {
+    $loan = app(MicroLoans::class)->open(
+        'Huda', 'F2F', '1000', '0', 'USD', '', CarbonImmutable::parse('2026-03-01'), 4, CarbonImmutable::parse('2026-04-30'), '1111', '',
+        FundSource::DonorGrant, 5, approvedLoanRequest()->id, ' 01020304050 ', '+963 11 123 4567', 'Rima, Salma', 2,
+    )['loan']->fresh();
+
+    expect($loan->national_number)->toBe('01020304050')
+        ->and($loan->mobile)->toBe('+963 11 123 4567')
+        ->and($loan->partners)->toBe('Rima, Salma')
+        ->and($loan->payment_interval_months)->toBe(2)
+        ->and($loan->first_payment_date?->toDateString())->toBe('2026-04-30')
+        ->and($loan->instalments->pluck('due_date')->map->toDateString()->all())->toBe(['2026-04-30', '2026-06-30', '2026-08-30', '2026-10-30']);
+
+    $plain = openLoan(['beneficiary' => 'Omar'])['loan']->fresh();
+    expect($plain->national_number)->toBeNull()->and($plain->mobile)->toBeNull()->and($plain->payment_interval_months)->toBe(1);
+});
+
+it('refuses a bad interval or a mobile number with letters', function () {
+    $open = fn (string $mobile, int $interval) => fn () => app(MicroLoans::class)->open(
+        'Huda', 'F2F', '1000', '0', 'USD', '', CarbonImmutable::parse('2026-03-01'), 4, CarbonImmutable::parse('2026-04-30'), '1111', '',
+        FundSource::DonorGrant, 5, approvedLoanRequest()->id, '', $mobile, '', $interval,
+    );
+
+    expect($open('call me', 1))->toThrow(LoanException::class)
+        ->and($open('0999', 0))->toThrow(LoanException::class)
+        ->and($open('0999', 13))->toThrow(LoanException::class);
+    expect(MicroLoan::query()->count())->toBe(0);
+});
+
+it('counts the late instalments the way the Windows program does and flags three or more', function () {
+    ['loan' => $loan] = openLoan();
+    $loans = app(MicroLoans::class);
+    $at = fn (string $day) => CarbonImmutable::parse($day);
+
+    // Four instalments, one a month from 04-30.
+    $due = $loan->instalments->pluck('due_date')->map->toDateString()->all();
+    expect($loans->latePayments($loan, $at($due[0])))->toBe(0)
+        ->and($loans->latePayments($loan, $at($due[0])->addDay()))->toBe(1)
+        ->and($loans->latePayments($loan, $at($due[2])->addDay()))->toBe(3)
+        ->and($loans->latePayments($loan, $at($due[2])->addDay()) >= MicroLoans::LATE_FLAG)->toBeTrue();
+
+    payLoan($loan, '250');
+    expect($loans->latePayments($loan->fresh(), $at($due[2])->addDay()))->toBe(2);
+
+    // A part payment leaves the instalment incomplete, so it is still late.
+    payLoan($loan->fresh(), '100');
+    expect($loans->latePayments($loan->fresh(), $at($due[2])->addDay()))->toBe(2);
+});
+
+it('adds a late column to the loans report and flags a beneficiary with three late instalments', function () {
+    ['loan' => $loan] = openLoan();
+    $due = $loan->instalments->pluck('due_date')->map->toDateString()->all();
+    $run = fn () => app(FollowUpReports::class)->run('loans', new FollowUpFilters(to: CarbonImmutable::parse($due[2])->addDay()->toDateString()));
+
+    expect(array_column($run()['columns'], 'key'))->toContain('late')
+        ->and($run()['rows'][0])->toMatchArray(['late' => '3', 'late_flag' => '1']);
+
+    // Only an approved receipt counts, as in the rest of the report.
+    $voucher = payLoan($loan, '250');
+    expect($run()['rows'][0])->toMatchArray(['late' => '3', 'late_flag' => '1']);
+
+    $voucher->update(['status' => VoucherStatus::Approved, 'approved_by' => 9, 'approved_at' => now()]);
+    expect($run()['rows'][0])->toMatchArray(['late' => '2', 'late_flag' => '']);
+});
+
+it('opens a loan with the beneficiary details from the screen and highlights a flagged beneficiary', function () {
+    $ann = loanUser(RoleId::Accountant, 'Ann');
+
+    Livewire::actingAs($ann)->test(MicroLoansScreen::class)
+        ->set('beneficiary', 'Huda')->set('nationalNumber', '0102')->set('mobile', '0999 123 456')->set('partners', 'Rima')
+        ->set('project', 'F2F')->set('loanAmount', '1000')->set('grantAmount', '0')->set('instalments', '4')->set('intervalMonths', '2')
+        ->set('cashAccount', '1111')->set('requestId', (string) approvedLoanRequest()->id)
+        ->call('open')
+        ->assertSet('failures', [])
+        ->assertSet('mobile', '')
+        ->assertSee('0999 123 456');
+
+    $loan = MicroLoan::query()->firstOrFail();
+    expect($loan->national_number)->toBe('0102')->and($loan->payment_interval_months)->toBe(2);
+
+    // Make three instalments late: the row is highlighted.
+    DB::table('gl_micro_instalments')->where('loan_id', $loan->id)->update(['due_date' => '2020-01-01']);
+    Livewire::actingAs($ann)->test(MicroLoansScreen::class)->assertSeeHtml('data-late-flag');
+});

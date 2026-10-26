@@ -30,6 +30,9 @@ class MicroLoans
 {
     public const LOANS_ACCOUNT = '1204';
 
+    /** A beneficiary with this many late instalments, or more, is flagged. */
+    public const LATE_FLAG = 3;
+
     public function __construct(
         private readonly ScheduleGenerator $schedules,
         private readonly PostVoucher $posting,
@@ -56,6 +59,10 @@ class MicroLoans
         FundSource $fundSource,
         int $preparedBy,
         ?int $requestId = null,
+        string $nationalNumber = '',
+        string $mobile = '',
+        string $partners = '',
+        int $intervalMonths = 1,
     ): array {
         $problems = [];
         $loan = $this->amount($loanAmount);
@@ -83,6 +90,14 @@ class MicroLoans
             $problems[] = __('loans.problem.project');
         }
 
+        if ($intervalMonths < 1 || $intervalMonths > 12) {
+            $problems[] = __('loans.problem.interval');
+        }
+
+        if (trim($mobile) !== '' && preg_match('/^[0-9+\-\s()]{5,50}$/', trim($mobile)) !== 1) {
+            $problems[] = __('loans.problem.mobile');
+        }
+
         $rate = $currency === 'SYP' ? $this->rate($rate) : '1.000000';
         if ($rate === null) {
             $problems[] = __('loans.problem.rate');
@@ -103,7 +118,7 @@ class MicroLoans
         $rows = [];
         if (bccomp($loan, '0', 2) > 0 && in_array($currency, ['USD', 'SYP'], true)) {
             try {
-                $rows = $this->schedules->equalMonthly($loan, $instalments, $firstDue, $currency);
+                $rows = $this->schedules->equalMonthly($loan, $instalments, $firstDue, $currency, $intervalMonths);
             } catch (LoanException $e) {
                 array_push($problems, ...$e->problems);
             }
@@ -113,14 +128,19 @@ class MicroLoans
             throw new LoanException($problems === [] ? [__('loans.problem.amount')] : $problems);
         }
 
-        return DB::transaction(function () use ($beneficiary, $project, $loan, $grant, $currency, $rate, $date, $rows, $cashAccount, $budgetLine, $fundSource, $preparedBy, $requestId) {
+        $details = [
+            'national_number' => $this->optional($nationalNumber, 30), 'mobile' => $this->optional($mobile, 50),
+            'partners' => $this->optional($partners, 255), 'payment_interval_months' => $intervalMonths, 'first_payment_date' => $firstDue->toDateString(),
+        ];
+
+        return DB::transaction(function () use ($beneficiary, $project, $loan, $grant, $currency, $rate, $date, $rows, $cashAccount, $budgetLine, $fundSource, $preparedBy, $requestId, $details) {
             $draft = $this->disbursement($beneficiary, $project, $loan, $grant, $currency, $rate, $date, $cashAccount, $budgetLine, $fundSource, $preparedBy, $requestId);
             $voucher = $this->posting->post($draft);
 
             $record = MicroLoan::query()->create([
                 'beneficiary' => trim($beneficiary), 'project_code' => $project->code,
                 'loan_amount' => $loan, 'grant_amount' => $grant, 'currency' => $currency,
-            ]);
+            ] + $details);
             foreach ($rows as $row) {
                 $record->instalments()->create(['due_date' => $row['due_date'], 'amount' => $row['amount']]);
             }
@@ -209,6 +229,24 @@ class MicroLoans
         }
 
         return ['amount' => $amount, 'instalments' => $count, 'days' => $oldest === null ? 0 : (int) CarbonImmutable::parse($oldest->toDateString())->diffInDays($asAt)];
+    }
+
+    /**
+     * How many instalments are late on a date: due before it and not fully paid. This is the Windows program's "late"
+     * count (an unpaid or incomplete instalment whose due date has passed); a beneficiary with three or more is flagged.
+     */
+    public function latePayments(MicroLoan $loan, CarbonImmutable $asAt): int
+    {
+        return $loan->instalments->filter(
+            fn (MicroInstalment $instalment): bool => $instalment->due_date->toDateString() < $asAt->toDateString() && bccomp($instalment->outstanding(), '0', 2) > 0,
+        )->count();
+    }
+
+    private function optional(string $text, int $max): ?string
+    {
+        $text = trim($text);
+
+        return $text === '' ? null : mb_substr($text, 0, $max);
     }
 
     /**
