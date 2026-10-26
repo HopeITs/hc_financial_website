@@ -109,6 +109,7 @@ it('reports micro loan collection and arrears, counting only approved payments',
 });
 
 it('limits a project manager to their own projects', function () {
+    createLegacyHomeSchema();
     $sz = 4321;
     DB::table('gl_projects')->where('code', 'SZ')->update(['legacy_account_id' => $sz]);
 

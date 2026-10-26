@@ -35,6 +35,7 @@ beforeEach(function () {
     // The seeded budget lines are in the donor's currency; the requests use USD and SYP.
     GlBudgetLine::query()->where('project_code', 'F2F')->update(['currency' => 'USD']);
     GlProject::query()->whereKey('F2F')->update(['legacy_account_id' => 77]);
+    DB::connection('legacy')->table('account')->insert(['ID' => 77, 'SubProject_ID' => 7, 'Name' => 'F2F']);
     Storage::fake('local');
 });
 
@@ -45,6 +46,11 @@ function rqUser(RoleId $role, string $name): User
 
     if ($role->isWebOnly()) {
         WebUserRole::create(['user_id' => $id, 'role_id' => $role]);
+    }
+
+    // The Windows program limits a financial manager to the sub-projects given to them.
+    if ($role === RoleId::FinancialManager) {
+        DB::connection('legacy')->table('user_accounts')->insert(['user_id' => $id, 'subproject_id' => 7]);
     }
 
     return User::query()->findOrFail($id);
