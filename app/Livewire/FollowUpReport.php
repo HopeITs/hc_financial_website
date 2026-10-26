@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\HasMonthFilter;
 use App\Models\GlProject;
 use App\Models\User;
 use App\Services\Ledger\FollowUpFilters;
@@ -22,6 +23,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 #[Layout('components.layouts.app')]
 class FollowUpReport extends Component
 {
+    use HasMonthFilter;
+
     public string $screen = '';
 
     #[Url]

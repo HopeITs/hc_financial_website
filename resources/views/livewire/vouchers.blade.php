@@ -28,21 +28,31 @@
             @endforeach
         </div>
 
-        <div class="grid items-end gap-4 sm:grid-cols-2 lg:grid-cols-4" data-test="voucher-filters">
+        <div class="grid items-end gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6" data-test="voucher-filters">
             <x-ui.form-input wire:model.live.debounce.300ms="search" :label="__('vouchers.search')" :placeholder="__('vouchers.search')" />
             <x-ui.form-select wire:model.live="status" :label="__('vouchers.status_label')" :placeholder="__('vouchers.all_statuses')">
                 @foreach ($statuses as $option)
                     <option value="{{ $option }}">{{ __('vouchers.status.'.$option) }}</option>
                 @endforeach
             </x-ui.form-select>
+            <x-ui.month-filter />
             <x-ui.form-input type="date" wire:model.live="from" :label="__('vouchers.from')" />
             <x-ui.form-input type="date" wire:model.live="to" :label="__('vouchers.to')" />
         </div>
+
+        <label class="flex items-center gap-2 text-sm text-secondary-dark dark:text-ink">
+            <input type="checkbox" wire:model.live="withRejected" @disabled($status !== '') data-test="with-rejected" />
+            {{ __('vouchers.include_rejected') }}
+        </label>
 
         <x-ui.scroll-table :paginate="false">
             <table class="fin-table" data-test="voucher-list">
                 <thead>
                     <tr>
+                        <th class="w-8">
+                            <input type="checkbox" wire:click="togglePage(@js($pageIds))" @checked($pageIds !== [] && array_diff($pageIds, $selected) === [])
+                                aria-label="{{ __('vouchers.select_page') }}" data-test="select-page" />
+                        </th>
                         <th>{{ __('vouchers.number') }}</th>
                         <th>{{ __('vouchers.date') }}</th>
                         <th>{{ __('vouchers.type') }}</th>
@@ -58,8 +68,14 @@
                             $badge = $row->trashed() ? 'rejected' : $row->status->value;
                             $color = ['pending_approval' => 'amber', 'approved' => 'green', 'replaced' => 'zinc', 'rejected' => 'red'][$badge];
                         @endphp
-                        <tr wire:key="voucher-{{ $row->id }}">
-                            <td dir="ltr" class="whitespace-nowrap text-start"><a href="{{ route('vouchers', ['voucher' => $row->id]) }}" wire:navigate class="font-medium text-primary hover:underline dark:text-brand-text">{{ $row->id }}</a></td>
+                        <tr wire:key="voucher-{{ $row->id }}" @if (in_array($row->id, $amended, true)) data-amended @endif>
+                            <td><input type="checkbox" wire:model.live="selected" value="{{ $row->id }}" aria-label="{{ __('vouchers.select_row', ['number' => $row->id]) }}" /></td>
+                            <td dir="ltr" class="whitespace-nowrap text-start">
+                                <a href="{{ route('vouchers', ['voucher' => $row->id]) }}" wire:navigate class="font-medium text-primary hover:underline dark:text-brand-text">{{ $row->id }}</a>
+                                @if (in_array($row->id, $amended, true))
+                                    <flux:badge size="sm" color="amber" title="{{ __('vouchers.amended_hint') }}" data-test="amended-badge">{{ __('vouchers.amended') }}</flux:badge>
+                                @endif
+                            </td>
                             <td dir="ltr" class="whitespace-nowrap text-start">{{ $row->date->toDateString() }}</td>
                             <td title="{{ $row->type->label() }}"><span dir="ltr">{{ $row->type->value }}</span></td>
                             <td>{{ $row->description ?: '—' }}</td>
@@ -68,9 +84,25 @@
                             <td><flux:badge size="sm" :color="$color">{{ __('vouchers.status.'.$badge) }}</flux:badge></td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" class="fin-empty" data-test="no-vouchers">{{ __('vouchers.no_match') }}</td></tr>
+                        <tr><td colspan="8" class="fin-empty" data-test="no-vouchers">{{ __('vouchers.no_match') }}</td></tr>
                     @endforelse
                 </tbody>
+                <tfoot>
+                    <tr data-test="voucher-totals">
+                        <td colspan="5">
+                            <span data-test="selected-count">{{ __('common.selected_of', ['selected' => count($selected), 'total' => $list->total()]) }}</span>
+                            @if ($selected !== [])
+                                <button type="button" wire:click="clearSelection" class="ms-2 text-primary hover:underline dark:text-brand-text">{{ __('vouchers.clear_selection') }}</button>
+                            @endif
+                        </td>
+                        <td class="fin-num" colspan="3">
+                            <div>{{ __('common.page_total') }}: <x-money :amount="$pageTotal" currency="USD" /></div>
+                            @if ($selected !== [])
+                                <div data-test="selected-total">{{ __('common.selected_total') }}: <x-money :amount="$selectedTotal" currency="USD" /></div>
+                            @endif
+                        </td>
+                    </tr>
+                </tfoot>
             </table>
         </x-ui.scroll-table>
 

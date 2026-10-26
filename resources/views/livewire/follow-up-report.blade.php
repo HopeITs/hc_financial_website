@@ -6,6 +6,7 @@
     </x-ui.page-header>
 
     <div class="grid items-end gap-4 sm:grid-cols-2 lg:grid-cols-4" data-test="report-filters">
+        <x-ui.month-filter />
         <x-ui.form-input type="date" wire:model.live="from" :label="__('ledger.op.from')" />
         <x-ui.form-input type="date" wire:model.live="to" :label="__('ledger.op.to')" />
         <x-ui.form-select wire:model.live="city" :label="__('ledger.follow.columns.city')" :placeholder="__('ledger.op.all')">

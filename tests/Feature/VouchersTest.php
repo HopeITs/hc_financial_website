@@ -209,3 +209,51 @@ it('speaks Arabic', function () {
     vouchersPage(screenUser(RoleId::FinancialManager, 'Fatima'))->assertSee('بانتظار الموافقة');
     vouchersPage(screenUser(RoleId::FinancialManager, 'Fatima'), ['voucher' => $voucher->id])->assertSee('اعتماد')->assertSee('السجل');
 });
+
+it('fills the dates from a month and clears them again', function () {
+    $manager = screenUser(RoleId::FinancialManager, 'Fatima');
+    $feb = screenVoucher(screenUser(RoleId::Accountant, 'Ann'), ['description' => 'February grant', 'date' => CarbonImmutable::parse('2026-02-10')]);
+    screenVoucher(screenUser(RoleId::Accountant, 'Bob'), ['description' => 'March grant', 'date' => CarbonImmutable::parse('2026-03-10')]);
+
+    $page = vouchersPage($manager)->set('month', '2026-02')
+        ->assertSet('from', '2026-02-01')->assertSet('to', '2026-02-28')
+        ->assertSee($feb->id)->assertDontSee('March grant');
+
+    $page->set('month', '')->assertSet('from', '')->assertSet('to', '')->assertSee('March grant');
+    $page->set('month', 'nonsense')->assertSet('month', '')->assertSet('from', '');
+});
+
+it('shows rejected vouchers only when asked and marks the amended ones', function () {
+    $ann = screenUser(RoleId::Accountant, 'Ann');
+    $manager = screenUser(RoleId::FinancialManager, 'Fatima');
+    $kept = screenVoucher($ann, ['description' => 'Kept grant']);
+    $rejected = screenVoucher($ann, ['description' => 'Rejected grant']);
+    $rejected->delete();
+
+    vouchersPage($manager)->assertSee('Kept grant')->assertDontSee('Rejected grant')
+        ->set('withRejected', true)->assertSee('Rejected grant')->assertSee(__('vouchers.status.rejected'))
+        ->assertDontSeeHtml('data-test="amended-badge"');
+
+    DB::table('gl_voucher_audit')->insert(['voucher_id' => $kept->id, 'action' => 'amend', 'field' => 'description', 'old_value' => 'a', 'new_value' => 'b', 'changed_by' => 1, 'reason' => 'typo']);
+
+    vouchersPage($manager)->assertSeeHtml('data-test="amended-badge"');
+});
+
+it('counts the ticked vouchers and totals them next to the page total', function () {
+    $ann = screenUser(RoleId::Accountant, 'Ann');
+    $manager = screenUser(RoleId::FinancialManager, 'Fatima');
+    $first = screenVoucher($ann, [], 100);
+    $second = screenVoucher($ann, [], 250);
+    $third = screenVoucher($ann, [], 40);
+
+    $page = vouchersPage($manager)
+        ->assertSee(__('common.selected_of', ['selected' => 0, 'total' => 3]))
+        ->assertSee('390.00')->assertDontSeeHtml('data-test="selected-total"');
+
+    $page->set('selected', [$first->id, $second->id])
+        ->assertSee(__('common.selected_of', ['selected' => 2, 'total' => 3]))
+        ->assertSeeHtml('data-test="selected-total"')->assertSee('350.00');
+
+    $page->call('togglePage', [$first->id, $second->id, $third->id])->assertSet('selected', fn (array $ids) => count($ids) === 3);
+    $page->call('togglePage', [$first->id, $second->id, $third->id])->assertSet('selected', []);
+});

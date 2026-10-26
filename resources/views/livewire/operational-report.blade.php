@@ -27,6 +27,7 @@
             <option value="EUR">EUR</option>
         </x-ui.form-select>
         @if ($usesDates)
+            <x-ui.month-filter />
             <x-ui.form-input type="date" wire:model.live="from" :label="__('ledger.op.from')" />
             <x-ui.form-input type="date" wire:model.live="to" :label="__('ledger.op.to')" />
         @endif
