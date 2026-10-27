@@ -68,7 +68,7 @@ it('opens for a signed-in user and exports CSV', function () {
     tbReceipt('2026-02-10', 40);
     $user = User::query()->findOrFail(createFinanceUser('tbuser', 'secret pass', RoleId::HeadOffice->name, RoleId::HeadOffice->value));
 
-    $this->actingAs($user)->get('/screens/tb')->assertOk()->assertSee('1111');
+    $this->actingAs($user)->get('/reports/trial-balance')->assertOk()->assertSee('1111');
 
     Livewire::actingAs($user)->test(TrialBalance::class)->call('export')->assertFileDownloaded('trial-balance.csv');
 });

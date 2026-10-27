@@ -269,8 +269,8 @@ it('shows the loans screen to the financial manager but lets only the preparers 
         ->call('open')
         ->assertForbidden();
 
-    $this->actingAs(loanUser(RoleId::Cashier, 'Carl'))->get(route('payments'))->assertForbidden();
-    $this->actingAs(loanUser(RoleId::Accountant, 'Ann'))->get(route('payments'))->assertOk();
+    $this->actingAs(loanUser(RoleId::Cashier, 'Carl'))->get(route('entries.micro-loans'))->assertForbidden();
+    $this->actingAs(loanUser(RoleId::Accountant, 'Ann'))->get(route('entries.micro-loans'))->assertOk();
 });
 
 it('refuses a disbursement above the payment limit without an approved request', function () {

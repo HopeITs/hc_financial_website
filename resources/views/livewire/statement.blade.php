@@ -54,7 +54,7 @@
                     @forelse ($data['rows'] as $row)
                         <tr>
                             <td><span dir="ltr">{{ $row['date'] }}</span></td>
-                            <td><a href="{{ route('screens.show', ['screen' => 'vouchers', 'voucher' => $row['voucher']]) }}" class="underline" dir="ltr">{{ $row['voucher'] }}</a></td>
+                            <td><a href="{{ route('entries.vouchers', ['voucher' => $row['voucher']]) }}" class="underline" dir="ltr">{{ $row['voucher'] }}</a></td>
                             <td>{{ $row['description'] }}</td>
                             <td><span dir="ltr">{{ $row['project'] }}</span></td>
                             <td class="fin-num"><x-money :amount="$row['debit']" /></td>

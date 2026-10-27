@@ -170,23 +170,23 @@ it('attaches nothing when one file has no voucher', function () {
 it('keeps the entry screens to those who may create, and the old approval screen opens on the pending vouchers', function () {
     $viewer = entryUser(RoleId::Cashier, 'Cass');
 
-    $this->actingAs($viewer)->get('/screens/multi')->assertForbidden();
+    $this->actingAs($viewer)->get('/entries/multi')->assertForbidden();
     Livewire::actingAs($viewer)->test(MultiEntry::class)->set('sheet', sheetRow())->call('save')->assertForbidden();
 
-    $this->actingAs(entryUser(RoleId::Accountant, 'Ann'))->get('/screens/single')->assertOk();
-    $this->actingAs(entryUser(RoleId::FinancialManager, 'Fay'))->get('/screens/approval')->assertOk();
+    $this->actingAs(entryUser(RoleId::Accountant, 'Ann'))->get('/entries/single')->assertOk();
+    $this->actingAs(entryUser(RoleId::FinancialManager, 'Fay'))->get('/entries/approval')->assertOk();
 });
 
 it('prints a voucher for paper, with its lines and the places to sign', function () {
     $voucher = app(PostVoucher::class)->post(ledgerReceipt());
 
-    $this->actingAs(entryUser())->get(route('vouchers.print', ['voucher' => $voucher->id]))
+    $this->actingAs(entryUser())->get(route('entries.vouchers.print', ['voucher' => $voucher->id]))
         ->assertOk()
         ->assertSee($voucher->id)
         ->assertSee('data-test="print-lines"', false)
         ->assertSee('100.00')
         ->assertSee(__('vouchers.received_by'));
 
-    $this->actingAs(entryUser(RoleId::Employee, 'Emp'))->get(route('vouchers.print', ['voucher' => $voucher->id]))->assertForbidden();
-    $this->actingAs(entryUser())->get(route('vouchers.print', ['voucher' => 'CRV-2026-9999']))->assertNotFound();
+    $this->actingAs(entryUser(RoleId::Employee, 'Emp'))->get(route('entries.vouchers.print', ['voucher' => $voucher->id]))->assertForbidden();
+    $this->actingAs(entryUser())->get(route('entries.vouchers.print', ['voucher' => 'CRV-2026-9999']))->assertNotFound();
 });

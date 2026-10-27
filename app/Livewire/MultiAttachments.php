@@ -70,7 +70,7 @@ class MultiAttachments extends Component
 
         $this->files = [];
         session()->flash('notice', __('ledger.multiatt.saved', ['count' => $count]));
-        $this->redirectRoute('vouchers', navigate: true);
+        $this->redirectRoute('entries.vouchers', navigate: true);
     }
 
     public function render(VoucherAttachments $attachments): View

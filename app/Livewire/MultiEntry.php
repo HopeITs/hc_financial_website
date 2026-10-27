@@ -58,7 +58,7 @@ class MultiEntry extends Component
         }
 
         session()->flash('notice', __('ledger.multi.saved', ['count' => count($vouchers), 'first' => $vouchers[0]->id]));
-        $this->redirectRoute('vouchers', ['status' => 'pending_approval'], navigate: true);
+        $this->redirectRoute('entries.vouchers', ['status' => 'pending_approval'], navigate: true);
     }
 
     public function render(OperationSheet $operations): View

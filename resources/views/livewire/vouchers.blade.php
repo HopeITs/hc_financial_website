@@ -14,7 +14,7 @@
         <x-ui.page-header :title="__('navigation.screens.vouchers')" :subtitle="__('vouchers.intro')" :count="$list->total()">
             @can('screen', ['vouchers', 'create'])
                 <x-slot:actions>
-                    <x-ui.button tone="primary" icon="plus" :href="route('vouchers.create')" wire:navigate data-test="new-voucher">{{ __('ledger.builder.title') }}</x-ui.button>
+                    <x-ui.button tone="primary" icon="plus" :href="route('entries.vouchers.create')" wire:navigate data-test="new-voucher">{{ __('ledger.builder.title') }}</x-ui.button>
                 </x-slot:actions>
             @endcan
         </x-ui.page-header>
@@ -71,7 +71,7 @@
                         <tr wire:key="voucher-{{ $row->id }}" @if (in_array($row->id, $amended, true)) data-amended @endif>
                             <td><input type="checkbox" wire:model.live="selected" value="{{ $row->id }}" aria-label="{{ __('vouchers.select_row', ['number' => $row->id]) }}" /></td>
                             <td dir="ltr" class="whitespace-nowrap text-start">
-                                <a href="{{ route('vouchers', ['voucher' => $row->id]) }}" wire:navigate class="font-medium text-primary hover:underline dark:text-brand-text">{{ $row->id }}</a>
+                                <a href="{{ route('entries.vouchers', ['voucher' => $row->id]) }}" wire:navigate class="font-medium text-primary hover:underline dark:text-brand-text">{{ $row->id }}</a>
                                 @if (in_array($row->id, $amended, true))
                                     <flux:badge size="sm" color="amber" title="{{ __('vouchers.amended_hint') }}" data-test="amended-badge">{{ __('vouchers.amended') }}</flux:badge>
                                 @endif
@@ -114,12 +114,12 @@
         @endphp
 
         <div>
-            <a href="{{ route('vouchers') }}" wire:navigate class="text-sm text-secondary-medium hover:underline dark:text-ink-muted">{{ __('vouchers.back') }}</a>
+            <a href="{{ route('entries.vouchers') }}" wire:navigate class="text-sm text-secondary-medium hover:underline dark:text-ink-muted">{{ __('vouchers.back') }}</a>
         </div>
 
         <x-ui.page-header :title="$voucher->id" :subtitle="$voucher->description ?: __('vouchers.no_description')">
             <x-slot:actions>
-                <a href="{{ route('vouchers.print', ['voucher' => $voucher->id]) }}" target="_blank" rel="noopener" class="page-action" data-test="print-voucher">{{ __('vouchers.print') }}</a>
+                <a href="{{ route('entries.vouchers.print', ['voucher' => $voucher->id]) }}" target="_blank" rel="noopener" class="page-action" data-test="print-voucher">{{ __('vouchers.print') }}</a>
                 <flux:badge size="lg" :color="$color" data-test="voucher-status">{{ __('vouchers.status.'.$badge) }}</flux:badge>
             </x-slot:actions>
         </x-ui.page-header>

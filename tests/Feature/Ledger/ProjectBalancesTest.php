@@ -121,8 +121,8 @@ it('renders for the financial manager and refuses a cashier', function () {
     $manager = User::query()->findOrFail(createFinanceUser('fm', 'secret pass', RoleId::FinancialManager->name, RoleId::FinancialManager->value));
     $this->actingAs($manager);
     Livewire::test(ProjectBalances::class)->assertSee('F2F')->assertSee('100.00');
-    $this->get(route('projbal'))->assertOk();
+    $this->get(route('reports.project-balances'))->assertOk();
 
     $cashier = User::query()->findOrFail(createFinanceUser('cash', 'secret pass', RoleId::Cashier->name, RoleId::Cashier->value));
-    $this->actingAs($cashier)->get(route('projbal'))->assertForbidden();
+    $this->actingAs($cashier)->get(route('reports.project-balances'))->assertForbidden();
 });

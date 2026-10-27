@@ -65,7 +65,7 @@
                     <tbody>
                         @foreach ($city->safes as $row)
                             <tr>
-                                <td><span dir="ltr">{{ $row->code }}</span> <a href="{{ route('statement', ['account' => $row->code]) }}" class="underline">{{ $row->name() }}</a></td>
+                                <td><span dir="ltr">{{ $row->code }}</span> <a href="{{ route('reports.account-statement', ['account' => $row->code]) }}" class="underline">{{ $row->name() }}</a></td>
                                 <td>{{ $row->currency }}</td>
                                 <td class="fin-num" dir="ltr">{{ number_format((float) $row->orig, 2) }}</td>
                                 <td class="fin-num" dir="ltr">{{ number_format((float) $row->usd, 2) }}</td>
@@ -97,7 +97,7 @@
                     <tbody>
                         @foreach ($report->other as $row)
                             <tr data-test="other-{{ $row->code }}">
-                                <td><span dir="ltr">{{ $row->code }}</span> <a href="{{ route('statement', ['account' => $row->code]) }}" class="underline">{{ $row->name() }}</a></td>
+                                <td><span dir="ltr">{{ $row->code }}</span> <a href="{{ route('reports.account-statement', ['account' => $row->code]) }}" class="underline">{{ $row->name() }}</a></td>
                                 <td>{{ $row->currency }}</td>
                                 <td class="fin-num" dir="ltr">{{ number_format((float) $row->orig, 2) }}</td>
                                 <td class="fin-num" dir="ltr">{{ number_format((float) $row->usd, 2) }}</td>

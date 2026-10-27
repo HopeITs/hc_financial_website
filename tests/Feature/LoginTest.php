@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use App\Support\FinancePassword;
+use App\Support\Navigation;
 use Illuminate\Support\Facades\DB;
 
 beforeEach(function () {
@@ -16,7 +17,7 @@ beforeEach(function () {
 it('sends guests to the sign-in page', function () {
     $this->get('/')->assertRedirect(route('login'));
     $this->get('/home')->assertRedirect(route('login'));
-    $this->get('/screens/chart')->assertRedirect(route('login'));
+    $this->get('/chart')->assertRedirect(route('login'));
 });
 
 it('shows the sign-in form with a username and a password', function () {
@@ -62,10 +63,26 @@ it('opens every screen of the navigation for a signed-in user', function () {
     $this->actingAs(User::query()->firstOrFail());
 
     foreach (collect(config('navigation.groups'))->flatten() as $screen) {
-        $this->get(route('screens.show', $screen))->assertOk();
+        $this->get(route(Navigation::routeName($screen)))->assertOk();
     }
 
     $this->get('/screens/unknown')->assertNotFound();
+});
+
+it('gives every screen of the navigation its own readable address', function () {
+    $slugs = collect(Navigation::slugs());
+
+    expect(array_keys(config('navigation.paths')))->toEqualCanonicalizing($slugs->all())
+        ->and($slugs->map(fn (string $slug) => Navigation::path($slug))->duplicates())->toBeEmpty();
+});
+
+it('moves the old screens addresses to the readable ones', function () {
+    $this->actingAs(User::query()->firstOrFail());
+
+    $this->get('/screens/tb')->assertStatus(301)->assertRedirect(route('reports.trial-balance'));
+    $this->get('/screens/vouchers?voucher=CRV-2026-0001')->assertStatus(301)->assertRedirect(route('entries.vouchers', ['voucher' => 'CRV-2026-0001']));
+    $this->get('/screens/vouchers/new')->assertStatus(301)->assertRedirect(route('entries.vouchers.create'));
+    $this->get('/screens/vouchers/CRV-2026-0001/print')->assertStatus(301)->assertRedirect(route('entries.vouchers.print', ['voucher' => 'CRV-2026-0001']));
 });
 
 it('switches the interface to Arabic with a right to left page', function () {

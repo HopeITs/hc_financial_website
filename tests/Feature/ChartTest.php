@@ -33,27 +33,27 @@ it('can be seeded twice without duplicates', function () {
 });
 
 it('shows the five classes on the chart screen', function () {
-    $this->actingAs(chartUser())->get('/screens/chart')
+    $this->actingAs(chartUser())->get('/chart')
         ->assertOk()
         ->assertSee('ASSETS')
         ->assertSee('EXPENSES');
 });
 
 it('shows one account with its rules, tags and the accounts below it', function () {
-    $this->actingAs(chartUser())->get('/screens/chart?account=1110')
+    $this->actingAs(chartUser())->get('/chart?account=1110')
         ->assertOk()
         ->assertSee('Aleppo office')
         ->assertSee('Aleppo main safe – USD')
         ->assertSee('مكتب حلب');
 
-    $this->actingAs(chartUser())->get('/screens/chart?account=1111')
+    $this->actingAs(chartUser())->get('/chart?account=1111')
         ->assertOk()
         ->assertSee('Physical US dollars in the Aleppo safe')
         ->assertSee('Fund source');
 });
 
 it('puts only the chart tree in the sidebar and the other groups in the top bar', function () {
-    $html = $this->actingAs(chartUser())->get('/screens/chart')->getContent();
+    $html = $this->actingAs(chartUser())->get('/chart')->getContent();
 
     expect($html)->toContain('data-test="chart-tree"')
         ->and($html)->toContain('data-test="menu-entries"')
@@ -63,10 +63,10 @@ it('puts only the chart tree in the sidebar and the other groups in the top bar'
 
 it('opens the chart for the roles that have it and refuses the others', function () {
     foreach ([RoleId::HeadOffice, RoleId::FinancialManager, RoleId::Accountant] as $role) {
-        $this->actingAs(chartUser($role))->get('/screens/chart')->assertOk();
+        $this->actingAs(chartUser($role))->get('/chart')->assertOk();
     }
 
-    $this->actingAs(chartUser(RoleId::Cashier))->get('/screens/chart')->assertForbidden();
+    $this->actingAs(chartUser(RoleId::Cashier))->get('/chart')->assertForbidden();
 });
 
 it('ignores an unknown account code', function () {
@@ -74,7 +74,7 @@ it('ignores an unknown account code', function () {
 });
 
 it('hands the accounts to the sidebar tree as data', function () {
-    $html = $this->actingAs(chartUser())->get('/screens/chart')->getContent();
+    $html = $this->actingAs(chartUser())->get('/chart')->getContent();
 
     expect($html)->not->toContain('@js(')
         ->and($html)->toContain('Aleppo main safe')

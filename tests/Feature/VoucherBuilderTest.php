@@ -47,10 +47,10 @@ function checkStates($page): array
 }
 
 it('opens for the roles that prepare vouchers and not for the others', function () {
-    $this->actingAs(builderUser(RoleId::Accountant))->get(route('vouchers.create'))->assertOk()->assertSee('New voucher');
-    $this->actingAs(builderUser(RoleId::HeadOffice, 'Hana'))->get(route('vouchers.create'))->assertOk();
-    $this->actingAs(builderUser(RoleId::FinancialManager, 'Fatima'))->get(route('vouchers.create'))->assertForbidden();
-    $this->actingAs(builderUser(RoleId::Cashier, 'Carl'))->get(route('vouchers.create'))->assertForbidden();
+    $this->actingAs(builderUser(RoleId::Accountant))->get(route('entries.vouchers.create'))->assertOk()->assertSee('New voucher');
+    $this->actingAs(builderUser(RoleId::HeadOffice, 'Hana'))->get(route('entries.vouchers.create'))->assertOk();
+    $this->actingAs(builderUser(RoleId::FinancialManager, 'Fatima'))->get(route('entries.vouchers.create'))->assertForbidden();
+    $this->actingAs(builderUser(RoleId::Cashier, 'Carl'))->get(route('entries.vouchers.create'))->assertForbidden();
 });
 
 it('adds a New voucher button to the list only for those who can prepare', function () {
@@ -160,7 +160,7 @@ it('saves a receipt as pending approval prepared by the signed-in person, and go
 
     fillReceipt(builderPage($user))->set('description', 'ACN first instalment')->call('save')
         ->assertHasNoErrors()
-        ->assertRedirect(route('vouchers', ['voucher' => 'CRV-2026-0001']));
+        ->assertRedirect(route('entries.vouchers', ['voucher' => 'CRV-2026-0001']));
 
     $voucher = Voucher::query()->findOrFail('CRV-2026-0001');
 

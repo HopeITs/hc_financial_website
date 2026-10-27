@@ -85,7 +85,7 @@ it('shows each role only its screens', function (RoleId $role) {
         ->keys();
 
     foreach ($navigation as $screen) {
-        $response = $this->actingAs($user)->get(route('screens.show', $screen));
+        $response = $this->actingAs($user)->get(route(Navigation::routeName($screen)));
 
         $permitted->contains($screen) ? $response->assertOk() : $response->assertForbidden();
     }

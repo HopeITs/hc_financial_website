@@ -36,7 +36,7 @@
                     @foreach ($class['rows'] as $row)
                         <tr>
                             <td><span dir="ltr">{{ $row['code'] }}</span></td>
-                            <td><a href="{{ route('statement', ['account' => $row['code']]) }}" class="underline">{{ app()->getLocale() === 'ar' ? $row['name_ar'] : $row['name_en'] }}</a></td>
+                            <td><a href="{{ route('reports.account-statement', ['account' => $row['code']]) }}" class="underline">{{ app()->getLocale() === 'ar' ? $row['name_ar'] : $row['name_en'] }}</a></td>
                             <td class="fin-num"><x-money :amount="$row['debit']" /></td>
                             <td class="fin-num"><x-money :amount="$row['credit']" /></td>
                             <td class="fin-num"><x-money :amount="$row['net']" /></td>
