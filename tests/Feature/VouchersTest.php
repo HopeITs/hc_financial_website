@@ -88,11 +88,11 @@ it('shows the pending count in the menu until nothing is pending', function () {
     $voucher = screenVoucher($ann);
     screenVoucher($ann);
 
-    $this->actingAs($manager)->get(route('vouchers'))->assertOk()->assertSeeHtml('data-test="badge-vouchers"');
+    $this->actingAs($manager)->get(route('entries.vouchers'))->assertOk()->assertSeeHtml('data-test="badge-vouchers"');
 
     Voucher::query()->update(['status' => VoucherStatus::Approved]);
 
-    $this->actingAs($manager)->get(route('vouchers'))->assertOk()->assertDontSeeHtml('data-test="badge-vouchers"');
+    $this->actingAs($manager)->get(route('entries.vouchers'))->assertOk()->assertDontSeeHtml('data-test="badge-vouchers"');
     expect($voucher->fresh()->status)->toBe(VoucherStatus::Approved);
 });
 
@@ -101,7 +101,7 @@ it('opens a voucher from its link: lines, totals, attachments and history', func
     $voucher = screenVoucher($ann, ['description' => 'ACN first instalment'], 250);
     VoucherAttachment::query()->create(['voucher_id' => $voucher->id, 'original_name' => 'bank-slip.pdf', 'stored_path' => 'a/b.pdf', 'size' => 2048]);
 
-    $this->actingAs(screenUser(RoleId::Accountant, 'Omar'))->get(route('vouchers', ['voucher' => $voucher->id]))->assertOk()->assertSee($voucher->id);
+    $this->actingAs(screenUser(RoleId::Accountant, 'Omar'))->get(route('entries.vouchers', ['voucher' => $voucher->id]))->assertOk()->assertSee($voucher->id);
 
     vouchersPage(screenUser(RoleId::FinancialManager, 'Fatima'), ['voucher' => $voucher->id])
         ->assertSeeHtml('data-test="voucher-lines"')
@@ -198,7 +198,7 @@ it('lets the accountant read vouchers but not approve or reject them', function 
 });
 
 it('is closed to the roles that cannot see vouchers', function () {
-    $this->actingAs(screenUser(RoleId::Cashier, 'Carl'))->get(route('vouchers'))->assertForbidden();
+    $this->actingAs(screenUser(RoleId::Cashier, 'Carl'))->get(route('entries.vouchers'))->assertForbidden();
 });
 
 it('speaks Arabic', function () {

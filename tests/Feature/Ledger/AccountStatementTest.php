@@ -76,7 +76,7 @@ it('opens for a signed-in user, links the vouchers and exports CSV', function ()
     $id = receiptOn('2026-02-10', 40);
     $user = User::query()->findOrFail(createFinanceUser('stmt', 'secret pass', RoleId::HeadOffice->name, RoleId::HeadOffice->value));
 
-    $this->actingAs($user)->get('/screens/statement?account=1111')->assertOk()->assertSee($id);
+    $this->actingAs($user)->get('/reports/account-statement?account=1111')->assertOk()->assertSee($id);
 
     Livewire::actingAs($user)->withQueryParams(['account' => '1111'])->test(Statement::class)
         ->call('export')->assertFileDownloaded('statement-1111.csv');

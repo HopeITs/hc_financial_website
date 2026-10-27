@@ -28,7 +28,8 @@ use App\Livewire\Users;
 use App\Livewire\VoucherBuilder;
 use App\Livewire\Vouchers;
 use App\Services\MasterData\ReferenceData;
-use Illuminate\Support\Arr;
+use App\Support\Navigation;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -40,71 +41,82 @@ Route::post('locale', SwitchLocaleController::class)->middleware('throttle:30,1'
 Route::middleware('auth')->group(function () {
     Route::get('home', Home::class)->middleware('screen:home')->name('home');
 
-    // A built screen is registered before the placeholder route below; `screen` keeps the menu highlight working.
-    Route::get('screens/chart', Chart::class)->defaults('screen', 'chart')->middleware('screen')->name('chart');
+    // A screen's address and route name come from its path in config/navigation.php; the `screen`
+    // default is its permission slug and keeps the menu highlight working.
+    $built = [];
+    $screen = function (string $slug, string $component) use (&$built) {
+        $built[] = $slug;
 
-    Route::get('screens/programs', Programs::class)->defaults('screen', 'programs')->middleware('screen')->name('programs');
+        return Route::get(Navigation::path($slug), $component)
+            ->defaults('screen', $slug)
+            ->middleware('screen')
+            ->name(Navigation::routeName($slug));
+    };
 
-    Route::get('screens/projects', Projects::class)->defaults('screen', 'projects')->middleware('screen')->name('projects');
+    $screen('chart', Chart::class);
+
+    $screen('programs', Programs::class);
+    $screen('projects', Projects::class);
     Route::get('projects/{account}', ProjectPage::class)->whereNumber('account')->defaults('screen', 'projects')->middleware('screen')->name('projects.show');
 
-    Route::get('screens/statement', Statement::class)->defaults('screen', 'statement')->middleware('screen')->name('statement');
+    // Master data (task 38): the old project windows are the project page.
+    foreach (ReferenceData::MERGED as $slug) {
+        $screen($slug, Projects::class);
+    }
 
-    Route::get('screens/vouchers/new', VoucherBuilder::class)->defaults('screen', 'vouchers')->middleware('screen:vouchers,create')->name('vouchers.create');
+    // Registered before the vouchers list so `new` is not read as a list filter.
+    Route::get('entries/vouchers/new', VoucherBuilder::class)->defaults('screen', 'vouchers')->middleware('screen:vouchers,create')->name('entries.vouchers.create');
+    Route::get('entries/vouchers/{voucher}/print', VoucherPrintController::class)->defaults('screen', 'vouchers')->middleware('screen')->name('entries.vouchers.print');
+    $screen('vouchers', Vouchers::class);
 
-    Route::get('screens/vouchers', Vouchers::class)->defaults('screen', 'vouchers')->middleware('screen')->name('vouchers');
-
-    Route::get('screens/single', SingleEntry::class)->defaults('screen', 'single')->middleware('screen')->name('single');
-
-    Route::get('screens/multi', MultiEntry::class)->defaults('screen', 'multi')->middleware('screen')->name('multi');
-
-    Route::get('screens/multiatt', MultiAttachments::class)->defaults('screen', 'multiatt')->middleware('screen')->name('multiatt');
+    $screen('single', SingleEntry::class);
+    $screen('multi', MultiEntry::class);
+    $screen('multiatt', MultiAttachments::class);
+    $screen('payments', MicroLoans::class);
 
     // The old approval screen is the list of vouchers waiting for approval.
-    Route::get('screens/approval', Approval::class)->defaults('screen', 'approval')->middleware('screen')->name('approval');
+    $screen('approval', Approval::class);
 
-    Route::get('screens/vouchers/{voucher}/print', VoucherPrintController::class)->defaults('screen', 'vouchers')->middleware('screen')->name('vouchers.print');
+    $screen('requests', Requests::class);
+    Route::get('entries/requests/quotes/{quote}', RequestQuoteController::class)->whereNumber('quote')->defaults('screen', 'requests')->middleware('screen')->name('entries.requests.quote');
 
-    Route::get('screens/requests', Requests::class)->defaults('screen', 'requests')->middleware('screen')->name('requests');
-    Route::get('requests/quotes/{quote}', RequestQuoteController::class)->whereNumber('quote')->defaults('screen', 'requests')->middleware('screen')->name('requests.quote');
-
-    Route::get('screens/salaries', Salaries::class)->defaults('screen', 'salaries')->middleware('screen')->name('salaries');
-
-    Route::get('screens/payments', MicroLoans::class)->defaults('screen', 'payments')->middleware('screen')->name('payments');
-
-    Route::get('screens/projbal', ProjectBalances::class)->defaults('screen', 'projbal')->middleware('screen')->name('projbal');
-
-    Route::get('screens/tb', TrialBalance::class)->defaults('screen', 'tb')->middleware('screen')->name('tb');
-
-    Route::get('screens/alloc', Transfers::class)->defaults('screen', 'alloc')->middleware('screen')->name('alloc');
-
-    Route::get('screens/treasury', Treasury::class)->defaults('screen', 'treasury')->middleware('screen')->name('treasury');
-
-    Route::get('screens/statements', FinancialStatements::class)->defaults('screen', 'statements')->middleware('screen')->name('statements');
+    $screen('treasury', Treasury::class);
+    $screen('alloc', Transfers::class);
 
     foreach (['rexp', 'rcash', 'rbl', 'rrev', 'rfixed', 'rattach'] as $report) {
-        Route::get('screens/'.$report, OperationalReport::class)->defaults('screen', $report)->middleware('screen')->name($report);
+        $screen($report, OperationalReport::class);
     }
+
+    $screen('tb', TrialBalance::class);
+    $screen('projbal', ProjectBalances::class);
+    $screen('statement', Statement::class);
+    $screen('statements', FinancialStatements::class);
 
     foreach (['recon', 'uncomp', 'advances', 'loans'] as $report) {
-        Route::get('screens/'.$report, FollowUpReport::class)->defaults('screen', $report)->middleware('screen')->name($report);
+        $screen($report, FollowUpReport::class);
     }
 
-    // Master data (task 38): the old program's lists are read-only references; the old project windows are the project page.
+    $screen('salaries', Salaries::class);
+    $screen('users', Users::class);
+
+    // Master data (task 38): the old program's lists are read-only references.
     foreach (ReferenceData::SLUGS as $slug) {
-        Route::get('screens/'.$slug, ReferenceList::class)->defaults('screen', $slug)->middleware('screen')->name($slug);
+        $screen($slug, ReferenceList::class);
     }
 
-    Route::get('screens/users', Users::class)->defaults('screen', 'users')->middleware('screen')->name('users');
-
-    foreach (ReferenceData::MERGED as $slug) {
-        Route::get('screens/'.$slug, Projects::class)->defaults('screen', $slug)->middleware('screen')->name($slug);
+    // Every other screen of the navigation shows the placeholder until it is built.
+    foreach (array_diff(Navigation::slugs(), $built) as $slug) {
+        Route::view(Navigation::path($slug), 'pages.screen', ['screen' => $slug])
+            ->defaults('screen', $slug)
+            ->middleware('screen')
+            ->name(Navigation::routeName($slug));
     }
 
-    // Every screen of the navigation. Until a screen is built it shows the placeholder.
+    // The old `screens/<slug>` addresses (bookmarks, links in old messages) move to the readable paths.
     // An unknown slug is a 404 from routing, before the permission check.
-    Route::get('screens/{screen}', fn (string $screen) => view('pages.screen', ['screen' => $screen]))
-        ->whereIn('screen', Arr::flatten(config('navigation.groups')))
-        ->middleware('screen')
-        ->name('screens.show');
+    Route::get('screens/vouchers/new', fn () => redirect()->route('entries.vouchers.create', status: 301))->middleware('screen:vouchers,create');
+    Route::get('screens/vouchers/{voucher}/print', fn (string $voucher) => redirect()->route('entries.vouchers.print', ['voucher' => $voucher], 301))->middleware('screen:vouchers');
+    Route::get('screens/{screen}', fn (Request $request, string $screen) => redirect()->route(Navigation::routeName($screen), $request->query(), 301))
+        ->whereIn('screen', Navigation::slugs())
+        ->middleware('screen');
 });

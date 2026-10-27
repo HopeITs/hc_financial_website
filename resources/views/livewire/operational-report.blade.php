@@ -54,7 +54,7 @@
                             @if ($column['type'] === 'money')
                                 <td class="fin-num"><x-money :amount="$value" /></td>
                             @elseif ($column['type'] === 'voucher')
-                                <td><a href="{{ route('screens.show', ['screen' => 'vouchers', 'voucher' => $value]) }}" class="underline" dir="ltr">{{ $value }}</a></td>
+                                <td><a href="{{ route('entries.vouchers', ['voucher' => $value]) }}" class="underline" dir="ltr">{{ $value }}</a></td>
                             @elseif ($column['type'] === 'kind')
                                 <td>{{ __('ledger.op.kind.'.$value) }}</td>
                             @elseif ($column['type'] === 'date' || $column['type'] === 'ltr')

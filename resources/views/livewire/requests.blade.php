@@ -128,7 +128,7 @@
                 <tbody>
                     @forelse ($list as $row)
                         <tr wire:key="request-{{ $row->id }}">
-                            <td dir="ltr" class="whitespace-nowrap text-start"><a href="{{ route('requests', ['request' => $row->id]) }}" wire:navigate class="font-medium text-primary hover:underline dark:text-brand-text">#{{ $row->id }}</a></td>
+                            <td dir="ltr" class="whitespace-nowrap text-start"><a href="{{ route('entries.requests', ['request' => $row->id]) }}" wire:navigate class="font-medium text-primary hover:underline dark:text-brand-text">#{{ $row->id }}</a></td>
                             <td dir="ltr" class="text-start">{{ $row->project_code }}</td>
                             <td dir="ltr" class="text-start">{{ $row->month?->format('Y-m') ?? '—' }}</td>
                             <td>{{ __('requests.types.'.$row->type) }}</td>
@@ -146,7 +146,7 @@
         {{ $list->links() }}
     @else
         <div>
-            <a href="{{ route('requests') }}" wire:navigate class="text-sm text-secondary-medium hover:underline dark:text-ink-muted">{{ __('requests.back') }}</a>
+            <a href="{{ route('entries.requests') }}" wire:navigate class="text-sm text-secondary-medium hover:underline dark:text-ink-muted">{{ __('requests.back') }}</a>
         </div>
 
         <x-ui.page-header :title="__('requests.request_number', ['number' => $current->id])" :subtitle="$current->description ?: __('requests.no_description')">
@@ -250,7 +250,7 @@
                     @endif
                     @forelse ($current->quotes as $quote)
                         <p class="flex flex-wrap items-baseline gap-3 text-sm" wire:key="quote-{{ $quote->id }}">
-                            <a href="{{ route('requests.quote', $quote) }}" class="text-primary hover:underline dark:text-brand-text" dir="ltr">{{ $quote->original_name }}</a>
+                            <a href="{{ route('entries.requests.quote', $quote) }}" class="text-primary hover:underline dark:text-brand-text" dir="ltr">{{ $quote->original_name }}</a>
                             <span class="text-secondary-medium dark:text-ink-muted" dir="ltr">{{ number_format($quote->size / 1024, 1) }} KB</span>
                             @if ($canEdit)
                                 <button type="button" wire:click="removeQuote({{ $quote->id }})" class="text-status-critical hover:underline">{{ __('requests.remove') }}</button>
@@ -288,7 +288,7 @@
                 <h2 class="text-base font-semibold text-secondary-dark dark:text-ink">{{ __('requests.vouchers') }}</h2>
                 <x-ui.panel class="flex flex-col gap-1 p-4" data-test="request-vouchers">
                     @foreach ($vouchers as $voucher)
-                        <p class="text-sm" wire:key="voucher-{{ $voucher->id }}"><a href="{{ route('vouchers', ['voucher' => $voucher->id]) }}" wire:navigate class="text-primary hover:underline dark:text-brand-text" dir="ltr">{{ $voucher->id }}</a> · {{ $voucher->date->toDateString() }}</p>
+                        <p class="text-sm" wire:key="voucher-{{ $voucher->id }}"><a href="{{ route('entries.vouchers', ['voucher' => $voucher->id]) }}" wire:navigate class="text-primary hover:underline dark:text-brand-text" dir="ltr">{{ $voucher->id }}</a> · {{ $voucher->date->toDateString() }}</p>
                     @endforeach
                 </x-ui.panel>
             </section>

@@ -258,7 +258,7 @@ it('lets an accountant propose a rate and the financial manager approve it, then
     $accountant = User::query()->whereKey(createFinanceUser('acc', 'secret pass', RoleId::Accountant->name, RoleId::Accountant->value))->firstOrFail();
     $manager = User::query()->whereKey(createFinanceUser('fm', 'secret pass', RoleId::FinancialManager->name, RoleId::FinancialManager->value))->firstOrFail();
 
-    $this->actingAs($accountant)->get('/screens/alloc')->assertOk();
+    $this->actingAs($accountant)->get('/treasury/allocation-rates')->assertOk();
 
     Livewire::actingAs($accountant)->test(Transfers::class)
         ->set('rateCity', 'Aleppo')->set('rateValue', '14000')->set('rateFrom', '2026-04-01')
