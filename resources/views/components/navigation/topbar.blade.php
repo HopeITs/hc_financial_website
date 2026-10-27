@@ -102,7 +102,7 @@
             <p class="mega-label">{{ __('navigation.groups.'.$group) }}</p>
             <div class="mega-grid">
                 @foreach ($screens as $screen)
-                    <a href="{{ route('screens.show', $screen) }}" wire:navigate class="mega-tile" x-on:click="open = null" @if ($currentScreen === $screen) aria-current="page" @endif>
+                    <a href="{{ route(\App\Support\Navigation::routeName($screen)) }}" wire:navigate class="mega-tile" x-on:click="open = null" @if ($currentScreen === $screen) aria-current="page" @endif>
                         <span class="flex items-center justify-between gap-2">
                             <span class="mega-title">{{ __('navigation.screens.'.$screen) }}</span>
                             @if (($badges[$screen] ?? 0) > 0)

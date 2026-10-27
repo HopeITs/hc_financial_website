@@ -29,6 +29,28 @@ class Navigation
     }
 
     /**
+     * Every screen slug of the navigation.
+     *
+     * @return list<string>
+     */
+    public static function slugs(): array
+    {
+        return array_merge(...array_values((array) config('navigation.groups')));
+    }
+
+    /** The address of a screen, `reports/trial-balance` for `tb` (config/navigation.php `paths`). */
+    public static function path(string $screen): string
+    {
+        return (string) config('navigation.paths.'.$screen);
+    }
+
+    /** The route name of a screen: its path with dots, `reports.trial-balance` for `tb`. */
+    public static function routeName(string $screen): string
+    {
+        return str_replace('/', '.', self::path($screen));
+    }
+
+    /**
      * @return array<string, list<string>>
      */
     public static function visibleGroups(?User $user): array

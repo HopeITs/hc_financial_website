@@ -1,6 +1,6 @@
 <div class="flex flex-col gap-6 px-4 pb-10 lg:px-8">
     <div>
-        <a href="{{ route('projects') }}" wire:navigate class="text-sm text-secondary-medium hover:underline dark:text-ink-muted">{{ __('projects.back') }}</a>
+        <a href="{{ route('projects.balances') }}" wire:navigate class="text-sm text-secondary-medium hover:underline dark:text-ink-muted">{{ __('projects.back') }}</a>
         <flux:heading size="xl" level="1" class="mt-1 text-3xl! font-bold! leading-none!">{{ $project->name }}</flux:heading>
         <flux:subheading class="mt-2">
             {{ collect([$project->cityName, $project->programName, $project->donors ?: null])->filter()->implode(' · ') }}

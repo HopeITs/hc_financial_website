@@ -9,6 +9,7 @@ use App\Services\Ledger\LineDraft;
 use App\Services\Ledger\OperationalReports;
 use App\Services\Ledger\PostVoucher;
 use App\Services\Ledger\ReportFilters;
+use App\Support\Navigation;
 use Carbon\CarbonImmutable;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Support\Facades\DB;
@@ -139,7 +140,7 @@ it('serves each report screen and rejects unknown ones', function () {
     $user = User::query()->findOrFail(createFinanceUser('opuser', 'secret pass', RoleId::HeadOffice->name, RoleId::HeadOffice->value));
 
     foreach (OperationalReports::REPORTS as $slug) {
-        $this->actingAs($user)->get(route($slug))->assertOk();
+        $this->actingAs($user)->get(route(Navigation::routeName($slug)))->assertOk();
     }
 
     Livewire::actingAs($user)->test(OperationalReport::class, ['screen' => 'rexp'])->call('export')->assertFileDownloaded('rexp.csv');

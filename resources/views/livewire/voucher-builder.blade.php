@@ -5,7 +5,7 @@
 
 <div class="flex flex-col gap-6 px-4 pb-10 lg:px-8" data-test="voucher-builder">
     <div>
-        <a href="{{ route('vouchers') }}" wire:navigate class="text-sm text-secondary-medium hover:underline dark:text-ink-muted">{{ __('ledger.builder.back') }}</a>
+        <a href="{{ route('entries.vouchers') }}" wire:navigate class="text-sm text-secondary-medium hover:underline dark:text-ink-muted">{{ __('ledger.builder.back') }}</a>
     </div>
 
     <x-ui.page-header :title="__('ledger.builder.title')" :subtitle="__('ledger.builder.intro')" />

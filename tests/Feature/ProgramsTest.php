@@ -33,7 +33,7 @@ function programsUser(RoleId $role = RoleId::HeadOffice): User
 }
 
 it('lists the legacy programs with their active projects and balances', function () {
-    $this->actingAs(programsUser())->get('/screens/programs')
+    $this->actingAs(programsUser())->get('/projects/programs')
         ->assertOk()
         ->assertSee('Hope Center')
         ->assertSee('1,500.50')
@@ -86,7 +86,7 @@ it('warns about a duplicate name without blocking it', function () {
 it('refuses the add button and the save to roles without programs.create', function (RoleId $role) {
     $user = programsUser($role);
 
-    $this->actingAs($user)->get('/screens/programs')->assertOk()->assertDontSee('data-test="add-program"', false);
+    $this->actingAs($user)->get('/projects/programs')->assertOk()->assertDontSee('data-test="add-program"', false);
 
     Livewire::actingAs($user)->test(Programs::class)->call('openForm')->assertForbidden();
     Livewire::actingAs($user)->test(Programs::class)->set('nameEn', 'X')->set('nameAr', 'س')->call('save')->assertForbidden();
@@ -96,7 +96,7 @@ it('refuses the add button and the save to roles without programs.create', funct
 })->with([RoleId::Accountant, RoleId::ProjectManager]);
 
 it('refuses the page to a role that cannot view it', function () {
-    $this->actingAs(programsUser(RoleId::Cashier))->get('/screens/programs')->assertForbidden();
+    $this->actingAs(programsUser(RoleId::Cashier))->get('/projects/programs')->assertForbidden();
 });
 
 it('files a project under a web program and moves its balances', function () {
