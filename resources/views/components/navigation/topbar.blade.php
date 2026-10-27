@@ -43,7 +43,7 @@
 
                 <flux:menu>
                     @foreach ($screens as $screen)
-                        <flux:menu.item :href="route('screens.show', $screen)" wire:navigate :class="$currentScreen === $screen ? 'font-semibold text-primary' : ''">
+                        <flux:menu.item :href="route(\App\Support\Navigation::routeName($screen))" wire:navigate :class="$currentScreen === $screen ? 'font-semibold text-primary' : ''">
                             {{ __('navigation.screens.'.$screen) }}
                             @if (($badges[$screen] ?? 0) > 0)
                                 <span class="ms-2 inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold tabular-nums text-white" data-test="badge-{{ $screen }}">{{ $badges[$screen] }}</span>

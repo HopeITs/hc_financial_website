@@ -5,6 +5,7 @@ use App\Livewire\FollowUpReport;
 use App\Models\User;
 use App\Services\Ledger\FollowUpFilters;
 use App\Services\Ledger\FollowUpReports;
+use App\Support\Navigation;
 use Carbon\CarbonImmutable;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Support\Facades\DB;
@@ -122,14 +123,14 @@ it('limits a project manager to their own projects', function () {
 
     $component = Livewire::actingAs($manager)->test(FollowUpReport::class, ['screen' => 'advances']);
     $component->assertSee('Rana')->assertDontSee('Omar');
-    $this->actingAs($manager)->get(route('uncomp'))->assertForbidden();
+    $this->actingAs($manager)->get(route('reports.uncompensated-cash'))->assertForbidden();
 });
 
 it('opens the four screens for head office and exports csv', function () {
     $user = User::query()->findOrFail(createFinanceUser('fuser', 'secret pass', RoleId::HeadOffice->name, RoleId::HeadOffice->value));
 
     foreach (FollowUpReports::REPORTS as $slug) {
-        $this->actingAs($user)->get(route($slug))->assertOk();
+        $this->actingAs($user)->get(route(Navigation::routeName($slug)))->assertOk();
         Livewire::actingAs($user)->test(FollowUpReport::class, ['screen' => $slug])->call('export')->assertFileDownloaded($slug.'.csv');
     }
 

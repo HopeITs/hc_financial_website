@@ -55,7 +55,7 @@ function projectsUser(RoleId $role = RoleId::HeadOffice): User
 }
 
 it('lists every project with city, program, donor, status and summed balances', function () {
-    $this->actingAs(projectsUser())->get('/screens/projects')
+    $this->actingAs(projectsUser())->get('/projects/balances')
         ->assertOk()
         ->assertSee('Alpha Aleppo')->assertSee('Hope Center')->assertSee('Donor One')
         ->assertSee('1,500.50')->assertSee('15.25')
@@ -112,7 +112,7 @@ it('keeps the names but hides the money from a role without finance permission',
     $manager = projectsUser(RoleId::ProjectManager);
     DB::table('web_project_managers')->insert(['user_id' => $manager->getKey(), 'account_id' => 10]);
 
-    $this->actingAs($manager)->get('/screens/projects')
+    $this->actingAs($manager)->get('/projects/balances')
         ->assertOk()->assertSee('Alpha Aleppo')->assertDontSee('1,500.50')->assertDontSee(__('home.balance_usd'));
 
     $page = Livewire::actingAs($manager)->test(ProjectPage::class, ['account' => 10]);

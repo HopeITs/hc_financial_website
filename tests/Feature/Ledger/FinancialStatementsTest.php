@@ -99,7 +99,7 @@ it('opens for a signed-in user and downloads XLSX and PDF', function () {
     stmtReceipt('2026-01-05', 100);
     $user = User::query()->findOrFail(createFinanceUser('stmtuser', 'secret pass', RoleId::HeadOffice->name, RoleId::HeadOffice->value));
 
-    $this->actingAs($user)->get('/screens/statements')->assertOk()->assertSee('Cash and cash equivalents');
+    $this->actingAs($user)->get('/reports/financial-statements')->assertOk()->assertSee('Cash and cash equivalents');
 
     foreach (['en', 'ar'] as $locale) {
         app()->setLocale($locale);

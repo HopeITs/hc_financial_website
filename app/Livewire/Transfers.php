@@ -147,7 +147,7 @@ class Transfers extends Component
         }
 
         session()->flash('notice', __('ledger.builder.saved', ['number' => $voucher->id]));
-        $this->redirectRoute('vouchers', ['voucher' => $voucher->id], navigate: true);
+        $this->redirectRoute('entries.vouchers', ['voucher' => $voucher->id], navigate: true);
     }
 
     public function render(TransferRates $rates, TransferBuilder $builder): View

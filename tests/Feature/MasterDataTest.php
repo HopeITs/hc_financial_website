@@ -5,6 +5,7 @@ use App\Livewire\ReferenceList;
 use App\Livewire\Users;
 use App\Models\User;
 use App\Support\FinancePassword;
+use App\Support\Navigation;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
@@ -93,15 +94,15 @@ it('filters the log by date', function () {
 });
 
 it('opens the reference screens for the roles that may see them and not for the others', function () {
-    $this->actingAs(masterUser(RoleId::Accountant))->get('/screens/donors')->assertOk();
-    $this->actingAs(masterUser(RoleId::Cashier, 'Cass'))->get('/screens/tills')->assertOk();
-    $this->actingAs(masterUser(RoleId::Cashier, 'Cass2'))->get('/screens/donors')->assertForbidden();
-    $this->actingAs(masterUser(RoleId::Employee, 'Emp'))->get('/screens/log')->assertForbidden();
-    $this->actingAs(masterUser(RoleId::HeadOffice, 'Hoa'))->get('/screens/limits')->assertOk();
+    $this->actingAs(masterUser(RoleId::Accountant))->get('/people/donors')->assertOk();
+    $this->actingAs(masterUser(RoleId::Cashier, 'Cass'))->get('/treasury/tills')->assertOk();
+    $this->actingAs(masterUser(RoleId::Cashier, 'Cass2'))->get('/people/donors')->assertForbidden();
+    $this->actingAs(masterUser(RoleId::Employee, 'Emp'))->get('/people/log')->assertForbidden();
+    $this->actingAs(masterUser(RoleId::HeadOffice, 'Hoa'))->get('/people/approval-limits')->assertOk();
 });
 
 it('sends the old project windows to the project list', function (string $slug) {
-    $this->actingAs(masterUser(RoleId::HeadOffice))->get('/screens/'.$slug)->assertOk();
+    $this->actingAs(masterUser(RoleId::HeadOffice))->get('/'.Navigation::path($slug))->assertOk();
 })->with(['projwin', 'allaccounts', 'budgetlines', 'lifetime']);
 
 it('lists the users with their roles and states', function () {
@@ -167,12 +168,12 @@ it('lets only those who may edit users change a password', function () {
     $target = masterUser(RoleId::Accountant, 'Ann');
     $before = DB::table('user')->where('ID', $target->getKey())->value('Password');
 
-    $this->actingAs($manager)->get('/screens/users')->assertOk()->assertDontSee('data-test="change-'.$target->getKey().'"', false);
+    $this->actingAs($manager)->get('/people/users')->assertOk()->assertDontSee('data-test="change-'.$target->getKey().'"', false);
     Livewire::actingAs($manager)->test(Users::class)->call('edit', $target->getKey())->assertForbidden();
     Livewire::actingAs($manager)->test(Users::class)->set('editing', $target->getKey())->set('password', 'long enough one')->set('confirmation', 'long enough one')->call('save')->assertForbidden();
 
     expect(DB::table('user')->where('ID', $target->getKey())->value('Password'))->toBe($before);
-    $this->actingAs(masterUser(RoleId::Accountant, 'Ann2'))->get('/screens/users')->assertForbidden();
+    $this->actingAs(masterUser(RoleId::Accountant, 'Ann2'))->get('/people/users')->assertForbidden();
 });
 
 it('never writes to a legacy table from a reference screen', function () {

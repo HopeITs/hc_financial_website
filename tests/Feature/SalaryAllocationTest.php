@@ -243,10 +243,10 @@ it('saves a payroll split from the screen', function () {
 
 it('keeps salaries away from the roles that are not finance or head office', function () {
     foreach ([RoleId::ProjectManager, RoleId::Cashier, RoleId::Employee, RoleId::Donor] as $role) {
-        $this->actingAs(payrollUser($role, 'User '.$role->name))->get(route('salaries'))->assertForbidden();
+        $this->actingAs(payrollUser($role, 'User '.$role->name))->get(route('people.salaries'))->assertForbidden();
     }
 
-    $this->actingAs(payrollUser(RoleId::Accountant, 'Ann'))->get(route('salaries'))->assertOk();
+    $this->actingAs(payrollUser(RoleId::Accountant, 'Ann'))->get(route('people.salaries'))->assertOk();
 });
 
 it('lets the financial manager view the screen but not save', function () {

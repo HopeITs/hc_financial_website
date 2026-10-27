@@ -254,7 +254,7 @@ it('refuses a project manager anything on a project that is not theirs', functio
     Livewire::actingAs($foreign)->test(Requests::class)->assertDontSee('#'.$request->id);
     Livewire::actingAs($owner)->test(Requests::class)->assertSee('#'.$request->id);
 
-    $this->actingAs($foreign)->get(route('requests', ['request' => $request->id]))->assertNotFound();
+    $this->actingAs($foreign)->get(route('entries.requests', ['request' => $request->id]))->assertNotFound();
 });
 
 it('answers 403 to every action the role does not have', function () {
@@ -275,8 +275,8 @@ it('answers 403 to every action the role does not have', function () {
 
     expect(fn () => rqWorkflow()->close($manager, $request))->toThrow(AuthorizationException::class);
 
-    $this->actingAs($cashier)->get(route('requests'))->assertForbidden();
-    $this->actingAs($accountant)->get(route('requests'))->assertOk();
+    $this->actingAs($cashier)->get(route('entries.requests'))->assertForbidden();
+    $this->actingAs($accountant)->get(route('entries.requests'))->assertOk();
 });
 
 it('does not let a person decide on their own request or decide twice', function () {
@@ -339,8 +339,8 @@ it('takes at most three quotes, keeps them off the public disk and never drops b
 
     expect(fn () => rqWorkflow()->removeQuote($manager, $request, $request->quotes()->first()->id))->toThrow(RequestException::class, 'price quotes');
 
-    $this->actingAs($manager)->get(route('requests.quote', $request->quotes()->first()))->assertOk();
-    $this->actingAs(rqManager('Other', 99))->get(route('requests.quote', $request->quotes()->first()))->assertForbidden();
+    $this->actingAs($manager)->get(route('entries.requests.quote', $request->quotes()->first()))->assertOk();
+    $this->actingAs(rqManager('Other', 99))->get(route('entries.requests.quote', $request->quotes()->first()))->assertForbidden();
 });
 
 it('needs no quotes for a routine request', function () {
@@ -428,8 +428,8 @@ it('rejects through the screen only with a reason', function () {
 it('shows the request screen in the menu and both languages', function () {
     $manager = rqManager();
 
-    $this->actingAs($manager)->get('/home')->assertSee(route('requests'));
-    $this->actingAs($manager)->withSession(['locale' => 'ar'])->get(route('requests'))->assertOk();
+    $this->actingAs($manager)->get('/home')->assertSee(route('entries.requests'));
+    $this->actingAs($manager)->withSession(['locale' => 'ar'])->get(route('entries.requests'))->assertOk();
 
     expect(array_keys(trans('requests', [], 'ar')))->toEqual(array_keys(trans('requests', [], 'en')));
 });
