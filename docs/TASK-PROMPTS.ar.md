@@ -622,7 +622,7 @@ Start from an up-to-date `main`, create branch `t1-6-framework-tables`, commit w
 
 
 #### Output and handoff to the next task
-تعتمد عليها: Task 14، Task 40.
+تعتمد عليها: Task 14.
 
 #### Claude prompt
 
@@ -3243,78 +3243,10 @@ Start from an up-to-date `main`, create branch `t7-2-master-data`, commit with m
 ## المرحلة 7: التقوية والاختبار والتحويل النهائي · A + B · 23–30 نوفمبر
 
 
-### 40 · فرض تغيير كلمة المرور المشتركة
+### 40 · فرض تغيير كلمة المرور المشتركة — ملغاة
 
-- **المطوّر والتواريخ:** المطوّر A · التواريخ: 2026-11-23
-- **الجهد المقدّر:** نصف يوم
-- **الاعتماديات:** Task 08
-
-#### Objective
-المستخدمون الـ14 يشتركون في كلمة مرور واحدة: فرض تغييرها عند أول دخول.
-
-
-#### Implementation scope
-
-- شاشة إلزامية عند أول دخول للويب وكتابة بـFinancePassword::make بملح عشوائي.
-
-
-#### Required deliverables
-
-- الشاشة + الاختبارات.
-
-
-#### Business rules
-لا ينطبق على هذه المهمة.
-
-
-#### Security and permissions
-
-- برنامج ويندوز يجب أن يتحقق من الصيغة نفسها.
-
-
-#### Exceptional and edge cases
-لا ينطبق على هذه المهمة.
-
-
-#### Acceptance criteria
-
-- اختبار: الصيغة الجديدة يقبلها التحقق.
-
-
-#### Mistakes to avoid
-
-- كتابة صيغة مختلفة.
-
-
-#### Output and handoff to the next task
-تعتمد عليها: Task 43.
-
-#### Claude prompt
-
-````text
-## Role and goal
-You are implementing Task 40 of the HC Financial Web plan (فرض تغيير كلمة المرور المشتركة). Branch: `t8-1-reset-shared-password`. Do only this task.
-
-## Read before writing any code
-1. `CLAUDE.md` and `AGENTS.md`.
-2. `docs/PLAN-hcsyria_financial_test.md` (authoritative) and `docs/PLAN-hcsyria_financial_test-AR.md`, especially sections 1, 3.2, 6 and 6.8-6.9.
-3. `docs/DECISIONS.md` once task 01 has produced it.
-
-## Common rules
-Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
-
-## Deadline
-Target date: 2026-11-23. October items feed the end-of-October demo (Home, side tree, programs, projects); everything else must be done by 2026-11-30.
-
-## Task
-All 14 users currently share one stored password. Add a forced password change at first web login; write with `FinancePassword::make` (random salt per user). Test that the Windows program format still verifies.
-
-## Preconditions
-These tasks must be merged first: 08. If one is missing, stop and report.
-
-## Git
-Start from an up-to-date `main`, create branch `t8-1-reset-shared-password`, commit with messages starting `T40:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
-````
+- **الحالة:** ملغاة، لا تُنفَّذ.
+- **السبب:** كلمة المرور المشتركة موجودة في بيئة الاختبار فقط (كل المستخدمين test). في قاعدة البيانات الفعلية لكل مستخدم كلمة مرور خاصة به، فلا حاجة لشاشة إجبارية لتغييرها. الفرع `t8-1-reset-shared-password` لا يُنشأ.
 
 ---
 
@@ -3475,7 +3407,7 @@ Start from an up-to-date `main`, create branch `t8-3-qa-uat`, commit with messag
 
 - **المطوّر والتواريخ:** المطوّر A · التواريخ: 2026-11-24–25 (الدليل)، والتنفيذ 11-30
 - **الجهد المقدّر:** 2 يوم + يوم التنفيذ
-- **الاعتماديات:** Task 42، Task 33، Task 40
+- **الاعتماديات:** Task 42، Task 33
 
 #### Objective
 تعليمات تنفيذ التحويل النهائي خطوة بخطوة، مع التراجع.
