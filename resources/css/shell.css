@@ -164,9 +164,8 @@
         color: var(--color-ink-muted);
     }
 
-    /* Account codes read as data: mono, tabular, always left to right. */
+    /* Account codes read as data: tabular digits, always left to right. */
     .fin-code {
-        font-family: var(--font-mono);
         font-size: 0.8125rem;
         font-variant-numeric: tabular-nums;
         direction: ltr;
