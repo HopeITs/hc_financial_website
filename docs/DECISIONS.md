@@ -123,6 +123,10 @@ Source: the receive-transfer-spend scenario run on the site with the ADISC budge
 | R4-10 | Monthly request after the deadline (last 5 working days of the month): a visible warning to the project manager, not blocked | FM | Decided | `Requests` |
 | R4-11 | A screen to create a project and its budget lines, and an Excel import in the budget-sheet format | FM | Decided | `projects` |
 | R4-12 | The proposed mapping of ADISC budget lines to expense accounts is approved (salaries 5101, other staff 5102, rent 5301, fuel/electricity/water 5302, phone/internet 5303, stationery 5304, cleaning 5309, maintenance 5307, solar 5204, internal transport 5306, travel/lodging 5408, training/events/courses 5406, certificates and hospitality 5403, staff training and activities 5104) | FM | Decided | Excel import |
+| R4-13 | Each donor transfers its own share in a separate receipt. OO's share is EUR 58,970 only (its 23 budget lines); MCC's 5 lines come in MCC's own transfer. The USD value of a share is set by the actual rate of that transfer, not by the budget rate 1.14. The single EUR 85,075 receipt of the scenario test is therefore not a real case | FM | Decided | Hawala receipt, ADISC-MCC and ADISC-OO receipts |
+| R4-14 | No bank account in the books. Money can reach the organisation through a bank in Lebanon, another bank in Lebanon, a bank in China, or as cash handed straight to the hawala office; in every case the receipt is recorded directly on the transfer company account 1161, as the hawala receipt voucher does today. No bank accounts outside Syria are added to the chart | FM | Decided | Hawala receipt (no change), chart (no new accounts) |
+
+R4-13 and R4-14 were given in chat on 2026-10-28, after the FM's procedure document `عملية مالية استلام وتحويل وصرف.docx` (the ADISC budget sheet is embedded in it: 28 lines, each with one donor, MCC USD 29,760 and OO USD 67,226 at the budget rate).
 
 ## 7. Sign-off
 

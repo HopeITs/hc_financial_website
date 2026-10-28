@@ -4,6 +4,7 @@ use App\Http\Controllers\RequestQuoteController;
 use App\Http\Controllers\SwitchLocaleController;
 use App\Http\Controllers\VoucherPrintController;
 use App\Livewire\Approval;
+use App\Livewire\Bridge;
 use App\Livewire\Chart;
 use App\Livewire\CurrencySettings;
 use App\Livewire\FinancialStatements;
@@ -100,6 +101,11 @@ Route::middleware('auth')->group(function () {
 
     $screen('salaries', Salaries::class);
     $screen('users', Users::class);
+
+    // Bridge pages (task 39): read-only, for Head Office and the Financial Manager.
+    foreach (Bridge::PAGES as $page) {
+        $screen($page, Bridge::class);
+    }
 
     // The currencies are the ledger's own table (R4-4), edited here; the other references are read-only.
     $screen('currency', CurrencySettings::class);

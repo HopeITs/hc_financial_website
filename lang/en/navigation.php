@@ -9,6 +9,7 @@ return [
         'reports' => 'Reports',
         'people' => 'People',
         'migration' => 'Migration',
+        'bridge' => 'Bridge',
     ],
 
     'screens' => [
@@ -58,6 +59,9 @@ return [
         'fixusd' => 'Fix USD report',
         'legacy' => 'Legacy exchange',
         'merges' => 'Till merges',
+        'decisions' => 'Decisions log',
+        'mapping' => 'Windows program mapping',
+        'rules' => 'Posting rules',
     ],
 
     'descriptions' => [
@@ -106,5 +110,8 @@ return [
         'fixusd' => 'Fix the USD report values',
         'legacy' => 'Legacy exchange operations',
         'merges' => 'Merge cash tills',
+        'decisions' => 'What the Financial Manager decided, and what is still open',
+        'mapping' => 'How the Windows program\'s data becomes ledger data',
+        'rules' => 'The checks every voucher passes, and where each one runs',
     ],
 ];
