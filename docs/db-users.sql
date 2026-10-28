@@ -3,7 +3,7 @@
 --     mysql -u root -p < docs/db-users.sql
 -- Do NOT run it against production. Replace both passwords first and keep them
 -- out of the repository: they go in .env as DB_PASSWORD (hc_web) and
--- LEGACY_DB_PASSWORD (hc_web_legacy), with DB_USERNAME=hc_web.
+-- LEGACY_DB_PASSWORD (hcfi), with DB_USERNAME=hc_web.
 --
 -- MySQL has no wildcards in table-level grants, so the app-owned tables are granted
 -- one by one by the procedure below. Migrations are run with an administrator account
@@ -13,8 +13,8 @@
 USE `hcsyria_financial_test`;
 
 -- 1. Read-only user, used by the `legacy` connection.
-CREATE USER IF NOT EXISTS 'hc_web_legacy'@'localhost' IDENTIFIED BY 'CHANGE_ME_LEGACY';
-GRANT SELECT ON `hcsyria_financial_test`.* TO 'hc_web_legacy'@'localhost';
+CREATE USER IF NOT EXISTS 'hcfi'@'localhost' IDENTIFIED BY 'CHANGE_ME_LEGACY';
+GRANT SELECT ON `hcsyria_financial_test`.* TO 'hcfi'@'localhost';
 
 -- 2. Application user, used by the default connection.
 CREATE USER IF NOT EXISTS 'hc_web'@'localhost' IDENTIFIED BY 'CHANGE_ME_APP';
