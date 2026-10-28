@@ -69,12 +69,12 @@
                                         <td class="text-xs text-secondary-medium dark:text-ink-muted">{{ $line['type'] }}</td>
                                         <td>
                                             <div class="form-box">
-                                                <select wire:model="projects.{{ $p }}.lines.{{ $l }}.account_code" class="form-box-input" data-test="account-{{ $p }}-{{ $l }}">
+                                                <x-ui.form-select bare wire:model="projects.{{ $p }}.lines.{{ $l }}.account_code" :label="__('projects.manage.choose_account')" data-test="account-{{ $p }}-{{ $l }}">
                                                     <option value="">{{ __('projects.manage.choose_account') }}</option>
                                                     @foreach ($accounts as $account)
                                                         <option value="{{ $account->code }}">{{ $account->code }} - {{ $account->name_en }}</option>
                                                     @endforeach
-                                                </select>
+                                                </x-ui.form-select>
                                             </div>
                                             @error("projects.$p.lines.$l.account_code") <span class="text-xs text-red-600">{{ $message }}</span> @enderror
                                         </td>
@@ -87,11 +87,11 @@
                                         </td>
                                         <td>
                                             <div class="form-box">
-                                                <select wire:model="projects.{{ $p }}.lines.{{ $l }}.currency" class="form-box-input">
+                                                <x-ui.form-select bare wire:model="projects.{{ $p }}.lines.{{ $l }}.currency" :label="__('projects.manage.donor_currency')">
                                                     @foreach ($currencies as $currency)
                                                         <option value="{{ $currency }}">{{ $currency }}</option>
                                                     @endforeach
-                                                </select>
+                                                </x-ui.form-select>
                                             </div>
                                         </td>
                                         <td>

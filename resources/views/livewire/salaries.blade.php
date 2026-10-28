@@ -44,12 +44,12 @@
                         <tr wire:key="split-{{ $i }}">
                             <td class="text-secondary-medium dark:text-ink-muted">{{ $i + 1 }}</td>
                             <td>
-                                <select wire:model="splitRows.{{ $i }}.budget_line" class="{{ $cell }}" aria-label="{{ __('salaries.budget_line') }}">
+                                <x-ui.form-select bare wire:model="splitRows.{{ $i }}.budget_line" :label="(__('salaries.budget_line'))">
                                     <option value="">—</option>
                                     @foreach ($budgetLines as $budgetLine)
                                         <option value="{{ $budgetLine->key }}">{{ $budgetLine->project_code }} · {{ $budgetLine->name }} · {{ $budgetLine->account_code }}</option>
                                     @endforeach
-                                </select>
+                                </x-ui.form-select>
                             </td>
                             <td><input type="text" inputmode="decimal" dir="ltr" wire:model="splitRows.{{ $i }}.percent" class="{{ $cell }}" aria-label="{{ __('salaries.percent') }}"></td>
                             <td><x-ui.button tone="ghost" wire:click="removeSplitRow({{ $i }})" :aria-label="__('salaries.remove')">✕</x-ui.button></td>
@@ -122,12 +122,12 @@
                         <tr wire:key="line-{{ $i }}">
                             <td class="text-secondary-medium dark:text-ink-muted">{{ $i + 1 }}</td>
                             <td>
-                                <select wire:model.live="lines.{{ $i }}.budget_line" class="{{ $cell }}" aria-label="{{ __('salaries.budget_line') }}">
+                                <x-ui.form-select bare wire:model.live="lines.{{ $i }}.budget_line" :label="(__('salaries.budget_line'))">
                                     <option value="">—</option>
                                     @foreach ($budgetLines as $budgetLine)
                                         <option value="{{ $budgetLine->key }}">{{ $budgetLine->project_code }} · {{ $budgetLine->name }} · {{ $budgetLine->account_code }}</option>
                                     @endforeach
-                                </select>
+                                </x-ui.form-select>
                             </td>
                             <td dir="ltr" class="text-secondary-medium dark:text-ink-muted">{{ ($line['percent'] ?? '') !== '' ? $line['percent'].'%' : '' }}</td>
                             <td><input type="text" inputmode="decimal" dir="ltr" wire:model.live.debounce.300ms="lines.{{ $i }}.amount" class="{{ $cell }}" aria-label="{{ __('salaries.amount') }}"></td>

@@ -61,20 +61,20 @@
                             <tr wire:key="form-line-{{ $i }}">
                                 <td class="text-secondary-medium dark:text-ink-muted">{{ $i + 1 }}</td>
                                 <td>
-                                    <select wire:model.live="fLines.{{ $i }}.budget_line" class="{{ $cell }}" aria-label="{{ __('requests.budget_line') }}">
+                                    <x-ui.form-select bare wire:model.live="fLines.{{ $i }}.budget_line" :label="(__('requests.budget_line'))">
                                         <option value="">—</option>
                                         @foreach ($budgetLines as $budgetLine)
                                             <option value="{{ $budgetLine->key }}">{{ $budgetLine->name }} · {{ $budgetLine->account_code }}</option>
                                         @endforeach
-                                    </select>
+                                    </x-ui.form-select>
                                 </td>
                                 <td><input type="text" inputmode="decimal" dir="ltr" wire:model.live.debounce.300ms="fLines.{{ $i }}.amount" class="{{ $cell }}" aria-label="{{ __('requests.amount') }}"></td>
                                 <td>
-                                    <select wire:model.live="fLines.{{ $i }}.currency" class="{{ $cell }}" aria-label="{{ __('requests.currency') }}">
+                                    <x-ui.form-select bare wire:model.live="fLines.{{ $i }}.currency" :label="(__('requests.currency'))">
                                         @foreach (app(\App\Services\Ledger\Currencies::class)->codes() as $code)
                                             <option value="{{ $code }}">{{ $code }}</option>
                                         @endforeach
-                                    </select>
+                                    </x-ui.form-select>
                                 </td>
                                 <td><input type="text" inputmode="decimal" dir="ltr" wire:model.live.debounce.300ms="fLines.{{ $i }}.rate" class="{{ $cell }}" @disabled(in_array($line['currency'] ?? '', ['', 'USD'], true)) placeholder="{{ ! in_array($line['currency'] ?? '', ['', 'USD'], true) ? __('requests.rate_auto') : '' }}" aria-label="{{ __('requests.rate') }}"></td>
                                 <td><input type="text" wire:model="fLines.{{ $i }}.note" class="{{ $cell }}" aria-label="{{ __('requests.note') }}"></td>
