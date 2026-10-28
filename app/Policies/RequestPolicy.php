@@ -12,7 +12,7 @@ use App\Services\Projects\ProjectAccess;
 
 /**
  * Who may do what with a request. A project manager works on the requests of the projects linked to them (checked
- * through the link, not the role alone); the Financial Manager and then the General Manager decide, never the person
+ * through the link, not the role alone); the Program Manager, the Financial Manager and then the General Manager decide, never the person
  * who made the request and never the same person twice. Whether the request is in the right state is the workflow's job.
  */
 class RequestPolicy
@@ -51,7 +51,7 @@ class RequestPolicy
 
         $done = array_values($approvals->where('decision', 'approved')->map(fn ($approval): RoleId => $approval->role_id)->all());
 
-        return $this->chain->mayApproveNext($this->total($request), $done, $user->roleIds());
+        return $this->chain->mayApproveNext($this->total($request), $done, $user->roleIds(), true);
     }
 
     public function close(User $user, LedgerRequest $request): bool

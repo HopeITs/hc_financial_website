@@ -174,7 +174,7 @@ it('holds the General Manager in the web table and leaves the legacy role alone'
 
     expect($gm->roleIds())->toContain(RoleId::GeneralManager)
         ->and(Gate::forUser($gm)->allows('screen', ['requests', 'approve']))->toBeTrue()
-        ->and(Gate::forUser($gm)->allows('screen', ['vouchers', 'approve']))->toBeFalse()
+        ->and(Gate::forUser($gm)->allows('screen', ['vouchers', 'approve']))->toBeTrue() // for the second step of a donor receipt only
         ->and(DB::table('role')->where('ID', '>=', 9)->count())->toBe(0);
 });
 

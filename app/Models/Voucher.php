@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Contracts\Approvable;
+use App\Enums\RoleId;
 use App\Enums\VoucherSource;
 use App\Enums\VoucherStatus;
 use App\Enums\VoucherType;
@@ -66,10 +67,53 @@ class Voucher extends Model implements Approvable
         return $this->prepared_by;
     }
 
-    /** What an approver's limit is measured against: the voucher's USD total (the sum of its debits). */
+    /**
+     * What an approver's limit is measured against: the voucher's USD total (the sum of its debits). A transfer has
+     * two legs that each post a debit, so it is measured by its larger leg once: per account the larger of its debits
+     * and credits, and the biggest of those.
+     */
     public function approvalAmount(): string
     {
-        return Money::normalize($this->lines()->reorder()->sum('debit_usd'));
+        if ($this->type !== VoucherType::Transfer) {
+            return Money::normalize($this->lines()->reorder()->sum('debit_usd'));
+        }
+
+        $largest = Money::zero();
+
+        foreach ($this->lines()->reorder()->get(['account_code', 'debit_usd', 'credit_usd'])->groupBy('account_code') as $legLines) {
+            $debit = $legLines->reduce(fn (string $sum, VoucherLine $line) => bcadd($sum, Money::normalize($line->debit_usd), 2), Money::zero());
+            $credit = $legLines->reduce(fn (string $sum, VoucherLine $line) => bcadd($sum, Money::normalize($line->credit_usd), 2), Money::zero());
+            $leg = bccomp($debit, $credit, 2) >= 0 ? $debit : $credit;
+
+            if (bccomp($leg, $largest, 2) > 0) {
+                $largest = $leg;
+            }
+        }
+
+        return $largest;
+    }
+
+    /** A donor receipt: a receipt (CRV) that debits the transfer company account (the hawala receipt). */
+    public function isDonorReceipt(): bool
+    {
+        return $this->type === VoucherType::Receipt
+            && $this->lines()->reorder()
+                ->where('account_code', (string) config('ledger.transfer_company_account'))
+                ->where('debit_usd', '>', 0)
+                ->exists();
+    }
+
+    /**
+     * The approval steps already done on a donor receipt, in order (kept in the audit trail until the last one).
+     *
+     * @return list<RoleId>
+     */
+    public function approvedSteps(): array
+    {
+        return array_values($this->audits()->where('action', 'approve_step')->orderBy('id')->get()
+            ->map(fn (VoucherAudit $audit): ?RoleId => RoleId::tryFrom((int) $audit->new_value))
+            ->filter()
+            ->all());
     }
 
     /** The limits are read in USD, so this is the id of the USD currency in the Windows program's `tilltypes`. */

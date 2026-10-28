@@ -202,7 +202,7 @@ class RequestWorkflow
     }
 
     /**
-     * One approval, in order: the Financial Manager, then (above the threshold) the General Manager.
+     * One approval, in order: the Program Manager, the Financial Manager, then (above the threshold) the General Manager.
      *
      * @throws AuthorizationException
      * @throws RequestException
@@ -215,7 +215,7 @@ class RequestWorkflow
             $this->authorize($by, 'decide', $request);
 
             $done = $this->approvedRoles($request);
-            $role = $this->chain->nextStep($this->total($request), $done);
+            $role = $this->chain->nextStep($this->total($request), $done, true);
             abort_if($role === null, 403);
 
             RequestApproval::query()->create([
@@ -225,7 +225,7 @@ class RequestWorkflow
 
             $this->audit($request, $by, 'approve', 'step', null, (string) (count($done) + 1));
 
-            if ($this->chain->nextStep($this->total($request), [...$done, $role]) === null) {
+            if ($this->chain->nextStep($this->total($request), [...$done, $role], true) === null) {
                 $request->update(['status' => RequestStatus::Approved->value, 'decided_by' => $this->id($by), 'decided_at' => now()]);
                 $this->audit($request, $by, 'approved', 'status', RequestStatus::Submitted->value, RequestStatus::Approved->value);
             }
@@ -251,7 +251,7 @@ class RequestWorkflow
             }
 
             $done = $this->approvedRoles($request);
-            $role = $this->chain->nextStep($this->total($request), $done);
+            $role = $this->chain->nextStep($this->total($request), $done, true);
             abort_if($role === null, 403);
 
             RequestApproval::query()->create([
@@ -311,7 +311,7 @@ class RequestWorkflow
             return null;
         }
 
-        return $this->chain->nextStep($this->total($request), $this->approvedRoles($request));
+        return $this->chain->nextStep($this->total($request), $this->approvedRoles($request), true);
     }
 
     /**

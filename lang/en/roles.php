@@ -9,4 +9,5 @@ return [
     'Employee' => 'Employee',
     'Donor' => 'Donor',
     'GeneralManager' => 'General Manager',
+    'ProgramManager' => 'Program Manager',
 ];

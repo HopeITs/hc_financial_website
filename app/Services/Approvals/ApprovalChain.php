@@ -5,8 +5,10 @@ namespace App\Services\Approvals;
 use App\Enums\RoleId;
 
 /**
- * The approvals a request needs, in order: the financial manager first, and for more than
+ * The approvals something needs, in order: the financial manager, and for more than
  * USD 2,000 (config `permissions.general_manager_threshold_usd`) the General Manager after.
+ * Monthly and extra requests (not vouchers) have the Program Manager before the financial manager.
+ * A donor receipt voucher uses the same chain; the financial manager has no ceiling on it (see ApprovalPolicy).
  */
 class ApprovalChain
 {
@@ -14,9 +16,9 @@ class ApprovalChain
      * @param  numeric-string  $amountUsd
      * @return list<RoleId>
      */
-    public function stepsFor(string $amountUsd): array
+    public function stepsFor(string $amountUsd, bool $withProgramManager = false): array
     {
-        $steps = [RoleId::FinancialManager];
+        $steps = $withProgramManager ? [RoleId::ProgramManager, RoleId::FinancialManager] : [RoleId::FinancialManager];
         $threshold = config('permissions.general_manager_threshold_usd');
 
         if (is_string($threshold) && is_numeric($threshold) && bccomp($amountUsd, $threshold, 2) > 0) {
@@ -32,9 +34,9 @@ class ApprovalChain
      * @param  numeric-string  $amountUsd
      * @param  list<RoleId>  $approvedSteps  the steps already approved, in order
      */
-    public function nextStep(string $amountUsd, array $approvedSteps): ?RoleId
+    public function nextStep(string $amountUsd, array $approvedSteps, bool $withProgramManager = false): ?RoleId
     {
-        return $this->stepsFor($amountUsd)[count($approvedSteps)] ?? null;
+        return $this->stepsFor($amountUsd, $withProgramManager)[count($approvedSteps)] ?? null;
     }
 
     /**
@@ -45,9 +47,9 @@ class ApprovalChain
      * @param  list<RoleId>  $approvedSteps
      * @param  list<RoleId>  $roles
      */
-    public function mayApproveNext(string $amountUsd, array $approvedSteps, array $roles): bool
+    public function mayApproveNext(string $amountUsd, array $approvedSteps, array $roles, bool $withProgramManager = false): bool
     {
-        $next = $this->nextStep($amountUsd, $approvedSteps);
+        $next = $this->nextStep($amountUsd, $approvedSteps, $withProgramManager);
 
         if ($next === null) {
             return false;

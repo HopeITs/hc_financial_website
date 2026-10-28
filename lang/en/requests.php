@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'intro' => 'A project manager asks for money once a month per project; an extra amount during the month is a separate request. The Financial Manager decides, and above USD 2,000 the General Manager approves after.',
+    'intro' => 'A project manager asks for money once a month per project; an extra amount during the month is a separate request. The Program Manager decides first, then the Financial Manager, and above USD 2,000 the General Manager approves after.',
     'form_intro' => 'List the budget lines and the amount for each. You can change the request until it is decided.',
     'new' => 'New request',
     'new_title' => 'New request',
@@ -53,7 +53,7 @@ return [
     'reject_reason_label' => 'Reason',
     'reject_help' => 'The reason stays in the request history.',
     'rejected_by' => 'Rejected by :name on :when',
-    'own_note' => 'Waiting for the Financial Manager to decide. You cannot change it now.',
+    'own_note' => 'Waiting for approval. You cannot change it now.',
     'waiting_for' => 'Waiting for: :role',
     'budget_warning' => 'Budget line :line: spent :spent plus this request :requested is more than the budget :budget :currency. This is a warning only.',
     'quotes' => 'Price quotes',

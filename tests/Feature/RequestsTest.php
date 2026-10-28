@@ -93,6 +93,12 @@ function rqSubmitted(string $amount = '300.00', ?User $manager = null): LedgerRe
     return rqWorkflow()->submit($manager, rqDraft($manager, $amount));
 }
 
+/** The Program Manager's step, which comes before the Financial Manager's. */
+function rqProgram(LedgerRequest $request, string $name = 'Paula'): LedgerRequest
+{
+    return rqWorkflow()->approve(rqUser(RoleId::ProgramManager, $name), $request);
+}
+
 function rqPdf(string $name = 'quote.pdf'): UploadedFile
 {
     return UploadedFile::fake()->create($name, 20, 'application/pdf');
@@ -151,6 +157,8 @@ it('moves through the states only in order: draft, submitted, approved, closed',
     expect(fn () => rqWorkflow()->submit($manager, $request))->toThrow(RequestException::class, 'Only a draft')
         ->and(fn () => rqWorkflow()->close($fm, $request))->toThrow(RequestException::class, 'Only an approved request');
 
+    rqProgram($request);
+
     expect(rqWorkflow()->approve($fm, $request)->status)->toBe('approved')
         ->and(rqWorkflow()->close($fm, $request)->status)->toBe('closed');
 
@@ -168,9 +176,11 @@ it('needs one approval up to USD 2,000 and the General Manager after the Financi
     $gm = rqUser(RoleId::GeneralManager, 'Gina');
 
     $small = rqWorkflow()->submit($manager, rqDraft($manager, '2000.00'));
+    rqProgram($small);
     expect(rqWorkflow()->approve($fm, $small)->status)->toBe('approved');
 
     $large = rqWorkflow()->submit($manager, rqDraft($manager, '2000.01', ['month' => '2026-12']));
+    rqProgram($large, 'Pia');
     expect(fn () => rqWorkflow()->approve($gm, $large))->toThrow(AuthorizationException::class);
 
     $afterFirst = rqWorkflow()->approve($fm, $large);
@@ -183,7 +193,7 @@ it('needs one approval up to USD 2,000 and the General Manager after the Financi
 
     expect($done->status)->toBe('approved')
         ->and($done->decided_by)->toBe((int) $gm->getKey())
-        ->and($done->approvals->pluck('role_id')->all())->toBe([RoleId::FinancialManager, RoleId::GeneralManager])
+        ->and($done->approvals->pluck('role_id')->all())->toBe([RoleId::ProgramManager, RoleId::FinancialManager, RoleId::GeneralManager])
         ->and(rqWorkflow()->pendingRole($done))->toBeNull();
 });
 
@@ -193,6 +203,7 @@ it('compares an SYP request in USD at the line rate', function () {
 
     $request = rqWorkflow()->create($manager, rqHeader(), [['budget_line' => 'F2F|Maintenance', 'amount' => '45000000', 'currency' => 'SYP', 'rate' => '15000']]);
     rqWorkflow()->submit($manager, $request);
+    rqProgram($request);
 
     expect((string) $request->refresh()->amount)->toBe('3000.00')
         ->and(rqWorkflow()->approve($fm, $request)->status)->toBe('submitted');
@@ -203,6 +214,7 @@ it('does not approve by itself when the General Manager is away, and any holder 
     $fm = rqUser(RoleId::FinancialManager, 'Fatima');
     $gone = rqUser(RoleId::GeneralManager, 'Gone');
     $request = rqWorkflow()->submit($manager, rqDraft($manager, '5000.00'));
+    rqProgram($request);
     rqWorkflow()->approve($fm, $request);
 
     expect($request->refresh()->status)->toBe('submitted');
@@ -228,13 +240,14 @@ it('keeps the request editable until a decision, audits every edit, then locks i
     expect($fields->keys()->all())->toContain('description', 'lines', 'total_usd')
         ->and($fields['total_usd'])->toBe('450.00');
 
-    rqWorkflow()->approve($fm, $request);
+    rqProgram($request);
 
     expect(fn () => rqWorkflow()->update($manager, $request, rqHeader(), rqLines('10.00')))->toThrow(RequestException::class, 'can no longer be changed')
         ->and(fn () => rqWorkflow()->addQuote($manager, $request, rqPdf()))->toThrow(RequestException::class, 'can no longer be changed');
 
     // A request waiting for the second approval is locked too.
     $large = rqWorkflow()->submit($manager, rqDraft($manager, '3000.00', ['month' => '2026-12']));
+    rqProgram($large, 'Pia');
     rqWorkflow()->approve($fm, $large);
 
     expect(fn () => rqWorkflow()->update($manager, $large, rqHeader(['month' => '2026-12']), rqLines('10.00')))->toThrow(RequestException::class, 'can no longer be changed');
@@ -288,6 +301,7 @@ it('does not let a person decide on their own request or decide twice', function
 
     $fm = rqUser(RoleId::FinancialManager, 'Fatima');
     $large = rqWorkflow()->submit($head, rqWorkflow()->create($head, rqHeader(['month' => '2026-12']), rqLines('4000.00')));
+    rqProgram($large);
     rqWorkflow()->approve($fm, $large);
 
     expect(fn () => rqWorkflow()->approve($fm, $large))->toThrow(AuthorizationException::class);
@@ -296,7 +310,7 @@ it('does not let a person decide on their own request or decide twice', function
 it('rejects with a reason, keeps it, and never reopens a rejected request', function () {
     $manager = rqManager();
     $fm = rqUser(RoleId::FinancialManager, 'Fatima');
-    $request = rqSubmitted('300.00', $manager);
+    $request = rqProgram(rqSubmitted('300.00', $manager));
 
     expect(fn () => rqWorkflow()->reject($fm, $request, '  '))->toThrow(RequestException::class, 'Write the reason');
 
@@ -304,7 +318,7 @@ it('rejects with a reason, keeps it, and never reopens a rejected request', func
 
     expect($rejected->status)->toBe('rejected')
         ->and($rejected->reject_reason)->toBe('Over the budget')
-        ->and($rejected->approvals->first()->decision)->toBe('rejected')
+        ->and($rejected->approvals->last()->decision)->toBe('rejected')
         ->and(fn () => rqWorkflow()->approve($fm, $rejected))->toThrow(RequestException::class)
         ->and(fn () => rqWorkflow()->update($manager, $rejected, rqHeader(), rqLines()))->toThrow(RequestException::class, 'can no longer be changed');
 });
@@ -357,6 +371,7 @@ it('only warns when a request goes over the budget line', function () {
 
     expect($warnings)->toHaveCount(1)
         ->and($warnings[0]['key'])->toBe('F2F|Maintenance')
+        ->and(rqProgram($request)->status)->toBe('submitted')
         ->and(rqWorkflow()->approve($fm, $request)->status)->toBe('approved');
 });
 
@@ -396,6 +411,13 @@ it('takes a request through the screen: draft, submit, both approvals', function
 
     $page->assertSee('2,500.00')->call('submit')->assertSee(RequestStatus::Submitted->label());
 
+    $program = rqUser(RoleId::ProgramManager, 'Paula');
+
+    Livewire::actingAs($program)->withQueryParams(['request' => $request->id])->test(Requests::class)
+        ->assertSee(__('requests.waiting_for', ['role' => RoleId::ProgramManager->label()]))
+        ->call('approve')
+        ->assertSee(__('requests.waiting_for', ['role' => RoleId::FinancialManager->label()]));
+
     Livewire::actingAs($fm)->withQueryParams(['request' => $request->id])->test(Requests::class)
         ->assertSee(__('requests.waiting_for', ['role' => RoleId::FinancialManager->label()]))
         ->call('approve')
@@ -410,7 +432,7 @@ it('takes a request through the screen: draft, submit, both approvals', function
 });
 
 it('rejects through the screen only with a reason', function () {
-    $request = rqSubmitted();
+    $request = rqProgram(rqSubmitted());
     $fm = rqUser(RoleId::FinancialManager, 'Fatima');
 
     Livewire::actingAs($fm)->withQueryParams(['request' => $request->id])->test(Requests::class)
@@ -432,4 +454,44 @@ it('shows the request screen in the menu and both languages', function () {
     $this->actingAs($manager)->withSession(['locale' => 'ar'])->get(route('entries.requests'))->assertOk();
 
     expect(array_keys(trans('requests', [], 'ar')))->toEqual(array_keys(trans('requests', [], 'en')));
+});
+
+// R4-3
+
+it('puts the Program Manager before the Financial Manager in a monthly and an extra request', function (string $type) {
+    $manager = rqManager();
+    $fm = rqUser(RoleId::FinancialManager, 'Fatima');
+    $program = rqUser(RoleId::ProgramManager, 'Paula');
+    $request = rqWorkflow()->submit($manager, rqDraft($manager, '300.00', ['type' => $type]));
+
+    expect(rqWorkflow()->pendingRole($request))->toBe(RoleId::ProgramManager)
+        ->and(fn () => rqWorkflow()->approve($fm, $request))->toThrow(AuthorizationException::class);
+
+    $afterProgram = rqWorkflow()->approve($program, $request);
+
+    expect($afterProgram->status)->toBe('submitted')
+        ->and(rqWorkflow()->pendingRole($afterProgram))->toBe(RoleId::FinancialManager)
+        ->and(fn () => rqWorkflow()->approve($program, $afterProgram))->toThrow(AuthorizationException::class);
+
+    $done = rqWorkflow()->approve($fm, $afterProgram);
+
+    expect($done->status)->toBe('approved')
+        ->and($done->approvals->pluck('role_id')->all())->toBe([RoleId::ProgramManager, RoleId::FinancialManager]);
+})->with(['monthly', 'extra']);
+
+it('lets the Program Manager reject a request and Head Office stand in only for the Financial Manager', function () {
+    $manager = rqManager();
+    $head = rqUser(RoleId::HeadOffice, 'Hana');
+    $request = rqWorkflow()->submit($manager, rqDraft($manager));
+
+    expect(fn () => rqWorkflow()->approve($head, $request))->toThrow(AuthorizationException::class);
+
+    $rejected = rqWorkflow()->reject(rqUser(RoleId::ProgramManager, 'Paula'), $request, 'Not this month');
+
+    expect($rejected->status)->toBe('rejected')
+        ->and($rejected->approvals->first()->role_id)->toBe(RoleId::ProgramManager);
+});
+
+it('does not add a Program Manager step to vouchers', function () {
+    expect(app(App\Services\Approvals\ApprovalChain::class)->stepsFor('100.00'))->toBe([RoleId::FinancialManager]);
 });
