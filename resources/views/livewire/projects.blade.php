@@ -1,5 +1,15 @@
 <div class="flex flex-col gap-6 px-4 pb-10 lg:px-8">
-    <x-ui.page-header :title="__('navigation.screens.projects')" :subtitle="__('projects.intro')" :count="$projects->total()" />
+    <x-ui.page-header :title="__('navigation.screens.projects')" :subtitle="__('projects.intro')" :count="$projects->total()">
+        @if ($canCreate)
+            <x-slot:actions>
+                <x-ui.button tone="primary" icon="plus" href="{{ route('projects.new') }}" wire:navigate data-test="new-project">{{ __('projects.manage.new') }}</x-ui.button>
+            </x-slot:actions>
+        @endif
+    </x-ui.page-header>
+
+    @if (session('status'))
+        <div class="rounded-lg border border-secondary-soft bg-white px-4 py-2 text-sm dark:border-line dark:bg-surface-1" role="status" data-test="notice">{{ session('status') }}</div>
+    @endif
 
     <x-ui.panel class="p-4">
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5" data-test="filters">
@@ -75,4 +85,42 @@
     </x-ui.scroll-table>
 
     {{ $projects->links() }}
+
+    @if ($canCreate)
+        <section class="flex flex-col gap-3" data-test="ledger-projects">
+            <flux:heading level="2">{{ __('projects.manage.ledger_projects') }}</flux:heading>
+            <x-ui.scroll-table :paginate="false">
+                <table class="fin-table">
+                    <thead>
+                        <tr>
+                            <th>{{ __('projects.manage.code') }}</th>
+                            <th>{{ __('projects.manage.name') }}</th>
+                            <th>{{ __('projects.donor') }}</th>
+                            <th>{{ __('projects.manage.start_date') }}</th>
+                            <th>{{ __('projects.manage.end_date') }}</th>
+                            <th class="fin-num">{{ __('projects.manage.line_name') }}</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($ledgerProjects as $ledgerProject)
+                            <tr wire:key="ledger-{{ $ledgerProject->code }}">
+                                <td class="font-medium text-secondary-dark dark:text-ink">{{ $ledgerProject->code }}</td>
+                                <td>{{ $ledgerProject->name }}</td>
+                                <td>{{ $ledgerProject->donor }}</td>
+                                <td>{{ $ledgerProject->start_date?->toDateString() }}</td>
+                                <td>{{ $ledgerProject->end_date?->toDateString() }}</td>
+                                <td class="fin-num">{{ $ledgerProject->budget_lines_count }}</td>
+                                <td>
+                                    @if ($canEdit)
+                                        <a href="{{ route('projects.edit', $ledgerProject->code) }}" wire:navigate class="hover:underline" data-test="edit-{{ $ledgerProject->code }}">{{ __('projects.manage.edit') }}</a>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </x-ui.scroll-table>
+        </section>
+    @endif
 </div>
