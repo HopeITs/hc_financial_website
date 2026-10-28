@@ -1,6 +1,7 @@
 <x-layouts.app :title="__('navigation.screens.'.$screen)">
     <div class="flex flex-col gap-6 px-4 pb-10 lg:px-8">
         <div>
+            <x-ui.breadcrumb class="mb-0.5" />
             <flux:heading size="xl" level="1">{{ __('navigation.screens.'.$screen) }}</flux:heading>
         </div>
 

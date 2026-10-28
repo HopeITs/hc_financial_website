@@ -2,6 +2,7 @@
 
 return [
     'app_name' => 'Hope Center Finance',
+    'breadcrumb' => 'Breadcrumb',
     'appearance' => 'Appearance',
     'copyright_notice' => '© :year - Hope Center - Finance',
     'log_out' => 'Log out',
