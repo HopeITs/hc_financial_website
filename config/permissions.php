@@ -44,11 +44,12 @@ return [
             $screens(['vouchers', 'approval', 'requests', 'alloc'], ['view', 'approve']),
             $screens(['limits'], ['view', 'edit']),
             $screens(['programs'], ['view', 'create']),
+            $screens(['projects'], $prepare),
         ),
 
         RoleId::Accountant->value => array_merge(
             $screens(['home', 'project-money', ...$projectScreens, ...$reports, 'tills', 'treasury', 'cities', 'currency', 'denoms', 'donors', 'employees', 'requests'], $view),
-            $screens(['chart', ...$entries, 'alloc', 'salaries'], $prepare),
+            $screens(['chart', 'projects', ...$entries, 'alloc', 'salaries'], $prepare),
         ),
 
         RoleId::ProjectManager->value => array_merge(

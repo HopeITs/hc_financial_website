@@ -14,6 +14,7 @@ use App\Livewire\MultiEntry;
 use App\Livewire\OperationalReport;
 use App\Livewire\Programs;
 use App\Livewire\ProjectBalances;
+use App\Livewire\ProjectEditor;
 use App\Livewire\ProjectPage;
 use App\Livewire\Projects;
 use App\Livewire\ReferenceList;
@@ -57,6 +58,8 @@ Route::middleware('auth')->group(function () {
 
     $screen('programs', Programs::class);
     $screen('projects', Projects::class);
+    Route::get('projects/new', ProjectEditor::class)->defaults('screen', 'projects')->middleware('screen:projects,create')->name('projects.new');
+    Route::get('projects/{code}/edit', ProjectEditor::class)->where('code', '[A-Za-z0-9_-]+')->defaults('screen', 'projects')->middleware('screen:projects,edit')->name('projects.edit');
     Route::get('projects/{account}', ProjectPage::class)->whereNumber('account')->defaults('screen', 'projects')->middleware('screen')->name('projects.show');
 
     // Master data (task 38): the old project windows are the project page.

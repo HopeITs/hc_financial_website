@@ -3,9 +3,11 @@
 namespace App\Livewire;
 
 use App\Contracts\ProjectBalanceSource;
+use App\Models\GlProject;
 use App\Services\Projects\ProjectAccess;
 use App\Services\Projects\ProjectDirectory;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -62,6 +64,9 @@ class Projects extends Component
             'cities' => $directory->cities(),
             'donors' => $directory->donors(),
             'programs' => $directory->programOptions(),
+            'canCreate' => Gate::allows('screen', ['projects', 'create']),
+            'canEdit' => Gate::allows('screen', ['projects', 'edit']),
+            'ledgerProjects' => Gate::allows('screen', ['projects', 'create']) ? GlProject::query()->withCount('budgetLines')->orderBy('code')->get() : collect(),
         ]);
     }
 }
