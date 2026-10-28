@@ -13,6 +13,7 @@ use App\Models\RequestAudit;
 use App\Models\RequestQuote;
 use App\Models\User;
 use App\Services\Approvals\ApprovalChain;
+use App\Services\Ledger\Currencies;
 use App\Services\Ledger\ProjectAverageRate;
 use App\Support\Money;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -32,7 +33,7 @@ use Illuminate\Support\Str;
  */
 class RequestWorkflow
 {
-    public function __construct(private readonly ApprovalChain $chain, private readonly ProjectAverageRate $averageRate) {}
+    public function __construct(private readonly ApprovalChain $chain, private readonly ProjectAverageRate $averageRate, private readonly Currencies $currencies) {}
 
     /**
      * @param  array{project: string, type?: string, month?: string, category?: string|null, description?: string|null}  $header
@@ -434,17 +435,17 @@ class RequestWorkflow
                 continue;
             }
 
-            $currency = strtoupper(trim((string) ($line['currency'] ?? ''))) ?: (in_array($budgetLine->currency, ['USD', 'SYP'], true) ? $budgetLine->currency : 'USD');
-            if (! in_array($currency, ['USD', 'SYP'], true)) {
+            $currency = strtoupper(trim((string) ($line['currency'] ?? ''))) ?: ($this->currencies->isActive((string) $budgetLine->currency) ? $budgetLine->currency : Currencies::BASE);
+            if (! $this->currencies->isActive($currency)) {
                 $problems[] = __('requests.problem.line_currency', ['line' => $number]);
 
                 continue;
             }
 
             $rate = Money::normalize('1', 6);
-            if ($currency === 'SYP') {
+            if ($currency !== Currencies::BASE) {
                 $rateText = trim((string) ($line['rate'] ?? ''));
-                $rateText = $rateText !== '' ? $rateText : ($this->averageRate->rate($project->code) ?? '');
+                $rateText = $rateText !== '' ? $rateText : ($this->averageRate->rate($project->code, $currency) ?? '');
 
                 $rate = preg_match('/^\d+(\.\d+)?$/', $rateText) === 1 ? Money::normalize($rateText, 6) : null;
                 if ($rate === null || bccomp($rate, '0', 6) <= 0) {
@@ -454,7 +455,7 @@ class RequestWorkflow
                 }
             }
 
-            $usd = $currency === 'USD' ? $amount : Money::normalize(bcdiv($amount, $rate, 6));
+            $usd = $this->currencies->toUsd($currency, $amount, $rate);
             $total = bcadd($total, $usd, 2);
 
             $note = trim((string) ($line['note'] ?? ''));
@@ -502,7 +503,7 @@ class RequestWorkflow
             'month' => $request->month?->format('Y-m') ?? '',
             'category' => (string) $request->category,
             'description' => (string) $request->description,
-            'lines' => $request->lines()->get()->map(fn ($line) => $line->budget_line_key.' '.$line->amount.' '.$line->currency.($line->currency === 'SYP' ? ' @'.$line->rate : ''))->implode('; '),
+            'lines' => $request->lines()->get()->map(fn ($line) => $line->budget_line_key.' '.$line->amount.' '.$line->currency.($line->currency !== 'USD' ? ' @'.$line->rate : ''))->implode('; '),
             'total_usd' => (string) $request->amount,
         ];
     }

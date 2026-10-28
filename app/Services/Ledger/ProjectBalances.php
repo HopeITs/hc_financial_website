@@ -18,6 +18,8 @@ use Illuminate\Support\Facades\DB;
  */
 class ProjectBalances
 {
+    public function __construct(private readonly Currencies $currencies) {}
+
     public const DEPRECIATION = '5703';
 
     private const RESTRICTED = 'With donor restrictions';
@@ -29,7 +31,8 @@ class ProjectBalances
      */
     public function report(string $currency = 'USD', ?string $rate = null): array
     {
-        $rate = $currency === 'SYP' ? $this->rate($rate) : '1';
+        $currency = $this->currencies->isActive($currency) ? $currency : Currencies::BASE;
+        $rate = $currency !== Currencies::BASE ? $this->rate($rate) : '1';
         $projects = GlProject::query()->orderBy('code')->get()->keyBy('code');
 
         $acc = [];
@@ -122,9 +125,9 @@ class ProjectBalances
                 // and a donor-currency budget (EUR) the donor amounts recorded in that currency.
                 if ($line->currency === 'USD') {
                     $actual = bcadd($actual, $this->money($sum->usd), 2);
-                } elseif ($line->currency === 'SYP' && $sum->currency === 'SYP') {
+                } elseif ($sum->currency === $line->currency) {
                     $actual = bcadd($actual, $this->money($sum->orig), 2);
-                } elseif ($line->currency !== 'SYP' && $sum->donor_currency === $line->currency) {
+                } elseif ($sum->donor_currency === $line->currency) {
                     $actual = bcadd($actual, $this->money($sum->donor), 2);
                 }
             }
@@ -225,13 +228,13 @@ class ProjectBalances
      */
     private function net(\stdClass $line, string $currency, string $rate): string
     {
-        if ($currency === 'SYP' && $line->currency === 'SYP') {
+        if ($currency !== Currencies::BASE && $line->currency === $currency) {
             return bcsub($this->money($line->debit_orig), $this->money($line->credit_orig), 2);
         }
 
         $usd = bcsub($this->money($line->debit_usd), $this->money($line->credit_usd), 2);
 
-        return $currency === 'SYP' ? bcmul($usd, $rate, 2) : $usd;
+        return $currency !== Currencies::BASE ? $this->currencies->fromUsd($currency, $usd, $rate) : $usd;
     }
 
     /** @return numeric-string */

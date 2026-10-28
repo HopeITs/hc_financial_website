@@ -60,7 +60,7 @@ it('rule 2: refuses a cash account in the other currency and a currency the book
     $draft = ledgerReceipt(lines: [
         new LineDraft('1111', 'SYP', debit: 100, debitUsd: 100),
         new LineDraft('1112', 'USD', debit: 100),
-        new LineDraft('4101', 'EUR', credit: 100, creditUsd: 100),
+        new LineDraft('4101', 'GBP', credit: 100, creditUsd: 100),
     ]);
 
     expect(ruleLines(new CashAccountInOwnCurrency, $draft))->toBe([1, 2, 3]);

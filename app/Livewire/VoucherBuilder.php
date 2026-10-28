@@ -9,6 +9,7 @@ use App\Models\GlAccount;
 use App\Models\GlBudgetLine;
 use App\Models\GlProject;
 use App\Models\VoucherAttachment;
+use App\Services\Ledger\Currencies;
 use App\Services\Ledger\LedgerRuleException;
 use App\Services\Ledger\PostVoucher;
 use App\Services\Ledger\ProjectAverageRate;
@@ -131,7 +132,7 @@ class VoucherBuilder extends Component
 
         if ($field === 'account') {
             $account = GlAccount::query()->find($line['account']);
-            if ($account !== null && in_array($account->currency, ['USD', 'SYP'], true)) {
+            if ($account !== null && app(Currencies::class)->isActive((string) $account->currency)) {
                 $line['currency'] = $account->currency;
             }
         }
@@ -239,7 +240,8 @@ class VoucherBuilder extends Component
             'credit' => $credit,
             'difference' => bcsub($debit, $credit, 2),
             'accountGroups' => $accounts->groupBy(fn (GlAccount $account) => $account->class->value),
-            'fixedCurrency' => $accounts->filter(fn (GlAccount $account) => in_array($account->currency, ['USD', 'SYP'], true))->pluck('currency', 'code')->all(),
+            'currencyCodes' => app(Currencies::class)->codes(),
+            'fixedCurrency' => $accounts->filter(fn (GlAccount $account) => app(Currencies::class)->isActive((string) $account->currency))->pluck('currency', 'code')->all(),
             'projects' => GlProject::query()->orderBy('code')->get(['code', 'name']),
             'projectRates' => GlProject::query()->where('donor_currency', '!=', 'USD')->where('donor_rate', '>', 0)->pluck('donor_rate', 'code')->all(),
             'budgetLines' => GlBudgetLine::query()->orderBy('key')->get(['key', 'project_code', 'account_code']),
@@ -276,10 +278,10 @@ class VoucherBuilder extends Component
         }
 
         $account = $line['account'] !== '' ? GlAccount::query()->find($line['account']) : null;
-        $currency = $account !== null && in_array($account->currency, ['USD', 'SYP'], true) ? $account->currency : $line['currency'];
+        $currency = $account !== null && app(Currencies::class)->isActive((string) $account->currency) ? $account->currency : $line['currency'];
 
-        if ($currency === 'SYP') {
-            $average = app(ProjectAverageRate::class)->rate($line['project']);
+        if ($currency !== Currencies::BASE) {
+            $average = app(ProjectAverageRate::class)->rate($line['project'], $currency);
             if ($average !== null) {
                 $this->lines[$index]['rate'] = rtrim(rtrim($average, '0'), '.');
             }

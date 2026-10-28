@@ -98,7 +98,7 @@ return [
         'line_budget' => 'Line :line: choose a budget line of this project.',
         'line_duplicate' => 'Line :line: this budget line is already listed.',
         'line_amount' => 'Line :line: enter an amount above zero.',
-        'line_currency' => 'Line :line: the currency must be USD or SYP.',
+        'line_currency' => 'Line :line: the currency is not one the books accept.',
         'line_rate' => 'Line :line: enter the rate (SYP per USD).',
         'locked' => 'This request can no longer be changed.',
         'not_draft' => 'Only a draft can be submitted.',

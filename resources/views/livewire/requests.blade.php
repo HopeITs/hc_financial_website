@@ -71,11 +71,12 @@
                                 <td><input type="text" inputmode="decimal" dir="ltr" wire:model.live.debounce.300ms="fLines.{{ $i }}.amount" class="{{ $cell }}" aria-label="{{ __('requests.amount') }}"></td>
                                 <td>
                                     <select wire:model.live="fLines.{{ $i }}.currency" class="{{ $cell }}" aria-label="{{ __('requests.currency') }}">
-                                        <option value="USD">USD</option>
-                                        <option value="SYP">SYP</option>
+                                        @foreach (app(\App\Services\Ledger\Currencies::class)->codes() as $code)
+                                            <option value="{{ $code }}">{{ $code }}</option>
+                                        @endforeach
                                     </select>
                                 </td>
-                                <td><input type="text" inputmode="decimal" dir="ltr" wire:model.live.debounce.300ms="fLines.{{ $i }}.rate" class="{{ $cell }}" @disabled(($line['currency'] ?? '') !== 'SYP') placeholder="{{ ($line['currency'] ?? '') === 'SYP' ? __('requests.rate_auto') : '' }}" aria-label="{{ __('requests.rate') }}"></td>
+                                <td><input type="text" inputmode="decimal" dir="ltr" wire:model.live.debounce.300ms="fLines.{{ $i }}.rate" class="{{ $cell }}" @disabled(in_array($line['currency'] ?? '', ['', 'USD'], true)) placeholder="{{ ! in_array($line['currency'] ?? '', ['', 'USD'], true) ? __('requests.rate_auto') : '' }}" aria-label="{{ __('requests.rate') }}"></td>
                                 <td><input type="text" wire:model="fLines.{{ $i }}.note" class="{{ $cell }}" aria-label="{{ __('requests.note') }}"></td>
                                 <td><x-ui.button tone="ghost" wire:click="removeLine({{ $i }})" :aria-label="__('requests.remove_line')">✕</x-ui.button></td>
                             </tr>
@@ -228,7 +229,7 @@
                                 <td>{{ $line->budgetLine?->name ?? $line->budget_line_key }} · <span dir="ltr">{{ $line->budgetLine?->account_code }}</span></td>
                                 <td class="fin-num"><x-money :amount="$line->amount" /></td>
                                 <td dir="ltr" class="text-start">{{ $line->currency }}</td>
-                                <td class="fin-num" dir="ltr">{{ $line->currency === 'SYP' ? rtrim(rtrim($line->rate, '0'), '.') : '—' }}</td>
+                                <td class="fin-num" dir="ltr">{{ $line->currency !== 'USD' ? rtrim(rtrim($line->rate, '0'), '.') : '—' }}</td>
                                 <td class="fin-num"><x-money :amount="$line->amount_usd" /></td>
                                 <td>{{ $line->note ?: '—' }}</td>
                             </tr>

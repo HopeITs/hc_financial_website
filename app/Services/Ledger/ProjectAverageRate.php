@@ -7,26 +7,25 @@ use App\Support\Money;
 use Illuminate\Support\Facades\DB;
 
 /**
- * The average rate of the Syrian pounds a project holds: the pounds in its pound cash accounts divided by the dollars
- * they were bought for (approved vouchers only). A payment in pounds is booked at this rate, so the dollars leaving
- * the project match the dollars that went in.
+ * The average rate of a foreign currency a project holds (pounds by default): what its cash accounts of that currency hold
+ * divided into the dollars they were bought for (approved vouchers only). A payment in that currency is booked at this
+ * rate, so the dollars leaving the project match the dollars that went in. The rate is in the currency's own quoting.
  */
 class ProjectAverageRate
 {
+    public function __construct(private readonly Currencies $currencies) {}
+
     /**
-     * Pounds per dollar, or null when the project holds no pounds (or has nothing in dollars to measure against).
+     * The currency's rate (pounds per dollar, dollars per euro, ...), or null when the project holds none of it (or has
+     * nothing in dollars to measure against).
      *
      * @return numeric-string|null
      */
-    public function rate(string $projectCode): ?string
+    public function rate(string $projectCode, string $currency = 'SYP'): ?string
     {
-        $held = $this->holding($projectCode, 'SYP');
+        $held = $this->holding($projectCode, $currency);
 
-        if (bccomp($held['orig'], '0', 2) <= 0 || bccomp($held['usd'], '0.01', 2) < 0) {
-            return null;
-        }
-
-        return bcdiv($held['orig'], $held['usd'], 6);
+        return $this->currencies->rateOf($currency, $held['orig'], $held['usd']);
     }
 
     /**

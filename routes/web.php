@@ -5,6 +5,7 @@ use App\Http\Controllers\SwitchLocaleController;
 use App\Http\Controllers\VoucherPrintController;
 use App\Livewire\Approval;
 use App\Livewire\Chart;
+use App\Livewire\CurrencySettings;
 use App\Livewire\FinancialStatements;
 use App\Livewire\FollowUpReport;
 use App\Livewire\Home;
@@ -102,8 +103,11 @@ Route::middleware('auth')->group(function () {
     $screen('salaries', Salaries::class);
     $screen('users', Users::class);
 
+    // The currencies are the ledger's own table (R4-4), edited here; the other references are read-only.
+    $screen('currency', CurrencySettings::class);
+
     // Master data (task 38): the old program's lists are read-only references.
-    foreach (ReferenceData::SLUGS as $slug) {
+    foreach (array_diff(ReferenceData::SLUGS, ['currency']) as $slug) {
         $screen($slug, ReferenceList::class);
     }
 
