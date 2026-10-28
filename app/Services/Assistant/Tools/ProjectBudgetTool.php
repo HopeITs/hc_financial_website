@@ -22,7 +22,7 @@ class ProjectBudgetTool extends Tool
 
     public function allows(User $user): bool
     {
-        return $this->can($user, 'projbal') || ($this->can($user, 'projects') && $this->can($user, ProjectAccess::MONEY_SCREEN));
+        return $this->can($user, 'projects') && $this->can($user, ProjectAccess::MONEY_SCREEN);
     }
 
     public function definition(): array

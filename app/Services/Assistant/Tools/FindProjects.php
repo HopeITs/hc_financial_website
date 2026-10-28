@@ -19,7 +19,7 @@ class FindProjects extends Tool
 
     public function allows(User $user): bool
     {
-        return $this->can($user, 'projects') || $this->can($user, 'projbal') || $this->can($user, 'single', ScreenAction::Create);
+        return $this->can($user, 'projects') || $this->can($user, 'single', ScreenAction::Create);
     }
 
     public function definition(): array

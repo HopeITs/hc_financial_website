@@ -14,7 +14,6 @@ use App\Livewire\MultiAttachments;
 use App\Livewire\MultiEntry;
 use App\Livewire\OperationalReport;
 use App\Livewire\Programs;
-use App\Livewire\ProjectBalances;
 use App\Livewire\ProjectEditor;
 use App\Livewire\ProjectPage;
 use App\Livewire\Projects;
@@ -92,7 +91,6 @@ Route::middleware('auth')->group(function () {
     }
 
     $screen('tb', TrialBalance::class);
-    $screen('projbal', ProjectBalances::class);
     $screen('statement', Statement::class);
     $screen('statements', FinancialStatements::class);
 

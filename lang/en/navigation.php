@@ -14,7 +14,6 @@ return [
     'screens' => [
         'chart' => 'Chart of accounts',
         'projwin' => 'Projects',
-        'allaccounts' => 'All accounts (owners)',
         'budgetlines' => 'Budget lines',
         'blcats' => 'Line categories',
         'lifetime' => 'Lines lifetime',
@@ -41,7 +40,6 @@ return [
         'rfixed' => 'Fixed assets',
         'rattach' => 'Attachments',
         'tb' => 'Trial balance',
-        'projbal' => 'Project balances',
         'statement' => 'Account statement',
         'statements' => 'Financial statements',
         'recon' => 'Hawala reconciliation',
@@ -64,7 +62,6 @@ return [
 
     'descriptions' => [
         'projwin' => 'Project list, donor, budget and fund balance',
-        'allaccounts' => 'Cash, income and spending by project',
         'budgetlines' => 'Budget lines and their expense accounts',
         'blcats' => 'Expense groups 5100 to 5800',
         'lifetime' => 'When a budget line may be used',
@@ -91,7 +88,6 @@ return [
         'rfixed' => 'Fixed assets of 700 USD or more',
         'rattach' => 'Attachments by voucher',
         'tb' => 'Trial balance at any date',
-        'projbal' => 'Balance of each project by currency',
         'statement' => 'Account statement with a running balance',
         'statements' => 'Financial statements',
         'recon' => 'Transfer company statement against the ledger',

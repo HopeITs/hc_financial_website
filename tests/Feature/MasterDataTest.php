@@ -103,7 +103,7 @@ it('opens the reference screens for the roles that may see them and not for the 
 
 it('sends the old project windows to the project list', function (string $slug) {
     $this->actingAs(masterUser(RoleId::HeadOffice))->get('/'.Navigation::path($slug))->assertOk();
-})->with(['projwin', 'allaccounts', 'budgetlines', 'lifetime']);
+})->with(['projwin', 'budgetlines', 'lifetime']);
 
 it('lists the users with their roles and states', function () {
     $ann = masterUser(RoleId::Accountant, 'Ann');
