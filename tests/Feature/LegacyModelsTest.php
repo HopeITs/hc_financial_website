@@ -19,7 +19,6 @@ use App\Models\Legacy\Line;
 use App\Models\Legacy\Payment;
 use App\Models\Legacy\Project;
 use App\Models\Legacy\Rate;
-use App\Models\Legacy\RoleCurrencyLimit;
 use App\Models\Legacy\SubProject;
 use App\Models\Legacy\Till;
 use App\Models\Legacy\TillType;
@@ -59,7 +58,6 @@ const LEGACY_TEST_TABLES = [
     'employee_salary' => ['id', 'employee_subproject_id'],
     'rate' => ['ID', 'Account_ID', 'FromTill', 'ToTill', 'ObserveRate_ID'],
     'role' => ['ID', 'Name'],
-    'role_currency_limit' => ['Role_ID', 'TillType_ID', 'Approval_Limit'],
     'cash_balances' => ['Account_ID', 'CashAccount_id', 'Account_Net'],
     'tree_view' => ['CityID', 'ProjectID', 'SubprojectID', 'AccountID'],
 ];
@@ -150,8 +148,6 @@ dataset('legacy relations', [
     'Rate.fromTillType' => [Rate::class, 'fromTillType', TillType::class],
     'Rate.toTillType' => [Rate::class, 'toTillType', TillType::class],
     'Rate.observeRate' => [Rate::class, 'observeRate', Rate::class],
-    'RoleCurrencyLimit.role' => [RoleCurrencyLimit::class, 'role', Role::class],
-    'RoleCurrencyLimit.tillType' => [RoleCurrencyLimit::class, 'tillType', TillType::class],
     'CashBalance.account' => [CashBalance::class, 'account', Account::class],
     'CashBalance.cashAccount' => [CashBalance::class, 'cashAccount', CashAccount::class],
     'TreeView.city' => [TreeView::class, 'city', City::class],
@@ -164,7 +160,7 @@ dataset('legacy models', [
     Action::class, ActionPayment::class, ActionAttachment::class, Payment::class, Beneficiary::class,
     Account::class, Till::class, TillType::class, CashAccount::class, Donor::class, Line::class,
     BudgetLine::class, Budget::class, Project::class, SubProject::class, City::class, Employee::class,
-    EmployeeSubProject::class, EmployeeSalary::class, Rate::class, RoleCurrencyLimit::class,
+    EmployeeSubProject::class, EmployeeSalary::class, Rate::class,
     CashBalance::class, TreeView::class,
 ]);
 

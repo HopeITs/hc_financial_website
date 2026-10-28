@@ -7,17 +7,15 @@ use App\Enums\ScreenAction;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Services\Approvals\ApprovalChain;
-use App\Services\Approvals\ApprovalLimits;
 
 /**
  * Who may approve a voucher: a role with the approve action on the vouchers screen,
- * never the person who prepared it, and only within the role's limit in that currency.
- * A donor receipt has no ceiling for the Financial Manager, and above the General Manager threshold the General
+ * never the person who prepared it. Above the General Manager threshold the General
  * Manager approves after the Financial Manager (two different people).
  */
 class ApprovalPolicy
 {
-    public function __construct(private readonly ApprovalLimits $limits, private readonly ApprovalChain $chain) {}
+    public function __construct(private readonly ApprovalChain $chain) {}
 
     public function approve(User $user, Approvable $subject): bool
     {
@@ -34,11 +32,9 @@ class ApprovalPolicy
         }
 
         foreach ($user->roleIds() as $role) {
-            if ($role->isWebOnly()) {
-                continue;
-            }
+            $actions = config("permissions.roles.{$role->value}.vouchers", []);
 
-            if ($this->limits->allows($role, $subject->approvalCurrencyId(), $subject->approvalAmount())) {
+            if (! $role->isWebOnly() && in_array(ScreenAction::Approve->value, $actions, true)) {
                 return true;
             }
         }

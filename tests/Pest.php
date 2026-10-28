@@ -26,7 +26,6 @@ function createFinanceSchema(): void
     Schema::create('role', function ($table) {
         $table->integer('ID')->primary();
         $table->string('Name');
-        $table->decimal('Approval_Limit', 18, 2)->default(0);
     });
 
     Schema::create('user', function ($table) {
@@ -259,11 +258,6 @@ function createMasterDataSchema(): void
         $table->string('Name');
         $table->integer('Type_ID')->nullable();
         $table->integer('Kind')->nullable();
-    });
-    $create('role_currency_limit', function ($table) {
-        $table->integer('Role_ID');
-        $table->integer('TillType_ID');
-        $table->decimal('Approval_Limit', 18, 2);
     });
 }
 

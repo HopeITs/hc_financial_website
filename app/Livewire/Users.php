@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Enums\ScreenAction;
+use App\Models\Role;
 use App\Models\User;
 use App\Support\FinancePassword;
 use Illuminate\Contracts\View\View;
@@ -30,6 +31,12 @@ class Users extends Component
     #[Url(as: 'q')]
     public string $search = '';
 
+    #[Url(except: '')]
+    public string $role = '';
+
+    #[Url(except: '')]
+    public string $status = '';
+
     public ?int $editing = null;
 
     public string $password = '';
@@ -42,6 +49,16 @@ class Users extends Component
     public array $failures = [];
 
     public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedRole(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedStatus(): void
     {
         $this->resetPage();
     }
@@ -120,11 +137,15 @@ class Users extends Component
 
         $people = User::query()->with('roleRecord')
             ->when($term !== '', fn ($query) => $query->where('Username', 'like', '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $term).'%'))
+            ->when($this->role !== '', fn ($query) => $query->where('Role', (int) $this->role))
+            ->when($this->status === 'active', fn ($query) => $query->where('State', 1))
+            ->when($this->status === 'inactive', fn ($query) => $query->where(fn ($inner) => $inner->where('State', '!=', 1)->orWhereNull('State')))
             ->orderBy('Username')
             ->paginate(self::PER_PAGE);
 
         return view('livewire.users', [
             'people' => $people,
+            'roles' => Role::query()->orderBy('Name')->get(),
             'canEdit' => $user instanceof User && $user->canOnScreen('users', ScreenAction::Edit),
             'editingName' => $this->editing !== null ? User::query()->whereKey($this->editing)->first()?->username : null,
             'min' => self::MIN_LENGTH,

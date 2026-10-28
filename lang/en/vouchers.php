@@ -37,7 +37,7 @@ return [
     'approve' => 'Approve',
     'reject' => 'Reject',
     'own_note' => 'You prepared this voucher, so someone else has to approve or reject it.',
-    'limit_note' => 'Your role or approval limit does not cover this voucher.',
+    'limit_note' => 'Your role may not approve this voucher.',
     'approved_notice' => 'Voucher :number is approved.',
     'rejected_notice' => 'Voucher :number is rejected. It keeps its number.',
     'reject_title' => 'Reject :number',

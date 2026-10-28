@@ -289,7 +289,7 @@ return [
         'budget_line_project' => 'بند الميزانية :key يتبع المشروع :budget_project وليس :project.',
         'budget_line_account' => 'بند الميزانية :key يرحّل إلى الحساب :budget_account وليس :account.',
         'not_pending' => 'يمكن اعتماد أو رفض السند الذي هو بانتظار الموافقة فقط.',
-        'approval_not_allowed' => 'دورك أو حد الاعتماد عندك لا يغطي هذا السند.',
+        'approval_not_allowed' => 'دورك لا يسمح لك باعتماد هذا السند.',
         'reject_own' => 'من أعدّ السند لا يستطيع رفضه.',
         'reject_reason' => 'اكتب سبب رفض السند.',
         'approver_not_preparer' => 'من أعدّ السند لا يستطيع الموافقة عليه.',

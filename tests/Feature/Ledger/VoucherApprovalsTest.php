@@ -15,7 +15,6 @@ use App\Services\Ledger\VoucherApprovals;
 use Carbon\CarbonImmutable;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 beforeEach(function () {
     createFinanceSchema();
@@ -23,13 +22,7 @@ beforeEach(function () {
     config(['database.connections.legacy' => ['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '']]);
     DB::purge('legacy');
     createLegacyHomeSchema();
-    Schema::connection('legacy')->create('role_currency_limit', function ($table) {
-        $table->integer('Role_ID');
-        $table->integer('TillType_ID');
-        $table->decimal('Approval_Limit', 18, 2);
-    });
     DB::connection('legacy')->table('tilltypes')->insert(['ID' => 2, 'Name' => 'USD']);
-    DB::connection('legacy')->table('role_currency_limit')->insert(['Role_ID' => RoleId::FinancialManager->value, 'TillType_ID' => 2, 'Approval_Limit' => 1000]);
 
     (require database_path('migrations/2026_10_24_110000_add_request_and_transfer_columns_to_gl_vouchers.php'))->up();
     (new ChartOfAccountsSeeder)->run();
@@ -91,20 +84,12 @@ it('refuses a role that cannot approve vouchers', function () {
         ->and($voucher->fresh()->status)->toBe(VoucherStatus::PendingApproval);
 });
 
-it('holds the financial manager to the approval limit, and lets head office, who has none, approve more', function () {
+it('lets the financial manager approve a voucher of any amount', function () {
     $accountant = approverUser(RoleId::Accountant, 'ann');
     $manager = approverUser(RoleId::FinancialManager, 'fatima');
-    $head = approverUser(RoleId::HeadOffice, 'hana');
     $big = pendingReceipt(uid($accountant), 1500);
 
-    try {
-        approvals()->approve($big, $manager);
-        $this->fail('The limit should have refused it.');
-    } catch (LedgerRuleException $e) {
-        expect($e->violations[0]->message)->toBe(__('ledger.rules.approval_not_allowed'));
-    }
-
-    expect(approvals()->approve($big, $head)->status)->toBe(VoucherStatus::Approved);
+    expect(approvals()->approve($big, $manager)->status)->toBe(VoucherStatus::Approved);
 });
 
 it('refuses to approve a voucher dated in a month that has since been closed', function () {

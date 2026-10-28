@@ -13,7 +13,6 @@ use App\Services\Ledger\VoucherApprovals;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Schema;
 
 beforeEach(function () {
     createFinanceSchema();
@@ -21,14 +20,7 @@ beforeEach(function () {
     config(['database.connections.legacy' => ['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '']]);
     DB::purge('legacy');
     createLegacyHomeSchema();
-    Schema::connection('legacy')->create('role_currency_limit', function ($table) {
-        $table->integer('Role_ID');
-        $table->integer('TillType_ID');
-        $table->decimal('Approval_Limit', 18, 2);
-    });
     DB::connection('legacy')->table('tilltypes')->insert(['ID' => 2, 'Name' => 'USD']);
-    // The Financial Manager's limit in the scenario test.
-    DB::connection('legacy')->table('role_currency_limit')->insert(['Role_ID' => RoleId::FinancialManager->value, 'TillType_ID' => 2, 'Approval_Limit' => 6818]);
 
     (require database_path('migrations/2026_10_24_110000_add_request_and_transfer_columns_to_gl_vouchers.php'))->up();
     (new ChartOfAccountsSeeder)->run();
@@ -90,13 +82,12 @@ it('measures a transfer by its larger leg once, not by every debit line', functi
         ->and(arVoucher(VoucherType::Transfer, [['1111', 'debit', '5000.00'], ['1111', 'credit', '5000.00']], 999)->approvalAmount())->toBe('5000.00');
 });
 
-it('lets the Financial Manager approve a 5,000 USD transfer whose debit lines add up past the limit', function () {
+it('lets the Financial Manager approve a 5,000 USD transfer whose debit lines add up to 10,000', function () {
     $manager = arUser(RoleId::FinancialManager, 'Aram');
     $transfer = arTransfer('5000.00', '5000.00', 999);
 
     expect((float) $transfer->lines()->sum('debit_usd'))->toBe(10000.0)
-        ->and(Gate::forUser($manager)->allows('approve', $transfer))->toBeTrue()
-        ->and(Gate::forUser($manager)->allows('approve', arTransfer('6818.01', '6818.01', 999)))->toBeFalse();
+        ->and(Gate::forUser($manager)->allows('approve', $transfer))->toBeTrue();
 });
 
 it('keeps the sum of debits for the other voucher types', function () {
@@ -117,11 +108,10 @@ it('recognises a donor receipt by the transfer company debit on a receipt', func
         ->and($payment->isDonorReceipt())->toBeFalse();
 });
 
-it('has no ceiling for the Financial Manager on a donor receipt', function () {
+it('lets the Financial Manager approve a donor receipt of any amount', function () {
     $manager = arUser(RoleId::FinancialManager, 'Aram');
 
-    expect(Gate::forUser($manager)->allows('approve', arDonorReceipt('50000.00', 999)))->toBeTrue()
-        ->and(Gate::forUser($manager)->allows('approve', arVoucher(VoucherType::Receipt, [['1111', 'debit', '50000.00'], ['4101', 'credit', '50000.00']], 999)))->toBeFalse();
+    expect(Gate::forUser($manager)->allows('approve', arDonorReceipt('50000.00', 999)))->toBeTrue();
 });
 
 it('approves a donor receipt up to USD 2,000 with the Financial Manager alone', function () {

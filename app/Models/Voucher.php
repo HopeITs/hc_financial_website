@@ -7,7 +7,6 @@ use App\Enums\RoleId;
 use App\Enums\VoucherSource;
 use App\Enums\VoucherStatus;
 use App\Enums\VoucherType;
-use App\Models\Legacy\TillType;
 use App\Support\Money;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -68,7 +67,7 @@ class Voucher extends Model implements Approvable
     }
 
     /**
-     * What an approver's limit is measured against: the voucher's USD total (the sum of its debits). A transfer has
+     * The voucher's USD total, which picks the approval chain steps (the sum of its debits). A transfer has
      * two legs that each post a debit, so it is measured by its larger leg once: per account the larger of its debits
      * and credits, and the biggest of those.
      */
@@ -114,14 +113,6 @@ class Voucher extends Model implements Approvable
             ->map(fn (VoucherAudit $audit): ?RoleId => RoleId::tryFrom((int) $audit->new_value))
             ->filter()
             ->all());
-    }
-
-    /** The limits are read in USD, so this is the id of the USD currency in the Windows program's `tilltypes`. */
-    public function approvalCurrencyId(): ?int
-    {
-        $id = TillType::query()->where('Name', 'USD')->value('ID');
-
-        return is_numeric($id) ? (int) $id : null;
     }
 
     /** @return HasMany<VoucherLine, $this> */

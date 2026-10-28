@@ -28,7 +28,6 @@ beforeEach(function () {
     DB::connection('legacy')->table('fiscalbond')->insert([['ID' => 1, 'Name' => 'HC - Aleppo', 'Date' => '2024-01-01', 'Notes' => 'Yearly', 'Account_ID' => 8, 'Till_ID' => 14]]);
     DB::connection('legacy')->table('linecategorytype')->insert([['ID' => 2, 'Name' => 'Running Cost']]);
     DB::connection('legacy')->table('linecategory')->insert([['ID' => 1, 'Name' => 'Fuel', 'Type_ID' => 2, 'Kind' => 1]]);
-    DB::connection('legacy')->table('role_currency_limit')->insert([['Role_ID' => 4, 'TillType_ID' => 2, 'Approval_Limit' => '6818.00']]);
 
     DB::table('role')->insertOrIgnore(['ID' => 4, 'Name' => 'Financial Manager']);
 });
@@ -62,7 +61,6 @@ it('shows each reference list with what the old program keeps', function (string
     'tills' => ['tills', ['Main Cash Till - Aleppo', 'SYP', 'Aleppo']],
     'bonds' => ['bonds', ['HC - Aleppo', 'Family to Family', 'Yearly']],
     'blcats' => ['blcats', ['Fuel', 'Running Cost']],
-    'limits' => ['limits', ['Financial Manager', 'USD', '6,818.00']],
     'log' => ['log', ['LOGIN', 'Mai', '2026-03-01']],
 ]);
 
@@ -98,7 +96,6 @@ it('opens the reference screens for the roles that may see them and not for the 
     $this->actingAs(masterUser(RoleId::Cashier, 'Cass'))->get('/treasury/tills')->assertOk();
     $this->actingAs(masterUser(RoleId::Cashier, 'Cass2'))->get('/people/donors')->assertForbidden();
     $this->actingAs(masterUser(RoleId::Employee, 'Emp'))->get('/people/log')->assertForbidden();
-    $this->actingAs(masterUser(RoleId::HeadOffice, 'Hoa'))->get('/people/approval-limits')->assertOk();
 });
 
 it('sends the old project windows to the project list', function (string $slug) {
@@ -181,7 +178,7 @@ it('never writes to a legacy table from a reference screen', function () {
     $counts = fn () => collect(['donor', 'city', 'tilltypes', 'cashaccount', 'employee', 'fiscalbond'])->map(fn (string $table) => $legacy->table($table)->count())->all();
     $before = $counts();
 
-    foreach (['donors', 'cities', 'currency', 'denoms', 'employees', 'tills', 'bonds', 'blcats', 'limits', 'log'] as $slug) {
+    foreach (['donors', 'cities', 'currency', 'denoms', 'employees', 'tills', 'bonds', 'blcats', 'log'] as $slug) {
         Livewire::actingAs(masterUser(RoleId::HeadOffice, 'U'.$slug))->test(ReferenceList::class, ['screen' => $slug])->set('search', 'x');
     }
 

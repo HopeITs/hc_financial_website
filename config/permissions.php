@@ -42,7 +42,6 @@ return [
         RoleId::FinancialManager->value => array_merge(
             $screens(['home', 'chart', 'project-money', ...$projectScreens, ...$treasury, ...$reports, 'donors', 'employees', 'salaries', 'users', 'log', 'single', 'multi', 'multiatt', 'payments', 'bonds'], $view),
             $screens(['vouchers', 'approval', 'requests', 'alloc'], ['view', 'approve']),
-            $screens(['limits'], ['view', 'edit']),
             $screens(['programs'], ['view', 'create']),
             $screens(['currency'], $prepare),
             $screens(['projects'], $prepare),

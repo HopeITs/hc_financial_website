@@ -19,7 +19,6 @@ use App\Services\Payroll\SalaryAllocation;
 use Carbon\CarbonImmutable;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -27,13 +26,7 @@ beforeEach(function () {
     config(['database.connections.legacy' => ['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '']]);
     DB::purge('legacy');
     createLegacyHomeSchema();
-    Schema::connection('legacy')->create('role_currency_limit', function ($table) {
-        $table->integer('Role_ID');
-        $table->integer('TillType_ID');
-        $table->decimal('Approval_Limit', 18, 2);
-    });
     DB::connection('legacy')->table('tilltypes')->insert(['ID' => 2, 'Name' => 'USD']);
-    DB::connection('legacy')->table('role_currency_limit')->insert(['Role_ID' => RoleId::FinancialManager->value, 'TillType_ID' => 2, 'Approval_Limit' => 5000]);
 
     (require database_path('migrations/2026_10_24_110000_add_request_and_transfer_columns_to_gl_vouchers.php'))->up();
     (require database_path('migrations/2026_10_25_090000_add_contract_dates_to_gl_projects.php'))->up();

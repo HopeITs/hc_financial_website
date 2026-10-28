@@ -13,14 +13,9 @@ interface Approvable
     public function preparedBy(): int;
 
     /**
-     * The amount as a decimal string, in the currency of {@see self::approvalCurrencyId()}.
+     * The amount as a decimal string, in USD.
      *
      * @return numeric-string
      */
     public function approvalAmount(): string;
-
-    /**
-     * The `tilltypes`.`ID` of the amount's currency (the key of `role_currency_limit`).
-     */
-    public function approvalCurrencyId(): ?int;
 }

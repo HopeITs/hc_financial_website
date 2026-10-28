@@ -2,14 +2,13 @@
 
 namespace App\Services\MasterData;
 
-use App\Models\Role;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
 /**
  * The master-data screens that only show what the Windows program keeps (decision of T38): donors, cities, currencies,
- * denominations, employees, cash tills, fiscal bonds, budget line categories, approval limits and the log. They read
+ * denominations, employees, cash tills, fiscal bonds, budget line categories and the log. They read
  * through the SELECT-only `legacy` connection (the log through the default one, which the web app also writes to at
  * login) and never write. The ledger's own master data (the chart, the programs and the projects) is edited on its
  * own screens; the old project windows are the tabs of the project page.
@@ -22,7 +21,7 @@ class ReferenceData
     public const PER_PAGE = 25;
 
     /** @var list<string> */
-    public const SLUGS = ['donors', 'cities', 'currency', 'denoms', 'employees', 'tills', 'bonds', 'blcats', 'limits', 'log'];
+    public const SLUGS = ['donors', 'cities', 'currency', 'denoms', 'employees', 'tills', 'bonds', 'blcats', 'log'];
 
     /** Screens that the project page replaces. */
     public const MERGED = ['projwin', 'budgetlines', 'lifetime'];
@@ -44,7 +43,6 @@ class ReferenceData
             'tills' => [['name', 'master.col.name', 'text'], ['currency', 'master.col.currency', 'text'], ['city', 'master.col.city', 'text']],
             'bonds' => [['name', 'master.col.name', 'text'], ['date', 'master.col.date', 'date'], ['account', 'master.col.account', 'text'], ['notes', 'master.col.notes', 'text']],
             'blcats' => [['name', 'master.col.name', 'text'], ['type', 'master.col.type', 'text'], ['kind', 'master.col.kind', 'number']],
-            'limits' => [['role', 'master.col.role', 'text'], ['currency', 'master.col.currency', 'text'], ['limit', 'master.col.limit', 'number']],
             'log' => [['date', 'master.col.date', 'date'], ['user', 'master.col.user', 'text'], ['form', 'master.col.form', 'text'], ['title', 'master.col.title', 'text'], ['details', 'master.col.details', 'text']],
             default => [],
         };
@@ -75,9 +73,8 @@ class ReferenceData
         }
 
         $page = $query->paginate(self::PER_PAGE);
-        $roles = $slug === 'limits' ? $this->roleNames(array_values($page->getCollection()->pluck('role_id')->all())) : [];
 
-        return $page->through(fn (object $row) => $this->row($slug, $row, $roles));
+        return $page->through(fn (object $row) => $this->row($slug, $row));
     }
 
     /**
@@ -104,17 +101,14 @@ class ReferenceData
                 ->select('f.ID as id', 'f.Name as name', 'f.Date as date', 'f.Notes as notes', 'a.Name as account')->orderByDesc('f.Date')->orderByDesc('f.ID'), ['f.Name', 'f.Notes', 'a.Name']],
             'blcats' => [$legacy('linecategory as c')->leftJoin('linecategorytype as t', 't.ID', '=', 'c.Type_ID')
                 ->select('c.ID as id', 'c.Name as name', 't.Name as type', 'c.Kind as kind')->orderBy('t.Name')->orderBy('c.Name'), ['c.Name', 't.Name']],
-            'limits' => [$legacy('role_currency_limit as l')->leftJoin('tilltypes as t', 't.ID', '=', 'l.TillType_ID')
-                ->select('l.Role_ID as role_id', 't.Name as currency', 'l.Approval_Limit as limit')->orderBy('l.Role_ID')->orderBy('t.Name'), ['t.Name']],
             default => [DB::table('log')->select('id', 'date', 'user', 'form_name as form', 'title', 'details')->orderByDesc('id'), ['user', 'form_name', 'title', 'details']],
         };
     }
 
     /**
-     * @param  array<int, string>  $roles
      * @return array<string, mixed>
      */
-    private function row(string $slug, object $row, array $roles): array
+    private function row(string $slug, object $row): array
     {
         $values = (array) $row;
 
@@ -127,26 +121,6 @@ class ReferenceData
             $values['divisor'] = rtrim(rtrim(number_format((float) $values['divisor'], 6, '.', ''), '0'), '.');
         }
 
-        if ($slug === 'limits') {
-            $values['role'] = $roles[(int) $values['role_id']] ?? (string) $values['role_id'];
-            $values['limit'] = number_format((float) $values['limit'], 2);
-        }
-
         return $values;
-    }
-
-    /**
-     * @param  list<mixed>  $ids
-     * @return array<int, string>
-     */
-    private function roleNames(array $ids): array
-    {
-        $names = [];
-
-        foreach (Role::query()->whereIn('ID', $ids)->get() as $role) {
-            $names[(int) $role->getKey()] = $role->name;
-        }
-
-        return $names;
     }
 }

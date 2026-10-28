@@ -5,11 +5,9 @@ use App\Enums\RoleId;
 use App\Models\User;
 use App\Models\WebUserRole;
 use App\Services\Approvals\ApprovalChain;
-use App\Services\Approvals\ApprovalLimits;
 use App\Support\Navigation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Schema;
 
 beforeEach(function () {
     createFinanceSchema();
@@ -17,11 +15,6 @@ beforeEach(function () {
     config(['database.connections.legacy' => ['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '']]);
     DB::purge('legacy');
     createLegacyHomeSchema();
-    Schema::connection('legacy')->create('role_currency_limit', function ($table) {
-        $table->integer('Role_ID');
-        $table->integer('TillType_ID');
-        $table->decimal('Approval_Limit', 18, 2);
-    });
     createMasterDataSchema();
 
     (require database_path('migrations/2026_10_24_110000_add_request_and_transfer_columns_to_gl_vouchers.php'))->up();
@@ -43,11 +36,11 @@ function userWithRole(RoleId $role, string $name = 'Person'): User
     return User::query()->findOrFail($id);
 }
 
-function voucher(int $preparedBy, string $amount = '100.00', ?int $currency = 4): Approvable
+function voucher(int $preparedBy, string $amount = '100.00'): Approvable
 {
-    return new class($preparedBy, $amount, $currency) implements Approvable
+    return new class($preparedBy, $amount) implements Approvable
     {
-        public function __construct(private int $by, private string $amount, private ?int $currency) {}
+        public function __construct(private int $by, private string $amount) {}
 
         public function preparedBy(): int
         {
@@ -57,11 +50,6 @@ function voucher(int $preparedBy, string $amount = '100.00', ?int $currency = 4)
         public function approvalAmount(): string
         {
             return $this->amount;
-        }
-
-        public function approvalCurrencyId(): ?int
-        {
-            return $this->currency;
         }
     };
 }
@@ -140,33 +128,9 @@ it('never lets the preparer approve their own voucher', function (RoleId $role) 
 it('lets the financial manager approve a voucher prepared by someone else', function () {
     $manager = userWithRole(RoleId::FinancialManager);
     $accountant = userWithRole(RoleId::Accountant, 'A');
-    DB::table('role')->where('ID', 4)->update(['Approval_Limit' => 1000]);
 
     expect(Gate::forUser($manager)->allows('approve', voucher((int) $accountant->getKey(), '500.00')))->toBeTrue()
         ->and(Gate::forUser($accountant)->allows('approve', voucher((int) $manager->getKey())))->toBeFalse();
-});
-
-it('uses the currency limit first and the role limit as fallback', function () {
-    DB::table('role')->insert(['ID' => 4, 'Name' => 'Financial Manager', 'Approval_Limit' => 1000]);
-    DB::connection('legacy')->table('role_currency_limit')->insert(['Role_ID' => 4, 'TillType_ID' => 2, 'Approval_Limit' => 50]);
-
-    $limits = new ApprovalLimits;
-
-    expect($limits->limitFor(RoleId::FinancialManager, 2))->toBe('50.00')
-        ->and($limits->limitFor(RoleId::FinancialManager, 4))->toBe('1000.00')
-        ->and($limits->limitFor(RoleId::FinancialManager, null))->toBe('1000.00')
-        ->and($limits->allows(RoleId::FinancialManager, 2, '50.00'))->toBeTrue()
-        ->and($limits->allows(RoleId::FinancialManager, 2, '50.01'))->toBeFalse()
-        ->and($limits->allows(RoleId::HeadOffice, 2, '999999999.00'))->toBeTrue()
-        ->and($limits->allows(RoleId::Accountant, 2, '1.00'))->toBeFalse();
-});
-
-it('refuses an approval above the role limit', function () {
-    $manager = userWithRole(RoleId::FinancialManager);
-    DB::connection('legacy')->table('role_currency_limit')->insert(['Role_ID' => 4, 'TillType_ID' => 2, 'Approval_Limit' => 6818]);
-
-    expect(Gate::forUser($manager)->allows('approve', voucher(999, '6818.00', 2)))->toBeTrue()
-        ->and(Gate::forUser($manager)->allows('approve', voucher(999, '6818.01', 2)))->toBeFalse();
 });
 
 it('holds the General Manager in the web table and leaves the legacy role alone', function () {

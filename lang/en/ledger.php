@@ -289,7 +289,7 @@ return [
         'budget_line_project' => 'Budget line :key belongs to project :budget_project, not :project.',
         'budget_line_account' => 'Budget line :key posts to account :budget_account, not :account.',
         'not_pending' => 'Only a voucher that is pending approval can be approved or rejected.',
-        'approval_not_allowed' => 'Your role or approval limit does not cover this voucher.',
+        'approval_not_allowed' => 'Your role may not approve this voucher.',
         'reject_own' => 'The person who prepared a voucher cannot reject it.',
         'reject_reason' => 'Write the reason for rejecting the voucher.',
         'approver_not_preparer' => 'The person who prepared a voucher cannot approve it.',
