@@ -38,6 +38,7 @@ function createFinanceSchema(): void
 
     (require database_path('migrations/2026_10_22_120000_create_web_user_roles_table.php'))->up();
     (require database_path('migrations/2026_10_22_130000_create_web_user_preferences_table.php'))->up();
+    (require database_path('migrations/2026_10_31_090000_create_web_user_permissions_table.php'))->up();
     (require database_path('migrations/2026_10_23_090000_create_gl_programs_tables.php'))->up();
     (require database_path('migrations/2026_10_23_100000_create_web_project_managers_table.php'))->up();
     (require database_path('migrations/2026_10_24_090000_create_gl_accounts_projects_budget_lines_tables.php'))->up();

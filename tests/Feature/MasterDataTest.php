@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\RoleId;
+use App\Enums\ScreenAction;
 use App\Livewire\ReferenceList;
 use App\Livewire\Users;
 use App\Models\User;
@@ -118,11 +119,10 @@ it('changes a password the way the old program stores it, and logs it without th
     $before = DB::table('user')->where('ID', $target->getKey())->value('Password');
 
     Livewire::actingAs($head)->test(Users::class)
-        ->call('edit', $target->getKey())
+        ->call('selectUser', $target->getKey())
         ->set('password', 'a new strong one')->set('confirmation', 'a new strong one')
         ->call('save')
         ->assertSet('failures', [])
-        ->assertSet('editing', null)
         ->assertSet('notice', __('master.users.changed', ['name' => 'Ann']));
 
     $stored = DB::table('user')->where('ID', $target->getKey())->value('Password');
@@ -149,7 +149,7 @@ it('refuses a short password, two different passwords and an unknown user', func
     $before = DB::table('user')->where('ID', $target->getKey())->value('Password');
 
     Livewire::actingAs($head)->test(Users::class)
-        ->call('edit', $target->getKey())
+        ->call('selectUser', $target->getKey())
         ->set('password', 'short')->set('confirmation', 'short')->call('save')
         ->assertSet('failures', [__('master.users.too_short', ['min' => Users::MIN_LENGTH])])
         ->set('password', 'long enough one')->set('confirmation', 'another one!!')->call('save')
@@ -157,20 +157,122 @@ it('refuses a short password, two different passwords and an unknown user', func
 
     expect(DB::table('user')->where('ID', $target->getKey())->value('Password'))->toBe($before);
 
-    Livewire::actingAs($head)->test(Users::class)->call('edit', 9999)->assertNotFound();
+    Livewire::actingAs($head)->test(Users::class)->call('selectUser', 9999)->assertNotFound();
 });
 
-it('lets only those who may edit users change a password', function () {
+it('lets only those who may edit users change anything', function () {
     $manager = masterUser(RoleId::FinancialManager, 'Fay');
     $target = masterUser(RoleId::Accountant, 'Ann');
     $before = DB::table('user')->where('ID', $target->getKey())->value('Password');
 
-    $this->actingAs($manager)->get('/people/users')->assertOk()->assertDontSee('data-test="change-'.$target->getKey().'"', false);
-    Livewire::actingAs($manager)->test(Users::class)->call('edit', $target->getKey())->assertForbidden();
-    Livewire::actingAs($manager)->test(Users::class)->set('editing', $target->getKey())->set('password', 'long enough one')->set('confirmation', 'long enough one')->call('save')->assertForbidden();
+    $this->actingAs($manager)->get('/people/users')->assertOk()->assertDontSee('data-test="add-user"', false);
+    Livewire::actingAs($manager)->test(Users::class)->call('selectUser', $target->getKey())->assertOk()
+        ->assertDontSee('data-test="save-access"', false)->assertDontSee('data-test="password-form"', false)
+        ->set('password', 'long enough one')->set('confirmation', 'long enough one')->call('save')->assertForbidden();
+    Livewire::actingAs($manager)->test(Users::class)->call('selectUser', $target->getKey())->call('saveAccess')->assertForbidden();
+    Livewire::actingAs($manager)->test(Users::class)->call('openCreate')->assertForbidden();
+    Livewire::actingAs($manager)->test(Users::class)->call('confirmDelete', $target->getKey())->assertForbidden();
 
     expect(DB::table('user')->where('ID', $target->getKey())->value('Password'))->toBe($before);
     $this->actingAs(masterUser(RoleId::Accountant, 'Ann2'))->get('/people/users')->assertForbidden();
+});
+
+it('filters the list by role and state and shows the roles tab', function () {
+    $ann = masterUser(RoleId::Accountant, 'Ann');
+    DB::table('user')->where('ID', $ann->getKey())->update(['State' => 0]);
+    masterUser(RoleId::FinancialManager, 'Fay');
+
+    Livewire::actingAs(masterUser(RoleId::HeadOffice, 'Hoa'))->test(Users::class)
+        ->set('role', (string) RoleId::Accountant->value)->assertSee('Ann')->assertDontSee('Fay')
+        ->set('role', '')->set('status', 'inactive')->assertSee('Ann')->assertDontSee('Fay')
+        ->set('status', 'active')->assertSee('Fay')->assertDontSee('Ann')
+        ->call('showTab', 'roles')->assertSee(RoleId::GeneralManager->label())
+        ->call('selectRole', RoleId::Accountant->value)->assertSee('Ann');
+});
+
+it('saves roles, state and permissions given to one person, and honours them', function () {
+    DB::table('role')->insertOrIgnore([['ID' => 5, 'Name' => 'Accountant'], ['ID' => 6, 'Name' => 'Cashier'], ['ID' => 7, 'Name' => 'Employee']]);
+    $head = masterUser(RoleId::HeadOffice, 'Hoa');
+    $target = masterUser(RoleId::Employee, 'Eli');
+
+    expect(User::query()->findOrFail($target->getKey())->canOnScreen('chart'))->toBeFalse();
+
+    Livewire::actingAs($head)->test(Users::class)
+        ->call('selectUser', $target->getKey())
+        ->set('primaryRoleId', RoleId::Cashier->value)
+        ->set('extraRoleIds', [RoleId::GeneralManager->value])
+        ->set('permissions', ['chart.view', 'chart.edit'])
+        ->set('active', false)
+        ->call('saveAccess')
+        ->assertSet('failures', [])
+        ->assertSet('notice', __('master.users.access_saved', ['name' => 'Eli']));
+
+    $row = DB::table('user')->where('ID', $target->getKey())->first();
+    $fresh = User::query()->findOrFail($target->getKey());
+
+    expect((int) $row->Role)->toBe(RoleId::Cashier->value)
+        ->and((int) $row->State)->toBe(0)
+        ->and($fresh->canOnScreen('chart'))->toBeTrue()
+        ->and($fresh->canOnScreen('chart', ScreenAction::Edit))->toBeTrue()
+        ->and($fresh->canOnScreen('chart', ScreenAction::Delete))->toBeFalse()
+        ->and($fresh->canOnScreen('approval', ScreenAction::Approve))->toBeTrue()
+        ->and(DB::table('web_user_roles')->where('user_id', $target->getKey())->pluck('role_id')->map(fn ($id) => (int) $id)->all())->toBe([RoleId::GeneralManager->value])
+        ->and(DB::table('log')->where('title', 'ACCESS_CHANGED')->value('details'))->toBe('Eli');
+
+    Livewire::actingAs($head)->test(Users::class)->call('selectUser', $target->getKey())
+        ->assertSet('permissions', ['chart.edit', 'chart.view'])->assertSet('active', false);
+});
+
+it('refuses a bad role, a bad permission and deactivating yourself', function () {
+    $head = masterUser(RoleId::HeadOffice, 'Hoa');
+
+    Livewire::actingAs($head)->test(Users::class)
+        ->call('selectUser', $head->getKey())
+        ->set('primaryRoleId', RoleId::GeneralManager->value)->set('permissions', ['nope.view'])->set('active', false)
+        ->call('saveAccess')
+        ->assertSet('failures', [__('master.users.bad_role'), __('master.users.bad_permission'), __('master.users.not_yourself')]);
+
+    expect(DB::table('web_user_permissions')->count())->toBe(0);
+});
+
+it('adds a user to the old program, who can sign in', function () {
+    DB::table('role')->insertOrIgnore(['ID' => 6, 'Name' => 'Cashier']);
+    $head = masterUser(RoleId::HeadOffice, 'Hoa');
+
+    Livewire::actingAs($head)->test(Users::class)
+        ->call('openCreate')->assertSet('showCreate', true)
+        ->set('newUsername', 'Neo')->set('newPassword', 'short')->set('newRoleId', RoleId::Cashier->value)
+        ->call('createUser')->assertHasErrors('newPassword')
+        ->set('newPassword', 'a long enough one')->call('createUser')->assertHasNoErrors()
+        ->assertSet('showCreate', false)->assertSet('notice', __('master.users.created', ['name' => 'Neo']));
+
+    $row = DB::table('user')->where('Username', 'Neo')->first();
+    expect((int) $row->Role)->toBe(RoleId::Cashier->value)->and((int) $row->State)->toBe(1)
+        ->and(FinancePassword::verify('a long enough one', $row->Password))->toBeTrue()
+        ->and(DB::table('log')->where('title', 'USER_CREATED')->exists())->toBeTrue();
+
+    Livewire::actingAs($head)->test(Users::class)->call('openCreate')
+        ->set('newUsername', 'Neo')->set('newPassword', 'a long enough one')->set('newRoleId', RoleId::Cashier->value)
+        ->call('createUser')->assertHasErrors('newUsername');
+});
+
+it('deletes a user with their web roles and permissions, but not yourself', function () {
+    $head = masterUser(RoleId::HeadOffice, 'Hoa');
+    $target = masterUser(RoleId::Employee, 'Eli');
+    DB::table('web_user_roles')->insert(['user_id' => $target->getKey(), 'role_id' => RoleId::GeneralManager->value]);
+    DB::table('web_user_permissions')->insert(['user_id' => $target->getKey(), 'screen' => 'chart', 'action' => 'view']);
+
+    Livewire::actingAs($head)->test(Users::class)
+        ->call('confirmDelete', $head->getKey())->call('deleteUser')->assertSet('deleteError', __('master.users.not_yourself'))
+        ->call('closeDelete')
+        ->call('confirmDelete', $target->getKey())->assertSet('showDelete', true)->call('deleteUser')
+        ->assertSet('showDelete', false)->assertSet('notice', __('master.users.deleted', ['name' => 'Eli']));
+
+    expect(DB::table('user')->where('ID', $target->getKey())->exists())->toBeFalse()
+        ->and(DB::table('user')->where('ID', $head->getKey())->exists())->toBeTrue()
+        ->and(DB::table('web_user_roles')->where('user_id', $target->getKey())->exists())->toBeFalse()
+        ->and(DB::table('web_user_permissions')->where('user_id', $target->getKey())->exists())->toBeFalse()
+        ->and(DB::table('log')->where('title', 'USER_DELETED')->value('details'))->toBe('Eli');
 });
 
 it('never writes to a legacy table from a reference screen', function () {

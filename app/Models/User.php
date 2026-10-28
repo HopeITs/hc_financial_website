@@ -15,8 +15,9 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 /**
  * A row of the Windows program's `user` table (id, username, password, role).
  *
- * The table belongs to the Windows program, so this model never writes to it:
- * no remember-me token column, no timestamps, and the password is only read.
+ * The table belongs to the Windows program: no remember-me token column, no
+ * timestamps. It is written only from the Users screen (the password, role and
+ * state of a person, adding and removing a person), and every change is logged.
  *
  * @property int $id
  * @property string $username
@@ -74,7 +75,17 @@ class User extends Authenticatable
     }
 
     /**
-     * Whether any of the person's roles allows the action on the screen (config/permissions.php).
+     * Permissions given to this person alone, on top of their roles.
+     *
+     * @return HasMany<WebUserPermission, $this>
+     */
+    public function webPermissions(): HasMany
+    {
+        return $this->hasMany(WebUserPermission::class, 'user_id', 'ID');
+    }
+
+    /**
+     * Whether a role of the person (config/permissions.php) or a permission given to them alone allows the action on the screen.
      */
     public function canOnScreen(string $slug, ScreenAction $action = ScreenAction::View): bool
     {
@@ -86,7 +97,7 @@ class User extends Authenticatable
             }
         }
 
-        return false;
+        return $this->webPermissions->contains(fn (WebUserPermission $permission): bool => $permission->screen === $slug && $permission->action === $action->value);
     }
 
     /**
