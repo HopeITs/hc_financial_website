@@ -14,9 +14,13 @@ document.addEventListener('alpine:init', () => {
         page: 1,
         total: 0,
         observer: null,
+        root: null,
 
         init() {
             if (!this.paginate) return;
+
+            // `$el` is the clicked button inside a click handler, so the card is kept from here.
+            this.root = this.$el;
 
             // Watch the whole card, not one tbody: Livewire may replace the tbody (or render the table after the
             // card), and it also resets the `hidden` attribute of rows it morphs, which must be put back.
@@ -24,7 +28,7 @@ document.addEventListener('alpine:init', () => {
                 if (mutations.every((mutation) => mutation.target.closest?.('.fin-table-pager'))) return;
                 this.render();
             });
-            this.observer.observe(this.$el, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
+            this.observer.observe(this.root, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
             this.render();
         },
 
@@ -33,7 +37,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         rows() {
-            return [...this.$el.querySelectorAll('tbody > tr')].filter((row) => !row.querySelector('[colspan]'));
+            return [...this.root.querySelectorAll('tbody > tr')].filter((row) => !row.querySelector('[colspan]'));
         },
 
         get pages() {
