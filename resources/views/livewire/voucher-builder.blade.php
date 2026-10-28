@@ -68,7 +68,7 @@
                         <tr wire:key="line-{{ $i }}">
                             <td class="text-secondary-medium dark:text-ink-muted">{{ $i + 1 }}</td>
                             <td>
-                                <select wire:model.live="lines.{{ $i }}.account" class="{{ $cell }}" aria-label="{{ __('ledger.builder.account') }} {{ $i + 1 }}" data-test="account-{{ $i }}">
+                                <x-ui.form-select bare wire:model.live="lines.{{ $i }}.account" :label="(__('ledger.builder.account')).' '.($i + 1)" data-test="account-{{ $i }}">
                                     <option value="">{{ __('ledger.builder.pick_account') }}</option>
                                     @foreach ($accountGroups as $class => $group)
                                         <optgroup label="{{ $classLabels[$class] ?? $class }}">
@@ -77,23 +77,23 @@
                                             @endforeach
                                         </optgroup>
                                     @endforeach
-                                </select>
+                                </x-ui.form-select>
                             </td>
                             <td>
-                                <select wire:model.live="lines.{{ $i }}.side" class="{{ $cell }}" aria-label="{{ __('ledger.builder.side') }} {{ $i + 1 }}" data-test="side-{{ $i }}">
+                                <x-ui.form-select bare wire:model.live="lines.{{ $i }}.side" :label="(__('ledger.builder.side')).' '.($i + 1)" data-test="side-{{ $i }}">
                                     <option value="debit">{{ __('ledger.statement.dr') }}</option>
                                     <option value="credit">{{ __('ledger.statement.cr') }}</option>
-                                </select>
+                                </x-ui.form-select>
                             </td>
                             <td>
                                 @if ($isFixed)
                                     <span dir="ltr" data-test="currency-{{ $i }}">{{ $currency }}</span>
                                 @else
-                                    <select wire:model.live="lines.{{ $i }}.currency" class="{{ $cell }}" aria-label="{{ __('ledger.builder.currency') }} {{ $i + 1 }}" data-test="currency-{{ $i }}">
+                                    <x-ui.form-select bare wire:model.live="lines.{{ $i }}.currency" :label="(__('ledger.builder.currency')).' '.($i + 1)" data-test="currency-{{ $i }}">
                                         @foreach ($currencyCodes as $code)
                                             <option value="{{ $code }}">{{ $code }}</option>
                                         @endforeach
-                                    </select>
+                                    </x-ui.form-select>
                                 @endif
                             </td>
                             <td><input type="text" inputmode="decimal" dir="ltr" wire:model.live.debounce.400ms="lines.{{ $i }}.amount" class="{{ $cell }} text-end" aria-label="{{ __('ledger.builder.amount') }} {{ $i + 1 }}" data-test="amount-{{ $i }}"></td>
@@ -106,40 +106,40 @@
                             </td>
                             <td class="fin-num" data-test="usd-{{ $i }}">@if ($effective) <x-money :amount="$effective['usd']" /> @else — @endif</td>
                             <td>
-                                <select wire:model.live="lines.{{ $i }}.project" class="{{ $cell }}" aria-label="{{ __('ledger.builder.project') }} {{ $i + 1 }}" data-test="project-{{ $i }}">
+                                <x-ui.form-select bare wire:model.live="lines.{{ $i }}.project" :label="(__('ledger.builder.project')).' '.($i + 1)" data-test="project-{{ $i }}">
                                     <option value="">{{ __('ledger.builder.no_project') }}</option>
                                     @foreach ($projects as $project)
                                         <option value="{{ $project->code }}">{{ $project->code }}</option>
                                     @endforeach
-                                </select>
+                                </x-ui.form-select>
                             </td>
                             <td>
-                                <select wire:model.live="lines.{{ $i }}.budget_line" class="{{ $cell }}" aria-label="{{ __('ledger.builder.budget_line') }} {{ $i + 1 }}" data-test="budget-line-{{ $i }}">
+                                <x-ui.form-select bare wire:model.live="lines.{{ $i }}.budget_line" :label="(__('ledger.builder.budget_line')).' '.($i + 1)" data-test="budget-line-{{ $i }}">
                                     <option value="">{{ __('ledger.builder.no_budget_line') }}</option>
                                     @foreach ($budgetLines as $budgetLine)
                                         @if ($line['project'] === '' || $line['project'] === $budgetLine->project_code)
                                             <option value="{{ $budgetLine->key }}">{{ $budgetLine->key }}</option>
                                         @endif
                                     @endforeach
-                                </select>
+                                </x-ui.form-select>
                             </td>
                             <td>
-                                <select wire:model.live="lines.{{ $i }}.fund_source" class="{{ $cell }}" aria-label="{{ __('ledger.builder.fund_source') }} {{ $i + 1 }}">
+                                <x-ui.form-select bare wire:model.live="lines.{{ $i }}.fund_source" :label="(__('ledger.builder.fund_source')).' '.($i + 1)">
                                     <option value="">{{ __('ledger.builder.no_fund_source') }}</option>
                                     @foreach ($fundSources as $source)
                                         <option value="{{ $source->value }}">{{ $source->label() }}</option>
                                     @endforeach
-                                </select>
+                                </x-ui.form-select>
                             </td>
                             <td><input type="text" wire:model.live.debounce.400ms="lines.{{ $i }}.contact" class="{{ $cell }}" aria-label="{{ __('ledger.builder.contact') }} {{ $i + 1 }}"></td>
                             <td><input type="text" wire:model.live.debounce.400ms="lines.{{ $i }}.center" class="{{ $cell }}" aria-label="{{ __('ledger.builder.center') }} {{ $i + 1 }}"></td>
                             <td>
                                 @if ($isPounds)
-                                    <select wire:model.live="lines.{{ $i }}.lira_type" class="{{ $cell }}" aria-label="{{ __('ledger.builder.lira_type') }} {{ $i + 1 }}">
+                                    <x-ui.form-select bare wire:model.live="lines.{{ $i }}.lira_type" :label="(__('ledger.builder.lira_type')).' '.($i + 1)">
                                         <option value="">—</option>
                                         <option value="old">{{ __('ledger.builder.lira_old') }}</option>
                                         <option value="new">{{ __('ledger.builder.lira_new') }}</option>
-                                    </select>
+                                    </x-ui.form-select>
                                 @else
                                     <span class="text-secondary-medium dark:text-ink-muted">—</span>
                                 @endif

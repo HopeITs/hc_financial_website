@@ -11,6 +11,7 @@
     'value' => null,
     'multiple' => false,
     'employees' => false,
+    'bare' => false,
 ])
 
 @php
@@ -93,15 +94,7 @@
     $checkClasses = 'shrink-0 [:where(&)]:size-6 ms-auto size-4 shrink-0 '.($multiple ? 'text-primary dark:text-brand-text' : 'text-secondary-medium');
 @endphp
 
-<x-ui.form-field
-    :label="$label"
-    :for="$id"
-    :required="$required"
-    :help="$helpText"
-    :error="$error"
-    :class="$attributes->get('class')"
-    data-form-select="{{ $model }}"
->
+@php ob_start(); @endphp
     <div
         class="min-w-0"
         x-data="formPicker(@js([
@@ -123,6 +116,8 @@
                 icon:trailing="chevron-up-down"
                 class="w-full! justify-between!"
                 :disabled="$disabled"
+                :size="$bare ? 'sm' : 'base'"
+                :aria-label="$bare ? $label : null"
                 :autofocus="$attributes->has('autofocus')"
                 :aria-invalid="$error !== '' ? 'true' : null"
                 :aria-describedby="$describedBy !== '' ? $describedBy : null"
@@ -189,4 +184,21 @@
             </flux:menu>
         </flux:dropdown>
     </div>
-</x-ui.form-field>
+@php $picker = new Illuminate\Support\HtmlString(ob_get_clean()); @endphp
+
+@if ($bare)
+    {{-- Table-cell variant: no label, help or error rows; the label becomes the trigger's aria-label. --}}
+    <div class="min-w-0" data-form-select="{{ $model }}">{{ $picker }}</div>
+@else
+    <x-ui.form-field
+        :label="$label"
+        :for="$id"
+        :required="$required"
+        :help="$helpText"
+        :error="$error"
+        :class="$attributes->get('class')"
+        data-form-select="{{ $model }}"
+    >
+        {{ $picker }}
+    </x-ui.form-field>
+@endif
