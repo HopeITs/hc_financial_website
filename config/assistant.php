@@ -16,10 +16,12 @@ return [
 
     'api_key' => env('ANTHROPIC_API_KEY'),
 
-    'model' => env('ASSISTANT_MODEL', 'claude-opus-5-5'),
+    // Haiku is the cheapest Claude model. Set ASSISTANT_MODEL=claude-opus-5-5 for the most accurate answers (about 40x the price).
+    // Haiku has no server-side refusal fallback: a declined request stays declined and the panel says so.
+    'model' => env('ASSISTANT_MODEL', 'claude-haiku-5-5'),
 
     // low | medium | high | xhigh | max: how much the model thinks before it answers.
-    'effort' => env('ASSISTANT_EFFORT', 'medium'),
+    'effort' => env('ASSISTANT_EFFORT', 'low'),
 
     'max_tokens' => 16000,
 
