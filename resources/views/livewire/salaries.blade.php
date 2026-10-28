@@ -3,8 +3,10 @@
     $tabClass = fn (bool $active) => 'rounded-md px-3 py-1.5 text-sm font-medium '.($active ? 'bg-primary text-white' : 'text-secondary-medium hover:bg-secondary-soft dark:text-ink-muted dark:hover:bg-surface-2');
 @endphp
 
-<div class="flex flex-col gap-6 px-4 pb-10 lg:px-8" data-test="salaries">
+<div class="flex flex-col gap-6 px-4 pb-10 lg:px-8" data-test="salaries" x-data="unsavedGuard" data-unsaved-message="{{ __('drafts.leave_warning') }}" x-on:form-clean.window="clean()">
     <x-ui.page-header :title="__('salaries.title')" :subtitle="__('salaries.intro')" />
+
+    <x-ui.form-draft :saved-at="$draftSavedAt" :notice="$draftNotice" />
 
     @if ($notice)
         <div class="rounded-lg border border-secondary-soft bg-white px-4 py-2 text-sm dark:border-line dark:bg-surface-1" role="status" data-test="notice">{{ $notice }}</div>
@@ -63,7 +65,8 @@
             <x-ui.button wire:click="addSplitRow" icon="plus">{{ __('salaries.add_row') }}</x-ui.button>
             <x-ui.button wire:click="loadSplit" data-test="load-split">{{ __('salaries.splits.load') }}</x-ui.button>
             @if ($canCreate)
-                <x-ui.button tone="primary" wire:click="saveSplit" data-test="save-split">{{ __('salaries.splits.save') }}</x-ui.button>
+                <x-ui.button tone="primary" wire:click="saveSplit" x-on:click="leaving()" data-test="save-split">{{ __('salaries.splits.save') }}</x-ui.button>
+                <x-ui.button wire:click="saveDraft" data-test="save-draft">{{ __('drafts.save') }}</x-ui.button>
             @endif
         </div>
     @else
@@ -151,7 +154,8 @@
                 @if ($mode === 'salary')
                     <x-ui.button wire:click="propose" data-test="propose">{{ __('salaries.propose') }}</x-ui.button>
                 @endif
-                <x-ui.button tone="primary" wire:click="post" data-test="post-allocation">{{ __('salaries.post') }}</x-ui.button>
+                <x-ui.button tone="primary" wire:click="post" x-on:click="leaving()" data-test="post-allocation">{{ __('salaries.post') }}</x-ui.button>
+                <x-ui.button wire:click="saveDraft" data-test="save-draft">{{ __('drafts.save') }}</x-ui.button>
             @endif
         </div>
     @endif

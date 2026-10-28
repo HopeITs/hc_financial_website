@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\HasFormDraft;
 use App\Models\Currency;
 use App\Services\Ledger\Currencies;
 use Illuminate\Contracts\View\View;
@@ -19,6 +20,8 @@ use Livewire\Component;
 #[Layout('components.layouts.app')]
 class CurrencySettings extends Component
 {
+    use HasFormDraft;
+
     public bool $showForm = false;
 
     public ?string $editing = null;
@@ -70,6 +73,7 @@ class CurrencySettings extends Component
     public function cancel(): void
     {
         $this->showForm = false;
+        $this->dispatch('form-clean');
     }
 
     public function save(): void
@@ -110,6 +114,8 @@ class CurrencySettings extends Component
         }
 
         app()->forgetInstance(Currencies::class);
+        $this->forgetDraft();
+        $this->dispatch('form-clean');
         $this->showForm = false;
     }
 
@@ -123,6 +129,32 @@ class CurrencySettings extends Component
             'canCreate' => Gate::allows('screen', ['currency', 'create']),
             'canEdit' => Gate::allows('screen', ['currency', 'edit']),
         ]);
+    }
+
+    protected function draftFields(): array
+    {
+        return ['showForm', 'code', 'nameEn', 'nameAr', 'quote', 'active', 'editing'];
+    }
+
+    protected function draftScreen(): string
+    {
+        return 'currency';
+    }
+
+    protected function draftPermission(): array
+    {
+        return ['currency', $this->editing === null ? 'create' : 'edit'];
+    }
+
+    /**
+     * The currency being edited comes back only while it still exists and is not the base.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    protected function restoredDraft(array $payload): void
+    {
+        $editing = $payload['editing'] ?? null;
+        $this->editing = is_string($editing) && Currency::query()->whereKey($editing)->where('is_base', false)->exists() ? $editing : null;
     }
 
     private function linesIn(string $code): int

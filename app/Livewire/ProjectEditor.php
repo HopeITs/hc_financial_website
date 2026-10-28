@@ -4,7 +4,9 @@ namespace App\Livewire;
 
 use App\Enums\AccountClass;
 use App\Enums\AccountLevel;
+use App\Livewire\Concerns\HasFormDraft;
 use App\Models\GlAccount;
+use App\Models\GlBudgetLine;
 use App\Models\GlProject;
 use App\Services\Ledger\Currencies;
 use App\Services\Projects\BudgetSheetImport;
@@ -28,6 +30,7 @@ use Throwable;
 #[Layout('components.layouts.app')]
 class ProjectEditor extends Component
 {
+    use HasFormDraft;
     use WithFileUploads;
 
     public const RESTRICTIONS = ['With donor restrictions', 'Without donor restrictions'];
@@ -173,9 +176,80 @@ class ProjectEditor extends Component
             $saved[] = $writer->save($draft, $this->editing !== null)->code;
         }
 
+        $this->forgetDraft();
         session()->flash('status', __('projects.manage.saved', ['codes' => implode(', ', $saved)]));
 
         $this->redirectRoute(Navigation::routeName('projects'));
+    }
+
+    protected function draftFields(): array
+    {
+        return ['projects'];
+    }
+
+    /** A new project has one draft; each project being edited has its own. */
+    protected function draftScreen(): string
+    {
+        return $this->editing === null ? 'project-editor' : 'project-editor:'.$this->editing;
+    }
+
+    protected function draftPermission(): array
+    {
+        return ['projects', $this->editing === null ? 'create' : 'edit'];
+    }
+
+    /**
+     * Every restored project and line gets exactly the form's fields, as text. A line keeps its key only when it is a
+     * saved line of the project being edited; an edited project keeps its code. A draft with no project reloads the form.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    protected function restoredDraft(array $payload): void
+    {
+        $saved = $this->editing === null ? [] : GlBudgetLine::query()->where('project_code', $this->editing)->pluck('key')->all();
+        $projects = [];
+
+        foreach (is_array($payload['projects'] ?? null) ? $payload['projects'] : [] as $draft) {
+            if (! is_array($draft)) {
+                continue;
+            }
+
+            $project = $this->blankProject();
+            foreach (array_keys($project) as $field) {
+                if ($field !== 'lines' && isset($draft[$field]) && is_scalar($draft[$field])) {
+                    $project[$field] = (string) $draft[$field];
+                }
+            }
+
+            foreach (is_array($draft['lines'] ?? null) ? $draft['lines'] : [] as $line) {
+                if (! is_array($line)) {
+                    continue;
+                }
+
+                $row = $this->blankLine('');
+                foreach (array_keys($row) as $field) {
+                    if ($field !== 'key' && isset($line[$field]) && is_scalar($line[$field])) {
+                        $row[$field] = (string) $line[$field];
+                    }
+                }
+                $row['key'] = is_string($line['key'] ?? null) && in_array($line['key'], $saved, true) ? $line['key'] : null;
+                $project['lines'][] = $row;
+            }
+
+            $projects[] = $project;
+        }
+
+        if ($projects === []) {
+            $this->mount($this->editing);
+
+            return;
+        }
+
+        if ($this->editing !== null) {
+            $projects = [['code' => $this->editing] + $projects[0]];
+        }
+
+        $this->projects = $projects;
     }
 
     public function render(): View

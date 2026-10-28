@@ -7,11 +7,14 @@
         @endif
     </x-ui.page-header>
 
+    <x-ui.form-draft :saved-at="$draftSavedAt" :notice="$draftNotice" />
+
     @if ($notice)
         <div class="rounded-lg border border-secondary-soft bg-white px-4 py-2 text-sm dark:border-line dark:bg-surface-1" role="status" data-test="notice">{{ $notice }}</div>
     @endif
 
     @if ($showForm)
+        <div x-data="unsavedGuard" data-unsaved-message="{{ __('drafts.leave_warning') }}" x-on:form-clean.window="clean()">
         <form wire:submit="save" data-test="currency-form">
             <x-ui.panel :title="$editing === null ? __('currencies.add') : __('currencies.edit')" class="p-0">
                 <div class="flex flex-col gap-4 p-4">
@@ -33,12 +36,14 @@
                     </div>
 
                     <div class="flex gap-2">
-                        <x-ui.button type="submit" tone="primary">{{ __('currencies.save') }}</x-ui.button>
+                        <x-ui.button type="submit" tone="primary" x-on:click="leaving()">{{ __('currencies.save') }}</x-ui.button>
+                        <x-ui.button wire:click="saveDraft" data-test="save-draft">{{ __('drafts.save') }}</x-ui.button>
                         <x-ui.button type="button" wire:click="cancel">{{ __('currencies.cancel') }}</x-ui.button>
                     </div>
                 </div>
             </x-ui.panel>
         </form>
+        </div>
     @endif
 
     <x-ui.scroll-table>

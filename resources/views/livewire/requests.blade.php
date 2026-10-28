@@ -16,6 +16,7 @@
     @endif
 
     @if ($mode === 'form')
+        <div class="flex flex-col gap-6" x-data="unsavedGuard" data-unsaved-message="{{ __('drafts.leave_warning') }}" x-on:form-clean.window="clean()">
         <div>
             <button type="button" wire:click="cancelForm" class="text-sm text-secondary-medium hover:underline dark:text-ink-muted">{{ __('requests.back') }}</button>
         </div>
@@ -88,8 +89,9 @@
         </section>
 
         <div class="flex flex-wrap gap-3">
-            <x-ui.button tone="primary" wire:click="save" data-test="save-request">{{ __('requests.save') }}</x-ui.button>
+            <x-ui.button tone="primary" wire:click="save" x-on:click="leaving()" data-test="save-request">{{ __('requests.save') }}</x-ui.button>
             <x-ui.button wire:click="cancelForm">{{ __('requests.cancel') }}</x-ui.button>
+        </div>
         </div>
     @elseif ($mode === 'list')
         <x-ui.page-header :title="__('navigation.screens.requests')" :subtitle="__('requests.intro')" :count="$list->total()">

@@ -7,6 +7,8 @@
         @endif
     </x-ui.page-header>
 
+    <x-ui.form-draft :saved-at="$draftSavedAt" :notice="$draftNotice" />
+
     @if ($notice)
         <div class="rounded-lg border border-secondary-soft bg-white px-4 py-2 text-sm dark:border-line dark:bg-surface-1" role="status" data-test="notice">{{ $notice }}</div>
     @endif
@@ -186,6 +188,7 @@
     @endif
 
     @if ($canCreate || $canEdit)
+        <div x-data="unsavedGuard" data-unsaved-message="{{ __('drafts.leave_warning') }}" x-on:form-clean.window="clean()">
         <x-ui.modal wire:model.self="showEditor" size="lg" :title="$editing ? __('chart.edit_title', ['code' => $editing]) : __('chart.add_title')" submit="save" close="closeEditor" :required-note="true" data-test="account-editor">
             <div class="grid gap-4 sm:grid-cols-2">
                 <x-ui.form-input wire:model="formCode" :label="__('chart.code')" dir="ltr" maxlength="4" :disabled="$editing !== null" :help="$editing ? __('chart.code_locked') : null" required />
@@ -241,9 +244,11 @@
             </div>
 
             <x-slot:actions>
-                <x-ui.button type="submit" tone="primary" data-test="save-account">{{ __('chart.save') }}</x-ui.button>
+                <x-ui.button wire:click="saveDraft" data-test="save-draft">{{ __('drafts.save') }}</x-ui.button>
+                <x-ui.button type="submit" tone="primary" x-on:click="leaving()" data-test="save-account">{{ __('chart.save') }}</x-ui.button>
             </x-slot:actions>
         </x-ui.modal>
+        </div>
     @endif
 
     @if ($canDelete)

@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Enums\ProgramStatus;
+use App\Livewire\Concerns\HasFormDraft;
 use App\Models\GlProgram;
 use App\Services\Programs\ProgramList;
 use Illuminate\Contracts\View\View;
@@ -19,6 +20,8 @@ use Livewire\Component;
 #[Layout('components.layouts.app')]
 class Programs extends Component
 {
+    use HasFormDraft;
+
     public bool $showForm = false;
 
     public string $nameEn = '';
@@ -49,6 +52,7 @@ class Programs extends Component
     public function cancel(): void
     {
         $this->showForm = false;
+        $this->dispatch('form-clean');
     }
 
     public function save(ProgramList $programs): void
@@ -81,6 +85,8 @@ class Programs extends Component
         ]);
 
         $this->notice = __('programs.saved');
+        $this->forgetDraft();
+        $this->dispatch('form-clean');
         $this->showForm = false;
     }
 
@@ -115,6 +121,21 @@ class Programs extends Component
         DB::table('gl_program_projects')->where('sub_project_id', $subProjectId)->delete();
 
         $this->notice = __('programs.unlinked');
+    }
+
+    protected function draftFields(): array
+    {
+        return ['showForm', 'nameEn', 'nameAr', 'description', 'status'];
+    }
+
+    protected function draftScreen(): string
+    {
+        return 'programs';
+    }
+
+    protected function draftPermission(): array
+    {
+        return ['programs', 'create'];
     }
 
     public function render(ProgramList $programs): View

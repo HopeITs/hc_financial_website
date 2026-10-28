@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Enums\FundSource;
 use App\Enums\ScreenAction;
+use App\Livewire\Concerns\HasFormDraft;
 use App\Models\GlAccount;
 use App\Models\GlBudgetLine;
 use App\Models\GlProject;
@@ -25,6 +26,8 @@ use Livewire\Component;
 #[Layout('components.layouts.app')]
 class MicroLoans extends Component
 {
+    use HasFormDraft;
+
     #[Url]
     public string $tab = 'loans';
 
@@ -109,6 +112,7 @@ class MicroLoans extends Component
             return;
         }
 
+        $this->forgetDraft();
         $this->notice = __('loans.opened', ['number' => $result['voucher']->id]);
         $this->beneficiary = $this->loanAmount = $this->grantAmount = $this->nationalNumber = $this->mobile = $this->partners = '';
     }
@@ -139,8 +143,27 @@ class MicroLoans extends Component
             return;
         }
 
+        $this->forgetDraft();
         $this->notice = __('loans.received', ['number' => $voucher->id]);
         $this->paymentAmount = '';
+    }
+
+    protected function draftFields(): array
+    {
+        return [
+            'tab', 'beneficiary', 'nationalNumber', 'mobile', 'partners', 'intervalMonths', 'project', 'loanAmount', 'grantAmount',
+            'currency', 'rate', 'date', 'instalments', 'firstDue', 'cashAccount', 'budgetLine', 'fundSource', 'requestId', 'loanId', 'paymentAmount',
+        ];
+    }
+
+    protected function draftScreen(): string
+    {
+        return 'payments';
+    }
+
+    protected function draftPermission(): array
+    {
+        return ['payments', 'create'];
     }
 
     public function render(Loans $loans): View
