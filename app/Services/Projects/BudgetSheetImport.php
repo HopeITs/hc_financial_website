@@ -23,6 +23,9 @@ class BudgetSheetImport
         $byDonor = [];
 
         foreach ($this->reader->read($path) as $line) {
+            // A sheet without a donor column (or a blank cell) belongs to the donor already typed in the form.
+            $line['donor'] = $line['donor'] !== '' ? $line['donor'] : (string) ($template['donor'] ?? '');
+
             $byDonor[$line['donor']][] = [
                 'key' => null,
                 'name' => $line['name'],
@@ -30,7 +33,7 @@ class BudgetSheetImport
                 'account_code' => $this->accounts->propose($line['type'], $line['name']) ?? '',
                 'donor' => $line['donor'],
                 'budget' => $line['budget'],
-                'currency' => 'USD',
+                'currency' => $line['currency'],
             ];
         }
 

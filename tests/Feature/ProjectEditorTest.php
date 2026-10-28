@@ -104,15 +104,67 @@ it('reads the budget sheet and skips blank rows', function () {
         ->and($lines[1])->toMatchArray(['name' => 'Cleaner', 'type' => 'Other staff', 'donor' => 'MCC', 'budget' => '1200.50']);
 });
 
-it('refuses a sheet without the Donor column', function () {
-    (new BudgetSheetReader)->read(projectBudgetSheet([], ['Budget Line Name', 'Total/$ Year 1']));
-})->throws(InvalidArgumentException::class);
+it('keeps the lines of a sheet without a Donor column under the donor typed in the form', function () {
+    $file = UploadedFile::fake()->createWithContent('plain.xlsx', file_get_contents(projectBudgetSheet([['Rent', 100]], ['Budget Line Name', 'Total/$ Year 1'])));
+
+    $projects = Livewire::actingAs(projectEditorUser())->test(ProjectEditor::class)
+        ->set('projects.0.code', 'P1')->set('projects.0.name', 'P1')->set('projects.0.donor', 'Oxfam')
+        ->set('sheet', $file)->call('importSheet')->get('projects');
+
+    expect($projects)->toHaveCount(1)->and($projects[0]['code'])->toBe('P1')->and($projects[0]['donor'])->toBe('Oxfam')
+        ->and($projects[0]['lines'][0]['donor'])->toBe('Oxfam');
+});
 
 it('lets a role that may create open the screen and a project manager not', function () {
     $this->actingAs(projectEditorUser(RoleId::FinancialManager))->get('/projects/new')->assertOk();
     $this->actingAs(projectEditorUser(RoleId::Accountant))->get('/projects/new')->assertOk();
     $this->actingAs(projectEditorUser(RoleId::ProjectManager))->get('/projects/new')->assertForbidden();
 });
+
+it('reads a sheet with other column names, a title block, extra columns and section headings', function () {
+    $path = projectBudgetSheet([
+        ['Q3 plan', '', '', '', ''],
+        ['', '', '', '', ''],
+        ['Description', 'Amount (EUR)', 'Total cost (USD)', 'Notes', 'Funder'],
+        ['Personnel', '', '', '', ''],
+        ['Project manager', 5000, 6000, 'x', 'MCC'],
+        ['Office rent', 2600, 3000, '', 'MCC'],
+        ['Grand total', 7600, 9000, '', ''],
+    ], ['Project budget', '', '', '', '']);
+    // The header sits on the third row, below the title row written by the helper and one more title line.
+    $lines = (new BudgetSheetReader)->read($path);
+
+    expect($lines)->toHaveCount(2)
+        ->and($lines[0]['name'])->toBe('Project manager')
+        ->and($lines[0]['budget'])->toBe('6000.00')   // the USD column beats the EUR one
+        ->and($lines[0]['currency'])->toBe('USD')
+        ->and($lines[0]['category'])->toBe('Personnel') // the heading row names the lines below it
+        ->and($lines[1]['donor'])->toBe('MCC');
+});
+
+it('reads Arabic headers, picks the busiest sheet and computes a missing total', function () {
+    $path = tempnam(sys_get_temp_dir(), 'bud').'.xlsx';
+    $writer = new Writer;
+    $writer->openToFile($path);
+    $writer->addRow(Row::fromValues(['ملاحظات']));
+    $writer->getCurrentSheet()->setName('Notes');
+    $writer->addNewSheetAndMakeItCurrent()->setName('الموازنة');
+    $writer->addRow(Row::fromValues(['اسم البند', 'العدد', 'المدة', 'سعر الوحدة']));
+    $writer->addRow(Row::fromValues(['إيجار المكتب', 2, 12, 100]));
+    $writer->addRow(Row::fromValues(['كهرباء', 1, 6, '1,000.5']));
+    $writer->close();
+
+    $lines = (new BudgetSheetReader)->read($path);
+
+    expect($lines)->toHaveCount(2)
+        ->and($lines[0]['budget'])->toBe('2400.00')
+        ->and($lines[1]['budget'])->toBe('6003.00')
+        ->and($lines[0]['donor'])->toBe('');
+});
+
+it('refuses a workbook with no recognisable budget table', function () {
+    (new BudgetSheetReader)->read(projectBudgetSheet([['a', 'b']], ['Foo', 'Bar']));
+})->throws(InvalidArgumentException::class);
 
 it('splits an ADISC-style sheet into one project per donor, with the proposed accounts', function () {
     $file = UploadedFile::fake()->createWithContent('adisc.xlsx', file_get_contents(projectBudgetSheet(projectAdiscRows())));
