@@ -1,9 +1,21 @@
 <div>
     @if ($available)
-        <div x-data="{ pending: '' }" class="fixed bottom-4 end-4 z-40 flex flex-col items-end gap-3" data-test="assistant">
+        {{-- Positioning is plain CSS here, not utility classes, so the corner and the round button work without a front-end rebuild. --}}
+        <style>
+            .hc-assistant { position: fixed; right: 1rem; bottom: 1rem; z-index: 45; display: flex; flex-direction: column; align-items: flex-end; gap: .75rem; }
+            .hc-assistant__panel { width: min(28rem, calc(100vw - 2rem)); height: min(36rem, calc(100dvh - 6rem)); }
+            .hc-assistant__fab { display: grid; place-items: center; width: 3.5rem; height: 3.5rem; padding: 0; border: 0; border-radius: 9999px; cursor: pointer; color: #fff; background: var(--color-primary); box-shadow: 0 6px 18px rgb(0 0 0 / .28); transition: transform .15s ease, background-color .15s ease; }
+            .hc-assistant__fab:hover { transform: scale(1.06); }
+            .hc-assistant__fab:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 3px; }
+            .hc-assistant__fab svg { width: 2rem; height: 2rem; }
+            .dark .hc-assistant__fab { background: var(--color-brand); }
+            @media (prefers-reduced-motion: reduce) { .hc-assistant__fab { transition: none; } .hc-assistant__fab:hover { transform: none; } }
+        </style>
+
+        <div x-data="{ pending: '' }" class="hc-assistant" data-test="assistant">
             @if ($open)
                 <section
-                    class="flex h-[min(36rem,calc(100dvh-6rem))] w-[min(28rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-secondary-soft bg-white shadow-xl dark:border-line dark:bg-surface-1"
+                    class="hc-assistant__panel flex flex-col overflow-hidden rounded-xl border border-secondary-soft bg-white shadow-xl dark:border-line dark:bg-surface-1"
                     role="dialog"
                     aria-labelledby="assistant-title"
                     data-test="assistant-panel"
@@ -165,14 +177,26 @@
                 </section>
             @endif
 
-            <x-ui.button
-                tone="primary"
-                icon="sparkles"
+            <button
+                type="button"
+                class="hc-assistant__fab"
                 wire:click="toggle"
-                class="rounded-full! shadow-lg"
-                :aria-expanded="$open ? 'true' : 'false'"
+                aria-label="{{ __('assistant.title') }}"
+                title="{{ __('assistant.title') }}"
+                aria-expanded="{{ $open ? 'true' : 'false' }}"
                 data-test="assistant-toggle"
-            >{{ __('assistant.title') }}</x-ui.button>
+            >
+                {{-- Robot face: antenna, head, two eyes, mouth. --}}
+                <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M16 4v4" />
+                    <circle cx="16" cy="3.5" r="1.2" fill="currentColor" />
+                    <rect x="5" y="8" width="22" height="18" rx="6" />
+                    <circle cx="11.5" cy="16" r="1.8" fill="currentColor" stroke="none" />
+                    <circle cx="20.5" cy="16" r="1.8" fill="currentColor" stroke="none" />
+                    <path d="M11.5 21.5h9" />
+                    <path d="M2.5 15v4M29.5 15v4" />
+                </svg>
+            </button>
         </div>
     @endif
 </div>
