@@ -25,7 +25,7 @@ return new class extends Migration
 
             $table->foreign('project_code')->references('code')->on('gl_projects')->restrictOnDelete();
             $table->foreign('budget_line_key')->references('key')->on('gl_budget_lines')->restrictOnDelete();
-            $table->unique(['legacy_employee_id', 'budget_line_key', 'valid_from']);
+            $table->unique(['legacy_employee_id', 'budget_line_key', 'valid_from'], 'gl_payroll_splits_employee_line_from_unique');
             $table->index(['legacy_employee_id', 'valid_from']);
         });
     }
