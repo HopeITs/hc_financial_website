@@ -19,6 +19,12 @@
             </p>
         </flux:footer>
 
+        @auth
+            @persist('assistant')
+                <livewire:assistant-panel />
+            @endpersist
+        @endauth
+
         @persist('toast')
             <flux:toast.group position="center">
                 <flux:toast />
