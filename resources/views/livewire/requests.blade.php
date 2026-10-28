@@ -168,6 +168,10 @@
             </div>
         @endif
 
+        @if ($lateWarning)
+            <div class="rounded-lg border border-status-warning bg-status-warning-soft px-4 py-2 text-sm" role="note" data-test="late-warning">{{ $lateWarning }}</div>
+        @endif
+
         @foreach ($warnings as $warning)
             <div class="rounded-lg border border-status-warning bg-status-warning-soft px-4 py-2 text-sm" role="note" data-test="budget-warning">
                 {{ __('requests.budget_warning', ['line' => $warning['key'], 'budget' => number_format((float) $warning['budget'], 2), 'spent' => number_format((float) $warning['spent'], 2), 'requested' => number_format((float) $warning['requested'], 2), 'currency' => $warning['currency']]) }}

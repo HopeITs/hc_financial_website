@@ -15,6 +15,8 @@ use App\Services\Ledger\LineDraft;
 use App\Services\Ledger\Rules\RequestRequiredAboveLimit;
 use App\Services\Requests\RequestException;
 use App\Services\Requests\RequestWorkflow;
+use App\Services\Requests\SubmissionDeadline;
+use Carbon\CarbonImmutable;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\UploadedFile;
@@ -432,4 +434,48 @@ it('shows the request screen in the menu and both languages', function () {
     $this->actingAs($manager)->withSession(['locale' => 'ar'])->get(route('entries.requests'))->assertOk();
 
     expect(array_keys(trans('requests', [], 'ar')))->toEqual(array_keys(trans('requests', [], 'en')));
+});
+
+it('works out the monthly deadline: the last working day of the month before, weekends skipped', function () {
+    $deadline = app(SubmissionDeadline::class);
+    $december = CarbonImmutable::parse('2026-12-01');
+
+    // November 2026 ends on a Monday; Fridays and Saturdays are the weekend, so the five last working days are 30, 29, 26, 25 and 24.
+    expect($deadline->dueBy($december)->toDateString())->toBe('2026-11-30')
+        ->and($deadline->windowOpens($december)->toDateString())->toBe('2026-11-24')
+        ->and($deadline->isLate($december, CarbonImmutable::parse('2026-11-30 17:00')))->toBeFalse()
+        ->and($deadline->isLate($december, CarbonImmutable::parse('2026-12-01 08:00')))->toBeTrue();
+
+    // A Friday or Saturday at the end of the month is not a working day: October 2026 ends on a Saturday, so the day is Thursday 29.
+    expect($deadline->dueBy(CarbonImmutable::parse('2026-11-01'))->toDateString())->toBe('2026-10-29');
+});
+
+it('warns about a late monthly request but does not block it', function () {
+    $manager = rqManager();
+    Carbon\Carbon::setTestNow('2026-12-02 09:00:00');
+    $request = rqWorkflow()->submit($manager, rqDraft($manager, header: ['month' => '2026-12']));
+
+    expect($request->status)->toBe('submitted');
+
+    Livewire::actingAs($manager)->test(Requests::class)
+        ->set('requestId', $request->id)
+        ->assertSeeHtml('data-test="late-warning"');
+
+    Carbon\Carbon::setTestNow();
+});
+
+it('shows no late warning for a request submitted in time or for an extra request', function () {
+    $manager = rqManager();
+    Carbon\Carbon::setTestNow('2026-11-25 09:00:00');
+    $onTime = rqWorkflow()->submit($manager, rqDraft($manager, header: ['month' => '2026-12']));
+    Carbon\Carbon::setTestNow('2026-12-02 09:00:00');
+    $extra = rqWorkflow()->submit($manager, rqDraft($manager, header: ['month' => '2026-12', 'type' => 'extra']));
+
+    foreach ([$onTime, $extra] as $request) {
+        Livewire::actingAs($manager)->test(Requests::class)
+            ->set('requestId', $request->id)
+            ->assertDontSeeHtml('data-test="late-warning"');
+    }
+
+    Carbon\Carbon::setTestNow();
 });

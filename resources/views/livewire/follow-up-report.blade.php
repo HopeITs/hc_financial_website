@@ -32,7 +32,7 @@
             </thead>
             <tbody>
                 @forelse ($data['rows'] as $row)
-                    <tr @if (($row['late_flag'] ?? '') !== '') class="bg-status-critical-soft" title="{{ __('loans.late_hint') }}" data-late-flag @endif>
+                    <tr @if (($row['late_flag'] ?? '') !== '') class="bg-status-critical-soft" title="{{ __('loans.late_hint') }}" data-late-flag @elseif (($row['negative_flag'] ?? '') !== '') class="bg-status-warn-soft" title="{{ __('ledger.follow.negative_hint') }}" data-negative-flag @endif>
                         @foreach ($data['columns'] as $column)
                             @php $value = $row[$column['key']] ?? null; @endphp
                             @if ($column['type'] === 'money')

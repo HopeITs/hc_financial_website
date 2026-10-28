@@ -58,6 +58,14 @@ class Transfers extends Component
 
     public string $description = '';
 
+    public string $exchangeRate = '';
+
+    public string $received = '';
+
+    public string $commission = '';
+
+    public string $sypCashAccount = '';
+
     /** @var list<string> */
     public array $failures = [];
 
@@ -71,11 +79,13 @@ class Transfers extends Component
         $this->rateFrom = now()->toDateString();
         $this->date = now()->toDateString();
         $this->cashAccount = $this->defaultCash();
+        $this->sypCashAccount = $this->defaultSypCash();
     }
 
     public function updatedKind(): void
     {
         $this->cashAccount = $this->defaultCash();
+        $this->sypCashAccount = $this->defaultSypCash();
     }
 
     public function updatedCity(): void
@@ -83,6 +93,7 @@ class Transfers extends Component
         $this->project = '';
         $this->otherProject = '';
         $this->cashAccount = $this->defaultCash();
+        $this->sypCashAccount = $this->defaultSypCash();
     }
 
     public function updatedCurrency(): void
@@ -173,6 +184,8 @@ class Transfers extends Component
             'selected' => $kind,
             'showCurrency' => $kind?->movesFromProject() ?? false,
             'showOther' => $kind === TransferKind::BetweenProjects,
+            'showExchange' => $kind === TransferKind::LocalExchange,
+            'sypCashAccounts' => $this->sypCashAccounts(),
             'projects' => $this->projects(),
             'cashAccounts' => $this->cashAccounts(),
             'preview' => $preview,
@@ -202,13 +215,14 @@ class Transfers extends Component
         return $builder->build(
             $this->kind, $this->date, $this->city, $this->project, $this->otherProject, $this->currency,
             $this->amount, $this->cashAccount, $this->contact, $this->description, $this->userId(),
+            $this->exchangeRate, $this->received, $this->commission, $this->sypCashAccount,
         );
     }
 
     private function effectiveCurrency(): string
     {
         return match (TransferKind::tryFrom($this->kind)) {
-            TransferKind::UsdToProject => 'USD',
+            TransferKind::UsdToProject, TransferKind::LocalExchange => 'USD',
             TransferKind::SypToProject => 'SYP',
             default => $this->currency,
         };
@@ -223,9 +237,21 @@ class Transfers extends Component
     /** @return Collection<int, GlAccount> the city's cash accounts of the currency, in transit left out */
     private function cashAccounts(): Collection
     {
+        return $this->cashAccountsOf($this->effectiveCurrency());
+    }
+
+    /** @return Collection<int, GlAccount> the city's pound cash accounts, for the pounds side of a local exchange */
+    private function sypCashAccounts(): Collection
+    {
+        return $this->cashAccountsOf('SYP');
+    }
+
+    /** @return Collection<int, GlAccount> */
+    private function cashAccountsOf(string $currency): Collection
+    {
         return GlAccount::query()
             ->where('is_cash', true)->where('level', 'posting')->where('is_active', true)
-            ->where('city', $this->city)->where('currency', $this->effectiveCurrency())
+            ->where('city', $this->city)->where('currency', $currency)
             ->orderBy('code')->get()
             ->reject(fn (GlAccount $account) => preg_match((string) config('ledger.in_transit_pattern'), $account->code) === 1)
             ->values();
@@ -234,6 +260,11 @@ class Transfers extends Component
     private function defaultCash(): string
     {
         return $this->cashAccounts()->first()->code ?? '';
+    }
+
+    private function defaultSypCash(): string
+    {
+        return $this->sypCashAccounts()->first()->code ?? '';
     }
 
     private function userId(): int

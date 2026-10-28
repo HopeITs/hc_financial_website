@@ -24,7 +24,7 @@ return [
         'projects' => ['projwin', 'allaccounts', 'budgetlines', 'blcats', 'lifetime', 'programs', 'projects'],
         'entries' => ['single', 'multi', 'multiatt', 'payments', 'vouchers', 'bonds', 'approval', 'requests'],
         'treasury' => ['tills', 'treasury', 'alloc', 'cities', 'currency', 'denoms'],
-        'reports' => ['rexp', 'rcash', 'rbl', 'rrev', 'rfixed', 'rattach', 'tb', 'projbal', 'statement', 'statements', 'recon', 'uncomp', 'advances', 'loans'],
+        'reports' => ['rexp', 'rcash', 'rbl', 'rrev', 'rfixed', 'rattach', 'tb', 'projbal', 'statement', 'statements', 'recon', 'uncomp', 'xreserve', 'advances', 'loans'],
         'people' => ['donors', 'employees', 'salaries', 'users', 'limits', 'log'],
         'migration' => ['dbload', 'opening', 'fixusd', 'legacy', 'merges'],
     ],
@@ -68,6 +68,7 @@ return [
         'statements' => 'reports/financial-statements',
         'recon' => 'reports/hawala-reconciliation',
         'uncomp' => 'reports/uncompensated-cash',
+        'xreserve' => 'reports/exchange-difference-reserve',
         'advances' => 'reports/open-advances',
         'loans' => 'reports/loan-collection',
 

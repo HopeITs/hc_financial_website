@@ -17,7 +17,7 @@ use SplFileObject;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * One screen for the four follow-up reports (recon, uncomp, advances, loans), told apart by the route's screen slug.
+ * One screen for the four follow-up reports (recon, uncomp, xreserve, advances, loans), told apart by the route's screen slug.
  * They share one filter bar (dates, city, project) and a CSV export; a project manager sees only their projects.
  */
 #[Layout('components.layouts.app')]

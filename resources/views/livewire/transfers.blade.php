@@ -97,12 +97,14 @@
                         <option value="SYP">SYP</option>
                     </x-ui.form-select>
                 @endif
-                <x-ui.form-select wire:model.live="project" :label="$showOther ? __('ledger.transfers.from_project') : __('ledger.transfers.project')" required>
-                    <option value="">—</option>
-                    @foreach ($projects as $option)
-                        <option value="{{ $option->code }}">{{ $option->code }} · {{ $option->name }}</option>
-                    @endforeach
-                </x-ui.form-select>
+                @unless ($showExchange)
+                    <x-ui.form-select wire:model.live="project" :label="$showOther ? __('ledger.transfers.from_project') : __('ledger.transfers.project')" required>
+                        <option value="">—</option>
+                        @foreach ($projects as $option)
+                            <option value="{{ $option->code }}">{{ $option->code }} · {{ $option->name }}</option>
+                        @endforeach
+                    </x-ui.form-select>
+                @endunless
                 @if ($showOther)
                     <x-ui.form-select wire:model.live="otherProject" :label="__('ledger.transfers.to_project')" required>
                         <option value="">—</option>
@@ -117,6 +119,16 @@
                         <option value="{{ $option->code }}">{{ $option->code }} · {{ app()->getLocale() === 'ar' ? $option->name_ar : $option->name_en }}</option>
                     @endforeach
                 </x-ui.form-select>
+                @if ($showExchange)
+                    <x-ui.form-select wire:model.live="sypCashAccount" :label="__('ledger.transfers.syp_cash_account')" required data-test="syp-cash-account">
+                        @foreach ($sypCashAccounts as $option)
+                            <option value="{{ $option->code }}">{{ $option->code }} · {{ app()->getLocale() === 'ar' ? $option->name_ar : $option->name_en }}</option>
+                        @endforeach
+                    </x-ui.form-select>
+                    <x-ui.form-input wire:model.live.debounce.400ms="exchangeRate" :label="__('ledger.transfers.exchange_rate')" dir="ltr" inputmode="decimal" required />
+                    <x-ui.form-input wire:model.live.debounce.400ms="received" :label="__('ledger.transfers.received')" :help="__('ledger.transfers.received_help')" dir="ltr" inputmode="decimal" />
+                    <x-ui.form-input wire:model.live.debounce.400ms="commission" :label="__('ledger.transfers.commission')" dir="ltr" inputmode="decimal" />
+                @endif
                 @if ($selected === \App\Enums\TransferKind::SypToProject)
                     <x-ui.form-input wire:model.live.debounce.400ms="contact" :label="__('ledger.transfers.contact')" :help="__('ledger.transfers.contact_help')" />
                 @endif
