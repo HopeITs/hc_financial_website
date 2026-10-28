@@ -4,7 +4,7 @@
  * The wrapper scrolls (see `.fin-table-wrap` in finance.css) and shows `perPage`
  * rows at a time with a Prev / Next footer. Rows are hidden, not removed, so the
  * server-rendered table still works with JavaScript off. A MutationObserver
- * re-applies the page after Livewire morphs the tbody (filters, sorting).
+ * re-applies the page after Livewire morphs the table (filters, sorting).
  * Pass `{ paginate: false }` for tables that Livewire already paginates.
  */
 document.addEventListener('alpine:init', () => {
@@ -17,11 +17,14 @@ document.addEventListener('alpine:init', () => {
 
         init() {
             if (!this.paginate) return;
-            const body = this.$el.querySelector('tbody');
-            if (!body) return;
 
-            this.observer = new MutationObserver(() => this.render());
-            this.observer.observe(body, { childList: true });
+            // Watch the whole card, not one tbody: Livewire may replace the tbody (or render the table after the
+            // card), and it also resets the `hidden` attribute of rows it morphs, which must be put back.
+            this.observer = new MutationObserver((mutations) => {
+                if (mutations.every((mutation) => mutation.target.closest?.('.fin-table-pager'))) return;
+                this.render();
+            });
+            this.observer.observe(this.$el, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
             this.render();
         },
 
