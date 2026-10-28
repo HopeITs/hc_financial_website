@@ -25,7 +25,7 @@ class ReferenceData
     public const SLUGS = ['donors', 'cities', 'currency', 'denoms', 'employees', 'tills', 'bonds', 'blcats', 'limits', 'log'];
 
     /** Screens that the project page replaces. */
-    public const MERGED = ['projwin', 'allaccounts', 'budgetlines', 'lifetime'];
+    public const MERGED = ['projwin', 'budgetlines', 'lifetime'];
 
     public function has(string $slug): bool
     {

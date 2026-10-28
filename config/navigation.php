@@ -21,10 +21,10 @@ return [
 
     'groups' => [
         'chart' => ['chart'],
-        'projects' => ['projwin', 'allaccounts', 'budgetlines', 'blcats', 'lifetime', 'programs', 'projects'],
+        'projects' => ['projwin', 'budgetlines', 'blcats', 'lifetime', 'programs', 'projects'],
         'entries' => ['single', 'multi', 'multiatt', 'payments', 'vouchers', 'bonds', 'approval', 'requests'],
         'treasury' => ['tills', 'treasury', 'alloc', 'cities', 'currency', 'denoms'],
-        'reports' => ['rexp', 'rcash', 'rbl', 'rrev', 'rfixed', 'rattach', 'tb', 'projbal', 'statement', 'statements', 'recon', 'uncomp', 'xreserve', 'advances', 'loans'],
+        'reports' => ['rexp', 'rcash', 'rbl', 'rrev', 'rfixed', 'rattach', 'tb', 'statement', 'statements', 'recon', 'uncomp', 'xreserve', 'advances', 'loans'],
         'people' => ['donors', 'employees', 'salaries', 'users', 'limits', 'log'],
         'migration' => ['dbload', 'opening', 'fixusd', 'legacy', 'merges'],
     ],
@@ -33,7 +33,6 @@ return [
         'chart' => 'chart',
 
         'projwin' => 'projects/list',
-        'allaccounts' => 'projects/accounts',
         'budgetlines' => 'projects/budget-lines',
         'blcats' => 'projects/line-categories',
         'lifetime' => 'projects/lines-lifetime',
@@ -63,7 +62,6 @@ return [
         'rfixed' => 'reports/fixed-assets',
         'rattach' => 'reports/attachments',
         'tb' => 'reports/trial-balance',
-        'projbal' => 'reports/project-balances',
         'statement' => 'reports/account-statement',
         'statements' => 'reports/financial-statements',
         'recon' => 'reports/hawala-reconciliation',

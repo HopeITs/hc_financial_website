@@ -1,16 +1,12 @@
 <?php
 
 use App\Enums\FundSource;
-use App\Enums\RoleId;
-use App\Livewire\ProjectBalances;
 use App\Models\GlBudgetLine;
-use App\Models\User;
 use App\Services\Ledger\LineDraft;
 use App\Services\Ledger\PostVoucher;
 use App\Services\Ledger\ProjectBalances as ProjectBalancesReport;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Support\Facades\DB;
-use Livewire\Livewire;
 
 beforeEach(function () {
     createFinanceSchema();
@@ -113,16 +109,4 @@ it('shows SYP lines as entered and converts USD lines at the typed rate', functi
 
     expect($row['cash'])->toBe('1700000.00')
         ->and($row['income'])->toBe('1800000.00');
-});
-
-it('renders for the financial manager and refuses a cashier', function () {
-    receiveFor('F2F', 100);
-
-    $manager = User::query()->findOrFail(createFinanceUser('fm', 'secret pass', RoleId::FinancialManager->name, RoleId::FinancialManager->value));
-    $this->actingAs($manager);
-    Livewire::test(ProjectBalances::class)->assertSee('F2F')->assertSee('100.00');
-    $this->get(route('reports.project-balances'))->assertOk();
-
-    $cashier = User::query()->findOrFail(createFinanceUser('cash', 'secret pass', RoleId::Cashier->name, RoleId::Cashier->value));
-    $this->actingAs($cashier)->get(route('reports.project-balances'))->assertForbidden();
 });
