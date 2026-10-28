@@ -13,7 +13,7 @@ use App\Enums\RoleId;
 | (whether the project pages show balances and amounts).
 |
 | The accountant prepares (create, edit), the financial manager approves,
-| Head Office does both. The General Manager only approves requests, after the financial manager.
+| Head Office does both. The General Manager approves requests and donor receipts after the financial manager; the Program Manager approves requests first.
 |
 */
 
@@ -66,7 +66,12 @@ return [
         RoleId::Donor->value => $screens(['home'], $view),
 
         RoleId::GeneralManager->value => array_merge(
-            $screens(['home', 'chart', 'project-money', ...$projectScreens, ...$treasury, ...$reports, 'vouchers', 'approval'], $view),
+            $screens(['home', 'chart', 'project-money', ...$projectScreens, ...$treasury, ...$reports], $view),
+            $screens(['requests', 'vouchers', 'approval'], ['view', 'approve']),
+        ),
+
+        RoleId::ProgramManager->value => array_merge(
+            $screens(['home', 'project-money', ...$projectScreens], $view),
             $screens(['requests'], ['view', 'approve']),
         ),
 

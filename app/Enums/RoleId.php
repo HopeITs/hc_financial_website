@@ -6,7 +6,7 @@ namespace App\Enums;
 
 /**
  * The roles of the web app. Ids 2 to 8 are the Windows program's `role` rows;
- * the General Manager is web-only (held in `web_user_roles`) and uses an id outside the legacy range.
+ * the General Manager and the Program Manager are web-only (held in `web_user_roles`) and uses an id outside the legacy range.
  */
 enum RoleId: int
 {
@@ -18,13 +18,14 @@ enum RoleId: int
     case Employee = 7;
     case Donor = 8;
     case GeneralManager = 100;
+    case ProgramManager = 101;
 
     /**
      * The role is stored in the web table, not in the legacy `role` table.
      */
     public function isWebOnly(): bool
     {
-        return $this === self::GeneralManager;
+        return $this === self::GeneralManager || $this === self::ProgramManager;
     }
 
     public function label(): string
