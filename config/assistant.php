@@ -14,7 +14,16 @@
 
 return [
 
+    // anthropic | gemini: which AI service answers. Each needs its own key below.
+    'provider' => env('ASSISTANT_PROVIDER', 'anthropic'),
+
     'api_key' => env('ANTHROPIC_API_KEY'),
+
+    // Used when ASSISTANT_PROVIDER=gemini (a key from aistudio.google.com).
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+        'model' => env('GEMINI_MODEL', 'gemini-2.5-flash'),
+    ],
 
     // Haiku is the cheapest Claude model. Set ASSISTANT_MODEL=claude-opus-5-5 for the most accurate answers (about 40x the price).
     // Haiku has no server-side refusal fallback: a declined request stays declined and the panel says so.

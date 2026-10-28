@@ -100,6 +100,14 @@ class AssistantPanel extends Component
         $this->conversation = (string) Str::uuid();
     }
 
+    /** Whether the key for the chosen AI service is set. */
+    private function hasKey(): bool
+    {
+        $key = config(config('assistant.provider') === 'gemini' ? 'assistant.gemini.api_key' : 'assistant.api_key');
+
+        return is_string($key) && $key !== '';
+    }
+
     public function render(Assistant $assistant, EntryProposals $proposals): View
     {
         $user = auth()->user();
@@ -119,7 +127,7 @@ class AssistantPanel extends Component
 
         return view('livewire.assistant-panel', [
             'available' => true,
-            'configured' => is_string(config('assistant.api_key')) && config('assistant.api_key') !== '',
+            'configured' => $this->hasKey(),
             'items' => $items,
             'cards' => $cards,
             'hasHistory' => $items !== [],
