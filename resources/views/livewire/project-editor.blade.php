@@ -28,7 +28,12 @@
                     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <x-ui.form-input wire:model="projects.{{ $p }}.code" :label="__('projects.manage.code')" :disabled="$isEditing" maxlength="16" dir="ltr" required />
                         <x-ui.form-input wire:model="projects.{{ $p }}.name" :label="__('projects.manage.name')" class="lg:col-span-3" required />
-                        <x-ui.form-input wire:model="projects.{{ $p }}.donor" :label="__('projects.donor')" />
+                        <x-ui.form-select wire:model="projects.{{ $p }}.donor" :label="__('projects.donor')">
+                            <option value=""></option>
+                            @foreach ($donors as $donor)
+                                <option value="{{ $donor }}">{{ $donor }}</option>
+                            @endforeach
+                        </x-ui.form-select>
                         <x-ui.form-select wire:model="projects.{{ $p }}.restriction" :label="__('projects.manage.restriction')">
                             @foreach ($restrictions as $restriction)
                                 <option value="{{ $restriction }}">{{ $restriction }}</option>
@@ -79,7 +84,15 @@
                                             @error("projects.$p.lines.$l.account_code") <span class="text-xs text-red-600">{{ $message }}</span> @enderror
                                         </td>
                                         <td>
-                                            <div class="form-box"><input type="text" wire:model="projects.{{ $p }}.lines.{{ $l }}.donor" class="form-box-input" /></div>
+                                            <div class="form-box">
+                                                <x-ui.form-select bare wire:model="projects.{{ $p }}.lines.{{ $l }}.donor" :label="__('projects.donor')">
+                                                    <option value=""></option>
+                                                    @foreach ($donors as $donor)
+                                                        <option value="{{ $donor }}">{{ $donor }}</option>
+                                                    @endforeach
+                                                </x-ui.form-select>
+                                            </div>
+                                            @error("projects.$p.lines.$l.donor") <span class="text-xs text-red-600">{{ $message }}</span> @enderror
                                         </td>
                                         <td class="fin-num">
                                             <div class="form-box"><input type="number" step="0.01" min="0" wire:model="projects.{{ $p }}.lines.{{ $l }}.budget" class="form-box-input tabular-nums" /></div>
