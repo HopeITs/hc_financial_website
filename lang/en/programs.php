@@ -14,7 +14,7 @@ return [
     'save' => 'Save',
     'cancel' => 'Cancel',
     'saved' => 'The program was added.',
-    'duplicate_warning' => 'A program with this name already exists. It was saved anyway; check that it is not a duplicate.',
+    'duplicate_warning' => 'A program with this name already exists. Program names must be unique.',
     'program' => 'Program',
     'project' => 'Project',
     'active_projects' => 'Active projects',

@@ -62,8 +62,15 @@ class Programs extends Component
             'status' => ['required', Rule::enum(ProgramStatus::class)],
         ]);
 
-        // The same name as an existing program (legacy or web) is a warning, not a block.
-        $this->duplicateWarning = $programs->nameExists($data['nameEn'], $data['nameAr']);
+        // A name already used by a program (legacy or web) is refused.
+        if ($programs->nameExists($data['nameEn']) || $programs->nameExists($data['nameAr'])) {
+            $this->duplicateWarning = true;
+            $this->addError('nameEn', __('programs.duplicate_warning'));
+
+            return;
+        }
+
+        $this->duplicateWarning = false;
 
         GlProgram::query()->create([
             'name_en' => trim($data['nameEn']),

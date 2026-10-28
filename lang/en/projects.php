@@ -61,6 +61,7 @@ return [
         'save' => 'Save',
         'cancel' => 'Cancel',
         'saved' => 'Saved: :codes.',
+        'name_taken' => 'A project with this name already exists.',
         'code_format' => 'The code is 1 to 16 capital letters, digits, dashes or underscores.',
         'account_required' => 'Choose an expense account.',
         'import_title' => 'Import a budget sheet',

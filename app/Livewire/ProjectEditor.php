@@ -204,7 +204,14 @@ class ProjectEditor extends Component
         return [
             'projects' => ['required', 'array', 'min:1'],
             'projects.*.code' => ['required', 'regex:/^[A-Z0-9][A-Z0-9_-]{0,15}$/', 'distinct', $this->editing === null ? Rule::unique('gl_projects', 'code') : Rule::in([$this->editing])],
-            'projects.*.name' => ['required', 'string', 'max:255'],
+            'projects.*.name' => ['required', 'string', 'max:255', 'distinct:ignore_case', function (string $attribute, mixed $value, \Closure $fail): void {
+                $taken = GlProject::query()->whereRaw('LOWER(TRIM(name)) = ?', [mb_strtolower(trim((string) $value))])
+                    ->when($this->editing !== null, fn ($query) => $query->where('code', '!=', $this->editing))->exists();
+
+                if ($taken) {
+                    $fail(__('projects.manage.name_taken'));
+                }
+            }],
             'projects.*.donor' => ['nullable', 'string', 'max:255'],
             'projects.*.restriction' => ['required', Rule::in(self::RESTRICTIONS)],
             'projects.*.city' => ['nullable', 'string', 'max:255'],

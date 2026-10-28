@@ -24,9 +24,9 @@ class ProjectWriter
                 'contract_number' => $this->blank($draft['contract_number'] ?? null),
                 'start_date' => $this->blank($draft['start_date'] ?? null),
                 'end_date' => $this->endDate($draft),
-                'donor' => $this->blank($draft['donor'] ?? null),
+                'donor' => $this->existing('donor', $this->blank($draft['donor'] ?? null)),
                 'restriction' => $draft['restriction'],
-                'city' => $this->blank($draft['city'] ?? null),
+                'city' => $this->existing('city', $this->blank($draft['city'] ?? null)),
                 'donor_currency' => $draft['donor_currency'],
                 'donor_rate' => $draft['donor_rate'],
             ];
@@ -62,6 +62,19 @@ class ProjectWriter
         $start = $this->blank($draft['start_date'] ?? null);
 
         return $end ?? ($start === null ? null : Carbon::parse($start)->addYear()->subDay()->toDateString());
+    }
+
+    /** A donor or city that differs only in case or spacing from a saved one reuses that spelling, so none is listed twice. */
+    private function existing(string $column, ?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $match = GlProject::query()->whereNotNull($column)
+            ->whereRaw("LOWER(TRIM({$column})) = ?", [mb_strtolower($value)])->orderBy('code')->value($column);
+
+        return $match === null ? $value : trim((string) $match);
     }
 
     private function blank(mixed $value): ?string

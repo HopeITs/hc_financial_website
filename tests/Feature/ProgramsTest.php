@@ -72,15 +72,16 @@ it('validates the form', function () {
     expect(GlProgram::query()->count())->toBe(0);
 });
 
-it('warns about a duplicate name without blocking it', function () {
+it('refuses a duplicate name', function () {
+    $before = GlProgram::query()->count();
+
     Livewire::actingAs(programsUser())->test(Programs::class)
         ->call('openForm')
         ->set('nameEn', 'hope center')->set('nameAr', 'مركز الأمل')
         ->call('save')
-        ->assertHasNoErrors()
-        ->assertSee(__('programs.duplicate_warning'));
+        ->assertHasErrors(['nameEn']);
 
-    expect(GlProgram::query()->count())->toBe(1);
+    expect(GlProgram::query()->count())->toBe($before);
 });
 
 it('refuses the add button and the save to roles without programs.create', function (RoleId $role) {

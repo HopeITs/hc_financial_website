@@ -197,6 +197,18 @@ it('rejects a duplicate code, a bad code and a non-expense account', function ()
     expect(GlProject::query()->whereKey('OKAY')->exists())->toBeFalse();
 });
 
+it('rejects a project name that is already used, ignoring case', function () {
+    GlProject::query()->create(['code' => 'USED', 'name' => 'Clean Water', 'restriction' => 'With donor restrictions', 'city' => 'Idlib']);
+
+    Livewire::actingAs(projectEditorUser())->test(ProjectEditor::class)
+        ->set('projects.0.code', 'NEWP')->set('projects.0.name', ' clean water ')
+        ->call('save')->assertHasErrors(['projects.0.name'])
+        ->set('projects.0.name', 'Other')->set('projects.0.city', 'IDLIB')
+        ->call('save')->assertHasNoErrors();
+
+    expect(GlProject::query()->findOrFail('NEWP')->city)->toBe('Idlib');
+});
+
 it('edits a saved project and line without changing the line key', function () {
     GlProject::query()->create(['code' => 'EDIT', 'name' => 'Before', 'restriction' => 'With donor restrictions']);
     GlBudgetLine::query()->create(['key' => 'EDIT|Rent', 'project_code' => 'EDIT', 'name' => 'Rent', 'account_code' => '5301', 'budget' => 100, 'currency' => 'USD']);
