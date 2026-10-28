@@ -92,7 +92,7 @@ Route::middleware('auth')->group(function () {
     $screen('statement', Statement::class);
     $screen('statements', FinancialStatements::class);
 
-    foreach (['recon', 'uncomp', 'advances', 'loans'] as $report) {
+    foreach (['recon', 'uncomp', 'xreserve', 'advances', 'loans'] as $report) {
         $screen($report, FollowUpReport::class);
     }
 

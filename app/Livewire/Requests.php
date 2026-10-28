@@ -13,6 +13,7 @@ use App\Models\Voucher;
 use App\Services\Projects\ProjectAccess;
 use App\Services\Requests\RequestException;
 use App\Services\Requests\RequestWorkflow;
+use App\Services\Requests\SubmissionDeadline;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -200,6 +201,16 @@ class Requests extends Component
         $this->act(fn (User $user, LedgerRequest $request) => $workflow->submit($user, $request), 'submitted_notice');
     }
 
+    /** A monthly request submitted after its deadline (R4-10): still accepted, but the manager is told. */
+    public function lateWarning(LedgerRequest $request, SubmissionDeadline $deadline): ?string
+    {
+        if ($request->type !== LedgerRequest::MONTHLY || $request->month === null || $request->submitted_at === null || ! $deadline->isLate($request->month, $request->submitted_at)) {
+            return null;
+        }
+
+        return __('requests.late_warning', ['month' => $request->month->format('Y-m'), 'due' => $deadline->dueBy($request->month)->toDateString()]);
+    }
+
     public function approve(RequestWorkflow $workflow): void
     {
         $this->act(fn (User $user, LedgerRequest $request) => $workflow->approve($user, $request), 'approved_notice');
@@ -307,6 +318,7 @@ class Requests extends Component
             'canClose' => $request->state() === RequestStatus::Approved && Gate::allows('close', $request),
             'pendingRole' => $pending,
             'warnings' => $workflow->budgetWarnings($request),
+            'lateWarning' => $this->lateWarning($request, app(SubmissionDeadline::class)),
             'vouchers' => Voucher::query()->where('request_id', $request->id)->orderBy('id')->get(['id', 'type', 'date', 'status']),
             'ownRequest' => $request->requested_by === (int) $user->getAuthIdentifier(),
             'quotesNeeded' => $request->category !== null,

@@ -83,6 +83,7 @@ return [
         'reject' => 'رفض',
         'close' => 'إغلاق',
     ],
+    'late_warning' => 'قُدِّم هذا الطلب الشهري لشهر :month بعد موعده النهائي (آخر يوم عمل من الشهر السابق، :due). الطلب مقبول لكنه متأخر.',
     'saved_notice' => 'تم حفظ الطلب :number.',
     'submitted_notice' => 'تم تقديم الطلب :number.',
     'approved_notice' => 'سُجّلت موافقتك على الطلب :number.',

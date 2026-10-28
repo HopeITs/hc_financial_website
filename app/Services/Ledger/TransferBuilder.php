@@ -24,6 +24,10 @@ use InvalidArgumentException;
  *  - project back to general, and project to project: dollars one for one, pounds at the sending project's average rate,
  *    so the dollars follow the pounds and nothing is gained or lost.
  *
+ *  - local exchange (R4-9): dollars leave the city's general USD cash account and pounds enter its general SYP cash account at
+ *    the typed rate, in one voucher. The pounds are booked at that rate; when fewer or more pounds were really received than
+ *    dollars x rate, and for any commission paid in dollars, the difference goes to 5503 under the general SYP account.
+ *
  * It never posts and never throws on bad input: it reports problems (no pounds in the general account, not enough
  * pounds, no approved rate, ...) and returns no draft.
  */
@@ -46,6 +50,10 @@ class TransferBuilder
         string $contact,
         string $description,
         int $preparedBy,
+        string $rate = '',
+        string $received = '',
+        string $commission = '',
+        string $sypCashAccount = '',
     ): BuiltTransfer {
         $transfer = TransferKind::tryFrom($kind);
         if ($transfer === null) {
@@ -63,7 +71,7 @@ class TransferBuilder
         }
 
         $currency = match ($transfer) {
-            TransferKind::UsdToProject => 'USD',
+            TransferKind::UsdToProject, TransferKind::LocalExchange => 'USD',
             TransferKind::SypToProject => 'SYP',
             default => $currency,
         };
@@ -81,6 +89,10 @@ class TransferBuilder
         $cash = GlAccount::query()->whereKey($cashAccount)->first();
         if ($cash === null || ! $cash->is_cash || $cash->currency !== $currency || $cash->city !== $city || preg_match((string) config('ledger.in_transit_pattern'), $cash->code) === 1) {
             return $this->failed(__('ledger.transfers.bad_cash', ['currency' => $currency, 'city' => $city]));
+        }
+
+        if ($transfer === TransferKind::LocalExchange) {
+            return $this->localExchange($cash, $sypCashAccount, $city, $usdGeneral, $sypGeneral, $value, $rate, $received, $commission, $day, $description, $preparedBy);
         }
 
         $projects = GlProject::query()->whereIn('code', array_filter([$project, $otherProject]))->get()->keyBy('code');
@@ -104,6 +116,7 @@ class TransferBuilder
             TransferKind::UsdToProject, TransferKind::SypToProject => $project,
             TransferKind::Return => $general,
             TransferKind::BetweenProjects => $otherProject,
+            TransferKind::LocalExchange => $general,
         };
 
         $company = (string) config('ledger.transfer_company_account');
@@ -165,6 +178,77 @@ class TransferBuilder
         }
 
         return new BuiltTransfer($this->draft($transfer, $day, $preparedBy, $lines, $title), [], $rate, $projectUsd, $difference);
+    }
+
+    /**
+     * Local exchange: `$usdCash` (already checked as a USD cash account of the city) pays `$dollars`; the pounds received
+     * (`$received`, default dollars x rate) enter the city's SYP cash account at `$rate`. Dollars worth of the pounds that
+     * differ from the dollars given, and the commission, are 5503 on the general SYP account; the commission also leaves the
+     * USD cash account.
+     */
+    private function localExchange(GlAccount $usdCash, string $sypCashAccount, string $city, string $usdGeneral, string $sypGeneral, string $dollars, string $rate, string $received, string $commission, CarbonImmutable $day, string $description, int $preparedBy): BuiltTransfer
+    {
+        $rate = $this->rateValue($rate);
+        if ($rate === null) {
+            return $this->failed(__('ledger.transfers.bad_exchange_rate'));
+        }
+
+        $sypCash = GlAccount::query()->whereKey($sypCashAccount)->first();
+        if ($sypCash === null || ! $sypCash->is_cash || $sypCash->currency !== 'SYP' || $sypCash->city !== $city || preg_match((string) config('ledger.in_transit_pattern'), $sypCash->code) === 1) {
+            return $this->failed(__('ledger.transfers.bad_cash', ['currency' => 'SYP', 'city' => $city]));
+        }
+
+        $pounds = trim($received) === '' ? Money::normalize(bcmul($dollars, $rate, 6)) : $this->amount($received);
+        if ($pounds === null || bccomp($pounds, '0', 2) <= 0) {
+            return $this->failed(__('ledger.transfers.bad_received'));
+        }
+
+        $fee = trim($commission) === '' ? Money::zero() : $this->amount($commission);
+        if ($fee === null || bccomp($fee, '0', 2) < 0) {
+            return $this->failed(__('ledger.transfers.bad_commission'));
+        }
+
+        $held = $this->averages->holding($usdGeneral, 'USD');
+        $needed = bcadd($dollars, $fee, 2);
+        if (bccomp($held['orig'], '0', 2) <= 0) {
+            return $this->failed(__('ledger.transfers.no_dollars', ['project' => $usdGeneral]));
+        }
+        if (bccomp($held['orig'], $needed, 2) < 0) {
+            return $this->failed(__('ledger.transfers.not_enough_dollars', ['project' => $usdGeneral, 'held' => number_format((float) $held['orig'], 2)]));
+        }
+
+        $poundsUsd = Money::normalize(bcdiv($pounds, $rate, 6));
+        $difference = bcsub($dollars, $poundsUsd, 2);
+        $title = trim($description) !== '' ? trim($description) : TransferKind::LocalExchange->label();
+        $rounding = (string) config('ledger.rounding_account');
+
+        $lines = [
+            $this->line($usdCash->code, 'USD', 'credit', $dollars, '1.000000', $dollars, $usdGeneral, null, ''),
+            $this->line($sypCash->code, 'SYP', 'debit', $pounds, $rate, $poundsUsd, $sypGeneral, null, ''),
+        ];
+        if (bccomp($difference, '0', 2) !== 0) {
+            $lines[] = $this->line($rounding, 'USD', bccomp($difference, '0', 2) > 0 ? 'debit' : 'credit', Money::abs($difference), '1.000000', Money::abs($difference), $sypGeneral, null, '');
+        }
+        if (bccomp($fee, '0', 2) > 0) {
+            $lines[] = $this->line($rounding, 'USD', 'debit', $fee, '1.000000', $fee, $sypGeneral, null, '');
+            $lines[] = $this->line($usdCash->code, 'USD', 'credit', $fee, '1.000000', $fee, $usdGeneral, null, '');
+        }
+
+        return new BuiltTransfer($this->draft(TransferKind::LocalExchange, $day, $preparedBy, $lines, $title), [], $rate, $poundsUsd, bcsub('0.00', bcadd($difference, $fee, 2), 2));
+    }
+
+    /** @return numeric-string|null */
+    private function rateValue(string $text): ?string
+    {
+        $clean = str_replace([',', ' '], '', trim($text));
+
+        try {
+            $rate = Money::normalize($clean, 6);
+        } catch (InvalidArgumentException) {
+            return null;
+        }
+
+        return bccomp($rate, '0', 6) > 0 ? $rate : null;
     }
 
     /** @param  list<LineDraft>  $lines */

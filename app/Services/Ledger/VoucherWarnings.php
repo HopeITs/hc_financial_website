@@ -12,8 +12,9 @@ use App\Support\Money;
 use Illuminate\Support\Facades\DB;
 
 /**
- * The two soft warnings of the voucher builder (Financial Manager decisions R1-4b and R3-3). They never block a voucher:
- * money spent on a project after its end date, and a budget line spent past what is left of it. The amounts already
+ * The soft warnings of the voucher builder (Financial Manager decisions R1-4b, R3-3 and R4-8). They never block a voucher:
+ * money spent on a project after its end date, a budget line spent past what is left of it, and a city's general USD
+ * balance with the transfer company (1161) driven below zero. The amounts already
  * spent are the approved lines of the budget line, in USD, taken to the budget's currency at the project's donor rate.
  */
 class VoucherWarnings
@@ -21,7 +22,7 @@ class VoucherWarnings
     /** @return list<string> */
     public function for(VoucherDraft $draft): array
     {
-        return [...$this->afterEndDate($draft), ...$this->overBudget($draft)];
+        return [...$this->afterEndDate($draft), ...$this->overBudget($draft), ...$this->negativePool($draft)];
     }
 
     /** @return list<string> */
@@ -48,6 +49,48 @@ class VoucherWarnings
 
             if ($spends) {
                 $warnings[] = __('ledger.warnings.after_end', ['project' => $project->code, 'end' => $endDate->toDateString()]);
+            }
+        }
+
+        return $warnings;
+    }
+
+    /**
+     * A general USD project's balance on the transfer company account may go negative (R4-8), but the voucher says so:
+     * the approved balance plus this voucher's own movement on that account.
+     *
+     * @return list<string>
+     */
+    public function negativePool(VoucherDraft $draft): array
+    {
+        $company = (string) config('ledger.transfer_company_account');
+        $moves = [];
+        foreach ($draft->lines as $line) {
+            if ($line->accountCode === $company && $line->projectCode !== null) {
+                $moves[$line->projectCode] = bcadd($moves[$line->projectCode] ?? '0.00', bcsub($line->debitUsd, $line->creditUsd, 2), 2);
+            }
+        }
+
+        if ($moves === []) {
+            return [];
+        }
+
+        $generals = GlProject::query()->whereIn('code', array_map('strval', array_keys($moves)))->where('is_general_account', true)->pluck('code');
+        $warnings = [];
+
+        foreach ($generals as $code) {
+            $approved = DB::table('gl_voucher_lines as l')
+                ->join('gl_vouchers as v', 'v.id', '=', 'l.voucher_id')
+                ->where('v.status', VoucherStatus::Approved->value)
+                ->whereNull('v.deleted_at')
+                ->where('l.account_code', $company)
+                ->where('l.project_code', $code)
+                ->selectRaw('sum(l.debit_usd) - sum(l.credit_usd) as usd')
+                ->value('usd');
+            $after = bcadd(Money::normalize($approved), $moves[$code], 2);
+
+            if (bccomp($after, '0', 2) < 0) {
+                $warnings[] = __('ledger.warnings.negative_pool', ['account' => $company, 'project' => $code, 'balance' => number_format((float) $after, 2)]);
             }
         }
 

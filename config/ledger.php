@@ -8,6 +8,9 @@ return [
     // Currency exchange differences: where the cents of a rounded voucher go (rule 4).
     'rounding_account' => '5503',
 
+    // Days of the week that are not working days (0 Sunday ... 6 Saturday); the monthly request deadline skips them.
+    'weekend_days' => [5, 6],
+
     // In-transit accounts (11x3, 11x4) and these accounts must be zero before a month is closed (rule 12).
     'in_transit_pattern' => '/^11[1-5][34]$/',
     'clearing_accounts' => ['2901'],

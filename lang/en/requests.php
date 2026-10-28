@@ -83,6 +83,7 @@ return [
         'reject' => 'Rejected',
         'close' => 'Closed',
     ],
+    'late_warning' => 'This monthly request for :month was submitted after its deadline (the last working day of the month before, :due). It is accepted, but it is late.',
     'saved_notice' => 'Request :number is saved.',
     'submitted_notice' => 'Request :number is submitted.',
     'approved_notice' => 'Your approval of request :number is recorded.',

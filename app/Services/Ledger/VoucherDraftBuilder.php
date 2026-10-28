@@ -7,7 +7,6 @@ use App\Enums\VoucherType;
 use App\Models\GlAccount;
 use App\Models\GlBudgetLine;
 use App\Models\GlProject;
-use App\Services\Ledger\Rules\HawalaReceiptIsConsistent;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
 use InvalidArgumentException;
@@ -26,7 +25,8 @@ class VoucherDraftBuilder
     /**
      * @param  array<int, array<string, string>>  $rows  the form lines: account, currency, side, amount, rate, project,
      *                                                   budget_line, fund_source, contact, center, lira_type; a hawala
-     *                                                   receipt line also eur_amount, eur_rate, commission
+     *                                                   receipt line also eur_amount, eur_rate, commission; the commission itself
+     *                                                   is typed as a 5504 line, the builder adds none
      */
     public function build(string $type, string $date, string $description, string $requestId, array $rows, int $preparedBy): BuiltVoucher
     {
@@ -59,7 +59,6 @@ class VoucherDraftBuilder
 
         $lines = [];
         $built = [];
-        $commissions = [];
 
         // The rate a hawala receipt was really converted at also converts the project's other dollar lines of this voucher
         // into the donor currency, so the donor-currency view of the project follows the stored euros.
@@ -158,30 +157,7 @@ class VoucherDraftBuilder
                 commissionUsd: $hawala['commission'],
             );
 
-            if (bccomp($hawala['commission'], '0', 2) > 0) {
-                $commissions[] = ['amount' => $hawala['commission'], 'project' => $project, 'contact' => trim($row['contact']), 'number' => $number];
-            }
-
             $built[$index] = ['account' => $accountCode, 'currency' => $currency, 'project' => $projectCode, 'rate' => $rate, 'usd' => $usd];
-        }
-
-        foreach ($commissions as $commission) {
-            $general = $commission['project'] === null || $commission['project']->city === null ? null : GlProject::query()
-                ->where('is_general_account', true)->where('city', $commission['project']->city)->where('code', 'like', '%-USD')->first();
-
-            if ($general === null) {
-                $problems[] = __('ledger.builder.hawala_no_general', ['line' => $commission['number']]);
-
-                continue;
-            }
-
-            // The commission is the organisation's: its expense carries no project, and the general USD account pays it out of the pool.
-            $lines[] = new LineDraft(accountCode: HawalaReceiptIsConsistent::COMMISSION_ACCOUNT, currency: 'USD', debit: $commission['amount'], reason: __('ledger.builder.hawala_commission_reason'));
-            $lines[] = new LineDraft(
-                accountCode: (string) config('ledger.transfer_company_account'), currency: 'USD', credit: $commission['amount'],
-                projectCode: $general->code, fundSource: FundSource::Treasury, contact: $commission['contact'] !== '' ? $commission['contact'] : null,
-                restriction: $general->restriction,
-            );
         }
 
         $draft = $voucherType !== null && $voucherType !== VoucherType::Opening && $day !== null

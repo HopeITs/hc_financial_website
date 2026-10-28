@@ -2,6 +2,7 @@
 
 namespace App\Services\Ledger;
 
+use App\Enums\TransferKind;
 use App\Enums\VoucherStatus;
 use App\Services\Loans\MicroLoans;
 use App\Support\Money;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\DB;
  * The follow-up reports on approved voucher lines (amounts are USD unless a column says otherwise):
  * `recon` the transfer company's pool (1161) against project and city general balances, month by month;
  * `uncomp` cash received without a project that is still uncompensated, per city, in age buckets;
+ * `xreserve` the 5503 exchange differences booked by allocation and local-exchange transfers under each city's general SYP account;
  * `advances` open advances (1201) by person, no ageing: a settlement difference stays on the person as a receivable;
  * `loans` micro loan collection and arrears.
  * Each returns `columns` (key and type: text, ltr, date, money), `rows` and `totals`, the shape of OperationalReports.
@@ -21,7 +23,7 @@ use Illuminate\Support\Facades\DB;
  */
 class FollowUpReports
 {
-    public const REPORTS = ['recon', 'uncomp', 'advances', 'loans'];
+    public const REPORTS = ['recon', 'uncomp', 'xreserve', 'advances', 'loans'];
 
     public const ADVANCES_ACCOUNT = '1201';
 
@@ -34,6 +36,7 @@ class FollowUpReports
         return match ($report) {
             'recon' => $this->reconciliation($filters, $today),
             'uncomp' => $this->uncompensated($filters, $today),
+            'xreserve' => $this->exchangeReserve($filters),
             'advances' => $this->advances($filters),
             'loans' => $this->loans($filters, $today),
             default => abort(404),
@@ -57,6 +60,7 @@ class FollowUpReports
     /**
      * The pool is every 1161 line; "projects" is what lines on a project hold, "general" what lines on a city general
      * account hold, and the difference is what sits in the pool with no project at all. Balances are at each month's end.
+     * A city general account with a negative balance in the pool is allowed (R4-8) but listed in `negative` and the row is flagged.
      *
      * @return Report
      */
@@ -74,6 +78,7 @@ class FollowUpReports
         for ($month = $start; $month !== null && $month <= $end; $month = $month->addMonth()) {
             $monthEnd = $month->endOfMonth()->toDateString();
             $pool = $projects = $general = Money::zero();
+            $byGeneral = [];
             foreach ($lines as $line) {
                 if (substr((string) $line->date, 0, 10) > $monthEnd) {
                     break;
@@ -82,15 +87,18 @@ class FollowUpReports
                 $pool = bcadd($pool, $net, 2);
                 if ($line->project_code !== null && $line->general) {
                     $general = bcadd($general, $net, 2);
+                    $byGeneral[$line->project_code] = bcadd($byGeneral[$line->project_code] ?? '0.00', $net, 2);
                 } elseif ($line->project_code !== null) {
                     $projects = bcadd($projects, $net, 2);
                 }
             }
-            $rows[] = ['month' => $month->format('Y-m'), 'pool' => $pool, 'projects' => $projects, 'general' => $general, 'difference' => bcsub($pool, bcadd($projects, $general, 2), 2)];
+            $rows[] = ['month' => $month->format('Y-m'), 'pool' => $pool, 'projects' => $projects, 'general' => $general, 'difference' => bcsub($pool, bcadd($projects, $general, 2), 2),
+                'negative' => implode(', ', array_keys(array_filter($byGeneral, fn (string $balance) => bccomp($balance, '0', 2) < 0))), 'negative_flag' => ''];
+            $rows[array_key_last($rows)]['negative_flag'] = $rows[array_key_last($rows)]['negative'];
         }
 
         return [
-            'columns' => [['key' => 'month', 'type' => 'ltr'], ['key' => 'pool', 'type' => 'money'], ['key' => 'projects', 'type' => 'money'], ['key' => 'general', 'type' => 'money'], ['key' => 'difference', 'type' => 'money']],
+            'columns' => [['key' => 'month', 'type' => 'ltr'], ['key' => 'pool', 'type' => 'money'], ['key' => 'projects', 'type' => 'money'], ['key' => 'general', 'type' => 'money'], ['key' => 'difference', 'type' => 'money'], ['key' => 'negative', 'type' => 'text']],
             'rows' => $rows,
             'totals' => [],
         ];
@@ -125,6 +133,38 @@ class FollowUpReports
             'columns' => [['key' => 'city', 'type' => 'text'], ['key' => 'under_30', 'type' => 'money'], ['key' => 'days_30_90', 'type' => 'money'], ['key' => 'over_90', 'type' => 'money'], ['key' => 'total', 'type' => 'money']],
             'rows' => array_values($cities),
             'totals' => $this->sum($cities, ['under_30', 'days_30_90', 'over_90', 'total']),
+        ];
+    }
+
+    /**
+     * 5503 lines of approved transfer vouchers (SYP allocation, local exchange) on a city's general SYP project, per city: gains
+     * (credits), losses (debits) and the reserve they leave, up to the "to" date.
+     *
+     * @return Report
+     */
+    private function exchangeReserve(FollowUpFilters $filters): array
+    {
+        $lines = $this->lines($filters)
+            ->where('l.account_code', (string) config('ledger.rounding_account'))
+            ->where('p.is_general_account', true)->where('l.project_code', 'like', '%-SYP')
+            ->whereIn('v.transfer_kind', [TransferKind::SypToProject->value, TransferKind::LocalExchange->value])
+            ->when($filters->from, fn (Builder $query, string $value) => $query->whereDate('v.date', '>=', $value))
+            ->get(['l.city', 'p.city as project_city', 'l.debit_usd', 'l.credit_usd']);
+
+        $cities = [];
+        foreach ($lines as $line) {
+            $city = (string) ($line->city ?? $line->project_city ?? '');
+            $cities[$city] ??= ['city' => $city, 'gains' => Money::zero(), 'losses' => Money::zero(), 'reserve' => Money::zero()];
+            $cities[$city]['gains'] = bcadd($cities[$city]['gains'], Money::normalize($line->credit_usd), 2);
+            $cities[$city]['losses'] = bcadd($cities[$city]['losses'], Money::normalize($line->debit_usd), 2);
+            $cities[$city]['reserve'] = bcsub($cities[$city]['gains'], $cities[$city]['losses'], 2);
+        }
+        ksort($cities);
+
+        return [
+            'columns' => [['key' => 'city', 'type' => 'text'], ['key' => 'gains', 'type' => 'money'], ['key' => 'losses', 'type' => 'money'], ['key' => 'reserve', 'type' => 'money']],
+            'rows' => array_values($cities),
+            'totals' => $this->sum($cities, ['gains', 'losses', 'reserve']),
         ];
     }
 

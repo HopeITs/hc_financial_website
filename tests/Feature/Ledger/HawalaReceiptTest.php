@@ -29,14 +29,35 @@ function hawalaRows(string $received, array $hawala = [], string $project = 'F2F
     ];
 }
 
+/** The commission typed by hand: a 5504 debit and the general USD account of the city paying it (R4-6). */
+function withCommission(array $rows, string $commission = '15', string $city = 'GEN-ALP-USD'): array
+{
+    return [
+        ...$rows,
+        ['account' => '5504', 'currency' => 'USD', 'side' => 'debit', 'amount' => $commission],
+        ['account' => '1161', 'currency' => 'USD', 'side' => 'credit', 'amount' => $commission, 'project' => $city, 'fund_source' => 'treasury', 'contact' => 'Hawala Co'],
+    ];
+}
+
 function buildHawala(array $rows, string $type = 'CRV')
 {
     return app(VoucherDraftBuilder::class)->build($type, '2026-03-10', '', '', $rows, 7);
 }
 
-it('posts a euro receipt: the project is credited the net dollars and the commission goes to 5504 without a project', function () {
+it('posts a euro receipt with the commission typed by hand as a 5504 line, and adds no commission line of its own', function () {
     // 1,000 EUR at 1.10 = 1,100 USD, less 15 USD commission = 1,085 USD received.
-    $built = buildHawala(hawalaRows('1085', ['eur_amount' => '1000', 'eur_rate' => '1.1', 'commission' => '15']));
+    $hawala = ['eur_amount' => '1000', 'eur_rate' => '1.1', 'commission' => '15'];
+
+    $alone = buildHawala(hawalaRows('1085', $hawala));
+    expect($alone->problems)->toBe([])
+        ->and($alone->draft->lines)->toHaveCount(2)
+        ->and(collect(app(PostVoucher::class)->check($alone->draft))->pluck('rule')->all())->toContain(15);
+
+    $built = buildHawala([
+        ...hawalaRows('1085', $hawala),
+        ['account' => '5504', 'currency' => 'USD', 'side' => 'debit', 'amount' => '15'],
+        ['account' => '1161', 'currency' => 'USD', 'side' => 'credit', 'amount' => '15', 'project' => 'GEN-ALP-USD', 'fund_source' => 'treasury', 'contact' => 'Hawala Co'],
+    ]);
 
     expect($built->problems)->toBe([])
         ->and($built->draft->lines)->toHaveCount(4);
@@ -44,22 +65,33 @@ it('posts a euro receipt: the project is credited the net dollars and the commis
     $voucher = app(PostVoucher::class)->post($built->draft);
     $lines = $voucher->lines->keyBy(fn (VoucherLine $line) => $line->account_code.($line->debit_usd > 0 ? 'D' : 'C'));
 
-    expect($lines['1161D']->debit_usd)->toBe('1085.00')
+    // The commission is posted once, not twice.
+    expect($voucher->lines->where('account_code', '5504'))->toHaveCount(1)
+        ->and($lines['1161D']->debit_usd)->toBe('1085.00')
         ->and($lines['1161D']->project_code)->toBe('F2F')
         ->and($lines['1161D']->eur_amount)->toBe('1000.00')
         ->and($lines['1161D']->eur_rate)->toBe('1.100000')
         ->and($lines['1161D']->commission_usd)->toBe('15.00')
         ->and($lines['4101C']->credit_usd)->toBe('1085.00')
-        ->and($lines['4101C']->project_code)->toBe('F2F')
         ->and($lines['5504D']->debit_usd)->toBe('15.00')
         ->and($lines['5504D']->project_code)->toBeNull()
         ->and($lines['1161C']->credit_usd)->toBe('15.00')
         ->and($lines['1161C']->project_code)->toBe('GEN-ALP-USD');
 });
 
+it('refuses a hand-typed 5504 line smaller than the commission', function () {
+    $built = buildHawala([
+        ...hawalaRows('1085', ['eur_amount' => '1000', 'eur_rate' => '1.1', 'commission' => '15']),
+        ['account' => '5504', 'currency' => 'USD', 'side' => 'debit', 'amount' => '10'],
+        ['account' => '1161', 'currency' => 'USD', 'side' => 'credit', 'amount' => '10', 'project' => 'GEN-ALP-USD', 'fund_source' => 'treasury', 'contact' => 'Hawala Co'],
+    ]);
+
+    expect(collect(app(PostVoucher::class)->check($built->draft))->pluck('rule')->all())->toContain(15);
+});
+
 it('takes the project\'s default rate when none is typed', function () {
     // F2F has a default of 1.15: 1,000 EUR = 1,150 USD, less 15 = 1,135.
-    $built = buildHawala(hawalaRows('1135', ['eur_amount' => '1000', 'commission' => '15']));
+    $built = buildHawala(withCommission(hawalaRows('1135', ['eur_amount' => '1000', 'commission' => '15'])));
 
     expect($built->problems)->toBe([])
         ->and($built->draft->lines[0]->eurRate)->toBe('1.150000');
@@ -79,8 +111,8 @@ it('needs a typed rate when the project has no default, and refuses euros that d
 
 it('accepts a difference of one cent and refuses two', function () {
     // 333.33 EUR x 1.1 = 366.663; with 15 commission 351.663: 351.66 is within a cent, 351.64 is not.
-    $within = buildHawala(hawalaRows('351.66', ['eur_amount' => '333.33', 'eur_rate' => '1.1', 'commission' => '15']));
-    $outside = buildHawala(hawalaRows('351.64', ['eur_amount' => '333.33', 'eur_rate' => '1.1', 'commission' => '15']));
+    $within = buildHawala(withCommission(hawalaRows('351.66', ['eur_amount' => '333.33', 'eur_rate' => '1.1', 'commission' => '15'])));
+    $outside = buildHawala(withCommission(hawalaRows('351.64', ['eur_amount' => '333.33', 'eur_rate' => '1.1', 'commission' => '15'])));
 
     expect(collect(app(PostVoucher::class)->check($within->draft))->pluck('rule')->all())->not->toContain(15)
         ->and(collect(app(PostVoucher::class)->check($outside->draft))->pluck('rule')->all())->toContain(15);
@@ -119,7 +151,7 @@ it('refuses a commission that is not posted to 5504', function () {
 });
 
 it('shows the donor-currency view from the stored euros: net dollars at the actual rate', function () {
-    $built = buildHawala(hawalaRows('1085', ['eur_amount' => '1000', 'eur_rate' => '1.1', 'commission' => '15']));
+    $built = buildHawala(withCommission(hawalaRows('1085', ['eur_amount' => '1000', 'eur_rate' => '1.1', 'commission' => '15'])));
     $voucher = app(PostVoucher::class)->post($built->draft);
     DB::table('gl_vouchers')->where('id', $voucher->id)->update(['status' => 'approved', 'approved_by' => 9]);
 
@@ -132,7 +164,7 @@ it('shows the donor-currency view from the stored euros: net dollars at the actu
 });
 
 it('checks a saved voucher again with its euro fields', function () {
-    $built = buildHawala(hawalaRows('1085', ['eur_amount' => '1000', 'eur_rate' => '1.1', 'commission' => '15']));
+    $built = buildHawala(withCommission(hawalaRows('1085', ['eur_amount' => '1000', 'eur_rate' => '1.1', 'commission' => '15'])));
     $voucher = app(PostVoucher::class)->post($built->draft);
 
     expect(app(PostVoucher::class)->recheck($voucher->load('lines')))->toBe([]);
