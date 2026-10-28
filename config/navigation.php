@@ -27,6 +27,7 @@ return [
         'reports' => ['rexp', 'rcash', 'rbl', 'rrev', 'rfixed', 'rattach', 'tb', 'projbal', 'statement', 'statements', 'recon', 'uncomp', 'xreserve', 'advances', 'loans'],
         'people' => ['donors', 'employees', 'salaries', 'users', 'limits', 'log'],
         'migration' => ['dbload', 'opening', 'fixusd', 'legacy', 'merges'],
+        'bridge' => ['decisions', 'mapping', 'rules'],
     ],
 
     'paths' => [
@@ -84,6 +85,10 @@ return [
         'fixusd' => 'migration/fix-usd',
         'legacy' => 'migration/legacy-exchange',
         'merges' => 'migration/till-merges',
+
+        'decisions' => 'bridge/decisions',
+        'mapping' => 'bridge/mapping',
+        'rules' => 'bridge/posting-rules',
     ],
 
 ];
