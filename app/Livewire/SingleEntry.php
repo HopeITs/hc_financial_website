@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Enums\FundSource;
+use App\Livewire\Concerns\HasFormDraft;
 use App\Models\GlAccount;
 use App\Models\GlBudgetLine;
 use App\Models\GlProject;
@@ -30,6 +31,7 @@ use Throwable;
 #[Layout('components.layouts.app')]
 class SingleEntry extends Component
 {
+    use HasFormDraft;
     use WithFileUploads;
 
     public string $kind = 'income';
@@ -135,8 +137,24 @@ class SingleEntry extends Component
             return;
         }
 
+        $this->forgetDraft();
         session()->flash('notice', __('ledger.builder.saved', ['number' => $voucher->id]));
         $this->redirectRoute('entries.vouchers', ['voucher' => $voucher->id], navigate: true);
+    }
+
+    protected function draftFields(): array
+    {
+        return ['kind', 'date', 'project', 'budgetLine', 'cash', 'account', 'toCash', 'amount', 'rate', 'contact', 'fundSource', 'document', 'description'];
+    }
+
+    protected function draftScreen(): string
+    {
+        return 'single';
+    }
+
+    protected function draftPermission(): array
+    {
+        return ['single', 'create'];
     }
 
     public function render(OperationEntry $entry, PostVoucher $posting): View

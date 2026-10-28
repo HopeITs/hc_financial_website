@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\HasFormDraft;
 use App\Services\Ledger\LedgerRuleException;
 use App\Services\Ledger\OperationSheet;
 use Illuminate\Contracts\View\View;
@@ -14,6 +15,8 @@ use Throwable;
 #[Layout('components.layouts.app')]
 class MultiEntry extends Component
 {
+    use HasFormDraft;
+
     public string $sheet = '';
 
     /** @var list<string> */
@@ -57,8 +60,24 @@ class MultiEntry extends Component
             return;
         }
 
+        $this->forgetDraft();
         session()->flash('notice', __('ledger.multi.saved', ['count' => count($vouchers), 'first' => $vouchers[0]->id]));
         $this->redirectRoute('entries.vouchers', ['status' => 'pending_approval'], navigate: true);
+    }
+
+    protected function draftFields(): array
+    {
+        return ['sheet'];
+    }
+
+    protected function draftScreen(): string
+    {
+        return 'multi';
+    }
+
+    protected function draftPermission(): array
+    {
+        return ['multi', 'create'];
     }
 
     public function render(OperationSheet $operations): View
