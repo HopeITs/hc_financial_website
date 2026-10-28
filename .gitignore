@@ -27,3 +27,6 @@ yarn-error.log
 
 # Microsoft Office lock files (created while a .docx/.xlsx is open)
 ~$*
+
+# Apache config
+.htaccess
