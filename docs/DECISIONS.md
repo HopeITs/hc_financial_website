@@ -105,6 +105,25 @@ The mockup's own decisions page is not in this repository. Only the decisions th
 - Numbers for the new chart accounts (O-2, O-8).
 - The mockup's `decisions` page text for O-4, and the two corrupted project names (O-3).
 
+## 6b. Round 4: ADISC scenario test (`QUESTIONS-CFO-ADISC-GAPS-AR.docx`, answered 2026-10-28)
+
+Source: the receive-transfer-spend scenario run on the site with the ADISC budget (28 lines, USD 96,986 = EUR 85,075 at 1.14, donors MCC and OO). Three answers differ from the team's recommendation: R4-4, R4-5 and R4-6 (marked).
+
+| ID | Decision | Owner | Status | Unblocks |
+|----|----------|-------|--------|----------|
+| R4-1 | Approval limit compares a transfer by its larger side once, not by the sum of all debit lines | FM | Decided | `Voucher::approvalAmount`, `ApprovalPolicy` |
+| R4-2 | Donor receipts: the FM approves with no ceiling; above USD 2,000 the General Manager approves after the FM | FM | Decided | `ApprovalChain`, `ApprovalLimits` |
+| R4-3 | Add a program-manager step before the FM, in monthly/extra requests only (not in vouchers) | FM | Decided | `RequestWorkflow` |
+| R4-4 | **Differs from recommendation.** The project holds a third balance in EUR, and currencies must be data-driven: a future donor currency can be added and then behaves like USD and SYP | FM | Decided (design needed) | currency list, voucher lines, balances, reports |
+| R4-5 | **Differs from recommendation.** Two separate projects, ADISC-MCC and ADISC-OO, and the shared budget is split between them by the donor column | FM | Decided | project creation, budget import |
+| R4-6 | **Differs from recommendation.** The hawala commission is entered by hand as a 5504 line; the site does not add it. Rule 15 (5504 posted at least the commission) stays | FM | Decided | `VoucherDraftBuilder` (remove the automatic commission lines) |
+| R4-7 | The allocation exchange difference stays on 5503; add a per-city report "exchange-difference reserve" | FM | Decided | `reports` |
+| R4-8 | A negative general USD balance on the transfer company account is allowed, with a visible warning on the voucher and a flag in the hawala reconciliation report | FM | Decided | `PostVoucher`, `recon` |
+| R4-9 | New transfer kind "local exchange": USD cash out and SYP cash in at the rate in one voucher; difference and commission on 5503 | FM | Decided | `TransferKind`, `TransferBuilder` |
+| R4-10 | Monthly request after the deadline (last 5 working days of the month): a visible warning to the project manager, not blocked | FM | Decided | `Requests` |
+| R4-11 | A screen to create a project and its budget lines, and an Excel import in the budget-sheet format | FM | Decided | `projects` |
+| R4-12 | The proposed mapping of ADISC budget lines to expense accounts is approved (salaries 5101, other staff 5102, rent 5301, fuel/electricity/water 5302, phone/internet 5303, stationery 5304, cleaning 5309, maintenance 5307, solar 5204, internal transport 5306, travel/lodging 5408, training/events/courses 5406, certificates and hospitality 5403, staff training and activities 5104) | FM | Decided | Excel import |
+
 ## 7. Sign-off
 
 | Name | Role | Date | Signature |
