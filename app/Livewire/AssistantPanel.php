@@ -48,8 +48,12 @@ class AssistantPanel extends Component
         $this->reset('error', 'notice');
         $this->validate(['question' => ['required', 'string', 'max:4000']]);
 
-        // A question can take several model calls and tool runs.
-        set_time_limit(180);
+        // A question can take several model calls and tool runs. Only ever raise the limit: where there is none (the
+        // command line, tests) setting one would cap the rest of the process.
+        $limit = (int) ini_get('max_execution_time');
+        if ($limit !== 0 && $limit < 180) {
+            set_time_limit(180);
+        }
 
         try {
             $assistant->ask($this->user(), $this->conversation, $this->question);
