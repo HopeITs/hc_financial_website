@@ -50,7 +50,7 @@
     };
 
     $id ??= 'header-filter-'.substr(md5($label), 0, 12);
-    $searchable ??= count($options) > 7;
+    $searchable ??= true;
     $searchLabel ??= $label;
 @endphp
 

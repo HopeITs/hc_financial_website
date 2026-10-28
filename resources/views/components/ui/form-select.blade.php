@@ -78,7 +78,7 @@
     };
 
     $id ??= 'field-'.substr(md5($model.'|'.$label), 0, 10);
-    $searchable ??= $employees || count($options) > 7;
+    $searchable ??= true;
     $searchLabel ??= $label;
     $locked = $disabled && $lockedReason !== null;
     $helpText = $locked ? $lockedReason : $help;

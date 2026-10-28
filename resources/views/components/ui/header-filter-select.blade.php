@@ -42,7 +42,7 @@
         ?? $employeeLabels->get($selectedValue)
         ?? ($options[0]['label'] ?? '');
     $id ??= 'header-filter-'.substr(md5($model.'|'.$label), 0, 12);
-    $searchable ??= $employees || count($options) > 7;
+    $searchable ??= true;
     $searchLabel ??= $label;
     $employeesUrl = $employees ? null : null;
 
