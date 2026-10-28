@@ -2,6 +2,7 @@
 
 return [
     'app_name' => 'Hope Center Finance',
+    'breadcrumb' => 'مسار التنقل',
     'appearance' => 'المظهر',
     'copyright_notice' => '© :year - مركز الأمل المسيحي - المالية',
     'log_out' => 'تسجيل الخروج',

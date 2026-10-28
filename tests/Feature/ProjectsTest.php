@@ -120,3 +120,22 @@ it('keeps the names but hides the money from a role without finance permission',
     $page->call('show', 'budget')->assertSee('Salaries')->assertDontSee('150.25')->assertDontSee('901.50');
     $page->call('show', 'lifetime')->assertDontSee('150.00')->assertSee(__('projects.money_hidden'));
 });
+
+it('shows a breadcrumb trail on the list, on a sub-page and on a project', function () {
+    $user = projectsUser();
+
+    $this->actingAs($user)->get('/projects/balances')
+        ->assertSee('data-test="breadcrumb"', false)
+        ->assertSeeInOrder([__('home.title'), __('navigation.groups.projects'), __('navigation.screens.projects')]);
+
+    $this->actingAs($user)->get('/projects/new')
+        ->assertSeeInOrder([__('navigation.screens.projects'), __('projects.manage.new_title')]);
+
+    $this->actingAs($user)->get('/projects/10')
+        ->assertSee('data-test="breadcrumb"', false)
+        ->assertSeeInOrder([__('navigation.screens.projects'), 'Alpha']);
+});
+
+it('shows the breadcrumb on the home page and on a screen not built yet', function () {
+    $this->actingAs(projectsUser())->get('/home')->assertSee('data-test="breadcrumb"', false);
+});
