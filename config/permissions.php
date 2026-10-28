@@ -46,6 +46,7 @@ return [
             $screens(['programs'], ['view', 'create']),
             $screens(['currency'], $prepare),
             $screens(['projects'], $prepare),
+            $screens(['decisions', 'mapping', 'rules'], $view),
         ),
 
         RoleId::Accountant->value => array_merge(
