@@ -11,6 +11,7 @@ use App\Services\Projects\BudgetSheetImport;
 use App\Services\Projects\ProjectWriter;
 use App\Support\Navigation;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use InvalidArgumentException;
@@ -187,6 +188,9 @@ class ProjectEditor extends Component
         return view('livewire.project-editor', [
             'accounts' => $accounts,
             'restrictions' => self::RESTRICTIONS,
+            'donors' => DB::table('gl_projects')->whereNotNull('donor')->where('donor', '!=', '')->distinct()->orderBy('donor')->pluck('donor')
+                ->merge(collect($this->projects)->flatMap(fn (array $project) => [$project['donor'], ...array_column($project['lines'], 'donor')]))
+                ->filter()->unique()->sort()->values(),
             'currencies' => app(Currencies::class)->codes(),
             'isEditing' => $this->editing !== null,
         ]);
