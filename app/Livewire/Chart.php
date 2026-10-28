@@ -7,6 +7,7 @@ use App\Enums\AccountLevel;
 use App\Enums\NormalSide;
 use App\Models\GlAccount;
 use App\Services\Chart\AccountBalances;
+use App\Services\Ledger\Currencies;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
@@ -23,8 +24,6 @@ use Livewire\Component;
 #[Layout('components.layouts.app')]
 class Chart extends Component
 {
-    public const CURRENCIES = ['USD', 'SYP', 'Any'];
-
     #[Url(as: 'account')]
     public ?string $code = null;
 
@@ -138,7 +137,7 @@ class Chart extends Component
             'formParent' => ['nullable', Rule::exists('gl_accounts', 'code')->where('level', 'header')->whereNull('deleted_at')],
             'formClass' => ['required', Rule::enum(AccountClass::class)],
             'formSide' => ['required', Rule::enum(NormalSide::class)],
-            'formCurrency' => [$this->formLevel === 'posting' ? 'required' : 'nullable', Rule::in(self::CURRENCIES)],
+            'formCurrency' => [$this->formLevel === 'posting' ? 'required' : 'nullable', Rule::in([...app(Currencies::class)->codes(), 'Any'])],
             'formCity' => ['nullable', 'string', 'max:255'],
             'formCash' => ['boolean'],
             'formStatementLine' => ['nullable', 'string', 'max:255'],
@@ -287,7 +286,7 @@ class Chart extends Component
             'canDelete' => Gate::allows('screen', ['chart', 'delete']),
             'classes' => AccountClass::cases(),
             'sides' => NormalSide::cases(),
-            'currencies' => self::CURRENCIES,
+            'currencies' => [...app(Currencies::class)->codes(), 'Any'],
         ]);
     }
 }

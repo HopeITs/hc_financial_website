@@ -6,6 +6,7 @@ use App\Enums\AccountClass;
 use App\Enums\AccountLevel;
 use App\Models\GlAccount;
 use App\Models\GlProject;
+use App\Services\Ledger\Currencies;
 use App\Services\Projects\BudgetSheetImport;
 use App\Services\Projects\ProjectWriter;
 use App\Support\Navigation;
@@ -30,8 +31,6 @@ class ProjectEditor extends Component
     use WithFileUploads;
 
     public const RESTRICTIONS = ['With donor restrictions', 'Without donor restrictions'];
-
-    public const CURRENCIES = ['USD', 'EUR', 'SYP'];
 
     /** The project being edited; null when creating. */
     public ?string $editing = null;
@@ -188,7 +187,7 @@ class ProjectEditor extends Component
         return view('livewire.project-editor', [
             'accounts' => $accounts,
             'restrictions' => self::RESTRICTIONS,
-            'currencies' => self::CURRENCIES,
+            'currencies' => app(Currencies::class)->codes(),
             'isEditing' => $this->editing !== null,
         ]);
     }
@@ -215,7 +214,7 @@ class ProjectEditor extends Component
             'projects.*.lines.*.account_code' => ['required', $account],
             'projects.*.lines.*.donor' => ['nullable', 'string', 'max:255'],
             'projects.*.lines.*.budget' => ['required', 'numeric', 'min:0', 'max:9999999999999'],
-            'projects.*.lines.*.currency' => ['required', Rule::in(self::CURRENCIES)],
+            'projects.*.lines.*.currency' => ['required', Rule::in(app(Currencies::class)->codes())],
         ];
     }
 

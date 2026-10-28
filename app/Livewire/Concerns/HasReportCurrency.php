@@ -2,11 +2,12 @@
 
 namespace App\Livewire\Concerns;
 
+use App\Services\Ledger\Currencies;
 use Livewire\Attributes\Url;
 
 /**
- * The currency switch every report shares: USD, or SYP at a rate typed on the report (no rate table).
- * Pair it with `<x-ui.currency-switch />` in the view.
+ * The currency switch every report shares: USD, or another active currency (SYP, EUR, ...) at a rate typed on the report
+ * (no rate table), typed the way that currency is quoted. Pair it with `<x-ui.currency-switch />` in the view.
  */
 trait HasReportCurrency
 {
@@ -18,7 +19,7 @@ trait HasReportCurrency
 
     protected function reportCurrency(): string
     {
-        return $this->currency === 'SYP' ? 'SYP' : 'USD';
+        return app(Currencies::class)->isActive($this->currency) ? $this->currency : Currencies::BASE;
     }
 
     protected function reportRate(): ?string

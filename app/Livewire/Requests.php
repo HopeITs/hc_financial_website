@@ -10,6 +10,7 @@ use App\Models\GlProject;
 use App\Models\LedgerRequest;
 use App\Models\User;
 use App\Models\Voucher;
+use App\Services\Ledger\Currencies;
 use App\Services\Projects\ProjectAccess;
 use App\Services\Requests\RequestException;
 use App\Services\Requests\RequestWorkflow;
@@ -126,7 +127,7 @@ class Requests extends Component
         $this->fDescription = (string) $request->description;
         $this->fLines = $request->lines->map(fn ($line) => [
             'budget_line' => $line->budget_line_key, 'amount' => (string) $line->amount, 'currency' => $line->currency,
-            'rate' => $line->currency === 'SYP' ? rtrim(rtrim((string) $line->rate, '0'), '.') : '', 'note' => (string) $line->note,
+            'rate' => $line->currency !== 'USD' ? rtrim(rtrim((string) $line->rate, '0'), '.') : '', 'note' => (string) $line->note,
         ])->values()->all();
         $this->showForm = true;
     }
@@ -165,7 +166,7 @@ class Requests extends Component
 
         if ($field === 'budget_line' && isset($this->fLines[(int) $index])) {
             $currency = (string) GlBudgetLine::query()->whereKey($value)->value('currency');
-            $this->fLines[(int) $index]['currency'] = in_array($currency, ['USD', 'SYP'], true) ? $currency : 'USD';
+            $this->fLines[(int) $index]['currency'] = app(Currencies::class)->isActive($currency) ? $currency : 'USD';
         }
     }
 

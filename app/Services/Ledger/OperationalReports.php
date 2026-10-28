@@ -22,12 +22,15 @@ class OperationalReports
 {
     public const REPORTS = ['rexp', 'rcash', 'rbl', 'rrev', 'rfixed', 'rattach'];
 
+    public function __construct(private readonly Currencies $currencies) {}
+
     /** @return Report */
     public function run(string $report, ?ReportFilters $filters = null, string $currency = 'USD', ?string $rate = null): array
     {
         $filters ??= new ReportFilters;
         $typed = $rate !== null && is_numeric($rate) && preg_match('/^\d+(\.\d+)?$/', $rate) === 1 ? $rate : '1';
-        $unit = new ReportUnit($currency === 'SYP', $typed);
+        $view = $this->currencies->isActive($currency) ? $currency : Currencies::BASE;
+        $unit = new ReportUnit($view !== Currencies::BASE, $typed, $view);
 
         return match ($report) {
             'rexp' => $this->expenses($filters, $unit),
@@ -67,7 +70,7 @@ class OperationalReports
             return $usd;
         }
 
-        return $line->currency === 'SYP' ? $this->money($line->{$side.'_orig'}) : bcmul($usd, $unit->rate, 2);
+        return $line->currency === $unit->currency ? $this->money($line->{$side.'_orig'}) : $this->currencies->fromUsd($unit->currency, $usd, $unit->rate);
     }
 
     private function name(stdClass $row): string
@@ -158,9 +161,9 @@ class OperationalReports
             foreach ($actuals->get($line->key, []) as $sum) {
                 if ($line->currency === 'USD') {
                     $actual = bcadd($actual, $this->money($sum->usd), 2);
-                } elseif ($line->currency === 'SYP' && $sum->currency === 'SYP') {
+                } elseif ($sum->currency === $line->currency) {
                     $actual = bcadd($actual, $this->money($sum->orig), 2);
-                } elseif ($line->currency !== 'SYP' && $sum->donor_currency === $line->currency) {
+                } elseif ($sum->donor_currency === $line->currency) {
                     $actual = bcadd($actual, $this->money($sum->donor), 2);
                 }
             }

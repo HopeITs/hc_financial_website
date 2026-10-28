@@ -46,6 +46,7 @@ function createFinanceSchema(): void
     (require database_path('migrations/2026_10_27_090000_create_gl_micro_loans_tables.php'))->up();
     (require database_path('migrations/2026_10_28_090000_add_beneficiary_details_to_gl_micro_loans.php'))->up();
     (require database_path('migrations/2026_10_29_090000_create_web_assistant_tables.php'))->up();
+    (require database_path('migrations/2026_10_30_090000_create_gl_currencies_table.php'))->up();
 
     Schema::create('log', function ($table) {
         $table->increments('id');
@@ -273,6 +274,7 @@ function createLedgerSchema(): void
     (require database_path('migrations/2026_10_24_100000_create_gl_voucher_tables.php'))->up();
     (require database_path('migrations/2026_10_24_110000_add_request_and_transfer_columns_to_gl_vouchers.php'))->up();
     (require database_path('migrations/2026_10_25_090000_create_request_module_tables.php'))->up();
+    (require database_path('migrations/2026_10_30_090000_create_gl_currencies_table.php'))->up();
     (new ChartOfAccountsSeeder)->run();
 }
 

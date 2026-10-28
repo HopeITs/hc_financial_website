@@ -62,6 +62,7 @@
                             $effective = $built->rows[$i] ?? null;
                             $currency = $effective['currency'] ?? ($fixedCurrency[$line['account']] ?? $line['currency']);
                             $isFixed = isset($fixedCurrency[$effective['account'] ?? $line['account']]);
+                            $isForeign = $currency !== 'USD';
                             $isPounds = $currency === 'SYP';
                         @endphp
                         <tr wire:key="line-{{ $i }}">
@@ -89,14 +90,15 @@
                                     <span dir="ltr" data-test="currency-{{ $i }}">{{ $currency }}</span>
                                 @else
                                     <select wire:model.live="lines.{{ $i }}.currency" class="{{ $cell }}" aria-label="{{ __('ledger.builder.currency') }} {{ $i + 1 }}" data-test="currency-{{ $i }}">
-                                        <option value="USD">USD</option>
-                                        <option value="SYP">SYP</option>
+                                        @foreach ($currencyCodes as $code)
+                                            <option value="{{ $code }}">{{ $code }}</option>
+                                        @endforeach
                                     </select>
                                 @endif
                             </td>
                             <td><input type="text" inputmode="decimal" dir="ltr" wire:model.live.debounce.400ms="lines.{{ $i }}.amount" class="{{ $cell }} text-end" aria-label="{{ __('ledger.builder.amount') }} {{ $i + 1 }}" data-test="amount-{{ $i }}"></td>
                             <td>
-                                @if ($isPounds)
+                                @if ($isForeign)
                                     <input type="text" inputmode="decimal" dir="ltr" wire:model.live.debounce.400ms="lines.{{ $i }}.rate" class="{{ $cell }} text-end" aria-label="{{ __('ledger.builder.rate') }} {{ $i + 1 }}" data-test="rate-{{ $i }}">
                                 @else
                                     <span class="text-secondary-medium dark:text-ink-muted">—</span>

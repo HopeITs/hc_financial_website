@@ -334,6 +334,8 @@ return [
     'report' => [
         'currency' => 'Currency',
         'rate' => 'SYP per 1 USD',
+        'rate_per_usd' => ':currency per 1 USD',
+        'rate_usd_per_unit' => 'USD per 1 :currency',
     ],
     'tb' => [
         'intro' => 'Every account with its debit, credit and net as at a date, from approved vouchers only.',

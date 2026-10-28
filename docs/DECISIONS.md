@@ -114,7 +114,7 @@ Source: the receive-transfer-spend scenario run on the site with the ADISC budge
 | R4-1 | Approval limit compares a transfer by its larger side once, not by the sum of all debit lines | FM | Decided | `Voucher::approvalAmount`, `ApprovalPolicy` |
 | R4-2 | Donor receipts: the FM approves with no ceiling; above USD 2,000 the General Manager approves after the FM | FM | Decided | `ApprovalChain`, `ApprovalLimits` |
 | R4-3 | Add a program-manager step before the FM, in monthly/extra requests only (not in vouchers) | FM | Decided | `RequestWorkflow` |
-| R4-4 | **Differs from recommendation.** The project holds a third balance in EUR, and currencies must be data-driven: a future donor currency can be added and then behaves like USD and SYP | FM | Decided (design needed) | currency list, voucher lines, balances, reports |
+| R4-4 | **Differs from recommendation.** The project holds a third balance in EUR, and currencies must be data-driven: a future donor currency can be added and then behaves like USD and SYP | FM | Decided (built: `gl_currencies`, currencies screen, rates typed per currency) | currency list, voucher lines, balances, reports |
 | R4-5 | **Differs from recommendation.** Two separate projects, ADISC-MCC and ADISC-OO, and the shared budget is split between them by the donor column | FM | Decided | project creation, budget import |
 | R4-6 | **Differs from recommendation.** The hawala commission is entered by hand as a 5504 line; the site does not add it. Rule 15 (5504 posted at least the commission) stays | FM | Decided | `VoucherDraftBuilder` (remove the automatic commission lines) |
 | R4-7 | The allocation exchange difference stays on 5503; add a per-city report "exchange-difference reserve" | FM | Decided | `reports` |

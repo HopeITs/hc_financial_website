@@ -12,14 +12,16 @@ use Illuminate\Support\Facades\DB;
  * expenses not yet closed into them, so the statement balances. Activities: income and expenses over a period
  * (5503 exchange differences sit under financial and banking costs, D11). Both take an optional comparative.
  *
- * The balance check always runs on USD. In the SYP view a USD amount is multiplied by the typed rate and a SYP
- * line stays as typed (decision of round 2). Accounts with no statement line (headers) never appear.
+ * The balance check always runs on USD. In a foreign-currency view (SYP, EUR, ...) a USD amount is converted at the typed rate and a line in that
+ * currency stays as typed (decision of round 2). Accounts with no statement line (headers) never appear.
  *
  * @phpstan-type Line array{label: string, current: numeric-string, previous: numeric-string|null}
  * @phpstan-type Section array{key: string, lines: list<Line>, current: numeric-string, previous: numeric-string|null}
  */
 class FinancialStatements
 {
+    public function __construct(private readonly Currencies $currencies) {}
+
     /**
      * @return array{sections: list<Section>, liabilities_and_net_assets: array{current: numeric-string, previous: numeric-string|null}, balanced: bool, difference: numeric-string}
      */
@@ -86,7 +88,8 @@ class FinancialStatements
      */
     private function nets(?string $from, ?string $to, string $currency, ?string $rate): array
     {
-        $syp = $currency === 'SYP';
+        $code = $this->currencies->isActive($currency) ? $currency : Currencies::BASE;
+        $syp = $code !== Currencies::BASE;
         $rate = $syp && is_numeric($rate) && bccomp((string) $rate, '0', 6) > 0 ? number_format((float) $rate, 6, '.', '') : '1.000000';
 
         $sums = DB::table('gl_voucher_lines as l')
@@ -98,8 +101,9 @@ class FinancialStatements
             ->groupBy('l.account_code')
             ->selectRaw(
                 'l.account_code as code, sum(l.debit_usd - l.credit_usd) as net_usd, '
-                ."sum(case when l.currency = 'SYP' then l.debit_orig - l.credit_orig else 0 end) as net_syp, "
-                ."sum(case when l.currency = 'SYP' then 0 else l.debit_usd - l.credit_usd end) as net_other"
+                .'sum(case when l.currency = ? then l.debit_orig - l.credit_orig else 0 end) as net_syp, '
+                .'sum(case when l.currency = ? then 0 else l.debit_usd - l.credit_usd end) as net_other',
+                [$code, $code]
             )
             ->get()->keyBy('code');
 
@@ -111,7 +115,7 @@ class FinancialStatements
             $sum = $sums[$account->code];
             $base = ['class' => $account->class->value, 'line' => (string) $account->statement_line];
             $usd[$account->code] = $base + ['net' => $this->money($sum->net_usd)];
-            $view[$account->code] = $base + ['net' => $syp ? bcadd($this->money($sum->net_syp), bcmul($this->money($sum->net_other), $rate, 2), 2) : $this->money($sum->net_usd)];
+            $view[$account->code] = $base + ['net' => $syp ? bcadd($this->money($sum->net_syp), $this->currencies->fromUsd($code, $this->money($sum->net_other), $rate), 2) : $this->money($sum->net_usd)];
         }
 
         return ['usd' => $usd, 'view' => $view];

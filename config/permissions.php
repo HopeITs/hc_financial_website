@@ -44,6 +44,7 @@ return [
             $screens(['vouchers', 'approval', 'requests', 'alloc'], ['view', 'approve']),
             $screens(['limits'], ['view', 'edit']),
             $screens(['programs'], ['view', 'create']),
+            $screens(['currency'], $prepare),
             $screens(['projects'], $prepare),
         ),
 

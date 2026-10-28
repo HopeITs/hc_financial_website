@@ -6,5 +6,5 @@ namespace App\Services\Ledger;
 final readonly class ReportUnit
 {
     /** @param  numeric-string  $rate */
-    public function __construct(public bool $syp, public string $rate) {}
+    public function __construct(public bool $syp, public string $rate, public string $currency = 'SYP') {}
 }

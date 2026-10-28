@@ -1,0 +1,24 @@
+<?php
+
+return [
+    'intro' => 'The currencies of the books. USD is the base; any other currency added here works like SYP and EUR: cash accounts, voucher lines and reports at a typed rate.',
+    'add' => 'Add currency',
+    'edit' => 'Edit',
+    'code' => 'Code',
+    'name' => 'Name',
+    'name_en' => 'Name (English)',
+    'name_ar' => 'Name (Arabic)',
+    'quote' => 'How the rate is typed',
+    'quote_per_usd' => 'Units of the currency per 1 USD (like SYP)',
+    'quote_usd_per_unit' => 'USD per 1 unit of the currency (like EUR)',
+    'quote_locked' => 'This currency is already used by voucher lines, so the way its rate is typed cannot change.',
+    'status' => 'Status',
+    'active' => 'Active',
+    'inactive' => 'Inactive',
+    'base' => 'Base',
+    'lines' => 'Voucher lines',
+    'save' => 'Save',
+    'cancel' => 'Cancel',
+    'added' => 'The currency :code was added.',
+    'saved' => 'The currency :code was saved.',
+];

@@ -31,7 +31,7 @@ class OperationEntry
         'amount' => '', 'rate' => '', 'contact' => '', 'fund_source' => '', 'to_cash' => '', 'document' => '',
     ];
 
-    public function __construct(private readonly VoucherDraftBuilder $builder) {}
+    public function __construct(private readonly VoucherDraftBuilder $builder, private readonly Currencies $currencies) {}
 
     /** @param  array<string, string>  $operation */
     public function build(array $operation, int $preparedBy): BuiltVoucher
@@ -50,7 +50,7 @@ class OperationEntry
 
         $budgetLine = $op['budget_line'] !== '' ? GlBudgetLine::query()->whereKey($op['budget_line'])->first() : null;
         $project = $op['project'] !== '' ? $op['project'] : ($budgetLine !== null ? $budgetLine->project_code : '');
-        $currency = in_array($cash->currency, ['USD', 'SYP'], true) ? $cash->currency : 'USD';
+        $currency = $this->currencies->isActive((string) $cash->currency) ? $cash->currency : Currencies::BASE;
         $fund = $op['fund_source'] !== '' ? $op['fund_source'] : 'donor_grant';
 
         $row = fn (string $account, string $side, string $amount, string $rate = '', string $line = '', ?string $curr = null) => [
@@ -103,7 +103,7 @@ class OperationEntry
     private function exchange(array $op, GlAccount $given, callable $row): array|string
     {
         $received = $op['to_cash'] !== '' ? GlAccount::query()->whereKey($op['to_cash'])->first() : null;
-        if ($received === null || ! $received->is_cash || ! in_array($given->currency, ['USD', 'SYP'], true) || ! in_array($received->currency, ['USD', 'SYP'], true) || $received->currency === $given->currency) {
+        if ($received === null || ! $received->is_cash || ! $this->currencies->isActive((string) $given->currency) || ! $this->currencies->isActive((string) $received->currency) || $received->currency === $given->currency || ($given->currency !== Currencies::BASE && $received->currency !== Currencies::BASE)) {
             return __('ledger.entry.bad_exchange');
         }
 
@@ -118,20 +118,20 @@ class OperationEntry
             return __('ledger.entry.bad_exchange_amount');
         }
 
-        if ($given->currency === 'USD') {
-            $converted = Money::normalize(bcmul($amount, $rate, 6));
+        if ($given->currency === Currencies::BASE) {
+            $converted = $this->currencies->fromUsd((string) $received->currency, $amount, $rate);
 
             return [
-                $row($received->code, 'debit', $converted, $rate, '', 'SYP'),
+                $row($received->code, 'debit', $converted, $rate, '', (string) $received->currency),
                 $row($given->code, 'credit', $amount, '', '', 'USD'),
             ];
         }
 
-        $converted = Money::normalize(bcdiv($amount, $rate, 6));
+        $converted = $this->currencies->toUsd((string) $given->currency, $amount, $rate);
 
         return [
             $row($received->code, 'debit', $converted, '', '', 'USD'),
-            $row($given->code, 'credit', $amount, $rate, '', 'SYP'),
+            $row($given->code, 'credit', $amount, $rate, '', (string) $given->currency),
         ];
     }
 }

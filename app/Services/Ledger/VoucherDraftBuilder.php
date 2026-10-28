@@ -20,7 +20,7 @@ use InvalidArgumentException;
  */
 class VoucherDraftBuilder
 {
-    public function __construct(private readonly ProjectAverageRate $averages) {}
+    public function __construct(private readonly ProjectAverageRate $averages, private readonly Currencies $currencies) {}
 
     /**
      * @param  array<int, array<string, string>>  $rows  the form lines: account, currency, side, amount, rate, project,
@@ -91,9 +91,9 @@ class VoucherDraftBuilder
             $account = $accounts->get($accountCode) ?? ($accountCode !== '' ? GlAccount::query()->find($accountCode) : null);
             $project = $projectCode !== '' ? ($projects->get($projectCode) ?? GlProject::query()->find($projectCode)) : null;
 
-            $currency = $account !== null && in_array($account->currency, ['USD', 'SYP'], true)
+            $currency = $account !== null && $this->currencies->isActive((string) $account->currency)
                 ? $account->currency
-                : (in_array($row['currency'], ['USD', 'SYP'], true) ? $row['currency'] : 'USD');
+                : ($this->currencies->isActive($row['currency']) ? $row['currency'] : Currencies::BASE);
 
             $amount = $this->amount($row['amount']);
             if ($amount === null) {
@@ -103,15 +103,15 @@ class VoucherDraftBuilder
 
             $rate = '1.000000';
             $usd = $amount;
-            if ($currency === 'SYP') {
-                $rate = $this->rate($row['rate']) ?? ($voucherType === VoucherType::Payment && $projectCode !== '' ? $this->averages->rate($projectCode) : null);
+            if ($currency !== Currencies::BASE) {
+                $rate = $this->rate($row['rate']) ?? ($voucherType === VoucherType::Payment && $projectCode !== '' ? $this->averages->rate($projectCode, $currency) : null);
 
                 if ($rate === null || bccomp($rate, '0', 6) <= 0) {
                     $problems[] = __('ledger.builder.needs_rate', ['line' => $number]);
                     $rate = '0.000000';
                     $usd = Money::zero();
                 } else {
-                    $usd = Money::normalize(bcdiv($amount, $rate, 6));
+                    $usd = $this->currencies->toUsd($currency, $amount, $rate);
                 }
             }
 

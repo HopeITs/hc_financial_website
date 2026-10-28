@@ -12,6 +12,7 @@ use App\Policies\RequestPolicy;
 use App\Services\Assistant\AnthropicGateway;
 use App\Services\Assistant\ClaudeGateway;
 use App\Services\Assistant\GeminiGateway;
+use App\Services\Ledger\Currencies;
 use App\Services\Projects\LegacyProjectBalanceSource;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -26,6 +27,8 @@ class AppServiceProvider extends ServiceProvider
     {
         // Task 20 swaps this for the ledger implementation; the pages only know the interface.
         $this->app->bind(ProjectBalanceSource::class, LegacyProjectBalanceSource::class);
+
+        $this->app->scoped(Currencies::class);
 
         $this->app->singleton(ClaudeGateway::class, fn () => config('assistant.provider') === 'gemini' ? new GeminiGateway : new AnthropicGateway);
     }
