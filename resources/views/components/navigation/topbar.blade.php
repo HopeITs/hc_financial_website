@@ -48,6 +48,8 @@
     </nav>
 
     <div class="flex shrink-0 items-center gap-2">
+        <livewire:notification-bell />
+
         <x-locale-toggle class="hidden sm:inline-flex" />
 
         <flux:button

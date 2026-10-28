@@ -4,6 +4,7 @@ use App\Enums\RoleId;
 use App\Livewire\MultiEntry;
 use App\Livewire\SingleEntry;
 use App\Livewire\VoucherBuilder;
+use App\Models\GlProject;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Services\Ledger\OperationSheet;
@@ -18,6 +19,12 @@ beforeEach(function () {
     (require database_path('migrations/2026_10_24_110000_add_request_and_transfer_columns_to_gl_vouchers.php'))->up();
     (require database_path('migrations/2026_10_25_090000_add_contract_dates_to_gl_projects.php'))->up();
     (new ChartOfAccountsSeeder)->run();
+
+    // This test's own project; the chart seeder adds no projects.
+    GlProject::query()->create([
+        'code' => 'F2F', 'name' => 'Family to Family 2026', 'donor' => 'Caritas Poland', 'restriction' => 'With donor restrictions',
+        'city' => 'Aleppo', 'donor_currency' => 'USD', 'donor_rate' => 1, 'is_general_account' => false,
+    ]);
     Storage::fake('local');
 });
 
