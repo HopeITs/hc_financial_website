@@ -38,13 +38,28 @@ class AnthropicGateway implements ClaudeGateway
             throw new AssistantUnavailable(__('assistant.errors.busy'), previous: $e);
         } catch (APIStatusException|APIConnectionException $e) {
             report($e);
-            throw new AssistantUnavailable(__('assistant.errors.unreachable'), previous: $e);
+            throw $this->unavailable($e);
         }
 
         /** @var list<array<string, mixed>> $content */
         $content = json_decode((string) json_encode($message->content), true);
 
         return new GatewayReply((string) $message->stopReason, $content);
+    }
+
+    /**
+     * The message the person sees for an API failure. An account out of credit comes back as a plain 400, so it is
+     * recognised by the API's own wording; everything else is "could not be reached".
+     */
+    public function unavailable(APIStatusException|APIConnectionException $e): AssistantUnavailable
+    {
+        $detail = $e instanceof APIStatusException && is_array($e->body) ? ($e->body['error']['message'] ?? null) : null;
+
+        $message = is_string($detail) && str_contains(strtolower($detail), 'credit balance')
+            ? __('assistant.errors.credit')
+            : __('assistant.errors.unreachable');
+
+        return new AssistantUnavailable($message, previous: $e);
     }
 
     private function client(): Client

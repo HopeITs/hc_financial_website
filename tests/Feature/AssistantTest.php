@@ -1,12 +1,14 @@
 <?php
 
 use Anthropic\Beta\Messages\MessageCreateParams;
+use Anthropic\Core\Exceptions\APIStatusException;
 use App\Enums\RoleId;
 use App\Livewire\AssistantPanel;
 use App\Models\AssistantMessage;
 use App\Models\AssistantProposal;
 use App\Models\User;
 use App\Models\Voucher;
+use App\Services\Assistant\AnthropicGateway;
 use App\Services\Assistant\Assistant;
 use App\Services\Assistant\AssistantUnavailable;
 use App\Services\Assistant\ClaudeGateway;
@@ -263,6 +265,22 @@ it('answers in the panel and saves the entry from its card', function () {
     $panel->assertSee(__('assistant.proposal.open_voucher', ['number' => $voucher->id]));
 
     expect(AssistantMessage::query()->where('role', 'note')->count())->toBe(1);
+});
+
+it('tells the person when the Anthropic account is out of credit, and says unreachable for other failures', function () {
+    $failure = fn (int $status, string $message) => APIStatusException::from(
+        new GuzzleHttp\Psr7\Request('POST', 'https://api.anthropic.com/v1/messages'),
+        new GuzzleHttp\Psr7\Response($status, ['Content-Type' => 'application/json'], json_encode([
+            'type' => 'error', 'error' => ['type' => 'invalid_request_error', 'message' => $message],
+        ])),
+    );
+
+    $gateway = new AnthropicGateway;
+
+    expect($gateway->unavailable($failure(400, 'Your credit balance is too low to access the Anthropic API.'))->getMessage())
+        ->toBe(__('assistant.errors.credit'))
+        ->and($gateway->unavailable($failure(500, 'Internal error'))->getMessage())
+        ->toBe(__('assistant.errors.unreachable'));
 });
 
 it('shows the error in the panel when the model cannot be reached', function () {

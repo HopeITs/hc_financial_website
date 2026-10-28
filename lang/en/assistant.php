@@ -17,7 +17,8 @@ return [
     'errors' => [
         'not_set_up' => 'The assistant is not set up yet: the Anthropic API key is missing. Ask the administrator to add it.',
         'key' => 'The assistant\'s API key was refused. Ask the administrator to check it.',
-        'busy' => 'The assistant is busy. Try again in a minute.',
+        'credit' => 'The assistant\'s Anthropic account is out of credit. Ask the administrator to top it up.',
+        'busy' =>'The assistant is busy. Try again in a minute.',
         'unreachable' => 'The assistant could not be reached. Try again shortly.',
         'too_many' => 'Too many questions in a minute. Wait a moment and try again.',
     ],
