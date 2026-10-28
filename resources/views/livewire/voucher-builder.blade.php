@@ -3,12 +3,14 @@
     $classLabels = collect(\App\Enums\AccountClass::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]);
 @endphp
 
-<div class="flex flex-col gap-6 px-4 pb-10 lg:px-8" data-test="voucher-builder">
+<div class="flex flex-col gap-6 px-4 pb-10 lg:px-8" data-test="voucher-builder" x-data="unsavedGuard" data-unsaved-message="{{ __('drafts.leave_warning') }}" x-on:form-clean.window="clean()">
     <div>
         <a href="{{ route('entries.vouchers') }}" wire:navigate class="text-sm text-secondary-medium hover:underline dark:text-ink-muted">{{ __('ledger.builder.back') }}</a>
     </div>
 
     <x-ui.page-header :title="__('ledger.builder.title')" :subtitle="__('ledger.builder.intro')" />
+
+    <x-ui.form-draft :saved-at="$draftSavedAt" :notice="$draftNotice" />
 
     @if ($failures !== [])
         <div class="rounded-lg border border-status-critical bg-status-critical-soft px-4 py-2 text-sm text-status-critical" role="alert" data-test="failures">
@@ -248,7 +250,8 @@
     </section>
 
     <div class="flex flex-wrap items-center gap-3">
-        <x-ui.button tone="primary" wire:click="save" :disabled="! $ready" wire:loading.attr="disabled" wire:target="save" data-test="save-voucher">{{ __('ledger.builder.save') }}</x-ui.button>
+        <x-ui.button tone="primary" wire:click="save" x-on:click="leaving()" :disabled="! $ready" wire:loading.attr="disabled" wire:target="save" data-test="save-voucher">{{ __('ledger.builder.save') }}</x-ui.button>
+        <x-ui.button wire:click="saveDraft" data-test="save-draft">{{ __('drafts.save') }}</x-ui.button>
         <span class="type-meta text-secondary-medium dark:text-ink-muted">{{ __('ledger.builder.number_note') }}</span>
     </div>
 </div>

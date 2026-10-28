@@ -1,5 +1,7 @@
-<div class="flex flex-col gap-6 px-4 pb-10 lg:px-8">
+<div class="flex flex-col gap-6 px-4 pb-10 lg:px-8" x-data="unsavedGuard" data-unsaved-message="{{ __('drafts.leave_warning') }}" x-on:form-clean.window="clean()">
     <x-ui.page-header :title="__('navigation.screens.single')" :subtitle="__('ledger.entry.intro')" />
+
+    <x-ui.form-draft :saved-at="$draftSavedAt" :notice="$draftNotice" />
 
     @if ($failures !== [])
         <div class="rounded-lg border border-status-critical bg-status-critical-soft px-4 py-2 text-sm text-status-critical" role="alert" data-test="failures">
@@ -143,7 +145,8 @@
         </section>
     @endif
 
-    <div>
-        <x-ui.button tone="primary" wire:click="save" data-test="save-entry">{{ __('ledger.builder.save') }}</x-ui.button>
+    <div class="flex flex-wrap items-center gap-3">
+        <x-ui.button tone="primary" wire:click="save" x-on:click="leaving()" data-test="save-entry">{{ __('ledger.builder.save') }}</x-ui.button>
+        <x-ui.button wire:click="saveDraft" data-test="save-draft">{{ __('drafts.save') }}</x-ui.button>
     </div>
 </div>

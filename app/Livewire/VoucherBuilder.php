@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Enums\AccountLevel;
 use App\Enums\FundSource;
 use App\Enums\VoucherType;
+use App\Livewire\Concerns\HasFormDraft;
 use App\Models\GlAccount;
 use App\Models\GlBudgetLine;
 use App\Models\GlProject;
@@ -36,6 +37,7 @@ use Throwable;
 #[Layout('components.layouts.app')]
 class VoucherBuilder extends Component
 {
+    use HasFormDraft;
     use WithFileUploads;
 
     private const BLANK = [
@@ -199,8 +201,50 @@ class VoucherBuilder extends Component
             return;
         }
 
+        $this->forgetDraft();
         session()->flash('notice', __('ledger.builder.saved', ['number' => $voucher->id]));
         $this->redirectRoute('entries.vouchers', ['voucher' => $voucher->id], navigate: true);
+    }
+
+    protected function draftFields(): array
+    {
+        return ['type', 'date', 'description', 'requestId', 'lines'];
+    }
+
+    protected function draftScreen(): string
+    {
+        return 'voucher-builder';
+    }
+
+    protected function draftPermission(): array
+    {
+        return ['vouchers', 'create'];
+    }
+
+    /**
+     * Every restored line gets exactly the builder's fields, as text; an empty grid gets two blank lines.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    protected function restoredDraft(array $payload): void
+    {
+        $lines = [];
+
+        foreach (is_array($payload['lines'] ?? null) ? $payload['lines'] : [] as $line) {
+            if (! is_array($line)) {
+                continue;
+            }
+
+            $row = self::BLANK;
+            foreach (array_keys(self::BLANK) as $field) {
+                if (isset($line[$field]) && is_scalar($line[$field])) {
+                    $row[$field] = (string) $line[$field];
+                }
+            }
+            $lines[] = $row;
+        }
+
+        $this->lines = $lines !== [] ? $lines : [self::BLANK, self::BLANK];
     }
 
     public function render(VoucherDraftBuilder $builder, PostVoucher $posting, VoucherWarnings $warnings): View
