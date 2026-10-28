@@ -22,7 +22,9 @@ return [
     // Used when ASSISTANT_PROVIDER=gemini (a key from aistudio.google.com).
     'gemini' => [
         'api_key' => env('GEMINI_API_KEY'),
-        'model' => env('GEMINI_MODEL', 'gemini-2.5-flash'),
+        // Google retires models for new accounts without notice (gemini-2.5-flash already is): if the assistant stops
+        // answering with "could not be reached", check storage/logs for a 404 and set GEMINI_MODEL to a current one.
+        'model' => env('GEMINI_MODEL', 'gemini-3.5-flash'),
     ],
 
     // Haiku is the cheapest Claude model. Set ASSISTANT_MODEL=claude-opus-5-5 for the most accurate answers (about 40x the price).
