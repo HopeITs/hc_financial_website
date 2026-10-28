@@ -1,5 +1,7 @@
-<div class="flex flex-col gap-6 px-4 pb-10 lg:px-8">
+<div class="flex flex-col gap-6 px-4 pb-10 lg:px-8" x-data="unsavedGuard" data-unsaved-message="{{ __('drafts.leave_warning') }}" x-on:form-clean.window="clean()">
     <x-ui.page-header :title="$isEditing ? __('projects.manage.edit_title') : __('projects.manage.new_title')" :subtitle="__('projects.manage.intro')" />
+
+    <x-ui.form-draft :saved-at="$draftSavedAt" :notice="$draftNotice" />
 
     @if ($notice)
         <div class="rounded-lg border border-secondary-soft bg-white px-4 py-2 text-sm dark:border-line dark:bg-surface-1" role="status" data-test="notice">{{ $notice }}</div>
@@ -144,7 +146,8 @@
         @endforeach
 
         <div class="flex flex-wrap gap-2">
-            <x-ui.button type="submit" tone="primary" data-test="save">{{ __('projects.manage.save') }}</x-ui.button>
+            <x-ui.button type="submit" tone="primary" x-on:click="leaving()" data-test="save">{{ __('projects.manage.save') }}</x-ui.button>
+            <x-ui.button type="button" wire:click="saveDraft" data-test="save-draft">{{ __('drafts.save') }}</x-ui.button>
             @unless ($isEditing)
                 <x-ui.button type="button" wire:click="addProject">{{ __('projects.manage.add_project') }}</x-ui.button>
             @endunless

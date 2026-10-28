@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Enums\FundSource;
 use App\Enums\ScreenAction;
+use App\Livewire\Concerns\HasFormDraft;
 use App\Models\GlAccount;
 use App\Models\GlBudgetLine;
 use App\Models\PayrollSplit;
@@ -27,6 +28,8 @@ use Livewire\Component;
 #[Layout('components.layouts.app')]
 class Salaries extends Component
 {
+    use HasFormDraft;
+
     private const BLANK_SPLIT = ['budget_line' => '', 'percent' => ''];
 
     private const BLANK_LINE = ['budget_line' => '', 'amount' => '', 'percent' => ''];
@@ -142,6 +145,7 @@ class Salaries extends Component
             return;
         }
 
+        $this->forgetDraft();
         $this->notice = __('salaries.splits.saved', ['date' => $from->toDateString()]);
     }
 
@@ -215,10 +219,62 @@ class Salaries extends Component
             return;
         }
 
+        $this->forgetDraft();
         $this->notice = __('salaries.posted', ['number' => $voucher->id]);
         $this->amount = '';
         $this->description = '';
         $this->lines = [self::BLANK_LINE];
+    }
+
+    protected function draftFields(): array
+    {
+        return ['tab', 'employeeId', 'employeeName', 'changeDate', 'splitRows', 'mode', 'month', 'date', 'amount', 'currency', 'rate', 'cashAccount', 'fundSource', 'description', 'lines'];
+    }
+
+    protected function draftScreen(): string
+    {
+        return 'salaries';
+    }
+
+    protected function draftPermission(): array
+    {
+        return ['salaries', 'create'];
+    }
+
+    /**
+     * Split rows and voucher lines come back with exactly their own fields, as text; an empty list gets one blank row.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    protected function restoredDraft(array $payload): void
+    {
+        $this->splitRows = $this->rows($payload['splitRows'] ?? null, self::BLANK_SPLIT);
+        $this->lines = $this->rows($payload['lines'] ?? null, self::BLANK_LINE);
+    }
+
+    /**
+     * @param  array<string, string>  $blank
+     * @return list<array<string, string>>
+     */
+    private function rows(mixed $raw, array $blank): array
+    {
+        $rows = [];
+
+        foreach (is_array($raw) ? $raw : [] as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $clean = $blank;
+            foreach (array_keys($blank) as $field) {
+                if (isset($row[$field]) && is_scalar($row[$field])) {
+                    $clean[$field] = (string) $row[$field];
+                }
+            }
+            $rows[] = $clean;
+        }
+
+        return $rows !== [] ? $rows : [$blank];
     }
 
     public function render(SalaryAllocation $allocation): View

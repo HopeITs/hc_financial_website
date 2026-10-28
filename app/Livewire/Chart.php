@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Enums\AccountClass;
 use App\Enums\AccountLevel;
 use App\Enums\NormalSide;
+use App\Livewire\Concerns\HasFormDraft;
 use App\Models\GlAccount;
 use App\Services\Chart\AccountBalances;
 use App\Services\Ledger\Currencies;
@@ -24,6 +25,8 @@ use Livewire\Component;
 #[Layout('components.layouts.app')]
 class Chart extends Component
 {
+    use HasFormDraft;
+
     #[Url(as: 'account')]
     public ?string $code = null;
 
@@ -120,6 +123,7 @@ class Chart extends Component
     public function closeEditor(): void
     {
         $this->showEditor = false;
+        $this->dispatch('form-clean');
     }
 
     public function save(AccountBalances $balances): void
@@ -190,6 +194,8 @@ class Chart extends Component
             $this->notice = __('chart.saved');
         }
 
+        $this->forgetDraft();
+        $this->dispatch('form-clean');
         $this->showEditor = false;
     }
 
@@ -241,6 +247,38 @@ class Chart extends Component
 
         $this->code = $parent;
         $this->notice = __('chart.deleted');
+    }
+
+    protected function draftFields(): array
+    {
+        return ['showEditor', 'formCode', 'formLevel', 'formNameEn', 'formNameAr', 'formParent', 'formClass', 'formSide', 'formCurrency', 'formCity', 'formCash', 'formStatementLine', 'formTags', 'formNote', 'editing'];
+    }
+
+    protected function draftScreen(): string
+    {
+        return 'chart';
+    }
+
+    protected function draftPermission(): array
+    {
+        return ['chart', $this->editing === null ? 'create' : 'edit'];
+    }
+
+    /**
+     * The account being edited comes back only while it still exists, and the tags only as known tag names.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    protected function restoredDraft(array $payload): void
+    {
+        $editing = $payload['editing'] ?? null;
+        $this->editing = is_string($editing) && GlAccount::query()->whereKey($editing)->exists() ? $editing : null;
+
+        $known = array_keys((array) __('chart.tags'));
+        $this->formTags = array_values(array_filter(
+            is_array($payload['formTags'] ?? null) ? $payload['formTags'] : [],
+            fn (mixed $tag): bool => is_string($tag) && in_array($tag, $known, true),
+        ));
     }
 
     public function render(AccountBalances $balances): View

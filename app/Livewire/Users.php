@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Enums\RoleId;
 use App\Enums\ScreenAction;
+use App\Livewire\Concerns\HasFormDraft;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\WebUserPermission;
@@ -33,6 +34,7 @@ use Livewire\WithPagination;
 #[Layout('components.layouts.app')]
 class Users extends Component
 {
+    use HasFormDraft;
     use WithPagination;
 
     public const PER_PAGE = 25;
@@ -235,6 +237,8 @@ class Users extends Component
             $this->record('ACCESS_CHANGED', $person, $person->username);
         });
 
+        $this->forgetDraft();
+        $this->dispatch('form-clean');
         $this->pick($person->getKey());
         $this->notice = __('master.users.access_saved', ['name' => $person->username]);
     }
@@ -273,6 +277,7 @@ class Users extends Component
 
         $this->notice = __('master.users.changed', ['name' => $person->username]);
         $this->resetPasswordForm();
+        $this->dispatch('form-clean');
     }
 
     public function openCreate(): void
@@ -326,6 +331,8 @@ class Users extends Component
             return $id;
         });
 
+        $this->forgetDraft();
+        $this->dispatch('form-clean');
         $this->closeCreate();
         $this->pick($id);
         $this->notice = __('master.users.created', ['name' => $username]);
@@ -387,6 +394,48 @@ class Users extends Component
         $name = $person->username;
         $this->closeDelete();
         $this->notice = __('master.users.deleted', ['name' => $name]);
+    }
+
+    /** Never a password or its confirmation. */
+    protected function draftFields(): array
+    {
+        return ['editing', 'primaryRoleId', 'extraRoleIds', 'active', 'permissions', 'showCreate', 'newUsername', 'newRoleId'];
+    }
+
+    protected function draftScreen(): string
+    {
+        return 'users';
+    }
+
+    protected function draftPermission(): array
+    {
+        return ['users', $this->showCreate ? 'create' : 'edit'];
+    }
+
+    /**
+     * The person, roles and permissions come back only as ones that still exist; the password fields stay empty.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    protected function restoredDraft(array $payload): void
+    {
+        $role = fn (mixed $id): ?int => is_int($id) || (is_string($id) && ctype_digit($id)) ? RoleId::tryFrom((int) $id)?->value : null;
+        $legacyRole = fn (mixed $id): ?int => in_array($role($id), $this->legacyRoleIds(), true) ? $role($id) : null;
+        $editing = $payload['editing'] ?? null;
+
+        $this->editing = is_int($editing) && User::query()->whereKey($editing)->exists() ? $editing : null;
+        $this->primaryRoleId = $legacyRole($payload['primaryRoleId'] ?? null);
+        $this->newRoleId = $legacyRole($payload['newRoleId'] ?? null);
+        $this->extraRoleIds = array_values(array_unique(array_filter(
+            array_map($role, is_array($payload['extraRoleIds'] ?? null) ? $payload['extraRoleIds'] : []),
+            fn (?int $id): bool => $id !== null,
+        )));
+        $this->permissions = array_values(array_intersect(
+            array_filter(is_array($payload['permissions'] ?? null) ? $payload['permissions'] : [], 'is_string'),
+            $this->permissionKeys(),
+        ));
+        $this->resetPasswordForm();
+        $this->newPassword = '';
     }
 
     public function render(): View
