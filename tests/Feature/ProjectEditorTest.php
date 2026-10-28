@@ -108,11 +108,11 @@ it('keeps the lines of a sheet without a Donor column under the donor typed in t
     $file = UploadedFile::fake()->createWithContent('plain.xlsx', file_get_contents(projectBudgetSheet([['Rent', 100]], ['Budget Line Name', 'Total/$ Year 1'])));
 
     $projects = Livewire::actingAs(projectEditorUser())->test(ProjectEditor::class)
-        ->set('projects.0.code', 'P1')->set('projects.0.name', 'P1')->set('projects.0.donor', 'Oxfam')
+        ->set('projects.0.code', 'P1')->set('projects.0.name', 'P1')->set('projects.0.donor', 'ACN')
         ->set('sheet', $file)->call('importSheet')->get('projects');
 
-    expect($projects)->toHaveCount(1)->and($projects[0]['code'])->toBe('P1')->and($projects[0]['donor'])->toBe('Oxfam')
-        ->and($projects[0]['lines'][0]['donor'])->toBe('Oxfam');
+    expect($projects)->toHaveCount(1)->and($projects[0]['code'])->toBe('P1')->and($projects[0]['donor'])->toBe('ACN')
+        ->and($projects[0]['lines'][0]['donor'])->toBe('ACN');
 });
 
 it('lets a role that may create open the screen and a project manager not', function () {
@@ -218,7 +218,7 @@ it('saves the two donor projects with their start dates and lines once the missi
 
 it('creates a project and a budget line by hand', function () {
     Livewire::actingAs(projectEditorUser(RoleId::Accountant))->test(ProjectEditor::class)
-        ->set('projects.0.code', 'WATER')->set('projects.0.name', 'Water project')->set('projects.0.donor', 'Oxfam')
+        ->set('projects.0.code', 'WATER')->set('projects.0.name', 'Water project')->set('projects.0.donor', 'ACN')
         ->set('projects.0.city', 'Homs')->set('projects.0.donor_currency', 'EUR')->set('projects.0.donor_rate', '1.14')
         ->set('projects.0.contract_number', 'C-77')->set('projects.0.start_date', '2026-05-01')->set('projects.0.end_date', '2026-12-31')
         ->call('addLine', 0)
@@ -309,4 +309,13 @@ it('shows an error for a file that is not a budget sheet', function () {
         ->set('projects.0.code', 'X')->set('projects.0.name', 'X')
         ->set('sheet', $file)->call('importSheet')
         ->assertSet('importError', __('projects.manage.import_unreadable'));
+});
+
+it('takes donors from the Income accounts of the chart and refuses any other name', function () {
+    expect(GlAccount::donorNames()->all())->toContain('ACN', 'GIZ')->not->toContain('INCOME', 'Grants – church agencies');
+
+    Livewire::actingAs(projectEditorUser(RoleId::Accountant))->test(ProjectEditor::class)
+        ->set('projects.0.code', 'WATER')->set('projects.0.name', 'Water project')->set('projects.0.donor', 'Oxfam')
+        ->call('save')
+        ->assertHasErrors(['projects.0.donor']);
 });

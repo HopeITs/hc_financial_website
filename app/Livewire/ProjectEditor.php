@@ -11,7 +11,6 @@ use App\Services\Projects\BudgetSheetImport;
 use App\Services\Projects\ProjectWriter;
 use App\Support\Navigation;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use InvalidArgumentException;
@@ -188,9 +187,7 @@ class ProjectEditor extends Component
         return view('livewire.project-editor', [
             'accounts' => $accounts,
             'restrictions' => self::RESTRICTIONS,
-            'donors' => DB::table('gl_projects')->whereNotNull('donor')->where('donor', '!=', '')->distinct()->orderBy('donor')->pluck('donor')
-                ->merge(collect($this->projects)->flatMap(fn (array $project) => [$project['donor'], ...array_column($project['lines'], 'donor')]))
-                ->filter()->unique()->sort()->values(),
+            'donors' => GlAccount::donorNames(),
             'currencies' => app(Currencies::class)->codes(),
             'isEditing' => $this->editing !== null,
         ]);
@@ -212,7 +209,7 @@ class ProjectEditor extends Component
                     $fail(__('projects.manage.name_taken'));
                 }
             }],
-            'projects.*.donor' => ['nullable', 'string', 'max:255'],
+            'projects.*.donor' => ['nullable', Rule::in(GlAccount::donorNames())],
             'projects.*.restriction' => ['required', Rule::in(self::RESTRICTIONS)],
             'projects.*.city' => ['nullable', 'string', 'max:255'],
             'projects.*.donor_currency' => ['required', 'string', 'size:3', 'alpha'],
@@ -223,7 +220,7 @@ class ProjectEditor extends Component
             'projects.*.lines' => ['array'],
             'projects.*.lines.*.name' => ['required', 'string', 'max:255', 'distinct:ignore_case'],
             'projects.*.lines.*.account_code' => ['required', $account],
-            'projects.*.lines.*.donor' => ['nullable', 'string', 'max:255'],
+            'projects.*.lines.*.donor' => ['nullable', Rule::in(GlAccount::donorNames())],
             'projects.*.lines.*.budget' => ['required', 'numeric', 'min:0', 'max:9999999999999'],
             'projects.*.lines.*.currency' => ['required', Rule::in(app(Currencies::class)->codes())],
         ];

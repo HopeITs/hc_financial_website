@@ -9,7 +9,6 @@ use App\Models\GlProject;
 use App\Services\Ledger\OperationalReports;
 use App\Services\Ledger\ReportFilters;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -78,7 +77,7 @@ class OperationalReport extends Component
             'usesDates' => $this->screen !== 'rfixed',
             'projects' => GlProject::query()->orderBy('code')->get(['code', 'name']),
             'accounts' => GlAccount::query()->orderBy('code')->get(),
-            'donors' => DB::table('gl_projects')->whereNotNull('donor')->where('donor', '!=', '')->distinct()->orderBy('donor')->pluck('donor'),
+            'donors' => GlAccount::donorNames(),
         ]);
     }
 

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
 
 /**
  * An account of the ledger's chart of accounts (header or posting).
@@ -73,6 +74,17 @@ class GlAccount extends Model
     public function budgetLines(): HasMany
     {
         return $this->hasMany(GlBudgetLine::class, 'account_code', 'code');
+    }
+
+    /**
+     * The donors: the active posting accounts under Income in the chart (a donor is the account its grants are booked to).
+     *
+     * @return Collection<int, string>
+     */
+    public static function donorNames(): Collection
+    {
+        return self::query()->where('class', AccountClass::Income->value)->where('level', AccountLevel::Posting->value)
+            ->where('is_active', true)->orderBy('code')->pluck('name_en');
     }
 
     public function localizedName(): string
