@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -13,6 +14,12 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // The first version of this migration failed on MySQL after creating the table (the unique index's generated
+        // name was too long), and MySQL cannot roll a CREATE TABLE back, so that empty, half-built table was left behind.
+        if (Schema::hasTable('gl_payroll_splits') && DB::table('gl_payroll_splits')->doesntExist()) {
+            Schema::drop('gl_payroll_splits');
+        }
+
         Schema::create('gl_payroll_splits', function (Blueprint $table) {
             $table->id();
             $table->unsignedInteger('legacy_employee_id');
