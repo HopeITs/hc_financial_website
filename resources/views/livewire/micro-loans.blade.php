@@ -2,8 +2,10 @@
     $tabClass = fn (bool $active) => 'rounded-md px-3 py-1.5 text-sm font-medium '.($active ? 'bg-primary text-white' : 'text-secondary-medium hover:bg-secondary-soft dark:text-ink-muted dark:hover:bg-surface-2');
 @endphp
 
-<div class="flex flex-col gap-6 px-4 pb-10 lg:px-8" data-test="micro-loans">
+<div class="flex flex-col gap-6 px-4 pb-10 lg:px-8" data-test="micro-loans" x-data="unsavedGuard" data-unsaved-message="{{ __('drafts.leave_warning') }}" x-on:form-clean.window="clean()">
     <x-ui.page-header :title="__('loans.title')" :subtitle="__('loans.intro')" />
+
+    <x-ui.form-draft :saved-at="$draftSavedAt" :notice="$draftNotice" />
 
     @if ($notice)
         <div class="rounded-lg border border-secondary-soft bg-white px-4 py-2 text-sm dark:border-line dark:bg-surface-1" role="status" data-test="notice">{{ $notice }}</div>
@@ -38,7 +40,10 @@
             </x-ui.form-select>
         </x-ui.panel>
         @if ($canCreate)
-            <div><x-ui.button tone="primary" wire:click="receive" data-test="receive">{{ __('loans.receive') }}</x-ui.button></div>
+            <div class="flex flex-wrap gap-2">
+                <x-ui.button tone="primary" wire:click="receive" x-on:click="leaving()" data-test="receive">{{ __('loans.receive') }}</x-ui.button>
+                <x-ui.button wire:click="saveDraft" data-test="save-draft">{{ __('drafts.save') }}</x-ui.button>
+            </div>
         @endif
     @else
         <x-ui.panel class="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-4" data-test="loan-form">
@@ -82,7 +87,10 @@
             </x-ui.form-select>
         </x-ui.panel>
         @if ($canCreate)
-            <div><x-ui.button tone="primary" wire:click="open" data-test="open-loan">{{ __('loans.open') }}</x-ui.button></div>
+            <div class="flex flex-wrap gap-2">
+                <x-ui.button tone="primary" wire:click="open" x-on:click="leaving()" data-test="open-loan">{{ __('loans.open') }}</x-ui.button>
+                <x-ui.button wire:click="saveDraft" data-test="save-draft">{{ __('drafts.save') }}</x-ui.button>
+            </div>
         @endif
     @endif
 

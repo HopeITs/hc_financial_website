@@ -69,6 +69,8 @@
         </x-slot:actions>
     </x-ui.page-header>
 
+    <x-ui.form-draft :saved-at="$draftSavedAt" :notice="$draftNotice" />
+
     @if ($notice)
         <div class="ud-note" role="status" data-test="notice">{{ $notice }}</div>
     @endif
@@ -120,7 +122,7 @@
                 <div class="ud-foot">{{ $people->links() }}</div>
             </section>
 
-            <section class="ud-card">
+            <section class="ud-card" x-data="unsavedGuard" data-unsaved-message="{{ __('drafts.leave_warning') }}" x-on:form-clean.window="clean()">
                 @if ($picked)
                     <div class="ud-head">
                         <div class="ud-grow">
@@ -205,7 +207,8 @@
 
                         @if ($canEdit)
                             <div class="ud-bar">
-                                <x-ui.button type="submit" tone="primary" data-test="save-access">{{ __('master.users.save_access') }}</x-ui.button>
+                                <x-ui.button type="submit" tone="primary" x-on:click="leaving()" data-test="save-access">{{ __('master.users.save_access') }}</x-ui.button>
+                                <x-ui.button type="button" wire:click="saveDraft" data-test="save-draft">{{ __('drafts.save') }}</x-ui.button>
                             </div>
                         @endif
                     </form>
@@ -218,7 +221,7 @@
                                 <x-ui.form-input type="password" wire:model="confirmation" :label="__('master.users.confirm')" autocomplete="new-password" />
                             </div>
                             <div>
-                                <x-ui.button type="submit" data-test="save-password">{{ __('master.users.save') }}</x-ui.button>
+                                <x-ui.button type="submit" x-on:click="leaving()" data-test="save-password">{{ __('master.users.save') }}</x-ui.button>
                             </div>
                         </form>
                     @endif
@@ -285,6 +288,7 @@
         </div>
     @endif
 
+    <div x-data="unsavedGuard" data-unsaved-message="{{ __('drafts.leave_warning') }}" x-on:form-clean.window="clean()">
     <x-ui.modal wire:model="showCreate" size="md" :title="__('master.users.add')" :description="__('master.users.add_help')" submit="createUser" close="closeCreate" required-note>
         @if ($showCreate)
             <div style="display:grid;gap:1rem">
@@ -299,9 +303,11 @@
         @endif
 
         <x-slot:actions>
-            <x-ui.button type="submit" tone="primary" data-test="create-user">{{ __('master.users.add') }}</x-ui.button>
+            <x-ui.button type="button" wire:click="saveDraft" data-test="save-draft-create">{{ __('drafts.save') }}</x-ui.button>
+            <x-ui.button type="submit" tone="primary" x-on:click="leaving()" data-test="create-user">{{ __('master.users.add') }}</x-ui.button>
         </x-slot:actions>
     </x-ui.modal>
+    </div>
 
     <x-ui.confirm-modal wire:model="showDelete" close="closeDelete" :title="__('master.users.delete')" :message="__('master.users.delete_confirm', ['name' => $deletingName])" confirm="deleteUser" :confirm-label="__('master.users.delete')" confirm-test="confirm-delete-user">
         @if ($deleteError)

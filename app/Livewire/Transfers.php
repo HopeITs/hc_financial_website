@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Enums\ScreenAction;
 use App\Enums\TransferKind;
+use App\Livewire\Concerns\HasFormDraft;
 use App\Models\AllocationRate;
 use App\Models\GlAccount;
 use App\Models\GlProject;
@@ -30,6 +31,8 @@ use Throwable;
 #[Layout('components.layouts.app')]
 class Transfers extends Component
 {
+    use HasFormDraft;
+
     public string $rateCity = '';
 
     public string $rateValue = '';
@@ -115,6 +118,7 @@ class Transfers extends Component
             return;
         }
 
+        $this->forgetDraft();
         $this->rateValue = '';
         $this->rateAverageCost = false;
         $this->notice = __('ledger.transfers.rate_proposed');
@@ -157,8 +161,27 @@ class Transfers extends Component
             return;
         }
 
+        $this->forgetDraft();
         session()->flash('notice', __('ledger.builder.saved', ['number' => $voucher->id]));
         $this->redirectRoute('entries.vouchers', ['voucher' => $voucher->id], navigate: true);
+    }
+
+    protected function draftFields(): array
+    {
+        return [
+            'rateCity', 'rateValue', 'rateFrom', 'rateAverageCost', 'kind', 'date', 'city', 'project', 'otherProject', 'currency',
+            'amount', 'cashAccount', 'contact', 'description', 'exchangeRate', 'received', 'commission', 'sypCashAccount',
+        ];
+    }
+
+    protected function draftScreen(): string
+    {
+        return 'alloc';
+    }
+
+    protected function draftPermission(): array
+    {
+        return ['alloc', 'create'];
     }
 
     public function render(TransferRates $rates, TransferBuilder $builder): View
