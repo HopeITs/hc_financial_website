@@ -16,16 +16,22 @@
             <x-ui.panel :title="$editing === null ? __('currencies.add') : __('currencies.edit')" class="p-0">
                 <div class="flex flex-col gap-4 p-4">
                     <div class="grid gap-4 sm:grid-cols-3">
-                        <x-ui.form-input wire:model="code" :label="__('currencies.code')" dir="ltr" maxlength="3" :disabled="$editing !== null" required data-test="currency-code" />
+                        <x-ui.form-input wire:model.live.blur="code" :label="__('currencies.code')" dir="ltr" maxlength="3" :disabled="$editing !== null" required data-test="currency-code" />
                         <x-ui.form-input wire:model="nameEn" :label="__('currencies.name_en')" dir="ltr" required />
                         <x-ui.form-input wire:model="nameAr" :label="__('currencies.name_ar')" dir="rtl" required />
                     </div>
 
                     <div class="grid gap-4 sm:grid-cols-2">
-                        <x-ui.form-select wire:model="quote" :label="__('currencies.quote')">
-                            <option value="per_usd">{{ __('currencies.quote_per_usd') }}</option>
-                            <option value="usd_per_unit">{{ __('currencies.quote_usd_per_unit') }}</option>
-                        </x-ui.form-select>
+                        <div class="flex flex-col gap-1">
+                            <x-ui.form-select wire:model.live="quote" :label="__('currencies.quote')">
+                                <option value="per_usd">{{ __('currencies.quote_per_usd') }}</option>
+                                <option value="usd_per_unit">{{ __('currencies.quote_usd_per_unit') }}</option>
+                            </x-ui.form-select>
+                            <p class="text-xs text-secondary-dark dark:text-ink" data-test="quote-example">
+                                {{ __('currencies.quote_example') }}
+                                <span dir="ltr" class="font-medium">{{ $quote === 'usd_per_unit' ? '1 '.($code !== '' ? strtoupper($code) : 'XXX').' = 1.27 USD' : '1 USD = 150 '.($code !== '' ? strtoupper($code) : 'XXX') }}</span>
+                            </p>
+                        </div>
                         <x-ui.form-select wire:model="active" :label="__('currencies.status')">
                             <option value="1">{{ __('currencies.active') }}</option>
                             <option value="0">{{ __('currencies.inactive') }}</option>
