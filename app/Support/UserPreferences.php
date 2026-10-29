@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Enums\Locale;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -16,6 +17,8 @@ class UserPreferences
     public const MAX_SIDEBAR_WIDTH = 480;
 
     public const DEFAULT_SIDEBAR_WIDTH = 280;
+
+    public const LOCALE = 'locale';
 
     public function get(int $userId, string $key): ?string
     {
@@ -49,5 +52,16 @@ class UserPreferences
     public function clampSidebarWidth(int $width): int
     {
         return max(self::MIN_SIDEBAR_WIDTH, min(self::MAX_SIDEBAR_WIDTH, $width));
+    }
+
+    /** The interface language the person chose last (U-12), or null when they never chose one. */
+    public function locale(int $userId): ?Locale
+    {
+        return Locale::tryFrom((string) $this->get($userId, self::LOCALE));
+    }
+
+    public function setLocale(int $userId, Locale $locale): void
+    {
+        $this->set($userId, self::LOCALE, $locale->value);
     }
 }
