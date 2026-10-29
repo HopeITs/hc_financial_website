@@ -1,0 +1,609 @@
+[
+ {
+  "id": "U-01",
+  "group": "user",
+  "priority": "High",
+  "effort_days": 2,
+  "branch": "u-01-notifications",
+  "depends_on": [],
+  "status": "built",
+  "title_ar": "جرس إشعارات داخل البرنامج",
+  "title_en": "In-app notifications bell",
+  "area_ar": "الإشعارات",
+  "why_ar": "لا يوجد جدول notifications ولا أي إشعار. الموجود فقط رقم بجانب قائمة السندات يعدّ السندات المعلقة (Navigation.php badges، topbar.blade.php:43)، فلا يعرف المحاسب أن سنده رُفض ولا يعرف مدير المشروع أن طلبه اعتُمد.",
+  "what_ar": "جرس في الشريط العلوي فيه عدد غير المقروء وآخر الإشعارات، يتحدّث كل دقيقة. جدول خاص web_notifications (بـ migration)، والإشعارات تُرسل من سجل تدقيق السندات والطلبات بعد حفظ التغيير. السند المعلّق يذهب لكل من تسمح له قواعد الاعتماد باعتماده الآن (الدور والحد والدور في سلسلة إيصالات المانحين)، وليس لمن أعدّه أبداً. السند المعتمد أو المرفوض (مع السبب) يذهب لمن أعدّه. الطلب المقدَّم يذهب لمن عليه الدور (مدير البرنامج ثم المدير المالي ثم المدير العام)، والطلب المعتمد أو المرفوض (مع السبب) لمدير المشروع. السندات المرحّلة من البرنامج القديم لا تُرسل إشعاراً. النقر على الإشعار يعلّمه مقروءاً ويفتح السند أو الطلب.",
+  "done_when_ar": "رفض سند يُظهر إشعاراً لمُعدّه خلال دقيقة، والنقر عليه يفتح السند.",
+  "prompt_en": "Add a bell in the top bar with the person's unread count and latest notifications, refreshed every minute (Livewire poll). Send them from the voucher and request audit trails, after the change is committed: a voucher waiting for approval goes to everyone the ApprovalPolicy lets approve it now (role, limit, donor-receipt chain), never the preparer; an approved or rejected voucher (with the reason) goes to its preparer; a submitted request, or one past a step, goes to whoever RequestPolicy::decide allows next; an approved or rejected request (with the reason) goes to the requester. Migrated vouchers notify no one. Table `web_notifications` (migration); texts in lang en/ar built when shown; opening one marks it read and goes to the voucher or request.",
+  "done_when_en": "Rejecting a voucher shows a notification to its preparer within a minute, and clicking it opens the voucher.",
+  "evidence": [
+   "database/migrations (no notifications table)",
+   "app/Support/Navigation.php badges()",
+   "resources/views/components/navigation/topbar.blade.php:43"
+  ]
+ },
+ {
+  "id": "U-02",
+  "group": "user",
+  "priority": "High",
+  "effort_days": 1,
+  "branch": "u-02-error-pages",
+  "depends_on": [],
+  "status": null,
+  "title_ar": "صفحات أخطاء بالعربية وبهوية البرنامج",
+  "title_en": "Arabic error pages",
+  "area_ar": "الواجهة",
+  "why_ar": "لا يوجد مجلد resources/views/errors، فتظهر صفحات Laravel الافتراضية بالإنكليزية عند 403 و404 و419 و500 و503. وعند انتهاء الجلسة يظهر سؤال Livewire الافتراضي بالإنكليزية.",
+  "what_ar": "صفحات 403 و404 و419 و500 و503 بالعربية والإنكليزية حسب لغة المستخدم، بنفس تصميم البرنامج، مع زر رجوع للرئيسية. استبدال رسالة انتهاء الجلسة في Livewire برسالة عربية تعيد المستخدم لتسجيل الدخول.",
+  "done_when_ar": "كل صفحات الأخطاء الخمس وتنبيه انتهاء الجلسة تظهر بلغة المستخدم وبتصميم البرنامج.",
+  "prompt_en": "Add `resources/views/errors` pages for 403, 404, 419, 500 and 503 in the app's design and the person's language (en/ar), with a link back home. Replace Livewire's default English session-expired prompt with a localized message that sends the person to sign in.",
+  "done_when_en": "All five error pages and the session-expired notice show in the person's language and the app's design.",
+  "evidence": [
+   "no resources/views/errors directory",
+   "bootstrap/app.php:30-34"
+  ]
+ },
+ {
+  "id": "U-03",
+  "group": "user",
+  "priority": "Normal",
+  "effort_days": 1.5,
+  "branch": "u-03-waiting-panel",
+  "depends_on": [],
+  "status": null,
+  "title_ar": "لوحة «ما ينتظرني» في الصفحة الرئيسية",
+  "title_en": "Home panel: what is waiting for me",
+  "area_ar": "الواجهة",
+  "why_ar": "الصفحة الرئيسية تعرض أرصدة المشاريع فقط (Home.php:17-39)، ولا تُظهر للمستخدم ما عليه فعله اليوم.",
+  "what_ar": "قسم أعلى الصفحة حسب الدور: سندات تنتظر اعتمادي، سنداتي المرفوضة، طلبات تنتظر قراري، طلباتي المعلقة. كل بند يفتح القائمة المفلترة.",
+  "done_when_ar": "كل دور يرى عند الدخول عدد الأعمال المعلقة عليه، والنقر يفتح القائمة المفلترة.",
+  "prompt_en": "At the top of Home, per role: vouchers waiting for my approval, my rejected vouchers, requests waiting for my decision, my pending requests; each opens the filtered list. Use the same approval rules as the bell (U-01) to decide what counts.",
+  "done_when_en": "Each role sees its pending work on sign-in, and a click opens the filtered list.",
+  "evidence": [
+   "app/Livewire/Home.php:17-39",
+   "resources/views/livewire/home.blade.php:5-8"
+  ]
+ },
+ {
+  "id": "U-04",
+  "group": "user",
+  "priority": "Normal",
+  "effort_days": 1,
+  "branch": "u-04-unsaved-changes",
+  "depends_on": [],
+  "status": "done",
+  "title_ar": "تنبيه قبل مغادرة صفحة فيها تعديلات غير محفوظة",
+  "title_en": "Warn before leaving unsaved changes",
+  "area_ar": "الواجهة",
+  "why_ar": "لا يوجد wire:dirty ولا beforeunload في أي شاشة (الوحيد wire:confirm عند إغلاق طلب في requests.blade.php:198)، فيضيع قيد مكتوب جزئياً عند النقر على رابط آخر.",
+  "what_ar": "تحذير عند مغادرة شاشات القيد المفرد ومنشئ السند والقيد المتعدد والطلبات والرواتب إذا كان فيها تعديل غير محفوظ، ويشمل التنقل عبر wire:navigate.",
+  "done_when_ar": "مغادرة نموذج فيه تعديل غير محفوظ تطلب تأكيداً في كل شاشات الإدخال.",
+  "prompt_en": "Warn before leaving single entry, the voucher builder, multi entry, requests and salaries when a form has unsaved changes, including `wire:navigate` links.",
+  "done_when_en": "Leaving a form with unsaved changes asks for confirmation on every entry screen.",
+  "evidence": [
+   "resources/views/livewire/requests.blade.php:198",
+   "no wire:dirty or beforeunload in resources/"
+  ]
+ },
+ {
+  "id": "U-05",
+  "group": "user",
+  "priority": "Normal",
+  "effort_days": 0.5,
+  "branch": "u-05-session-warning",
+  "depends_on": [],
+  "status": null,
+  "title_ar": "تنبيه قبل انتهاء الجلسة",
+  "title_en": "Warn before the session expires",
+  "area_ar": "الواجهة",
+  "why_ar": "الجلسة تنتهي بعد 120 دقيقة (SESSION_LIFETIME في .env.example) دون أي تنبيه، فيفقد المحاسب ما كتبه عند الحفظ.",
+  "what_ar": "تنبيه قبل خمس دقائق من انتهاء الجلسة مع زر «متابعة العمل» يجدّدها.",
+  "done_when_ar": "يظهر التنبيه قبل انتهاء الجلسة، والنقر على متابعة يمدّها دون فقدان النموذج.",
+  "prompt_en": "Five minutes before `SESSION_LIFETIME` ends, show a notice with a Keep working button that refreshes the session without losing the form.",
+  "done_when_en": "The notice appears before expiry, and Keep working extends the session without losing the form.",
+  "evidence": [
+   ".env.example SESSION_LIFETIME=120"
+  ]
+ },
+ {
+  "id": "U-06",
+  "group": "user",
+  "priority": "Normal",
+  "effort_days": 2,
+  "branch": "u-06-global-search",
+  "depends_on": [],
+  "status": null,
+  "title_ar": "بحث شامل بـ Ctrl+K",
+  "title_en": "Global search (Ctrl+K)",
+  "area_ar": "الواجهة",
+  "why_ar": "البحث الوحيد هو بحث شجرة الحسابات في الشريط الجانبي (sidebar.blade.php:72-76)، ولا توجد طريقة سريعة للوصول إلى سند برقمه أو مشروع باسمه.",
+  "what_ar": "نافذة بحث تُفتح بـ Ctrl+K من أي شاشة: السندات برقمها ووصفها، الحسابات برمزها واسمها، المشاريع، والشاشات. النتائج تحترم صلاحيات المستخدم ونطاق بياناته.",
+  "done_when_ar": "كتابة رقم سند في نافذة البحث تفتحه مباشرة، والنتائج لا تُظهر ما لا يحق للمستخدم رؤيته.",
+  "prompt_en": "A search dialog opened with Ctrl+K from any screen: vouchers by number and description, accounts by code and name, projects, and screens. Results respect the person's screen permissions and data scope.",
+  "done_when_en": "Typing a voucher number opens it directly, and results never show what the person may not see.",
+  "evidence": [
+   "resources/views/components/navigation/sidebar.blade.php:72-76"
+  ]
+ },
+ {
+  "id": "U-07",
+  "group": "user",
+  "priority": "Normal",
+  "effort_days": 1,
+  "branch": "u-07-shortcuts",
+  "depends_on": [],
+  "status": null,
+  "title_ar": "اختصارات لوحة المفاتيح في شاشات الإدخال",
+  "title_en": "Keyboard shortcuts on entry screens",
+  "area_ar": "الواجهة",
+  "why_ar": "الاختصارات الموجودة للتنقل داخل الحقول فقط (form-fields.js:283، form-segmented.blade.php:59-62)، ولا يوجد اختصار للحفظ أو لإضافة سطر، والمحاسبون معتادون على الكيبورد في البرنامج القديم.",
+  "what_ar": "Ctrl+S للحفظ، Ctrl+Enter للحفظ وبدء قيد جديد، Alt+N لإضافة سطر في منشئ السند، Esc لإغلاق النوافذ. لائحة اختصارات تظهر بـ ?.",
+  "done_when_ar": "الاختصارات تعمل في القيد المفرد ومنشئ السند والقيد المتعدد، ولائحة الاختصارات تظهر بـ ?.",
+  "prompt_en": "Ctrl+S saves, Ctrl+Enter saves and starts a new entry, Alt+N adds a line in the voucher builder, Esc closes dialogs, and ? shows the list of shortcuts.",
+  "done_when_en": "The shortcuts work on single entry, the voucher builder and multi entry, and ? shows the list.",
+  "evidence": [
+   "resources/js/form-fields.js:283",
+   "resources/views/components/ui/form-segmented.blade.php:59-62"
+  ]
+ },
+ {
+  "id": "U-08",
+  "group": "user",
+  "priority": "Normal",
+  "effort_days": 0.5,
+  "branch": "u-08-pwa",
+  "depends_on": [],
+  "status": null,
+  "title_ar": "تثبيت البرنامج على الكمبيوتر كتطبيق (PWA)",
+  "title_en": "Install the app on the computer (PWA)",
+  "area_ar": "الواجهة",
+  "why_ar": "لا يوجد manifest ولا service worker في public/، وhead.blade.php فيه theme-color فقط. الموظفون معتادون على برنامج له أيقونة ونافذة خاصة.",
+  "what_ar": "ملف manifest بالاسم والأيقونات، وservice worker يخزّن ملفات الواجهة فقط دون أي إدخال بلا إنترنت، وزر «تثبيت البرنامج» في قائمة المستخدم.",
+  "done_when_ar": "يمكن تثبيت البرنامج من Chrome أو Edge، فيظهر بأيقونة على سطح المكتب وينفتح بنافذة مستقلة.",
+  "prompt_en": "Add a web app manifest (name, icons, theme), a service worker that caches static assets only (no offline entry), and an Install the app item in the user menu.",
+  "done_when_en": "Chrome or Edge can install the app; it opens in its own window from a desktop icon.",
+  "evidence": [
+   "public/ (no manifest.json, no sw.js)",
+   "resources/views/partials/head.blade.php:10-11"
+  ]
+ },
+ {
+  "id": "U-09",
+  "group": "user",
+  "priority": "Normal",
+  "effort_days": 2,
+  "branch": "u-09-two-factor",
+  "depends_on": [],
+  "status": null,
+  "title_ar": "التحقق بخطوتين للإدارة العامة والمدير المالي",
+  "title_en": "Two-factor sign-in for Head Office and the Financial Manager",
+  "area_ar": "الأمان",
+  "why_ar": "ميزات Fortify كلها مطفأة (config/fortify.php:58)، فيكفي اسم المستخدم وكلمة السر لاعتماد السندات. ولا يمكن حفظ مفتاح التحقق في جدول user التابع للبرنامج القديم.",
+  "what_ar": "تحقق بخطوتين بتطبيق مصادقة (TOTP) مع رموز احتياطية. المفتاح يُحفظ مشفراً في جدول ويب خاص. يُفرض على Head Office والمدير المالي ويكون اختيارياً للبقية.",
+  "done_when_ar": "المدير المالي لا يدخل إلا برمز التطبيق، ورموز الاحتياط تعمل مرة واحدة لكل رمز.",
+  "prompt_en": "TOTP with recovery codes through Fortify's two-factor feature. The Windows program's `user` table cannot hold the secret: store it encrypted in a web table. Required for Head Office and the Financial Manager, optional for the others.",
+  "done_when_en": "The Financial Manager cannot sign in without the app's code, and each recovery code works once.",
+  "evidence": [
+   "config/fortify.php:58",
+   "app/Providers/FortifyServiceProvider.php:24"
+  ]
+ },
+ {
+  "id": "U-10",
+  "group": "user",
+  "priority": "Normal",
+  "effort_days": 1,
+  "branch": "u-10-lazy-reports",
+  "depends_on": [],
+  "status": null,
+  "title_ar": "تحميل التقارير الثقيلة تدريجياً مع مؤشر انتظار",
+  "title_en": "Load heavy reports progressively",
+  "area_ar": "الأداء",
+  "why_ar": "لا يوجد أي مكوّن Livewire يستخدم #[Lazy]، فتنتظر الصفحة حساب التقرير كاملاً قبل أن يظهر أي شيء، وأدوات التصفية لا تُظهر أنها تعمل (wire:loading مستخدم مرة واحدة فقط في المشروع).",
+  "what_ar": "تحويل ميزان المراجعة وكشف الحساب والقوائم المالية وأرصدة المشاريع والتقارير التشغيلية إلى تحميل كسول مع هيكل انتظار، ومؤشر تحميل عند تغيير الفلاتر.",
+  "done_when_ar": "تظهر الصفحة فوراً بهيكل انتظار ثم يُملأ التقرير، وتغيير الفلتر يُظهر مؤشراً.",
+  "prompt_en": "Make the trial balance, account statement, financial statements, project balances and operational reports `#[Lazy]` with a skeleton, and show a loading indicator when a filter changes.",
+  "done_when_en": "The page shows at once with a skeleton, then the report; changing a filter shows an indicator.",
+  "evidence": [
+   "app/Livewire (no #[Lazy])",
+   "resources/views/livewire/voucher-builder.blade.php:249 (only wire:loading)"
+  ]
+ },
+ {
+  "id": "U-11",
+  "group": "user",
+  "priority": "Low",
+  "effort_days": 1.5,
+  "branch": "u-11-telegram",
+  "depends_on": [
+   "U-01"
+  ],
+  "status": null,
+  "title_ar": "قناة تلغرام اختيارية للإشعارات",
+  "title_en": "Optional Telegram channel for notifications",
+  "area_ar": "الإشعارات",
+  "why_ar": "البريد مطفأ (MAIL_MAILER=log في .env.example) ووصوله غير مضمون، وتلغرام أبسط وأرخص من واتساب.",
+  "what_ar": "بوت تلغرام يربطه كل مستخدم بحسابه برمز من صفحة ملفه. يرسل الإشعارات نفسها من الجرس بنص مختصر دون مبالغ، مع رابط للبرنامج. يعتمد على U-01.",
+  "done_when_ar": "المستخدم المرتبط يصله إشعار رفض سنده على تلغرام خلال دقيقة.",
+  "prompt_en": "A Telegram bot that each user links from their profile with a one-time code. It sends the same notifications as the bell, as short text with no amounts, plus a link to the app.",
+  "done_when_en": "A linked user gets the rejection of their voucher on Telegram within a minute.",
+  "evidence": [
+   ".env.example MAIL_MAILER=log"
+  ]
+ },
+ {
+  "id": "U-12",
+  "group": "user",
+  "priority": "Low",
+  "effort_days": 0.5,
+  "branch": "u-12-user-locale",
+  "depends_on": [],
+  "status": null,
+  "title_ar": "حفظ لغة الواجهة لكل مستخدم",
+  "title_en": "Remember each user's interface language",
+  "area_ar": "الواجهة",
+  "why_ar": "اللغة محفوظة في الجلسة فقط (SetLocale.php:14-15، SwitchLocaleController.php:18)، فتضيع عند تسجيل الخروج أو انتهاء الجلسة، ويرجع المستخدم إلى اللغة الافتراضية. والجدول web_user_preferences والصنف UserPreferences موجودان أصلاً لإعدادات كل مستخدم.",
+  "what_ar": "عندما يغيّر المستخدم اللغة وهو داخل، تُحفظ له في web_user_preferences بالمفتاح locale عبر UserPreferences. عند تسجيل الدخول تُقرأ لغته المحفوظة وتوضع في الجلسة. إن لم تكن له لغة محفوظة بعد، تُحفظ اللغة التي اختارها في صفحة الدخول. لا يُكتب شيء في جدول user التابع للبرنامج القديم.",
+  "done_when_ar": "مستخدم اختار العربية ثم سجّل الخروج، يدخل مرة ثانية ولو من متصفح آخر فتظهر الواجهة بالعربية.",
+  "prompt_en": "The interface language lives in the session only (`SetLocale`, `SwitchLocaleController`), so it is lost at sign-out. When a signed-in person switches language, save it with `UserPreferences` under the key `locale` (table `web_user_preferences`, never the Windows program's `user` table). On sign-in (Fortify's Login event), put the saved language into the session; if the person has none saved yet, save the language they picked on the sign-in page. Test: switch to Arabic, sign out, sign in again from a fresh session, and see Arabic.",
+  "done_when_en": "A person who chose Arabic, signed out and signed in again, from any browser, sees the app in Arabic.",
+  "evidence": [
+   "app/Http/Middleware/SetLocale.php:14-30",
+   "app/Http/Controllers/SwitchLocaleController.php:18",
+   "app/Support/UserPreferences.php",
+   "database/migrations/2026_10_22_130000_create_web_user_preferences_table.php"
+  ]
+ },
+ {
+  "id": "IT-01",
+  "group": "it",
+  "priority": "High",
+  "effort_days": 1,
+  "branch": "it-01-backup",
+  "depends_on": [],
+  "status": null,
+  "title_ar": "نسخ احتياطي يومي لجداول الويب",
+  "title_en": "Daily backup of the web tables",
+  "area_ar": "التشغيل والنسخ الاحتياطي",
+  "why_ar": "جداول الويب (gl_* وweb_*) هي المصدر الوحيد للسندات الجديدة، ولا توجد أي مهمة مجدولة: routes/console.php فيه أمر inspire فقط، ولا توجد حزمة نسخ احتياطي في composer.json.",
+  "what_ar": "أمر artisan يصدّر جداول gl_* وweb_* فقط (دون جداول البرنامج القديم) إلى ملف مضغوط بتاريخه. جدولته يومياً ليلاً مع الاحتفاظ بآخر 14 نسخة. توثيق طريقة الاسترجاع وتجربتها مرة على قاعدة اختبار.",
+  "done_when_ar": "تُنشأ نسخة كل ليلة تلقائياً، وتنجح تجربة استرجاع موثقة على قاعدة منفصلة.",
+  "prompt_en": "An artisan command that dumps only the `gl_*` and `web_*` tables (never the Windows program's tables) to a dated compressed file; schedule it nightly, keep the last 14, and document and rehearse a restore into a separate database.",
+  "done_when_en": "A backup is made every night, and a documented restore works on a separate database.",
+  "evidence": [
+   "routes/console.php:1-8",
+   "composer.json (no backup package)"
+  ]
+ },
+ {
+  "id": "IT-02",
+  "group": "it",
+  "priority": "High",
+  "effort_days": 1,
+  "branch": "it-02-ci",
+  "depends_on": [],
+  "status": null,
+  "title_ar": "تشغيل الاختبارات والفحوص تلقائياً على GitHub",
+  "title_en": "Run the tests and checks on GitHub",
+  "area_ar": "تجربة المطوّر",
+  "why_ar": "لا يوجد مجلد .github/workflows، وملف .gitleaks.toml:1 يذكر صراحة أنه لا يوجد CI. الاختبارات تعمل على sqlite في الذاكرة (phpunit.xml:27-28) فيسهل تشغيلها آلياً، وأمر composer test جاهز.",
+  "what_ar": "إضافة GitHub Action يعمل على كل Pull Request: Pint وPHPStan (المستوى 7) وPest وgitleaks. منع الدمج في main إذا فشل الفحص.",
+  "done_when_ar": "كل Pull Request يُظهر نتيجة الفحوص الأربعة، ولا يُدمج إلا إذا نجحت.",
+  "prompt_en": "A GitHub Actions workflow on every pull request and on main: Pint --test, PHPStan, Pest (sqlite in memory, as phpunit.xml) and gitleaks. Protect main so a failing check blocks the merge.",
+  "done_when_en": "Every pull request shows the four checks, and none merges while one fails.",
+  "evidence": [
+   ".gitleaks.toml:1",
+   "phpunit.xml:27-28",
+   "composer.json scripts.test",
+   "no .github/workflows directory"
+  ]
+ },
+ {
+  "id": "IT-03",
+  "group": "it",
+  "priority": "High",
+  "effort_days": 1,
+  "branch": "it-03-money-helpers",
+  "depends_on": [],
+  "status": null,
+  "title_ar": "توحيد تنسيق وجمع المبالغ بدل الأرقام العشرية العائمة",
+  "title_en": "Sum and format money with bcmath only",
+  "area_ar": "جودة الكود",
+  "why_ar": "قاعدة المشروع أن المال يُحسب بـ bcmath وليس float، لكن الصفحة الرئيسية تجمع الأرصدة كـ float (home.blade.php:7-8) وكذلك AccountBalances.php:31. وكل خدمة تقريباً تكتب دالة تنسيق خاصة بها بـ number_format((float)…) (AccountStatement.php:88، TrialBalance.php:92، OperationalReports.php:81، ProjectBalances.php:246، ProjectDetails.php:79).",
+  "what_ar": "إضافة Money::format وMoney::sum إلى app/Support/Money.php. استبدال الدوال المكررة والجمع بالـ float بهما. اختبار لحالات التقريب.",
+  "done_when_ar": "لا يبقى جمع مبالغ بـ float، ودالة تنسيق واحدة تستخدمها كل التقارير.",
+  "prompt_en": "Add `Money::format` and `Money::sum` to `app/Support/Money.php`; replace the float sums (home page, `AccountBalances`) and the per-service `number_format((float) ...)` helpers with them; add rounding tests.",
+  "done_when_en": "No money is summed as a float, and every report uses the one formatting helper.",
+  "evidence": [
+   "resources/views/livewire/home.blade.php:7-8",
+   "app/Services/Chart/AccountBalances.php:31",
+   "app/Services/Ledger/AccountStatement.php:88",
+   "app/Services/Ledger/TrialBalance.php:92",
+   "app/Services/Ledger/OperationalReports.php:81",
+   "app/Support/Money.php"
+  ]
+ },
+ {
+  "id": "IT-04",
+  "group": "it",
+  "priority": "Normal",
+  "effort_days": 0.5,
+  "branch": "it-04-log-rotation",
+  "depends_on": [],
+  "status": null,
+  "title_ar": "تدوير سجل الأخطاء يومياً",
+  "title_en": "Rotate the error log daily",
+  "area_ar": "التشغيل والنسخ الاحتياطي",
+  "why_ar": "السجل ملف واحد (LOG_STACK=single في .env.example) يكبر بلا حد على السيرفر.",
+  "what_ar": "قناة daily مع الاحتفاظ بآخر 14 يوماً، ومستوى warning في الإنتاج بدل debug.",
+  "done_when_ar": "يُنشأ ملف سجل لكل يوم وتُحذف الملفات الأقدم من 14 يوماً تلقائياً.",
+  "prompt_en": "Use the daily log channel with 14 days kept, and the warning level in production instead of debug (`.env.example` and the docs).",
+  "done_when_en": "A log file is made per day, and files older than 14 days are removed.",
+  "evidence": [
+   ".env.example LOG_STACK=single, LOG_LEVEL=debug"
+  ]
+ },
+ {
+  "id": "IT-05",
+  "group": "it",
+  "priority": "Normal",
+  "effort_days": 1,
+  "branch": "it-05-error-alerts",
+  "depends_on": [],
+  "status": null,
+  "title_ar": "تنبيه فوري عند أخطاء السيرفر",
+  "title_en": "Alert the team on server errors",
+  "area_ar": "التشغيل والنسخ الاحتياطي",
+  "why_ar": "الأخطاء تُكتب في السجل فقط (bootstrap/app.php:30-34)، فلا يعرف الفريق بخطأ 500 إلا عندما يشتكي مستخدم.",
+  "what_ar": "إرسال ملخص كل خطأ 500 (دون بيانات مالية) إلى قناة الفريق مع تجميع الأخطاء المتكررة، وتقرير يومي بعدد الأخطاء.",
+  "done_when_ar": "خطأ 500 في الإنتاج يصل تنبيهه للفريق خلال دقائق، ولا يتكرر للخطأ نفسه أكثر من مرة كل ساعة.",
+  "prompt_en": "Send a short summary of each 500 error (no financial data) to the team's channel, grouping repeats to one per error per hour, plus a daily count.",
+  "done_when_en": "A 500 in production reaches the team within minutes, and at most once an hour per error.",
+  "evidence": [
+   "bootstrap/app.php:30-34",
+   ".env.example MAIL_MAILER=log"
+  ]
+ },
+ {
+  "id": "IT-06",
+  "group": "it",
+  "priority": "Normal",
+  "effort_days": 1.5,
+  "branch": "it-06-service-tests",
+  "depends_on": [],
+  "status": null,
+  "title_ar": "اختبارات للخدمات الحساسة التي لا يختبرها شيء مباشرة",
+  "title_en": "Tests for the sensitive services that have none",
+  "area_ar": "جودة الكود",
+  "why_ar": "لا يوجد اختبار يذكر VoucherAttachments.php (رفع الملفات، 135 سطراً) ولا VoucherNumberAllocator.php (ترقيم السندات تحت القفل) ولا HawalaReceiptIsConsistent.php ولا StatementExport.php.",
+  "what_ar": "اختبارات Pest: رفض الملفات غير المسموحة وحدودها، عدم تكرار رقم السند حتى مع سند محذوف، قاعدة الحوالة بحالاتها، وتصدير كشف الحساب.",
+  "done_when_ar": "كل خدمة من الأربع لها اختبار يغطي الحالة الناجحة وحالة الرفض.",
+  "prompt_en": "Pest tests for VoucherAttachments (types, size, count), VoucherNumberAllocator (no reuse, even with a deleted voucher), HawalaReceiptIsConsistent (each case) and StatementExport.",
+  "done_when_en": "Each of the four services has a passing and a refusing test.",
+  "evidence": [
+   "app/Services/Ledger/VoucherAttachments.php",
+   "app/Services/Ledger/VoucherNumberAllocator.php",
+   "app/Services/Ledger/Rules/HawalaReceiptIsConsistent.php",
+   "app/Services/Ledger/StatementExport.php"
+  ]
+ },
+ {
+  "id": "IT-07",
+  "group": "it",
+  "priority": "Normal",
+  "effort_days": 0.5,
+  "branch": "it-07-readme-php-cmd",
+  "depends_on": [],
+  "status": null,
+  "title_ar": "دليل تشغيل المشروع محلياً وإصلاح php.cmd",
+  "title_en": "Local setup guide, and a php.cmd that finds PHP",
+  "area_ar": "تجربة المطوّر",
+  "why_ar": "README.md هو ملف Laravel الافتراضي، وphp.cmd يبحث عن PHP في C:\\php85 فقط (php.cmd:6) فيفشل على جهاز PHP فيه في C:\\php\\8.5.",
+  "what_ar": "README بالعربية: المتطلبات، استيراد نسخة قاعدة الاختبار، ملف .env، المستخدم الثاني للقاعدة القديمة، تشغيل الاختبارات. جعل php.cmd يجرب PATH ومسارات شائعة قبل أن يفشل.",
+  "done_when_ar": "مطوّر جديد يشغّل المشروع والاختبارات باتباع README فقط.",
+  "prompt_en": "A README in Arabic: requirements, importing the test database copy, `.env`, the legacy database user, running the tests. Make `php.cmd` try the PATH and common folders (`C:\\php\\8.5`, `C:\\php85`, Herd) before it fails.",
+  "done_when_en": "A new developer runs the app and the tests by following the README alone.",
+  "evidence": [
+   "README.md:1-20",
+   "php.cmd:6-10"
+  ]
+ },
+ {
+  "id": "IT-08",
+  "group": "it",
+  "priority": "Low",
+  "effort_days": 0.5,
+  "branch": "it-08-assets",
+  "depends_on": [],
+  "status": null,
+  "title_ar": "تقليل حجم ملفات الواجهة والخطوط",
+  "title_en": "Smaller CSS and fonts",
+  "area_ar": "الأداء",
+  "why_ar": "ملف CSS المبني 450KB، وخطوط Lato بصيغة TTF (حوالي 220KB) بينما خط Somar بصيغة woff2 (public/build).",
+  "what_ar": "تحويل Lato إلى woff2 وتحميل الأوزان المستخدمة فقط، ومراجعة ما يدخل CSS من Flux.",
+  "done_when_ar": "حجم الخطوط والـ CSS المنقول عند أول فتح أقل بـ 40% على الأقل.",
+  "prompt_en": "Convert Lato to woff2 and load only the weights in use; review what Flux adds to the CSS.",
+  "done_when_en": "The CSS and fonts loaded on the first visit are at least 40% smaller.",
+  "evidence": [
+   "public/build/assets/app-*.css (450KB)",
+   "public/build/assets/Lato-*.ttf"
+  ]
+ },
+ {
+  "id": "IT-09",
+  "group": "it",
+  "priority": "Low",
+  "effort_days": 0.5,
+  "branch": "it-09-health-check",
+  "depends_on": [],
+  "status": null,
+  "title_ar": "فحص صحة يشمل القاعدتين مع تنبيه",
+  "title_en": "Health check of both databases, with an alert",
+  "area_ar": "التشغيل والنسخ الاحتياطي",
+  "why_ar": "مسار /up موجود (bootstrap/app.php:14) لكنه لا يفحص الاتصال بالقاعدة القديمة، والأمر finance:check-db موجود لكنه لا يعمل تلقائياً.",
+  "what_ar": "ربط فحص القاعدتين بمسار /up، وجدولة finance:check-db كل ساعة مع تنبيه عند الفشل.",
+  "done_when_ar": "انقطاع القاعدة القديمة يجعل /up يفشل ويصل تنبيه للفريق.",
+  "prompt_en": "Make `/up` check both the ledger and the `legacy` connection; schedule `finance:check-db` hourly and alert on failure.",
+  "done_when_en": "When the legacy database is down, `/up` fails and the team is alerted.",
+  "evidence": [
+   "bootstrap/app.php:14",
+   "app/Console/Commands/CheckFinanceDatabase.php"
+  ]
+ },
+ {
+  "id": "IT-10",
+  "group": "it",
+  "priority": "Low",
+  "effort_days": 0.5,
+  "branch": "it-10-lang-parity",
+  "depends_on": [],
+  "status": null,
+  "title_ar": "اختبار يضمن تطابق مفاتيح الترجمة",
+  "title_en": "A test that the en and ar keys match",
+  "area_ar": "تجربة المطوّر",
+  "why_ar": "14 ملف ترجمة بكل لغة، والمفاتيح متطابقة اليوم، لكن لا يوجد اختبار يمنع نسيان مفتاح عربي في التعديلات القادمة.",
+  "what_ar": "اختبار Pest يقارن مفاتيح lang/en وlang/ar ويفشل عند أي نقص.",
+  "done_when_ar": "إضافة مفتاح إنكليزي دون مقابله العربي تُفشل الاختبارات.",
+  "prompt_en": "A Pest test that compares every `lang/en` and `lang/ar` file key by key and fails on any gap.",
+  "done_when_en": "Adding an English key without its Arabic one fails the tests.",
+  "evidence": [
+   "lang/en/*.php",
+   "lang/ar/*.php",
+   "tests (no lang parity test)"
+  ]
+ },
+ {
+  "id": "IT-11",
+  "group": "it",
+  "priority": "Low",
+  "effort_days": 0.5,
+  "branch": "it-11-pre-commit",
+  "depends_on": [],
+  "status": null,
+  "title_ar": "فحص تلقائي قبل كل commit",
+  "title_en": "Checks before every commit",
+  "area_ar": "تجربة المطوّر",
+  "why_ar": "لا يوجد pre-commit hook، وgitleaks يُشغَّل يدوياً فقط حسب .gitleaks.toml:1.",
+  "what_ar": "hook مشترك في المستودع يشغّل Pint على الملفات المعدلة وgitleaks قبل كل commit، مع أمر تثبيت واحد.",
+  "done_when_ar": "commit فيه كلمة سر أو تنسيق خاطئ يُرفض محلياً.",
+  "prompt_en": "A shared pre-commit hook in the repository that runs Pint on the changed files and gitleaks, with a one-line install command.",
+  "done_when_en": "A commit with a secret or wrong formatting is refused locally.",
+  "evidence": [
+   ".gitleaks.toml:1",
+   "no .git/hooks/pre-commit"
+  ]
+ },
+ {
+  "id": "AI-01",
+  "group": "ai",
+  "priority": "High",
+  "effort_days": 1.5,
+  "branch": "ai-01-cost-controls",
+  "depends_on": [],
+  "status": "partial",
+  "title_ar": "إكمال أساس الذكاء الاصطناعي: حد التكلفة وسجلها",
+  "title_en": "Finish the AI foundation: cost cap and cost log",
+  "area_ar": "الذكاء الاصطناعي",
+  "why_ar": "المساعد موجود (config/assistant.php، AnthropicGateway، GeminiGateway): بلا مفتاح لا يتصل بشيء، وفيه حد للرسائل في الدقيقة وحد لجولات الجواب وسجل للمحادثات. ينقصه حد شهري للتكلفة وسجل لتكلفة كل طلب.",
+  "what_ar": "حد شهري للتكلفة يوقف الطلبات عند بلوغه. سجل لكل طلب: المستخدم، الميزة، الرموز الداخلة والخارجة، التكلفة، دون محتوى المستندات. مفتاح تشغيل وإيقاف لكل ميزة ذكاء اصطناعي في شاشة إعدادات لـ Head Office. ولا تُشغَّل ميزة جديدة قبل موافقة الإدارة على ما يُرسل.",
+  "done_when_ar": "عند بلوغ الحد الشهري يرفض المساعد برسالة واضحة، وتظهر تكلفة كل طلب في السجل.",
+  "prompt_en": "The assistant already exists (`config/assistant.php`, `AnthropicGateway`, `GeminiGateway`): without a key it calls nothing, and it has a per-minute limit, a cap on rounds per answer and a kept conversation log. Add: a monthly cost cap that stops calls when reached; a log of each call (user, feature, input and output tokens, cost) without document content; an on/off switch per AI feature on a settings screen for Head Office. Management must approve what data is sent before any new AI feature is switched on.",
+  "done_when_en": "When the monthly cap is reached the assistant refuses with a clear message, and each call's cost shows in the log.",
+  "evidence": [
+   "composer.json (no AI package)",
+   ".env.example"
+  ]
+ },
+ {
+  "id": "AI-02",
+  "group": "ai",
+  "priority": "High",
+  "effort_days": 3,
+  "branch": "ai-02-invoice-reading",
+  "depends_on": [
+   "AI-01"
+  ],
+  "status": null,
+  "title_ar": "قراءة الفاتورة المرفقة واقتراح حقول القيد",
+  "title_en": "Read an attached invoice and propose the entry",
+  "area_ar": "الذكاء الاصطناعي",
+  "why_ar": "المحاسب يقرأ كل فاتورة ويكتب تاريخها ومبلغها ورقمها يدوياً، والمرفقات بالآلاف. رفع المرفقات موجود أصلاً (app/Services/Ledger/VoucherAttachments.php)، فيمكن قراءة الملف نفسه.",
+  "what_ar": "زر «اقرأ الفاتورة» بجانب المرفق. يرسل الصورة أو PDF ويطلب نتيجة بصيغة محددة: التاريخ، المبلغ، العملة، نوع المستند ورقمه، المورّد، وصف بالعربية، وبند من بنود المشروع فقط. تظهر النتيجة كبطاقة اقتراح القيد الموجودة في المساعد (EntryProposals، ProposeEntry)، والفاتورة ظاهرة بجانبها. لا يُحفظ شيء قبل أن يضغط المحاسب «حفظ».",
+  "done_when_ar": "على 20 فاتورة حقيقية يُقاس عدد الحقول الصحيحة، ولا يمكن حفظ قيد من الاقتراح دون تأكيد المحاسب.",
+  "prompt_en": "From an attached invoice image or PDF, ask the model for a structured result (date, amount, currency, document type and number, supplier, Arabic description, and a budget line from the project's own lines only) and show it as the assistant's entry proposal card (`EntryProposals`, `ProposeEntry`). Nothing is saved until the accountant presses Save; the invoice stays visible beside the fields.",
+  "done_when_en": "On 20 real invoices the correct fields are counted, and no entry is saved from a proposal without the accountant.",
+  "evidence": [
+   "app/Services/Ledger/VoucherAttachments.php",
+   "resources/views/livewire/single-entry.blade.php"
+  ]
+ },
+ {
+  "id": "AI-03",
+  "group": "ai",
+  "priority": "Normal",
+  "effort_days": 3,
+  "branch": "ai-03-approval-hints",
+  "depends_on": [
+   "AI-01"
+  ],
+  "status": null,
+  "title_ar": "تنبيهات ذكية على شاشة الاعتماد",
+  "title_en": "Smart warnings on the approval screen",
+  "area_ar": "الذكاء الاصطناعي",
+  "why_ar": "المعتمد يرى السند كما هو، ولا شيء يلفت نظره لسند مكرر أو سعر صرف غريب قبل أن يعتمد.",
+  "what_ar": "علامات تحذير بجانب السند المعلق: سند مشابه بنفس المبلغ والحساب خلال أيام، سعر صرف بعيد عن متوسط الشهر، مبلغ أكبر من المتبقي في البند، وصف لا يناسب البند. أغلب هذه الفحوص قواعد عادية بلا ذكاء اصطناعي، والذكاء الاصطناعي يكتب سطراً بالعربية يشرح سبب التنبيه. التنبيه لا يمنع الاعتماد.",
+  "done_when_ar": "سند مكرر في بيانات الاختبار يظهر عليه تنبيه مع سبب واضح، ويبقى الاعتماد ممكناً.",
+  "prompt_en": "Show warnings on a pending voucher: a similar voucher (same amount and account within a few days), a rate far from the month's average, an amount above what is left on the budget line, a description that does not fit the line. Most are plain rules; the model only writes one Arabic sentence explaining a warning. Warnings never block approval.",
+  "done_when_en": "A duplicate voucher in the test data shows a warning with its reason, and approval stays possible.",
+  "evidence": [
+   "app/Livewire/Approval.php",
+   "resources/views/livewire/vouchers.blade.php"
+  ]
+ },
+ {
+  "id": "AI-04",
+  "group": "ai",
+  "priority": "Normal",
+  "effort_days": 1,
+  "branch": "ai-04-assistant-links",
+  "depends_on": [],
+  "status": "partial",
+  "title_ar": "أجوبة المساعد: ربط كل رقم بتقريره",
+  "title_en": "Assistant answers: link each number to its report",
+  "area_ar": "الذكاء الاصطناعي",
+  "why_ar": "المساعد بناه Mai (AssistantPanel وأدوات app/Services/Assistant/Tools): يجيب من أدوات للقراءة فقط ضمن صلاحيات الشخص. ما زال الجواب لا يربط الرقم بالتقرير الذي أُخذ منه.",
+  "what_ar": "كل جواب يذكر شاشة التقرير التي أُخذت منها أرقامه مع رابط لها. واختبار يثبت أن مدير المشروع لا يحصل على أرقام مشروع ليس له عبر أي أداة.",
+  "done_when_ar": "كل جواب فيه رابط لتقريره، واختبار النطاق ينجح.",
+  "prompt_en": "The assistant panel (`AssistantPanel`, tools under `app/Services/Assistant/Tools`) already answers from read-only tools within the person's permissions. Remaining: every answer names and links the report screen its numbers come from, and a test proves a project manager cannot get another project's numbers through any tool.",
+  "done_when_en": "Each answer carries a link to its report, and the scope test passes.",
+  "evidence": [
+   "app/Services/Ledger/TrialBalance.php",
+   "app/Services/Ledger/ProjectBalances.php",
+   "app/Services/Ledger/AccountStatement.php",
+   "app/Services/Ledger/OperationalReports.php"
+  ]
+ },
+ {
+  "id": "AI-05",
+  "group": "ai",
+  "priority": "Low",
+  "effort_days": 2,
+  "branch": "ai-05-monthly-summary",
+  "depends_on": [
+   "AI-01",
+   "U-01"
+  ],
+  "status": null,
+  "title_ar": "ملخص شهري مكتوب للمدير المالي",
+  "title_en": "A written monthly summary for the Financial Manager",
+  "area_ar": "الذكاء الاصطناعي",
+  "why_ar": "المدير المالي يجمع صورة الشهر من عدة تقارير بنفسه.",
+  "what_ar": "في نهاية كل شهر يُنشأ ملخص بالعربية من أرقام التقارير: أكبر الحركات، المصاريف حسب المشروع، البنود القريبة من نهايتها، والسندات المعلقة. يعمل كمهمة مجدولة بالدفعات (أرخص)، ويصل كإشعار مع رابط للصفحة.",
+  "done_when_ar": "يصل الملخص تلقائياً أول كل شهر، وكل رقم فيه مطابق للتقرير المأخوذ منه.",
+  "prompt_en": "At the end of each month a scheduled job writes an Arabic summary from the report numbers (largest movements, spending by project, budget lines near their end, pending vouchers) through the Batch API, and notifies the Financial Manager (U-01) with a link.",
+  "done_when_en": "The summary arrives on the 1st of each month, and every number in it matches its report.",
+  "evidence": [
+   "routes/console.php",
+   "app/Services/Ledger"
+  ]
+ }
+]

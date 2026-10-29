@@ -228,6 +228,152 @@ Status key: T = task, P = phase of the plan.
 
 ---
 
+## Phase 9: Improvements outside the plan (U, IT, AI)
+
+None of these needs a finance decision or overlaps tasks 01 to 45. The source is `docs/improvement-tasks.json` (the Arabic prompts are generated from it). They go to ClickUp by CSV import, not through `scripts/clickup_sync.py`. Branches are `u-NN-…`, `it-NN-…` or `ai-NN-…`, and commit messages start with the task id. The AI tasks need management approval before any data is sent out.
+
+### U-01 In-app notifications bell
+**Group:** Users · **Priority:** High · **Effort:** 2 days · **Branch:** `u-01-notifications` · **Depends on:** none · **Status:** built on its branch, waiting to be merged
+**Prompt:** Add a bell in the top bar with the person's unread count and latest notifications, refreshed every minute (Livewire poll). Send them from the voucher and request audit trails, after the change is committed: a voucher waiting for approval goes to everyone the ApprovalPolicy lets approve it now (role, limit, donor-receipt chain), never the preparer; an approved or rejected voucher (with the reason) goes to its preparer; a submitted request, or one past a step, goes to whoever RequestPolicy::decide allows next; an approved or rejected request (with the reason) goes to the requester. Migrated vouchers notify no one. Table `web_notifications` (migration); texts in lang en/ar built when shown; opening one marks it read and goes to the voucher or request.
+**Done when:** Rejecting a voucher shows a notification to its preparer within a minute, and clicking it opens the voucher.
+
+### U-02 Arabic error pages
+**Group:** Users · **Priority:** High · **Effort:** 1 day · **Branch:** `u-02-error-pages` · **Depends on:** none
+**Prompt:** Add `resources/views/errors` pages for 403, 404, 419, 500 and 503 in the app's design and the person's language (en/ar), with a link back home. Replace Livewire's default English session-expired prompt with a localized message that sends the person to sign in.
+**Done when:** All five error pages and the session-expired notice show in the person's language and the app's design.
+
+### U-03 Home panel: what is waiting for me
+**Group:** Users · **Priority:** Normal · **Effort:** 1.5 days · **Branch:** `u-03-waiting-panel` · **Depends on:** none
+**Prompt:** At the top of Home, per role: vouchers waiting for my approval, my rejected vouchers, requests waiting for my decision, my pending requests; each opens the filtered list. Use the same approval rules as the bell (U-01) to decide what counts.
+**Done when:** Each role sees its pending work on sign-in, and a click opens the filtered list.
+
+### U-04 Warn before leaving unsaved changes
+**Group:** Users · **Priority:** Normal · **Effort:** 1 day · **Branch:** `u-04-unsaved-changes` · **Depends on:** none · **Status:** done and merged into main
+**Prompt:** Warn before leaving single entry, the voucher builder, multi entry, requests and salaries when a form has unsaved changes, including `wire:navigate` links.
+**Done when:** Leaving a form with unsaved changes asks for confirmation on every entry screen.
+
+### U-05 Warn before the session expires
+**Group:** Users · **Priority:** Normal · **Effort:** half a day · **Branch:** `u-05-session-warning` · **Depends on:** none
+**Prompt:** Five minutes before `SESSION_LIFETIME` ends, show a notice with a Keep working button that refreshes the session without losing the form.
+**Done when:** The notice appears before expiry, and Keep working extends the session without losing the form.
+
+### U-06 Global search (Ctrl+K)
+**Group:** Users · **Priority:** Normal · **Effort:** 2 days · **Branch:** `u-06-global-search` · **Depends on:** none
+**Prompt:** A search dialog opened with Ctrl+K from any screen: vouchers by number and description, accounts by code and name, projects, and screens. Results respect the person's screen permissions and data scope.
+**Done when:** Typing a voucher number opens it directly, and results never show what the person may not see.
+
+### U-07 Keyboard shortcuts on entry screens
+**Group:** Users · **Priority:** Normal · **Effort:** 1 day · **Branch:** `u-07-shortcuts` · **Depends on:** none
+**Prompt:** Ctrl+S saves, Ctrl+Enter saves and starts a new entry, Alt+N adds a line in the voucher builder, Esc closes dialogs, and ? shows the list of shortcuts.
+**Done when:** The shortcuts work on single entry, the voucher builder and multi entry, and ? shows the list.
+
+### U-08 Install the app on the computer (PWA)
+**Group:** Users · **Priority:** Normal · **Effort:** half a day · **Branch:** `u-08-pwa` · **Depends on:** none
+**Prompt:** Add a web app manifest (name, icons, theme), a service worker that caches static assets only (no offline entry), and an Install the app item in the user menu.
+**Done when:** Chrome or Edge can install the app; it opens in its own window from a desktop icon.
+
+### U-09 Two-factor sign-in for Head Office and the Financial Manager
+**Group:** Users · **Priority:** Normal · **Effort:** 2 days · **Branch:** `u-09-two-factor` · **Depends on:** none
+**Prompt:** TOTP with recovery codes through Fortify's two-factor feature. The Windows program's `user` table cannot hold the secret: store it encrypted in a web table. Required for Head Office and the Financial Manager, optional for the others.
+**Done when:** The Financial Manager cannot sign in without the app's code, and each recovery code works once.
+
+### U-10 Load heavy reports progressively
+**Group:** Users · **Priority:** Normal · **Effort:** 1 day · **Branch:** `u-10-lazy-reports` · **Depends on:** none
+**Prompt:** Make the trial balance, account statement, financial statements, project balances and operational reports `#[Lazy]` with a skeleton, and show a loading indicator when a filter changes.
+**Done when:** The page shows at once with a skeleton, then the report; changing a filter shows an indicator.
+
+### U-11 Optional Telegram channel for notifications
+**Group:** Users · **Priority:** Low · **Effort:** 1.5 days · **Branch:** `u-11-telegram` · **Depends on:** U-01
+**Prompt:** A Telegram bot that each user links from their profile with a one-time code. It sends the same notifications as the bell, as short text with no amounts, plus a link to the app.
+**Done when:** A linked user gets the rejection of their voucher on Telegram within a minute.
+
+### U-12 Remember each user's interface language
+**Group:** Users · **Priority:** Low · **Effort:** half a day · **Branch:** `u-12-user-locale` · **Depends on:** none
+**Prompt:** The interface language lives in the session only (`SetLocale`, `SwitchLocaleController`), so it is lost at sign-out. When a signed-in person switches language, save it with `UserPreferences` under the key `locale` (table `web_user_preferences`, never the Windows program's `user` table). On sign-in (Fortify's Login event), put the saved language into the session; if the person has none saved yet, save the language they picked on the sign-in page. Test: switch to Arabic, sign out, sign in again from a fresh session, and see Arabic.
+**Done when:** A person who chose Arabic, signed out and signed in again, from any browser, sees the app in Arabic.
+
+### IT-01 Daily backup of the web tables
+**Group:** IT · **Priority:** High · **Effort:** 1 day · **Branch:** `it-01-backup` · **Depends on:** none
+**Prompt:** An artisan command that dumps only the `gl_*` and `web_*` tables (never the Windows program's tables) to a dated compressed file; schedule it nightly, keep the last 14, and document and rehearse a restore into a separate database.
+**Done when:** A backup is made every night, and a documented restore works on a separate database.
+
+### IT-02 Run the tests and checks on GitHub
+**Group:** IT · **Priority:** High · **Effort:** 1 day · **Branch:** `it-02-ci` · **Depends on:** none
+**Prompt:** A GitHub Actions workflow on every pull request and on main: Pint --test, PHPStan, Pest (sqlite in memory, as phpunit.xml) and gitleaks. Protect main so a failing check blocks the merge.
+**Done when:** Every pull request shows the four checks, and none merges while one fails.
+
+### IT-03 Sum and format money with bcmath only
+**Group:** IT · **Priority:** High · **Effort:** 1 day · **Branch:** `it-03-money-helpers` · **Depends on:** none
+**Prompt:** Add `Money::format` and `Money::sum` to `app/Support/Money.php`; replace the float sums (home page, `AccountBalances`) and the per-service `number_format((float) ...)` helpers with them; add rounding tests.
+**Done when:** No money is summed as a float, and every report uses the one formatting helper.
+
+### IT-04 Rotate the error log daily
+**Group:** IT · **Priority:** Normal · **Effort:** half a day · **Branch:** `it-04-log-rotation` · **Depends on:** none
+**Prompt:** Use the daily log channel with 14 days kept, and the warning level in production instead of debug (`.env.example` and the docs).
+**Done when:** A log file is made per day, and files older than 14 days are removed.
+
+### IT-05 Alert the team on server errors
+**Group:** IT · **Priority:** Normal · **Effort:** 1 day · **Branch:** `it-05-error-alerts` · **Depends on:** none
+**Prompt:** Send a short summary of each 500 error (no financial data) to the team's channel, grouping repeats to one per error per hour, plus a daily count.
+**Done when:** A 500 in production reaches the team within minutes, and at most once an hour per error.
+
+### IT-06 Tests for the sensitive services that have none
+**Group:** IT · **Priority:** Normal · **Effort:** 1.5 days · **Branch:** `it-06-service-tests` · **Depends on:** none
+**Prompt:** Pest tests for VoucherAttachments (types, size, count), VoucherNumberAllocator (no reuse, even with a deleted voucher), HawalaReceiptIsConsistent (each case) and StatementExport.
+**Done when:** Each of the four services has a passing and a refusing test.
+
+### IT-07 Local setup guide, and a php.cmd that finds PHP
+**Group:** IT · **Priority:** Normal · **Effort:** half a day · **Branch:** `it-07-readme-php-cmd` · **Depends on:** none
+**Prompt:** A README in Arabic: requirements, importing the test database copy, `.env`, the legacy database user, running the tests. Make `php.cmd` try the PATH and common folders (`C:\php\8.5`, `C:\php85`, Herd) before it fails.
+**Done when:** A new developer runs the app and the tests by following the README alone.
+
+### IT-08 Smaller CSS and fonts
+**Group:** IT · **Priority:** Low · **Effort:** half a day · **Branch:** `it-08-assets` · **Depends on:** none
+**Prompt:** Convert Lato to woff2 and load only the weights in use; review what Flux adds to the CSS.
+**Done when:** The CSS and fonts loaded on the first visit are at least 40% smaller.
+
+### IT-09 Health check of both databases, with an alert
+**Group:** IT · **Priority:** Low · **Effort:** half a day · **Branch:** `it-09-health-check` · **Depends on:** none
+**Prompt:** Make `/up` check both the ledger and the `legacy` connection; schedule `finance:check-db` hourly and alert on failure.
+**Done when:** When the legacy database is down, `/up` fails and the team is alerted.
+
+### IT-10 A test that the en and ar keys match
+**Group:** IT · **Priority:** Low · **Effort:** half a day · **Branch:** `it-10-lang-parity` · **Depends on:** none
+**Prompt:** A Pest test that compares every `lang/en` and `lang/ar` file key by key and fails on any gap.
+**Done when:** Adding an English key without its Arabic one fails the tests.
+
+### IT-11 Checks before every commit
+**Group:** IT · **Priority:** Low · **Effort:** half a day · **Branch:** `it-11-pre-commit` · **Depends on:** none
+**Prompt:** A shared pre-commit hook in the repository that runs Pint on the changed files and gitleaks, with a one-line install command.
+**Done when:** A commit with a secret or wrong formatting is refused locally.
+
+### AI-01 Finish the AI foundation: cost cap and cost log
+**Group:** AI (needs management approval) · **Priority:** High · **Effort:** 1.5 days · **Branch:** `ai-01-cost-controls` · **Depends on:** none · **Status:** partly built; the prompt says what is left
+**Prompt:** The assistant already exists (`config/assistant.php`, `AnthropicGateway`, `GeminiGateway`): without a key it calls nothing, and it has a per-minute limit, a cap on rounds per answer and a kept conversation log. Add: a monthly cost cap that stops calls when reached; a log of each call (user, feature, input and output tokens, cost) without document content; an on/off switch per AI feature on a settings screen for Head Office. Management must approve what data is sent before any new AI feature is switched on.
+**Done when:** When the monthly cap is reached the assistant refuses with a clear message, and each call's cost shows in the log.
+
+### AI-02 Read an attached invoice and propose the entry
+**Group:** AI (needs management approval) · **Priority:** High · **Effort:** 3 days · **Branch:** `ai-02-invoice-reading` · **Depends on:** AI-01
+**Prompt:** From an attached invoice image or PDF, ask the model for a structured result (date, amount, currency, document type and number, supplier, Arabic description, and a budget line from the project's own lines only) and show it as the assistant's entry proposal card (`EntryProposals`, `ProposeEntry`). Nothing is saved until the accountant presses Save; the invoice stays visible beside the fields.
+**Done when:** On 20 real invoices the correct fields are counted, and no entry is saved from a proposal without the accountant.
+
+### AI-03 Smart warnings on the approval screen
+**Group:** AI (needs management approval) · **Priority:** Normal · **Effort:** 3 days · **Branch:** `ai-03-approval-hints` · **Depends on:** AI-01
+**Prompt:** Show warnings on a pending voucher: a similar voucher (same amount and account within a few days), a rate far from the month's average, an amount above what is left on the budget line, a description that does not fit the line. Most are plain rules; the model only writes one Arabic sentence explaining a warning. Warnings never block approval.
+**Done when:** A duplicate voucher in the test data shows a warning with its reason, and approval stays possible.
+
+### AI-04 Assistant answers: link each number to its report
+**Group:** AI (needs management approval) · **Priority:** Normal · **Effort:** 1 day · **Branch:** `ai-04-assistant-links` · **Depends on:** none · **Status:** partly built; the prompt says what is left
+**Prompt:** The assistant panel (`AssistantPanel`, tools under `app/Services/Assistant/Tools`) already answers from read-only tools within the person's permissions. Remaining: every answer names and links the report screen its numbers come from, and a test proves a project manager cannot get another project's numbers through any tool.
+**Done when:** Each answer carries a link to its report, and the scope test passes.
+
+### AI-05 A written monthly summary for the Financial Manager
+**Group:** AI (needs management approval) · **Priority:** Low · **Effort:** 2 days · **Branch:** `ai-05-monthly-summary` · **Depends on:** AI-01, U-01
+**Prompt:** At the end of each month a scheduled job writes an Arabic summary from the report numbers (largest movements, spending by project, budget lines near their end, pending vouchers) through the Batch API, and notifies the Financial Manager (U-01) with a link.
+**Done when:** The summary arrives on the 1st of each month, and every number in it matches its report.
+
+---
+
 ## Inputs still needed from the business
 1. A read-only FTP user for the attachment move, and the production FTP folder.
 2. Confirmation of the two project names whose Arabic text was damaged in the mockup export (general account per city).

@@ -3552,3 +3552,1366 @@ Start from an up-to-date `main`, create branch `t7-3-bridge-pages`, commit with 
 ````
 
 ---
+
+## المرحلة 9: تحسينات خارج الخطة (U · IT · AI) · بلا قرار مالي · لا تتداخل مع المهام 01 إلى 45
+
+مصدرها `docs/improvement-tasks.json`، فعدّلها هناك ثم أعد التوليد. تُستورد إلى ClickUp من ملف CSV، لا عبر `scripts/clickup_sync.py` (الذي يزامن مهام الخطة الـ 45 فقط). الفرع `u-NN-…` أو `it-NN-…` أو `ai-NN-…`، ورسائل الـ commit تبدأ برقم المهمة.
+
+
+### U-01 · جرس إشعارات داخل البرنامج
+
+- **المجموعة:** تحسينات يحسّها المستخدم · **المجال:** الإشعارات · **الأولوية:** عالية
+- **الجهد المقدّر:** يومان
+- **الاعتماديات:** لا يوجد
+- **الحالة:** مبنية على فرعها، بانتظار الدمج
+
+#### Objective
+لا يوجد جدول notifications ولا أي إشعار. الموجود فقط رقم بجانب قائمة السندات يعدّ السندات المعلقة (Navigation.php badges، topbar.blade.php:43)، فلا يعرف المحاسب أن سنده رُفض ولا يعرف مدير المشروع أن طلبه اعتُمد.
+
+#### Implementation scope
+جرس في الشريط العلوي فيه عدد غير المقروء وآخر الإشعارات، يتحدّث كل دقيقة. جدول خاص web_notifications (بـ migration)، والإشعارات تُرسل من سجل تدقيق السندات والطلبات بعد حفظ التغيير. السند المعلّق يذهب لكل من تسمح له قواعد الاعتماد باعتماده الآن (الدور والحد والدور في سلسلة إيصالات المانحين)، وليس لمن أعدّه أبداً. السند المعتمد أو المرفوض (مع السبب) يذهب لمن أعدّه. الطلب المقدَّم يذهب لمن عليه الدور (مدير البرنامج ثم المدير المالي ثم المدير العام)، والطلب المعتمد أو المرفوض (مع السبب) لمدير المشروع. السندات المرحّلة من البرنامج القديم لا تُرسل إشعاراً. النقر على الإشعار يعلّمه مقروءاً ويفتح السند أو الطلب.
+
+#### Acceptance criteria
+رفض سند يُظهر إشعاراً لمُعدّه خلال دقيقة، والنقر عليه يفتح السند.
+
+#### References in the code
+- `database/migrations (no notifications table)`
+- `app/Support/Navigation.php badges()`
+- `resources/views/components/navigation/topbar.blade.php:43`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement U-01 of the HC Financial Web plan (In-app notifications bell). Branch: `u-01-notifications`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+Add a bell in the top bar with the person's unread count and latest notifications, refreshed every minute (Livewire poll). Send them from the voucher and request audit trails, after the change is committed: a voucher waiting for approval goes to everyone the ApprovalPolicy lets approve it now (role, limit, donor-receipt chain), never the preparer; an approved or rejected voucher (with the reason) goes to its preparer; a submitted request, or one past a step, goes to whoever RequestPolicy::decide allows next; an approved or rejected request (with the reason) goes to the requester. Migrated vouchers notify no one. Table `web_notifications` (migration); texts in lang en/ar built when shown; opening one marks it read and goes to the voucher or request.
+
+## Done when
+Rejecting a voucher shows a notification to its preparer within a minute, and clicking it opens the voucher.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `u-01-notifications`, commit with messages starting `U-01:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### U-02 · صفحات أخطاء بالعربية وبهوية البرنامج
+
+- **المجموعة:** تحسينات يحسّها المستخدم · **المجال:** الواجهة · **الأولوية:** عالية
+- **الجهد المقدّر:** يوم
+- **الاعتماديات:** لا يوجد
+
+#### Objective
+لا يوجد مجلد resources/views/errors، فتظهر صفحات Laravel الافتراضية بالإنكليزية عند 403 و404 و419 و500 و503. وعند انتهاء الجلسة يظهر سؤال Livewire الافتراضي بالإنكليزية.
+
+#### Implementation scope
+صفحات 403 و404 و419 و500 و503 بالعربية والإنكليزية حسب لغة المستخدم، بنفس تصميم البرنامج، مع زر رجوع للرئيسية. استبدال رسالة انتهاء الجلسة في Livewire برسالة عربية تعيد المستخدم لتسجيل الدخول.
+
+#### Acceptance criteria
+كل صفحات الأخطاء الخمس وتنبيه انتهاء الجلسة تظهر بلغة المستخدم وبتصميم البرنامج.
+
+#### References in the code
+- `no resources/views/errors directory`
+- `bootstrap/app.php:30-34`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement U-02 of the HC Financial Web plan (Arabic error pages). Branch: `u-02-error-pages`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+Add `resources/views/errors` pages for 403, 404, 419, 500 and 503 in the app's design and the person's language (en/ar), with a link back home. Replace Livewire's default English session-expired prompt with a localized message that sends the person to sign in.
+
+## Done when
+All five error pages and the session-expired notice show in the person's language and the app's design.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `u-02-error-pages`, commit with messages starting `U-02:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### U-03 · لوحة «ما ينتظرني» في الصفحة الرئيسية
+
+- **المجموعة:** تحسينات يحسّها المستخدم · **المجال:** الواجهة · **الأولوية:** متوسطة
+- **الجهد المقدّر:** 1.5 أيام
+- **الاعتماديات:** لا يوجد
+
+#### Objective
+الصفحة الرئيسية تعرض أرصدة المشاريع فقط (Home.php:17-39)، ولا تُظهر للمستخدم ما عليه فعله اليوم.
+
+#### Implementation scope
+قسم أعلى الصفحة حسب الدور: سندات تنتظر اعتمادي، سنداتي المرفوضة، طلبات تنتظر قراري، طلباتي المعلقة. كل بند يفتح القائمة المفلترة.
+
+#### Acceptance criteria
+كل دور يرى عند الدخول عدد الأعمال المعلقة عليه، والنقر يفتح القائمة المفلترة.
+
+#### References in the code
+- `app/Livewire/Home.php:17-39`
+- `resources/views/livewire/home.blade.php:5-8`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement U-03 of the HC Financial Web plan (Home panel: what is waiting for me). Branch: `u-03-waiting-panel`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+At the top of Home, per role: vouchers waiting for my approval, my rejected vouchers, requests waiting for my decision, my pending requests; each opens the filtered list. Use the same approval rules as the bell (U-01) to decide what counts.
+
+## Done when
+Each role sees its pending work on sign-in, and a click opens the filtered list.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `u-03-waiting-panel`, commit with messages starting `U-03:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### U-04 · تنبيه قبل مغادرة صفحة فيها تعديلات غير محفوظة
+
+- **المجموعة:** تحسينات يحسّها المستخدم · **المجال:** الواجهة · **الأولوية:** متوسطة
+- **الجهد المقدّر:** يوم
+- **الاعتماديات:** لا يوجد
+- **الحالة:** خالصة ومدموجة في main
+
+#### Objective
+لا يوجد wire:dirty ولا beforeunload في أي شاشة (الوحيد wire:confirm عند إغلاق طلب في requests.blade.php:198)، فيضيع قيد مكتوب جزئياً عند النقر على رابط آخر.
+
+#### Implementation scope
+تحذير عند مغادرة شاشات القيد المفرد ومنشئ السند والقيد المتعدد والطلبات والرواتب إذا كان فيها تعديل غير محفوظ، ويشمل التنقل عبر wire:navigate.
+
+#### Acceptance criteria
+مغادرة نموذج فيه تعديل غير محفوظ تطلب تأكيداً في كل شاشات الإدخال.
+
+#### References in the code
+- `resources/views/livewire/requests.blade.php:198`
+- `no wire:dirty or beforeunload in resources/`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement U-04 of the HC Financial Web plan (Warn before leaving unsaved changes). Branch: `u-04-unsaved-changes`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+Warn before leaving single entry, the voucher builder, multi entry, requests and salaries when a form has unsaved changes, including `wire:navigate` links.
+
+## Done when
+Leaving a form with unsaved changes asks for confirmation on every entry screen.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `u-04-unsaved-changes`, commit with messages starting `U-04:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### U-05 · تنبيه قبل انتهاء الجلسة
+
+- **المجموعة:** تحسينات يحسّها المستخدم · **المجال:** الواجهة · **الأولوية:** متوسطة
+- **الجهد المقدّر:** نصف يوم
+- **الاعتماديات:** لا يوجد
+
+#### Objective
+الجلسة تنتهي بعد 120 دقيقة (SESSION_LIFETIME في .env.example) دون أي تنبيه، فيفقد المحاسب ما كتبه عند الحفظ.
+
+#### Implementation scope
+تنبيه قبل خمس دقائق من انتهاء الجلسة مع زر «متابعة العمل» يجدّدها.
+
+#### Acceptance criteria
+يظهر التنبيه قبل انتهاء الجلسة، والنقر على متابعة يمدّها دون فقدان النموذج.
+
+#### References in the code
+- `.env.example SESSION_LIFETIME=120`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement U-05 of the HC Financial Web plan (Warn before the session expires). Branch: `u-05-session-warning`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+Five minutes before `SESSION_LIFETIME` ends, show a notice with a Keep working button that refreshes the session without losing the form.
+
+## Done when
+The notice appears before expiry, and Keep working extends the session without losing the form.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `u-05-session-warning`, commit with messages starting `U-05:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### U-06 · بحث شامل بـ Ctrl+K
+
+- **المجموعة:** تحسينات يحسّها المستخدم · **المجال:** الواجهة · **الأولوية:** متوسطة
+- **الجهد المقدّر:** يومان
+- **الاعتماديات:** لا يوجد
+
+#### Objective
+البحث الوحيد هو بحث شجرة الحسابات في الشريط الجانبي (sidebar.blade.php:72-76)، ولا توجد طريقة سريعة للوصول إلى سند برقمه أو مشروع باسمه.
+
+#### Implementation scope
+نافذة بحث تُفتح بـ Ctrl+K من أي شاشة: السندات برقمها ووصفها، الحسابات برمزها واسمها، المشاريع، والشاشات. النتائج تحترم صلاحيات المستخدم ونطاق بياناته.
+
+#### Acceptance criteria
+كتابة رقم سند في نافذة البحث تفتحه مباشرة، والنتائج لا تُظهر ما لا يحق للمستخدم رؤيته.
+
+#### References in the code
+- `resources/views/components/navigation/sidebar.blade.php:72-76`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement U-06 of the HC Financial Web plan (Global search (Ctrl+K)). Branch: `u-06-global-search`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+A search dialog opened with Ctrl+K from any screen: vouchers by number and description, accounts by code and name, projects, and screens. Results respect the person's screen permissions and data scope.
+
+## Done when
+Typing a voucher number opens it directly, and results never show what the person may not see.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `u-06-global-search`, commit with messages starting `U-06:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### U-07 · اختصارات لوحة المفاتيح في شاشات الإدخال
+
+- **المجموعة:** تحسينات يحسّها المستخدم · **المجال:** الواجهة · **الأولوية:** متوسطة
+- **الجهد المقدّر:** يوم
+- **الاعتماديات:** لا يوجد
+
+#### Objective
+الاختصارات الموجودة للتنقل داخل الحقول فقط (form-fields.js:283، form-segmented.blade.php:59-62)، ولا يوجد اختصار للحفظ أو لإضافة سطر، والمحاسبون معتادون على الكيبورد في البرنامج القديم.
+
+#### Implementation scope
+Ctrl+S للحفظ، Ctrl+Enter للحفظ وبدء قيد جديد، Alt+N لإضافة سطر في منشئ السند، Esc لإغلاق النوافذ. لائحة اختصارات تظهر بـ ?.
+
+#### Acceptance criteria
+الاختصارات تعمل في القيد المفرد ومنشئ السند والقيد المتعدد، ولائحة الاختصارات تظهر بـ ?.
+
+#### References in the code
+- `resources/js/form-fields.js:283`
+- `resources/views/components/ui/form-segmented.blade.php:59-62`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement U-07 of the HC Financial Web plan (Keyboard shortcuts on entry screens). Branch: `u-07-shortcuts`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+Ctrl+S saves, Ctrl+Enter saves and starts a new entry, Alt+N adds a line in the voucher builder, Esc closes dialogs, and ? shows the list of shortcuts.
+
+## Done when
+The shortcuts work on single entry, the voucher builder and multi entry, and ? shows the list.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `u-07-shortcuts`, commit with messages starting `U-07:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### U-08 · تثبيت البرنامج على الكمبيوتر كتطبيق (PWA)
+
+- **المجموعة:** تحسينات يحسّها المستخدم · **المجال:** الواجهة · **الأولوية:** متوسطة
+- **الجهد المقدّر:** نصف يوم
+- **الاعتماديات:** لا يوجد
+
+#### Objective
+لا يوجد manifest ولا service worker في public/، وhead.blade.php فيه theme-color فقط. الموظفون معتادون على برنامج له أيقونة ونافذة خاصة.
+
+#### Implementation scope
+ملف manifest بالاسم والأيقونات، وservice worker يخزّن ملفات الواجهة فقط دون أي إدخال بلا إنترنت، وزر «تثبيت البرنامج» في قائمة المستخدم.
+
+#### Acceptance criteria
+يمكن تثبيت البرنامج من Chrome أو Edge، فيظهر بأيقونة على سطح المكتب وينفتح بنافذة مستقلة.
+
+#### References in the code
+- `public/ (no manifest.json, no sw.js)`
+- `resources/views/partials/head.blade.php:10-11`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement U-08 of the HC Financial Web plan (Install the app on the computer (PWA)). Branch: `u-08-pwa`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+Add a web app manifest (name, icons, theme), a service worker that caches static assets only (no offline entry), and an Install the app item in the user menu.
+
+## Done when
+Chrome or Edge can install the app; it opens in its own window from a desktop icon.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `u-08-pwa`, commit with messages starting `U-08:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### U-09 · التحقق بخطوتين للإدارة العامة والمدير المالي
+
+- **المجموعة:** تحسينات يحسّها المستخدم · **المجال:** الأمان · **الأولوية:** متوسطة
+- **الجهد المقدّر:** يومان
+- **الاعتماديات:** لا يوجد
+
+#### Objective
+ميزات Fortify كلها مطفأة (config/fortify.php:58)، فيكفي اسم المستخدم وكلمة السر لاعتماد السندات. ولا يمكن حفظ مفتاح التحقق في جدول user التابع للبرنامج القديم.
+
+#### Implementation scope
+تحقق بخطوتين بتطبيق مصادقة (TOTP) مع رموز احتياطية. المفتاح يُحفظ مشفراً في جدول ويب خاص. يُفرض على Head Office والمدير المالي ويكون اختيارياً للبقية.
+
+#### Acceptance criteria
+المدير المالي لا يدخل إلا برمز التطبيق، ورموز الاحتياط تعمل مرة واحدة لكل رمز.
+
+#### References in the code
+- `config/fortify.php:58`
+- `app/Providers/FortifyServiceProvider.php:24`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement U-09 of the HC Financial Web plan (Two-factor sign-in for Head Office and the Financial Manager). Branch: `u-09-two-factor`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+TOTP with recovery codes through Fortify's two-factor feature. The Windows program's `user` table cannot hold the secret: store it encrypted in a web table. Required for Head Office and the Financial Manager, optional for the others.
+
+## Done when
+The Financial Manager cannot sign in without the app's code, and each recovery code works once.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `u-09-two-factor`, commit with messages starting `U-09:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### U-10 · تحميل التقارير الثقيلة تدريجياً مع مؤشر انتظار
+
+- **المجموعة:** تحسينات يحسّها المستخدم · **المجال:** الأداء · **الأولوية:** متوسطة
+- **الجهد المقدّر:** يوم
+- **الاعتماديات:** لا يوجد
+
+#### Objective
+لا يوجد أي مكوّن Livewire يستخدم #[Lazy]، فتنتظر الصفحة حساب التقرير كاملاً قبل أن يظهر أي شيء، وأدوات التصفية لا تُظهر أنها تعمل (wire:loading مستخدم مرة واحدة فقط في المشروع).
+
+#### Implementation scope
+تحويل ميزان المراجعة وكشف الحساب والقوائم المالية وأرصدة المشاريع والتقارير التشغيلية إلى تحميل كسول مع هيكل انتظار، ومؤشر تحميل عند تغيير الفلاتر.
+
+#### Acceptance criteria
+تظهر الصفحة فوراً بهيكل انتظار ثم يُملأ التقرير، وتغيير الفلتر يُظهر مؤشراً.
+
+#### References in the code
+- `app/Livewire (no #[Lazy])`
+- `resources/views/livewire/voucher-builder.blade.php:249 (only wire:loading)`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement U-10 of the HC Financial Web plan (Load heavy reports progressively). Branch: `u-10-lazy-reports`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+Make the trial balance, account statement, financial statements, project balances and operational reports `#[Lazy]` with a skeleton, and show a loading indicator when a filter changes.
+
+## Done when
+The page shows at once with a skeleton, then the report; changing a filter shows an indicator.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `u-10-lazy-reports`, commit with messages starting `U-10:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### U-11 · قناة تلغرام اختيارية للإشعارات
+
+- **المجموعة:** تحسينات يحسّها المستخدم · **المجال:** الإشعارات · **الأولوية:** منخفضة
+- **الجهد المقدّر:** 1.5 أيام
+- **الاعتماديات:** U-01
+
+#### Objective
+البريد مطفأ (MAIL_MAILER=log في .env.example) ووصوله غير مضمون، وتلغرام أبسط وأرخص من واتساب.
+
+#### Implementation scope
+بوت تلغرام يربطه كل مستخدم بحسابه برمز من صفحة ملفه. يرسل الإشعارات نفسها من الجرس بنص مختصر دون مبالغ، مع رابط للبرنامج. يعتمد على U-01.
+
+#### Acceptance criteria
+المستخدم المرتبط يصله إشعار رفض سنده على تلغرام خلال دقيقة.
+
+#### References in the code
+- `.env.example MAIL_MAILER=log`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement U-11 of the HC Financial Web plan (Optional Telegram channel for notifications). Branch: `u-11-telegram`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+A Telegram bot that each user links from their profile with a one-time code. It sends the same notifications as the bell, as short text with no amounts, plus a link to the app.
+
+## Done when
+A linked user gets the rejection of their voucher on Telegram within a minute.
+
+## Preconditions
+These must be merged first: U-01. If one is missing, stop and report.
+
+## Git
+Start from an up-to-date `main`, create branch `u-11-telegram`, commit with messages starting `U-11:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### U-12 · حفظ لغة الواجهة لكل مستخدم
+
+- **المجموعة:** تحسينات يحسّها المستخدم · **المجال:** الواجهة · **الأولوية:** منخفضة
+- **الجهد المقدّر:** نصف يوم
+- **الاعتماديات:** لا يوجد
+
+#### Objective
+اللغة محفوظة في الجلسة فقط (SetLocale.php:14-15، SwitchLocaleController.php:18)، فتضيع عند تسجيل الخروج أو انتهاء الجلسة، ويرجع المستخدم إلى اللغة الافتراضية. والجدول web_user_preferences والصنف UserPreferences موجودان أصلاً لإعدادات كل مستخدم.
+
+#### Implementation scope
+عندما يغيّر المستخدم اللغة وهو داخل، تُحفظ له في web_user_preferences بالمفتاح locale عبر UserPreferences. عند تسجيل الدخول تُقرأ لغته المحفوظة وتوضع في الجلسة. إن لم تكن له لغة محفوظة بعد، تُحفظ اللغة التي اختارها في صفحة الدخول. لا يُكتب شيء في جدول user التابع للبرنامج القديم.
+
+#### Acceptance criteria
+مستخدم اختار العربية ثم سجّل الخروج، يدخل مرة ثانية ولو من متصفح آخر فتظهر الواجهة بالعربية.
+
+#### References in the code
+- `app/Http/Middleware/SetLocale.php:14-30`
+- `app/Http/Controllers/SwitchLocaleController.php:18`
+- `app/Support/UserPreferences.php`
+- `database/migrations/2026_10_22_130000_create_web_user_preferences_table.php`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement U-12 of the HC Financial Web plan (Remember each user's interface language). Branch: `u-12-user-locale`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+The interface language lives in the session only (`SetLocale`, `SwitchLocaleController`), so it is lost at sign-out. When a signed-in person switches language, save it with `UserPreferences` under the key `locale` (table `web_user_preferences`, never the Windows program's `user` table). On sign-in (Fortify's Login event), put the saved language into the session; if the person has none saved yet, save the language they picked on the sign-in page. Test: switch to Arabic, sign out, sign in again from a fresh session, and see Arabic.
+
+## Done when
+A person who chose Arabic, signed out and signed in again, from any browser, sees the app in Arabic.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `u-12-user-locale`, commit with messages starting `U-12:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### IT-01 · نسخ احتياطي يومي لجداول الويب
+
+- **المجموعة:** شغل IT بحت · **المجال:** التشغيل والنسخ الاحتياطي · **الأولوية:** عالية
+- **الجهد المقدّر:** يوم
+- **الاعتماديات:** لا يوجد
+
+#### Objective
+جداول الويب (gl_* وweb_*) هي المصدر الوحيد للسندات الجديدة، ولا توجد أي مهمة مجدولة: routes/console.php فيه أمر inspire فقط، ولا توجد حزمة نسخ احتياطي في composer.json.
+
+#### Implementation scope
+أمر artisan يصدّر جداول gl_* وweb_* فقط (دون جداول البرنامج القديم) إلى ملف مضغوط بتاريخه. جدولته يومياً ليلاً مع الاحتفاظ بآخر 14 نسخة. توثيق طريقة الاسترجاع وتجربتها مرة على قاعدة اختبار.
+
+#### Acceptance criteria
+تُنشأ نسخة كل ليلة تلقائياً، وتنجح تجربة استرجاع موثقة على قاعدة منفصلة.
+
+#### References in the code
+- `routes/console.php:1-8`
+- `composer.json (no backup package)`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement IT-01 of the HC Financial Web plan (Daily backup of the web tables). Branch: `it-01-backup`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+An artisan command that dumps only the `gl_*` and `web_*` tables (never the Windows program's tables) to a dated compressed file; schedule it nightly, keep the last 14, and document and rehearse a restore into a separate database.
+
+## Done when
+A backup is made every night, and a documented restore works on a separate database.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `it-01-backup`, commit with messages starting `IT-01:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### IT-02 · تشغيل الاختبارات والفحوص تلقائياً على GitHub
+
+- **المجموعة:** شغل IT بحت · **المجال:** تجربة المطوّر · **الأولوية:** عالية
+- **الجهد المقدّر:** يوم
+- **الاعتماديات:** لا يوجد
+
+#### Objective
+لا يوجد مجلد .github/workflows، وملف .gitleaks.toml:1 يذكر صراحة أنه لا يوجد CI. الاختبارات تعمل على sqlite في الذاكرة (phpunit.xml:27-28) فيسهل تشغيلها آلياً، وأمر composer test جاهز.
+
+#### Implementation scope
+إضافة GitHub Action يعمل على كل Pull Request: Pint وPHPStan (المستوى 7) وPest وgitleaks. منع الدمج في main إذا فشل الفحص.
+
+#### Acceptance criteria
+كل Pull Request يُظهر نتيجة الفحوص الأربعة، ولا يُدمج إلا إذا نجحت.
+
+#### References in the code
+- `.gitleaks.toml:1`
+- `phpunit.xml:27-28`
+- `composer.json scripts.test`
+- `no .github/workflows directory`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement IT-02 of the HC Financial Web plan (Run the tests and checks on GitHub). Branch: `it-02-ci`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+A GitHub Actions workflow on every pull request and on main: Pint --test, PHPStan, Pest (sqlite in memory, as phpunit.xml) and gitleaks. Protect main so a failing check blocks the merge.
+
+## Done when
+Every pull request shows the four checks, and none merges while one fails.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `it-02-ci`, commit with messages starting `IT-02:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### IT-03 · توحيد تنسيق وجمع المبالغ بدل الأرقام العشرية العائمة
+
+- **المجموعة:** شغل IT بحت · **المجال:** جودة الكود · **الأولوية:** عالية
+- **الجهد المقدّر:** يوم
+- **الاعتماديات:** لا يوجد
+
+#### Objective
+قاعدة المشروع أن المال يُحسب بـ bcmath وليس float، لكن الصفحة الرئيسية تجمع الأرصدة كـ float (home.blade.php:7-8) وكذلك AccountBalances.php:31. وكل خدمة تقريباً تكتب دالة تنسيق خاصة بها بـ number_format((float)…) (AccountStatement.php:88، TrialBalance.php:92، OperationalReports.php:81، ProjectBalances.php:246، ProjectDetails.php:79).
+
+#### Implementation scope
+إضافة Money::format وMoney::sum إلى app/Support/Money.php. استبدال الدوال المكررة والجمع بالـ float بهما. اختبار لحالات التقريب.
+
+#### Acceptance criteria
+لا يبقى جمع مبالغ بـ float، ودالة تنسيق واحدة تستخدمها كل التقارير.
+
+#### References in the code
+- `resources/views/livewire/home.blade.php:7-8`
+- `app/Services/Chart/AccountBalances.php:31`
+- `app/Services/Ledger/AccountStatement.php:88`
+- `app/Services/Ledger/TrialBalance.php:92`
+- `app/Services/Ledger/OperationalReports.php:81`
+- `app/Support/Money.php`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement IT-03 of the HC Financial Web plan (Sum and format money with bcmath only). Branch: `it-03-money-helpers`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+Add `Money::format` and `Money::sum` to `app/Support/Money.php`; replace the float sums (home page, `AccountBalances`) and the per-service `number_format((float) ...)` helpers with them; add rounding tests.
+
+## Done when
+No money is summed as a float, and every report uses the one formatting helper.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `it-03-money-helpers`, commit with messages starting `IT-03:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### IT-04 · تدوير سجل الأخطاء يومياً
+
+- **المجموعة:** شغل IT بحت · **المجال:** التشغيل والنسخ الاحتياطي · **الأولوية:** متوسطة
+- **الجهد المقدّر:** نصف يوم
+- **الاعتماديات:** لا يوجد
+
+#### Objective
+السجل ملف واحد (LOG_STACK=single في .env.example) يكبر بلا حد على السيرفر.
+
+#### Implementation scope
+قناة daily مع الاحتفاظ بآخر 14 يوماً، ومستوى warning في الإنتاج بدل debug.
+
+#### Acceptance criteria
+يُنشأ ملف سجل لكل يوم وتُحذف الملفات الأقدم من 14 يوماً تلقائياً.
+
+#### References in the code
+- `.env.example LOG_STACK=single, LOG_LEVEL=debug`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement IT-04 of the HC Financial Web plan (Rotate the error log daily). Branch: `it-04-log-rotation`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+Use the daily log channel with 14 days kept, and the warning level in production instead of debug (`.env.example` and the docs).
+
+## Done when
+A log file is made per day, and files older than 14 days are removed.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `it-04-log-rotation`, commit with messages starting `IT-04:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### IT-05 · تنبيه فوري عند أخطاء السيرفر
+
+- **المجموعة:** شغل IT بحت · **المجال:** التشغيل والنسخ الاحتياطي · **الأولوية:** متوسطة
+- **الجهد المقدّر:** يوم
+- **الاعتماديات:** لا يوجد
+
+#### Objective
+الأخطاء تُكتب في السجل فقط (bootstrap/app.php:30-34)، فلا يعرف الفريق بخطأ 500 إلا عندما يشتكي مستخدم.
+
+#### Implementation scope
+إرسال ملخص كل خطأ 500 (دون بيانات مالية) إلى قناة الفريق مع تجميع الأخطاء المتكررة، وتقرير يومي بعدد الأخطاء.
+
+#### Acceptance criteria
+خطأ 500 في الإنتاج يصل تنبيهه للفريق خلال دقائق، ولا يتكرر للخطأ نفسه أكثر من مرة كل ساعة.
+
+#### References in the code
+- `bootstrap/app.php:30-34`
+- `.env.example MAIL_MAILER=log`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement IT-05 of the HC Financial Web plan (Alert the team on server errors). Branch: `it-05-error-alerts`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+Send a short summary of each 500 error (no financial data) to the team's channel, grouping repeats to one per error per hour, plus a daily count.
+
+## Done when
+A 500 in production reaches the team within minutes, and at most once an hour per error.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `it-05-error-alerts`, commit with messages starting `IT-05:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### IT-06 · اختبارات للخدمات الحساسة التي لا يختبرها شيء مباشرة
+
+- **المجموعة:** شغل IT بحت · **المجال:** جودة الكود · **الأولوية:** متوسطة
+- **الجهد المقدّر:** 1.5 أيام
+- **الاعتماديات:** لا يوجد
+
+#### Objective
+لا يوجد اختبار يذكر VoucherAttachments.php (رفع الملفات، 135 سطراً) ولا VoucherNumberAllocator.php (ترقيم السندات تحت القفل) ولا HawalaReceiptIsConsistent.php ولا StatementExport.php.
+
+#### Implementation scope
+اختبارات Pest: رفض الملفات غير المسموحة وحدودها، عدم تكرار رقم السند حتى مع سند محذوف، قاعدة الحوالة بحالاتها، وتصدير كشف الحساب.
+
+#### Acceptance criteria
+كل خدمة من الأربع لها اختبار يغطي الحالة الناجحة وحالة الرفض.
+
+#### References in the code
+- `app/Services/Ledger/VoucherAttachments.php`
+- `app/Services/Ledger/VoucherNumberAllocator.php`
+- `app/Services/Ledger/Rules/HawalaReceiptIsConsistent.php`
+- `app/Services/Ledger/StatementExport.php`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement IT-06 of the HC Financial Web plan (Tests for the sensitive services that have none). Branch: `it-06-service-tests`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+Pest tests for VoucherAttachments (types, size, count), VoucherNumberAllocator (no reuse, even with a deleted voucher), HawalaReceiptIsConsistent (each case) and StatementExport.
+
+## Done when
+Each of the four services has a passing and a refusing test.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `it-06-service-tests`, commit with messages starting `IT-06:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### IT-07 · دليل تشغيل المشروع محلياً وإصلاح php.cmd
+
+- **المجموعة:** شغل IT بحت · **المجال:** تجربة المطوّر · **الأولوية:** متوسطة
+- **الجهد المقدّر:** نصف يوم
+- **الاعتماديات:** لا يوجد
+
+#### Objective
+README.md هو ملف Laravel الافتراضي، وphp.cmd يبحث عن PHP في C:\php85 فقط (php.cmd:6) فيفشل على جهاز PHP فيه في C:\php\8.5.
+
+#### Implementation scope
+README بالعربية: المتطلبات، استيراد نسخة قاعدة الاختبار، ملف .env، المستخدم الثاني للقاعدة القديمة، تشغيل الاختبارات. جعل php.cmd يجرب PATH ومسارات شائعة قبل أن يفشل.
+
+#### Acceptance criteria
+مطوّر جديد يشغّل المشروع والاختبارات باتباع README فقط.
+
+#### References in the code
+- `README.md:1-20`
+- `php.cmd:6-10`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement IT-07 of the HC Financial Web plan (Local setup guide, and a php.cmd that finds PHP). Branch: `it-07-readme-php-cmd`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+A README in Arabic: requirements, importing the test database copy, `.env`, the legacy database user, running the tests. Make `php.cmd` try the PATH and common folders (`C:\php\8.5`, `C:\php85`, Herd) before it fails.
+
+## Done when
+A new developer runs the app and the tests by following the README alone.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `it-07-readme-php-cmd`, commit with messages starting `IT-07:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### IT-08 · تقليل حجم ملفات الواجهة والخطوط
+
+- **المجموعة:** شغل IT بحت · **المجال:** الأداء · **الأولوية:** منخفضة
+- **الجهد المقدّر:** نصف يوم
+- **الاعتماديات:** لا يوجد
+
+#### Objective
+ملف CSS المبني 450KB، وخطوط Lato بصيغة TTF (حوالي 220KB) بينما خط Somar بصيغة woff2 (public/build).
+
+#### Implementation scope
+تحويل Lato إلى woff2 وتحميل الأوزان المستخدمة فقط، ومراجعة ما يدخل CSS من Flux.
+
+#### Acceptance criteria
+حجم الخطوط والـ CSS المنقول عند أول فتح أقل بـ 40% على الأقل.
+
+#### References in the code
+- `public/build/assets/app-*.css (450KB)`
+- `public/build/assets/Lato-*.ttf`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement IT-08 of the HC Financial Web plan (Smaller CSS and fonts). Branch: `it-08-assets`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+Convert Lato to woff2 and load only the weights in use; review what Flux adds to the CSS.
+
+## Done when
+The CSS and fonts loaded on the first visit are at least 40% smaller.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `it-08-assets`, commit with messages starting `IT-08:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### IT-09 · فحص صحة يشمل القاعدتين مع تنبيه
+
+- **المجموعة:** شغل IT بحت · **المجال:** التشغيل والنسخ الاحتياطي · **الأولوية:** منخفضة
+- **الجهد المقدّر:** نصف يوم
+- **الاعتماديات:** لا يوجد
+
+#### Objective
+مسار /up موجود (bootstrap/app.php:14) لكنه لا يفحص الاتصال بالقاعدة القديمة، والأمر finance:check-db موجود لكنه لا يعمل تلقائياً.
+
+#### Implementation scope
+ربط فحص القاعدتين بمسار /up، وجدولة finance:check-db كل ساعة مع تنبيه عند الفشل.
+
+#### Acceptance criteria
+انقطاع القاعدة القديمة يجعل /up يفشل ويصل تنبيه للفريق.
+
+#### References in the code
+- `bootstrap/app.php:14`
+- `app/Console/Commands/CheckFinanceDatabase.php`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement IT-09 of the HC Financial Web plan (Health check of both databases, with an alert). Branch: `it-09-health-check`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+Make `/up` check both the ledger and the `legacy` connection; schedule `finance:check-db` hourly and alert on failure.
+
+## Done when
+When the legacy database is down, `/up` fails and the team is alerted.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `it-09-health-check`, commit with messages starting `IT-09:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### IT-10 · اختبار يضمن تطابق مفاتيح الترجمة
+
+- **المجموعة:** شغل IT بحت · **المجال:** تجربة المطوّر · **الأولوية:** منخفضة
+- **الجهد المقدّر:** نصف يوم
+- **الاعتماديات:** لا يوجد
+
+#### Objective
+14 ملف ترجمة بكل لغة، والمفاتيح متطابقة اليوم، لكن لا يوجد اختبار يمنع نسيان مفتاح عربي في التعديلات القادمة.
+
+#### Implementation scope
+اختبار Pest يقارن مفاتيح lang/en وlang/ar ويفشل عند أي نقص.
+
+#### Acceptance criteria
+إضافة مفتاح إنكليزي دون مقابله العربي تُفشل الاختبارات.
+
+#### References in the code
+- `lang/en/*.php`
+- `lang/ar/*.php`
+- `tests (no lang parity test)`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement IT-10 of the HC Financial Web plan (A test that the en and ar keys match). Branch: `it-10-lang-parity`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+A Pest test that compares every `lang/en` and `lang/ar` file key by key and fails on any gap.
+
+## Done when
+Adding an English key without its Arabic one fails the tests.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `it-10-lang-parity`, commit with messages starting `IT-10:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### IT-11 · فحص تلقائي قبل كل commit
+
+- **المجموعة:** شغل IT بحت · **المجال:** تجربة المطوّر · **الأولوية:** منخفضة
+- **الجهد المقدّر:** نصف يوم
+- **الاعتماديات:** لا يوجد
+
+#### Objective
+لا يوجد pre-commit hook، وgitleaks يُشغَّل يدوياً فقط حسب .gitleaks.toml:1.
+
+#### Implementation scope
+hook مشترك في المستودع يشغّل Pint على الملفات المعدلة وgitleaks قبل كل commit، مع أمر تثبيت واحد.
+
+#### Acceptance criteria
+commit فيه كلمة سر أو تنسيق خاطئ يُرفض محلياً.
+
+#### References in the code
+- `.gitleaks.toml:1`
+- `no .git/hooks/pre-commit`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement IT-11 of the HC Financial Web plan (Checks before every commit). Branch: `it-11-pre-commit`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+A shared pre-commit hook in the repository that runs Pint on the changed files and gitleaks, with a one-line install command.
+
+## Done when
+A commit with a secret or wrong formatting is refused locally.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `it-11-pre-commit`, commit with messages starting `IT-11:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### AI-01 · إكمال أساس الذكاء الاصطناعي: حد التكلفة وسجلها
+
+- **المجموعة:** الذكاء الاصطناعي (يحتاج موافقة الإدارة) · **المجال:** الذكاء الاصطناعي · **الأولوية:** عالية
+- **الجهد المقدّر:** 1.5 أيام
+- **الاعتماديات:** لا يوجد
+- **الحالة:** مبنية جزئياً، والباقي في الهدف أدناه
+
+#### Objective
+المساعد موجود (config/assistant.php، AnthropicGateway، GeminiGateway): بلا مفتاح لا يتصل بشيء، وفيه حد للرسائل في الدقيقة وحد لجولات الجواب وسجل للمحادثات. ينقصه حد شهري للتكلفة وسجل لتكلفة كل طلب.
+
+#### Implementation scope
+حد شهري للتكلفة يوقف الطلبات عند بلوغه. سجل لكل طلب: المستخدم، الميزة، الرموز الداخلة والخارجة، التكلفة، دون محتوى المستندات. مفتاح تشغيل وإيقاف لكل ميزة ذكاء اصطناعي في شاشة إعدادات لـ Head Office. ولا تُشغَّل ميزة جديدة قبل موافقة الإدارة على ما يُرسل.
+
+#### Acceptance criteria
+عند بلوغ الحد الشهري يرفض المساعد برسالة واضحة، وتظهر تكلفة كل طلب في السجل.
+
+#### References in the code
+- `composer.json (no AI package)`
+- `.env.example`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement AI-01 of the HC Financial Web plan (Finish the AI foundation: cost cap and cost log). Branch: `ai-01-cost-controls`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+The assistant already exists (`config/assistant.php`, `AnthropicGateway`, `GeminiGateway`): without a key it calls nothing, and it has a per-minute limit, a cap on rounds per answer and a kept conversation log. Add: a monthly cost cap that stops calls when reached; a log of each call (user, feature, input and output tokens, cost) without document content; an on/off switch per AI feature on a settings screen for Head Office. Management must approve what data is sent before any new AI feature is switched on.
+
+## Done when
+When the monthly cap is reached the assistant refuses with a clear message, and each call's cost shows in the log.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `ai-01-cost-controls`, commit with messages starting `AI-01:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### AI-02 · قراءة الفاتورة المرفقة واقتراح حقول القيد
+
+- **المجموعة:** الذكاء الاصطناعي (يحتاج موافقة الإدارة) · **المجال:** الذكاء الاصطناعي · **الأولوية:** عالية
+- **الجهد المقدّر:** 3 أيام
+- **الاعتماديات:** AI-01
+
+#### Objective
+المحاسب يقرأ كل فاتورة ويكتب تاريخها ومبلغها ورقمها يدوياً، والمرفقات بالآلاف. رفع المرفقات موجود أصلاً (app/Services/Ledger/VoucherAttachments.php)، فيمكن قراءة الملف نفسه.
+
+#### Implementation scope
+زر «اقرأ الفاتورة» بجانب المرفق. يرسل الصورة أو PDF ويطلب نتيجة بصيغة محددة: التاريخ، المبلغ، العملة، نوع المستند ورقمه، المورّد، وصف بالعربية، وبند من بنود المشروع فقط. تظهر النتيجة كبطاقة اقتراح القيد الموجودة في المساعد (EntryProposals، ProposeEntry)، والفاتورة ظاهرة بجانبها. لا يُحفظ شيء قبل أن يضغط المحاسب «حفظ».
+
+#### Acceptance criteria
+على 20 فاتورة حقيقية يُقاس عدد الحقول الصحيحة، ولا يمكن حفظ قيد من الاقتراح دون تأكيد المحاسب.
+
+#### References in the code
+- `app/Services/Ledger/VoucherAttachments.php`
+- `resources/views/livewire/single-entry.blade.php`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement AI-02 of the HC Financial Web plan (Read an attached invoice and propose the entry). Branch: `ai-02-invoice-reading`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+From an attached invoice image or PDF, ask the model for a structured result (date, amount, currency, document type and number, supplier, Arabic description, and a budget line from the project's own lines only) and show it as the assistant's entry proposal card (`EntryProposals`, `ProposeEntry`). Nothing is saved until the accountant presses Save; the invoice stays visible beside the fields.
+
+## Done when
+On 20 real invoices the correct fields are counted, and no entry is saved from a proposal without the accountant.
+
+## Preconditions
+These must be merged first: AI-01. If one is missing, stop and report.
+
+## Git
+Start from an up-to-date `main`, create branch `ai-02-invoice-reading`, commit with messages starting `AI-02:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### AI-03 · تنبيهات ذكية على شاشة الاعتماد
+
+- **المجموعة:** الذكاء الاصطناعي (يحتاج موافقة الإدارة) · **المجال:** الذكاء الاصطناعي · **الأولوية:** متوسطة
+- **الجهد المقدّر:** 3 أيام
+- **الاعتماديات:** AI-01
+
+#### Objective
+المعتمد يرى السند كما هو، ولا شيء يلفت نظره لسند مكرر أو سعر صرف غريب قبل أن يعتمد.
+
+#### Implementation scope
+علامات تحذير بجانب السند المعلق: سند مشابه بنفس المبلغ والحساب خلال أيام، سعر صرف بعيد عن متوسط الشهر، مبلغ أكبر من المتبقي في البند، وصف لا يناسب البند. أغلب هذه الفحوص قواعد عادية بلا ذكاء اصطناعي، والذكاء الاصطناعي يكتب سطراً بالعربية يشرح سبب التنبيه. التنبيه لا يمنع الاعتماد.
+
+#### Acceptance criteria
+سند مكرر في بيانات الاختبار يظهر عليه تنبيه مع سبب واضح، ويبقى الاعتماد ممكناً.
+
+#### References in the code
+- `app/Livewire/Approval.php`
+- `resources/views/livewire/vouchers.blade.php`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement AI-03 of the HC Financial Web plan (Smart warnings on the approval screen). Branch: `ai-03-approval-hints`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+Show warnings on a pending voucher: a similar voucher (same amount and account within a few days), a rate far from the month's average, an amount above what is left on the budget line, a description that does not fit the line. Most are plain rules; the model only writes one Arabic sentence explaining a warning. Warnings never block approval.
+
+## Done when
+A duplicate voucher in the test data shows a warning with its reason, and approval stays possible.
+
+## Preconditions
+These must be merged first: AI-01. If one is missing, stop and report.
+
+## Git
+Start from an up-to-date `main`, create branch `ai-03-approval-hints`, commit with messages starting `AI-03:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### AI-04 · أجوبة المساعد: ربط كل رقم بتقريره
+
+- **المجموعة:** الذكاء الاصطناعي (يحتاج موافقة الإدارة) · **المجال:** الذكاء الاصطناعي · **الأولوية:** متوسطة
+- **الجهد المقدّر:** يوم
+- **الاعتماديات:** لا يوجد
+- **الحالة:** مبنية جزئياً، والباقي في الهدف أدناه
+
+#### Objective
+المساعد بناه Mai (AssistantPanel وأدوات app/Services/Assistant/Tools): يجيب من أدوات للقراءة فقط ضمن صلاحيات الشخص. ما زال الجواب لا يربط الرقم بالتقرير الذي أُخذ منه.
+
+#### Implementation scope
+كل جواب يذكر شاشة التقرير التي أُخذت منها أرقامه مع رابط لها. واختبار يثبت أن مدير المشروع لا يحصل على أرقام مشروع ليس له عبر أي أداة.
+
+#### Acceptance criteria
+كل جواب فيه رابط لتقريره، واختبار النطاق ينجح.
+
+#### References in the code
+- `app/Services/Ledger/TrialBalance.php`
+- `app/Services/Ledger/ProjectBalances.php`
+- `app/Services/Ledger/AccountStatement.php`
+- `app/Services/Ledger/OperationalReports.php`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement AI-04 of the HC Financial Web plan (Assistant answers: link each number to its report). Branch: `ai-04-assistant-links`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+The assistant panel (`AssistantPanel`, tools under `app/Services/Assistant/Tools`) already answers from read-only tools within the person's permissions. Remaining: every answer names and links the report screen its numbers come from, and a test proves a project manager cannot get another project's numbers through any tool.
+
+## Done when
+Each answer carries a link to its report, and the scope test passes.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `ai-04-assistant-links`, commit with messages starting `AI-04:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### AI-05 · ملخص شهري مكتوب للمدير المالي
+
+- **المجموعة:** الذكاء الاصطناعي (يحتاج موافقة الإدارة) · **المجال:** الذكاء الاصطناعي · **الأولوية:** منخفضة
+- **الجهد المقدّر:** يومان
+- **الاعتماديات:** AI-01، U-01
+
+#### Objective
+المدير المالي يجمع صورة الشهر من عدة تقارير بنفسه.
+
+#### Implementation scope
+في نهاية كل شهر يُنشأ ملخص بالعربية من أرقام التقارير: أكبر الحركات، المصاريف حسب المشروع، البنود القريبة من نهايتها، والسندات المعلقة. يعمل كمهمة مجدولة بالدفعات (أرخص)، ويصل كإشعار مع رابط للصفحة.
+
+#### Acceptance criteria
+يصل الملخص تلقائياً أول كل شهر، وكل رقم فيه مطابق للتقرير المأخوذ منه.
+
+#### References in the code
+- `routes/console.php`
+- `app/Services/Ledger`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement AI-05 of the HC Financial Web plan (A written monthly summary for the Financial Manager). Branch: `ai-05-monthly-summary`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+At the end of each month a scheduled job writes an Arabic summary from the report numbers (largest movements, spending by project, budget lines near their end, pending vouchers) through the Batch API, and notifies the Financial Manager (U-01) with a link.
+
+## Done when
+The summary arrives on the 1st of each month, and every number in it matches its report.
+
+## Preconditions
+These must be merged first: AI-01, U-01. If one is missing, stop and report.
+
+## Git
+Start from an up-to-date `main`, create branch `ai-05-monthly-summary`, commit with messages starting `AI-05:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
