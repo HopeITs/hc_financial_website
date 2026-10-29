@@ -4,6 +4,7 @@ use App\Enums\NotificationKind;
 use App\Enums\RoleId;
 use App\Enums\VoucherSource;
 use App\Livewire\NotificationBell;
+use App\Livewire\Notifications;
 use App\Models\GlBudgetLine;
 use App\Models\GlProject;
 use App\Models\User;
@@ -169,13 +170,88 @@ it('shows a person only their own notifications, opens one and marks them read',
         ->and($theirs->refresh()->read_at)->toBeNull();
 });
 
-it('puts the bell in the top bar', function () {
-    $this->actingAs(ntUser(RoleId::HeadOffice, 'Ho'))->get('/bridge/decisions')->assertOk()->assertSee('data-test="notification-bell"', false);
+it('puts the bell in the top bar, with a link to every notification', function () {
+    $this->actingAs(ntUser(RoleId::HeadOffice, 'Ho'))->get('/bridge/decisions')->assertOk()
+        ->assertSee('data-test="notification-bell"', false)
+        ->assertSee('data-test="bell-view-all"', false)
+        ->assertSee(route('notifications'), false);
+});
+
+it('shows the heading, reference, amount and reason of each notification in the bell', function () {
+    $me = ntUser(RoleId::Accountant, 'Acc');
+    WebNotification::query()->create(['user_id' => $me->getKey(), 'kind' => NotificationKind::RequestRejected, 'subject' => '42', 'data' => ['project' => 'F2F', 'amount' => '300.00', 'reason' => 'Too early']]);
+
+    Livewire::actingAs($me)->test(NotificationBell::class)
+        ->assertSee(__('notifications.titles.request_rejected'))
+        ->assertSee('#42')
+        ->assertSee('300.00')
+        ->assertSee('Too early')
+        ->assertSeeHtml('data-test="unread-dot"');
+
+    Livewire::actingAs(ntUser(RoleId::Accountant, 'Ben'))->test(NotificationBell::class)->assertSeeHtml('data-test="bell-empty"');
+});
+
+it('lists a person their own notifications on the notifications page, by day, and filters them', function () {
+    $me = ntUser(RoleId::Accountant, 'Acc');
+    $other = ntUser(RoleId::Accountant, 'Ben');
+    WebNotification::query()->create(['user_id' => $me->getKey(), 'kind' => NotificationKind::VoucherApproved, 'subject' => 'CRV-2026-0001', 'data' => [], 'read_at' => now()]);
+    WebNotification::query()->create(['user_id' => $me->getKey(), 'kind' => NotificationKind::RequestPending, 'subject' => '7', 'data' => ['project' => 'F2F', 'amount' => '300.00']]);
+    $old = WebNotification::query()->create(['user_id' => $me->getKey(), 'kind' => NotificationKind::VoucherRejected, 'subject' => 'CRV-2026-0002', 'data' => ['reason' => 'No invoice']]);
+    $old->forceFill(['created_at' => now()->subDay()])->save();
+    WebNotification::query()->create(['user_id' => $other->getKey(), 'kind' => NotificationKind::VoucherApproved, 'subject' => 'CRV-2026-0099', 'data' => []]);
+
+    $this->actingAs($me)->get(route('notifications'))->assertOk()
+        ->assertSee(__('notifications.today'))->assertSee(__('notifications.yesterday'))
+        ->assertSee('CRV-2026-0001')->assertSee('#7')->assertSee('No invoice')
+        ->assertDontSee('CRV-2026-0099');
+
+    Livewire::actingAs($me)->test(Notifications::class)
+        ->set('show', 'unread')->assertDontSee('CRV-2026-0001')->assertSee('#7')->assertSee('CRV-2026-0002')
+        ->set('about', 'requests')->assertSee('#7')->assertDontSee('CRV-2026-0002')
+        ->set('show', 'all')->set('about', 'vouchers')->assertSee('CRV-2026-0001')->assertDontSee('#7');
+});
+
+it('marks one or all read from the page and opens a notification', function () {
+    $me = ntUser(RoleId::Accountant, 'Acc');
+    $other = ntUser(RoleId::Accountant, 'Ben');
+    $first = WebNotification::query()->create(['user_id' => $me->getKey(), 'kind' => NotificationKind::VoucherApproved, 'subject' => 'CRV-2026-0001', 'data' => []]);
+    WebNotification::query()->create(['user_id' => $me->getKey(), 'kind' => NotificationKind::VoucherApproved, 'subject' => 'CRV-2026-0002', 'data' => []]);
+    $theirs = WebNotification::query()->create(['user_id' => $other->getKey(), 'kind' => NotificationKind::VoucherApproved, 'subject' => 'CRV-2026-0099', 'data' => []]);
+
+    $page = Livewire::actingAs($me)->test(Notifications::class)
+        ->call('markRead', $first->id)->assertDispatched('notifications-read');
+    expect($first->refresh()->read_at)->not->toBeNull()
+        ->and(WebNotification::query()->for($me)->whereNull('read_at')->count())->toBe(1);
+
+    $page->call('markRead', $theirs->id)->assertNotFound();
+
+    Livewire::actingAs($me)->test(Notifications::class)->call('markAllRead')->assertDontSeeHtml('data-test="page-mark-all"');
+    expect(WebNotification::query()->for($me)->whereNull('read_at')->count())->toBe(0)
+        ->and($theirs->refresh()->read_at)->toBeNull();
+
+    Livewire::actingAs($me)->test(Notifications::class)->call('open', $first->id)->assertRedirect($first->url());
+});
+
+it('says so when there are no notifications, or none that match the filters', function () {
+    $me = ntUser(RoleId::Accountant, 'Acc');
+
+    Livewire::actingAs($me)->test(Notifications::class)
+        ->assertSeeHtml('data-test="notifications-empty"')->assertDontSeeHtml('data-test="notification-filters"');
+
+    WebNotification::query()->create(['user_id' => $me->getKey(), 'kind' => NotificationKind::VoucherApproved, 'subject' => 'CRV-2026-0001', 'data' => [], 'read_at' => now()]);
+
+    Livewire::actingAs($me)->test(Notifications::class)->set('show', 'unread')
+        ->assertSeeHtml('data-test="notifications-empty-filtered"');
+});
+
+it('keeps the notifications page for signed-in people', function () {
+    $this->get(route('notifications'))->assertRedirect(route('login'));
 });
 
 it('has every notification text in English and Arabic', function () {
     $keys = fn (string $locale) => collect(require lang_path("$locale/notifications.php"))->dot()->keys()->sort()->values()->all();
 
     expect($keys('ar'))->toBe($keys('en'))
-        ->and(collect(NotificationKind::cases())->every(fn (NotificationKind $kind) => in_array('kinds.'.$kind->value, $keys('en'), true)))->toBeTrue();
+        ->and(collect(NotificationKind::cases())->every(fn (NotificationKind $kind) => in_array('kinds.'.$kind->value, $keys('en'), true)))->toBeTrue()
+        ->and(collect(NotificationKind::cases())->every(fn (NotificationKind $kind) => in_array('titles.'.$kind->value, $keys('en'), true)))->toBeTrue();
 });

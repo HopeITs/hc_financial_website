@@ -13,6 +13,7 @@ use App\Livewire\Home;
 use App\Livewire\MicroLoans;
 use App\Livewire\MultiAttachments;
 use App\Livewire\MultiEntry;
+use App\Livewire\Notifications;
 use App\Livewire\OperationalReport;
 use App\Livewire\Programs;
 use App\Livewire\ProjectEditor;
@@ -42,6 +43,8 @@ Route::post('locale', SwitchLocaleController::class)->middleware('throttle:30,1'
 // Every signed-in route names its screen: `screen:<slug>` checks config/permissions.php.
 Route::middleware('auth')->group(function () {
     Route::get('home', Home::class)->middleware('screen:home')->name('home');
+    // Everyone who can sign in sees their own notifications, so the page follows the home screen's permission.
+    Route::get('notifications', Notifications::class)->middleware('screen:home')->name('notifications');
 
     // A screen's address and route name come from its path in config/navigation.php; the `screen`
     // default is its permission slug and keeps the menu highlight working.

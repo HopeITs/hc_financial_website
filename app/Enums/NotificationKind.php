@@ -16,7 +16,38 @@ enum NotificationKind: string
 
     public function isAboutVoucher(): bool
     {
-        return in_array($this, [self::VoucherPending, self::VoucherApproved, self::VoucherRejected], true);
+        return in_array($this, self::aboutVouchers(), true);
+    }
+
+    /** @return list<self> */
+    public static function aboutVouchers(): array
+    {
+        return [self::VoucherPending, self::VoucherApproved, self::VoucherRejected];
+    }
+
+    /** @return list<self> */
+    public static function aboutRequests(): array
+    {
+        return [self::RequestPending, self::RequestApproved, self::RequestRejected];
+    }
+
+    /** The status colour of its icon: waiting is amber, approved green, rejected red (the text says the same). */
+    public function tone(): string
+    {
+        return match ($this) {
+            self::VoucherPending, self::RequestPending => 'warn',
+            self::VoucherApproved, self::RequestApproved => 'good',
+            self::VoucherRejected, self::RequestRejected => 'critical',
+        };
+    }
+
+    public function icon(): string
+    {
+        return match ($this->tone()) {
+            'warn' => 'clock',
+            'good' => 'check',
+            default => 'x-mark',
+        };
     }
 
     /** The voucher opens in the vouchers list (a rejected one with the rejected vouchers shown), a request on the requests screen. */

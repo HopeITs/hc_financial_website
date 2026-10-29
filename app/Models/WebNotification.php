@@ -54,6 +54,30 @@ class WebNotification extends Model
         ]);
     }
 
+    /** The short heading shown above the details ("Voucher rejected"). */
+    public function title(): string
+    {
+        return __('notifications.titles.'.$this->kind->value);
+    }
+
+    /** The voucher number, or the request number with its # sign. */
+    public function reference(): string
+    {
+        return $this->kind->isAboutVoucher() ? $this->subject : '#'.$this->subject;
+    }
+
+    public function isUnread(): bool
+    {
+        return $this->read_at === null;
+    }
+
+    public function markRead(): void
+    {
+        if ($this->isUnread()) {
+            $this->update(['read_at' => now()]);
+        }
+    }
+
     public function url(): string
     {
         return $this->kind->url($this->subject);
