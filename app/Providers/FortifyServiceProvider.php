@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Actions\Fortify\AuthenticateWithFinanceAccount;
+use App\Listeners\ApplySavedLocale;
 use App\Listeners\LogWebLogin;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -26,6 +27,7 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::loginView(fn () => view('pages.auth.login'));
 
         Event::listen(Login::class, LogWebLogin::class);
+        Event::listen(Login::class, ApplySavedLocale::class);
 
         RateLimiter::for('login', function (Request $request) {
             $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());

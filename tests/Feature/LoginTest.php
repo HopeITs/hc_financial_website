@@ -91,6 +91,40 @@ it('switches the interface to Arabic with a right to left page', function () {
     $this->get('/login')->assertSee('dir="rtl"', false)->assertSee('اسم المستخدم');
 });
 
+it('keeps a person\'s language for their next sign-in, from another browser too', function () {
+    $this->post('/login', ['username' => 'Mai', 'password' => 'correct horse']);
+    $this->from('/home')->post('/locale', ['locale' => 'ar'])->assertRedirect('/home');
+    $this->post('/logout');
+
+    // A fresh browser: no session, no language chosen on the sign-in page.
+    $this->flushSession();
+    app('auth')->forgetGuards();
+    app()->setLocale('en'); // a new process starts from the default; in tests the app is shared
+    $this->get('/login')->assertSee('dir="ltr"', false);
+
+    $this->post('/login', ['username' => 'Mai', 'password' => 'correct horse'])->assertRedirect('/home');
+    $this->get('/home')->assertSee('dir="rtl"', false);
+
+    expect(DB::table('web_user_preferences')->where('key', 'locale')->pluck('value')->all())->toBe(['ar']);
+});
+
+it('saves the language picked on the sign-in page when the person has none saved, and lets a saved one win', function () {
+    $this->from('/login')->post('/locale', ['locale' => 'ar']);
+    expect(DB::table('web_user_preferences')->count())->toBe(0);
+
+    $this->post('/login', ['username' => 'Mai', 'password' => 'correct horse']);
+    expect(DB::table('web_user_preferences')->where('key', 'locale')->value('value'))->toBe('ar');
+
+    $this->post('/logout');
+    $this->flushSession();
+    app('auth')->forgetGuards();
+    app()->setLocale('en'); // a new process starts from the default; in tests the app is shared
+    $this->from('/login')->post('/locale', ['locale' => 'en']);
+    $this->post('/login', ['username' => 'Mai', 'password' => 'correct horse']);
+
+    $this->get('/home')->assertSee('dir="rtl"', false);
+});
+
 it('signs out', function () {
     $this->post('/login', ['username' => 'Mai', 'password' => 'correct horse']);
 
