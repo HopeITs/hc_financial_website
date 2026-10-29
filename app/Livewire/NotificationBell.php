@@ -6,11 +6,13 @@ use App\Models\User;
 use App\Models\WebNotification;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 /**
  * The bell in the top bar (U-01): the person's unread count and latest notifications, checked every minute. Opening
- * one marks it read and goes to its voucher or request. A person only ever sees and changes their own.
+ * one marks it read and goes to its voucher or request; the notifications page lists them all. A person only ever
+ * sees and changes their own.
  */
 class NotificationBell extends Component
 {
@@ -19,10 +21,7 @@ class NotificationBell extends Component
     public function open(int $id): void
     {
         $notification = $this->mine()->findOrFail($id);
-
-        if ($notification->read_at === null) {
-            $notification->update(['read_at' => now()]);
-        }
+        $notification->markRead();
 
         $this->redirect($notification->url(), navigate: true);
     }
@@ -30,13 +29,18 @@ class NotificationBell extends Component
     public function markAllRead(): void
     {
         $this->mine()->whereNull('read_at')->update(['read_at' => now()]);
+        $this->dispatch('notifications-read');
     }
+
+    /** The notifications page marked some read: show the new count straight away. */
+    #[On('notifications-read')]
+    public function refreshCount(): void {}
 
     public function render(): View
     {
         return view('livewire.notification-bell', [
             'unread' => $this->mine()->whereNull('read_at')->count(),
-            'latest' => $this->mine()->latest('id')->limit(self::SHOWN)->get(),
+            'latest' => $this->mine()->latest()->latest('id')->limit(self::SHOWN)->get(),
         ]);
     }
 
