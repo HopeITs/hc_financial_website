@@ -13,6 +13,7 @@
 @import './finance.css';
 @import './shell.css';
 @import './loader.css';
+@import './operations.css';
 
 /* flux.css already scans Flux's own stubs; these are the app's views and Laravel's pagination views. */
 @source '../views';
