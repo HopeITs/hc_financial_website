@@ -4,6 +4,7 @@ use App\Http\Controllers\RequestQuoteController;
 use App\Http\Controllers\SwitchLocaleController;
 use App\Http\Controllers\VoucherPrintController;
 use App\Livewire\Approval;
+use App\Livewire\AuditLog;
 use App\Livewire\Bridge;
 use App\Livewire\Chart;
 use App\Livewire\CurrencySettings;
@@ -113,6 +114,7 @@ Route::middleware('auth')->group(function () {
 
     $screen('salaries', Salaries::class);
     $screen('users', Users::class);
+    $screen('auditlog', AuditLog::class);
 
     // Bridge pages (task 39): read-only, for Head Office and the Financial Manager.
     foreach (Bridge::PAGES as $page) {
