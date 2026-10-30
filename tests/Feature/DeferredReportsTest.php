@@ -65,7 +65,7 @@ it('defers exactly the home page and the reports, following the setting', functi
     $deferred = collect(app('router')->getRoutes())->filter(fn ($route) => array_key_exists('defer', $route->defaults))
         ->map(fn ($route) => $route->getName())->sort()->values()->all();
 
-    $expected = collect(['tb', 'statement', 'statements', 'rexp', 'rcash', 'rbl', 'rrev', 'rfixed', 'rattach', 'recon', 'mapprovals', 'uncomp', 'xreserve', 'advances', 'loans'])
+    $expected = collect(['tb', 'statement', 'statements', 'rexp', 'rcash', 'rbl', 'rrev', 'rfixed', 'rattach', 'recon', 'mapprovals', 'uncomp', 'xreserve', 'advances', 'loans', 'rdonor'])
         ->map(fn (string $slug) => Navigation::routeName($slug))->push('home')->sort()->values()->all();
 
     expect($deferred)->toBe($expected)

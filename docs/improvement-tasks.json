@@ -905,7 +905,7 @@
     "effort_days": 2,
     "branch": "f-13-donor-report",
     "depends_on": [],
-    "status": null,
+    "status": "done",
     "title_ar": "تقرير المانح: الميزانية مقابل الصرف بعملة المانح",
     "title_en": "Donor report: budget against actual in the donor currency",
     "area_ar": "التقارير",

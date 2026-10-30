@@ -8,6 +8,7 @@ use App\Livewire\AuditLog;
 use App\Livewire\Bridge;
 use App\Livewire\Chart;
 use App\Livewire\CurrencySettings;
+use App\Livewire\DonorReportScreen;
 use App\Livewire\FinancialStatements;
 use App\Livewire\FollowUpReport;
 use App\Livewire\Home;
@@ -109,6 +110,7 @@ Route::middleware('auth')->group(function () {
     $screen('tb', TrialBalance::class)->defer($defer);
     $screen('statement', Statement::class)->defer($defer);
     $screen('statements', FinancialStatements::class)->defer($defer);
+    $screen('rdonor', DonorReportScreen::class)->defer($defer);
 
     foreach (['recon', 'mapprovals', 'uncomp', 'xreserve', 'advances', 'loans'] as $report) {
         $screen($report, FollowUpReport::class)->defer($defer);
