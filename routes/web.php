@@ -11,6 +11,7 @@ use App\Livewire\FinancialStatements;
 use App\Livewire\FollowUpReport;
 use App\Livewire\Home;
 use App\Livewire\MicroLoans;
+use App\Livewire\MonthEndScreen;
 use App\Livewire\MultiAttachments;
 use App\Livewire\MultiEntry;
 use App\Livewire\Notifications;
@@ -95,6 +96,7 @@ Route::middleware('auth')->group(function () {
 
     $screen('treasury', Treasury::class);
     $screen('tills', Tills::class);
+    $screen('monthend', MonthEndScreen::class);
     $screen('alloc', Transfers::class);
 
     foreach (['rexp', 'rcash', 'rbl', 'rrev', 'rfixed', 'rattach'] as $report) {

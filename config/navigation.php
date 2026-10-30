@@ -23,7 +23,7 @@ return [
         'chart' => ['chart'],
         'projects' => ['projwin', 'budgetlines', 'blcats', 'lifetime', 'programs', 'projects'],
         'entries' => ['single', 'multi', 'multiatt', 'payments', 'vouchers', 'bonds', 'approval', 'requests'],
-        'treasury' => ['tills', 'treasury', 'alloc', 'cities', 'currency', 'denoms'],
+        'treasury' => ['tills', 'treasury', 'alloc', 'monthend', 'cities', 'currency', 'denoms'],
         'reports' => ['rexp', 'rcash', 'rbl', 'rrev', 'rfixed', 'rattach', 'tb', 'statement', 'statements', 'recon', 'uncomp', 'xreserve', 'advances', 'loans'],
         'people' => ['donors', 'employees', 'salaries', 'users', 'log'],
         'migration' => ['dbload', 'opening', 'fixusd', 'legacy', 'merges'],
@@ -50,6 +50,7 @@ return [
         'requests' => 'entries/requests',
 
         'tills' => 'treasury/tills',
+        'monthend' => 'treasury/month-end',
         'treasury' => 'treasury/position',
         'alloc' => 'treasury/allocation-rates',
         'cities' => 'treasury/cities',

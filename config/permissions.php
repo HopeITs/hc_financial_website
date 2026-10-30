@@ -28,6 +28,7 @@ $screens = static fn (array $slugs, array $actions): array => array_fill_keys($s
 $reports = ['rexp', 'rcash', 'rbl', 'rrev', 'rfixed', 'rattach', 'tb', 'statement', 'statements', 'projects', 'recon', 'uncomp', 'xreserve', 'advances', 'loans'];
 $projectScreens = ['projwin', 'budgetlines', 'blcats', 'lifetime', 'programs'];
 $treasury = ['tills', 'treasury', 'alloc', 'cities', 'currency', 'denoms'];
+$monthEnd = ['monthend'];
 $entries = ['single', 'multi', 'multiatt', 'payments', 'vouchers', 'bonds'];
 
 return [
@@ -44,6 +45,7 @@ return [
             $screens(['vouchers', 'approval', 'requests', 'alloc'], ['view', 'approve']),
             $screens(['programs'], ['view', 'create']),
             $screens(['currency'], $prepare),
+            $screens($monthEnd, ['view', 'edit', 'approve']),
             $screens(['projects'], $prepare),
             $screens(['decisions', 'mapping', 'rules'], $view),
         ),
