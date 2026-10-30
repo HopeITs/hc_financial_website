@@ -56,6 +56,7 @@ class Notifier
                 ? $this->send($this->deciders($request, $audit->changed_by), NotificationKind::RequestPending, (string) $request->id, $data)
                 : null,
             'approved' => $this->send([$request->requested_by], NotificationKind::RequestApproved, (string) $request->id, $data),
+            'return' => $this->send([$request->requested_by], NotificationKind::RequestReturned, (string) $request->id, $data + ['reason' => (string) $audit->reason]),
             'reject' => $this->send([$request->requested_by], NotificationKind::RequestRejected, (string) $request->id, $data + ['reason' => (string) $audit->reason]),
             default => null,
         };
