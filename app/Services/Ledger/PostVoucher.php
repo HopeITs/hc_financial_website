@@ -13,6 +13,7 @@ use App\Services\Ledger\Rules\DebitOrCreditNeverBoth;
 use App\Services\Ledger\Rules\HawalaReceiptIsConsistent;
 use App\Services\Ledger\Rules\MigratedVoucherKeepsLegacyId;
 use App\Services\Ledger\Rules\MonthIsOpen;
+use App\Services\Ledger\Rules\NetAssetsAreComputed;
 use App\Services\Ledger\Rules\OnlyActivePostingAccounts;
 use App\Services\Ledger\Rules\PostingRule;
 use App\Services\Ledger\Rules\RequestRequiredAboveLimit;
@@ -169,6 +170,7 @@ class PostVoucher
             new MigratedVoucherKeepsLegacyId,
             new RequestRequiredAboveLimit,
             new HawalaReceiptIsConsistent,
+            new NetAssetsAreComputed,
         ];
     }
 }

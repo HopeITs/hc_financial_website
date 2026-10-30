@@ -59,4 +59,6 @@
         </table>
     </x-ui.scroll-table>
     <p class="type-meta text-secondary-medium dark:text-ink-muted">{{ __('ledger.tb.note') }}</p>
+
+    <x-net-assets :net="$netAssets" />
 </div>

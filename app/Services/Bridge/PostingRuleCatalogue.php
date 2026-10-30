@@ -12,6 +12,7 @@ use App\Services\Ledger\Rules\HawalaReceiptIsConsistent;
 use App\Services\Ledger\Rules\MigratedVoucherKeepsLegacyId;
 use App\Services\Ledger\Rules\MonthClosesOnlyWhenClearingIsZero;
 use App\Services\Ledger\Rules\MonthIsOpen;
+use App\Services\Ledger\Rules\NetAssetsAreComputed;
 use App\Services\Ledger\Rules\OnlyActivePostingAccounts;
 use App\Services\Ledger\Rules\RequestRequiredAboveLimit;
 use App\Services\Ledger\Rules\RequiredTagsFilled;
@@ -22,7 +23,7 @@ use Illuminate\Routing\ViewController;
 use Illuminate\Support\Facades\Route;
 
 /**
- * The posting rules of the plan (1 to 13) and the two the Financial Manager added (14, 15), with the class that
+ * The posting rules of the plan (1 to 13) and the three the Financial Manager added (14, 15, and 16 from request 03), with the class that
  * enforces each and the screen it runs from. A rule is live when its class exists and its screen is built; it is
  * code only when nothing on screen calls it yet; it is described when only the plan has it.
  */
@@ -53,6 +54,7 @@ class PostingRuleCatalogue
         13 => [MigratedVoucherKeepsLegacyId::class, 'dbload'],
         14 => [RequestRequiredAboveLimit::class, 'vouchers'],
         15 => [HawalaReceiptIsConsistent::class, 'vouchers'],
+        16 => [NetAssetsAreComputed::class, 'vouchers'],
     ];
 
     /** @return list<array{number: int, class: string, screen: string|null, state: string}> */

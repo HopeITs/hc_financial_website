@@ -14,7 +14,7 @@ use InvalidArgumentException;
  *
  *  - income:    CRV, debit the cash account, credit the income account (the donor's), the project on both lines.
  *  - expense:   CPV, debit the expense account (a budget line fills it and its project), credit the cash account.
- *  - exchange:  TRF, debit the cash account received, credit the cash account given, at the typed rate.
+ *  - exchange:  EXG, debit the cash account received, credit the cash account given, at the typed rate.
  *  - advance:   CPV, debit 1201 (the person is the contact), credit the cash account.
  *  - repayment: CRV, debit the cash account, credit 1201.
  *
@@ -81,7 +81,7 @@ class OperationEntry
                 $rows = [$row($cash->code, 'debit', $op['amount'], $op['rate']), $row(self::ADVANCE_ACCOUNT, 'credit', $op['amount'], $op['rate'])];
                 break;
             default:
-                $type = 'TRF';
+                $type = 'EXG';
                 $exchange = $this->exchange($op, $cash, $row);
                 if (is_string($exchange)) {
                     return new BuiltVoucher(null, [], [$exchange]);

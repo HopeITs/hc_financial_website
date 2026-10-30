@@ -183,14 +183,14 @@ class OperationalReports
     }
 
     /**
-     * Income lines (credit minus debit) and exchange: transfer vouchers' movements on cash accounts, with the amount in the safe's own currency beside it.
+     * Income lines (credit minus debit) and exchange: transfer and exchange vouchers' movements on cash accounts, with the amount in the safe's own currency beside it.
      *
      * @return Report
      */
     private function revenue(ReportFilters $filters, ReportUnit $unit): array
     {
         $lines = $this->lines($filters)
-            ->where(fn ($query) => $query->where('a.class', 'income')->orWhere(fn ($q) => $q->where('v.type', 'TRF')->where('a.is_cash', true)))
+            ->where(fn ($query) => $query->where('a.class', 'income')->orWhere(fn ($q) => $q->whereIn('v.type', ['TRF', 'EXG'])->where('a.is_cash', true)))
             ->orderBy('v.date')->orderBy('v.id')->orderBy('l.line_no')
             ->get(['v.date', 'v.id as voucher', 'a.class', 'l.account_code', 'a.name_en', 'a.name_ar', 'l.project_code', 'l.donor', 'l.currency', 'l.debit_usd', 'l.credit_usd', 'l.debit_orig', 'l.credit_orig']);
 

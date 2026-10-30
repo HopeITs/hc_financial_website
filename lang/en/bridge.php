@@ -23,7 +23,7 @@ return [
             ['Project account (account)', 'Project (owner) with donor, restriction, city, currency and rate'],
             ['Donor', 'Income account 4101 to 4602'],
             ['Line and budget line', 'Budget line tag, linked to one expense account 51xx to 58xx'],
-            ['Operation I, E, X, A, R, T', 'Voucher CRV, CPV, TRF, CPV (1201), CRV, and TRF, ALC or JV'],
+            ['Operation I, E, X, A, R, T', 'Voucher CRV, CPV, EXG, CPV (1201), CRV, and TRF, ALC or JV'],
             ['Approval and role limit', 'Voucher approval by the Financial Manager; the preparer never approves'],
         ],
 
@@ -37,8 +37,8 @@ return [
             ['E', 'Expense', 'CPV', 'Debit the expense account of the budget line, credit cash'],
             ['A', 'Advance', 'CPV', 'Debit advances 1201 with the person as contact, credit cash'],
             ['R', 'Returned', 'CRV', 'Credit 1204 when it repays a micro loan, otherwise 1201'],
-            ['X', 'Exchange', 'TRF', 'Debit the SYP cash account, credit the USD cash account'],
-            ['T', 'Transfer', 'TRF, ALC or JV', 'A transfer between accounts with its kind; a split over projects is an ALC'],
+            ['X', 'Exchange', 'EXG', 'Debit the SYP cash account, credit the USD cash account'],
+            ['T', 'Transfer', 'TRF, ALC or JV', 'A transfer between accounts with its kind; a salary split over projects is an ALC'],
         ],
 
         'statuses_title' => 'Operation states',
@@ -84,6 +84,7 @@ return [
             13 => ['title' => 'Migrated vouchers keep their legacy id', 'detail' => 'A voucher migrated from the Windows program keeps the id of its operation, once.'],
             14 => ['title' => 'A request is needed above USD 500', 'detail' => 'A payment not linked to an approved request is refused above USD 500 per voucher (R3-3).'],
             15 => ['title' => 'A hawala receipt is consistent', 'detail' => 'A donor receipt through the transfer company keeps the amount sent, the real rate and the commission; the dollars received equal amount times rate minus commission, and the commission is posted to 5504 (R1-6b, R4-6).'],
+            16 => ['title' => 'Net assets are computed', 'detail' => 'Net assets are assets minus liabilities, worked out by the program. No line typed in an entry screen may post to a 3xxx account; migrated vouchers keep theirs, and opening balances and the year-end close write them through their own vouchers.'],
         ],
     ],
 ];

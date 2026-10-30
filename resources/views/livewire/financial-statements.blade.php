@@ -29,6 +29,8 @@
         {{ $position['balanced'] ? __('ledger.statements.balanced') : __('ledger.statements.unbalanced', ['difference' => number_format((float) $position['difference'], 2)]) }}
     </p>
 
+    <x-net-assets :net="$netAssets" />
+
     @foreach ([['position', __('ledger.statements.position'), $position['sections'], $position['liabilities_and_net_assets'], __('ledger.statements.liabilities_and_net_assets')], ['activities', __('ledger.statements.activities'), $activities['sections'], $activities['surplus'], __('ledger.statements.surplus')]] as [$key, $heading, $sections, $grand, $grandLabel])
         <section class="flex flex-col gap-3" data-test="statement-{{ $key }}">
             <h2 class="text-xl font-bold">{{ $heading }}</h2>
