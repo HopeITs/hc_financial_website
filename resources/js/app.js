@@ -8,3 +8,4 @@ import './sidebar-resize';
 import './paged-table';
 import './unsaved-guard';
 import './shortcuts';
+import './session-expired';
