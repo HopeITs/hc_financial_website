@@ -19,7 +19,8 @@ COMMON_RULES = ("Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Ru
                 "`ar` key in `lang/`. Finish with `.\\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull "
                 "request. No credentials in the repository.")
 
-GROUPS = {"user": "تحسينات يحسّها المستخدم", "it": "شغل IT بحت", "ai": "الذكاء الاصطناعي (يحتاج موافقة الإدارة)"}
+GROUPS = {"user": "تحسينات يحسّها المستخدم", "it": "شغل IT بحت", "ai": "الذكاء الاصطناعي (يحتاج موافقة الإدارة)",
+          "finance": "طلبات المدير المالي وإجراء الخزينة"}
 PRIORITY = {"High": "عالية", "Normal": "متوسطة", "Low": "منخفضة"}
 STATUS = {"done": "خالصة ومدموجة في main", "built": "مبنية على فرعها، بانتظار الدمج", "partial": "مبنية جزئياً، والباقي في الهدف أدناه"}
 
@@ -28,8 +29,14 @@ def days(x):
     return {0.5: "نصف يوم", 1: "يوم", 2: "يومان"}.get(x, f"{x:g} أيام")
 
 
+PHASE_10 = ["\n## المرحلة 10: طلبات المدير المالي وإجراء الخزينة (F) · 2026-10-30\n",
+            "من ملاحظات المدير المالي (الطلبات 01 إلى 05) ومن مقارنة `CHC-Treasury-Procedure` بالبرنامج. التفاصيل والقرارات "
+            "المطلوبة في `docs/REVIEW-2026-10-30-treasury-procedure.ar.md`. المهام F-03 وF-05 وF-06 وF-11 تحتاج قراراً قبل البدء. "
+            "الفرع `f-NN-…`، ورسائل الـ commit تبدأ برقم المهمة.\n"]
+
+
 def improvements():
-    """Phase 9: the improvements outside the plan, one block per task in the same shape as the plan's tasks."""
+    """Phases 9 and 10: the improvements outside the plan (U, IT, AI), then the Financial Manager's requests (F)."""
     if not os.path.exists(IMPROVEMENTS):
         return []
     tasks = json.load(open(IMPROVEMENTS, encoding="utf-8"))
@@ -37,7 +44,11 @@ def improvements():
            "مصدرها `docs/improvement-tasks.json`، فعدّلها هناك ثم أعد التوليد. تُستورد إلى ClickUp من ملف CSV، لا عبر "
            "`scripts/clickup_sync.py` (الذي يزامن مهام الخطة الـ 45 فقط). الفرع `u-NN-…` أو `it-NN-…` أو `ai-NN-…`، "
            "ورسائل الـ commit تبدأ برقم المهمة.\n"]
+    finance_started = False
     for t in tasks:
+        if t["group"] == "finance" and not finance_started:
+            finance_started = True
+            out.extend(PHASE_10)
         deps = "، ".join(t["depends_on"]) or "لا يوجد"
         out.append(f"\n### {t['id']} · {t['title_ar']}\n")
         out.append(f"- **المجموعة:** {GROUPS[t['group']]} · **المجال:** {t['area_ar']} · **الأولوية:** {PRIORITY[t['priority']]}")
