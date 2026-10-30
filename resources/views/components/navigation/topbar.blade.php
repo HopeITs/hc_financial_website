@@ -89,6 +89,12 @@
 
                     <flux:menu.separator />
 
+                    <flux:menu.item icon="command-line" kbd="?" x-on:click="$dispatch('hc-shortcuts-open')" class="w-full cursor-pointer" data-test="shortcuts-button">
+                        {{ __('shortcuts.title') }}
+                    </flux:menu.item>
+
+                    <flux:menu.separator />
+
                     <form method="POST" action="{{ route('logout') }}" class="w-full">
                         @csrf
                         <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="w-full cursor-pointer rtl:[&_svg]:-scale-x-100" data-test="logout-button">
