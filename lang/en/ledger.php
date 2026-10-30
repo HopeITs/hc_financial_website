@@ -489,8 +489,10 @@ return [
         'note' => 'Approved vouchers only. Filters apply to the lines of each voucher; the legacy sub-project filter has no ledger counterpart. In the SYP view a dollar amount is multiplied by the rate typed above and a SYP amount stays as entered.',
     ],
     'follow' => [
+        'export_xlsx' => 'Export Excel',
         'intro' => [
             'recon' => 'The transfer company pool (1161) against what projects and city general accounts hold of it, at the end of each month.',
+            'mapprovals' => 'One month, per project: USD at the transfer company (1161) at the start, what was approved in pounds and its dollar cost, what was approved in dollars, other movements, USD at the end, and the pounds held at the start and end.',
             'uncomp' => 'Cash received without a project that has not been compensated yet, per city, by age.',
             'xreserve' => 'The exchange differences (5503) that allocation and local-exchange transfers booked under each city\'s general SYP account.',
             'advances' => 'Open operational advances (1201) by person. No deadline and no ageing.',
@@ -499,6 +501,7 @@ return [
         'negative_hint' => 'A city general account is below zero in the transfer company pool. Allowed, but needs settling.',
         'note' => [
             'recon' => 'Approved vouchers only, in USD, balances at each month end. The difference is the part of the pool that no project or general account holds.',
+            'mapprovals' => 'Choose the month with the month filter. Approved vouchers and requests only. USD at 1161 is debits less credits. Approved SYP and USD come from requests whose final approval fell in the month; the USD cost is what the pound allocations of the month moved on 1161. Start + cost + other movements = end.',
             'uncomp' => 'Approved vouchers only, in USD. Age runs from the voucher date to the To date (today when empty). There are no alerts.',
             'xreserve' => 'Approved transfer vouchers only, in USD. A gain is a credit to 5503, a loss a debit; the reserve is gains less losses and stays on 5503.',
             'advances' => 'Approved vouchers only, in USD. A negative open amount means the person settled with more than was advanced; the difference is a receivable to reconcile with them.',
@@ -506,6 +509,7 @@ return [
         ],
         'empty' => 'Nothing to show.',
         'columns' => [
+            'usd_start' => 'USD at 1161, start', 'syp_approved' => 'Approved in SYP', 'syp_cost' => 'Its USD cost', 'usd_approved' => 'Approved in USD', 'other' => 'Other movements', 'usd_end' => 'USD at 1161, end', 'syp_start' => 'SYP held, start', 'syp_end' => 'SYP held, end',
             'month' => 'Month', 'pool' => 'Pool (1161)', 'projects' => 'Held by projects', 'general' => 'Held by general accounts', 'negative' => 'General accounts below zero', 'difference' => 'Difference',
             'city' => 'City', 'under_30' => 'Under 30 days', 'days_30_90' => '30 to 90 days', 'over_90' => 'Over 90 days', 'total' => 'Total',
             'gains' => 'Gains', 'losses' => 'Losses', 'reserve' => 'Reserve', 'person' => 'Person', 'advanced' => 'Advanced', 'settled' => 'Settled', 'open' => 'Open', 'last_date' => 'Last movement',
