@@ -33,7 +33,7 @@ use Illuminate\Support\Str;
  */
 class RequestWorkflow
 {
-    public function __construct(private readonly ApprovalChain $chain, private readonly ProjectAverageRate $averageRate, private readonly Currencies $currencies) {}
+    public function __construct(private readonly ApprovalChain $chain, private readonly ProjectAverageRate $averageRate, private readonly Currencies $currencies, private readonly RequestAllocation $allocation) {}
 
     /**
      * @param  array{project: string, type?: string, month?: string, category?: string|null, description?: string|null}  $header
@@ -175,7 +175,9 @@ class RequestWorkflow
         return DB::transaction(function () use ($by, $request) {
             $request = $this->locked($request);
 
-            if ($request->state() !== RequestStatus::Draft) {
+            $was = $request->state();
+
+            if ($was !== RequestStatus::Draft && $was !== RequestStatus::Returned) {
                 throw new RequestException([__('requests.problem.not_draft')]);
             }
 
@@ -196,7 +198,7 @@ class RequestWorkflow
             }
 
             $request->update(['status' => RequestStatus::Submitted->value, 'submitted_at' => now()]);
-            $this->audit($request, $by, 'submit', 'status', RequestStatus::Draft->value, RequestStatus::Submitted->value);
+            $this->audit($request, $by, 'submit', 'status', $was->value, RequestStatus::Submitted->value);
 
             return $request->refresh();
         });
@@ -210,7 +212,7 @@ class RequestWorkflow
      */
     public function approve(User $by, LedgerRequest $request): LedgerRequest
     {
-        return DB::transaction(function () use ($by, $request) {
+        $request = DB::transaction(function () use ($by, $request) {
             $request = $this->locked($request);
             $this->assertSubmitted($request);
             $this->authorize($by, 'decide', $request);
@@ -230,6 +232,64 @@ class RequestWorkflow
                 $request->update(['status' => RequestStatus::Approved->value, 'decided_by' => $this->id($by), 'decided_at' => now()]);
                 $this->audit($request, $by, 'approved', 'status', RequestStatus::Submitted->value, RequestStatus::Approved->value);
             }
+
+            return $request->refresh();
+        });
+
+        // The approval stands whatever happens next: a failed allocation is reported on the request, not undone.
+        if ($request->state() === RequestStatus::Approved) {
+            $this->allocate($by, $request);
+        }
+
+        return $request->refresh();
+    }
+
+    /**
+     * Creates the pending allocation voucher(s) of an approved request: its SYP total from the city's general account at the
+     * city rate, and its USD total likewise. When something is missing (no approved city rate, no pounds in the general
+     * account...) nothing is created, the request stays approved and what is missing goes to its audit trail.
+     *
+     * @return array<int, string> what is missing; empty when the vouchers exist
+     */
+    public function allocate(User $by, LedgerRequest $request): array
+    {
+        if ($request->state() !== RequestStatus::Approved) {
+            return [__('requests.problem.not_approved')];
+        }
+
+        $result = $this->allocation->create($request, $this->id($by));
+
+        if ($result['problems'] !== []) {
+            $this->audit($request, $by, 'allocation_missing', null, null, null, implode(' ', $result['problems']));
+        } elseif ($result['vouchers'] !== []) {
+            $this->audit($request, $by, 'allocation', 'vouchers', null, implode(', ', $result['vouchers']));
+        }
+
+        return $result['problems'];
+    }
+
+    /**
+     * Sends a submitted request back to its requester with a reason: they edit and submit it again, and the approvals
+     * so far are cleared (they stay in the audit trail) so the chain starts again.
+     *
+     * @throws AuthorizationException
+     * @throws RequestException
+     */
+    public function returnForChanges(User $by, LedgerRequest $request, string $reason): LedgerRequest
+    {
+        return DB::transaction(function () use ($by, $request, $reason) {
+            $request = $this->locked($request);
+            $this->assertSubmitted($request);
+            $this->authorize($by, 'decide', $request);
+
+            $reason = trim($reason);
+            if ($reason === '') {
+                throw new RequestException([__('requests.problem.reason_needed')]);
+            }
+
+            $request->approvals()->delete();
+            $request->update(['status' => RequestStatus::Returned->value, 'return_reason' => $reason]);
+            $this->audit($request, $by, 'return', 'status', RequestStatus::Submitted->value, RequestStatus::Returned->value, $reason);
 
             return $request->refresh();
         });
@@ -297,7 +357,7 @@ class RequestWorkflow
     public function isEditable(LedgerRequest $request): bool
     {
         return match ($request->state()) {
-            RequestStatus::Draft => true,
+            RequestStatus::Draft, RequestStatus::Returned => true,
             RequestStatus::Submitted => ! $request->approvals()->exists(),
             default => false,
         };

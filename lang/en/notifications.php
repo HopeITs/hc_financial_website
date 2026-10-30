@@ -31,6 +31,7 @@ return [
         'request_pending' => 'Request waiting for your decision',
         'request_approved' => 'Your request was approved',
         'request_rejected' => 'Your request was rejected',
+        'request_returned' => 'Your request was returned for changes',
     ],
 
     'kinds' => [
@@ -40,5 +41,6 @@ return [
         'request_pending' => 'Request #:number for :project is waiting for your decision (USD :amount).',
         'request_approved' => 'Your request #:number for :project was approved.',
         'request_rejected' => 'Your request #:number for :project was rejected: :reason',
+        'request_returned' => 'Your request #:number for :project was returned for changes: :reason',
     ],
 ];

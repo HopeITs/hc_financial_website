@@ -1,6 +1,6 @@
 @php
     $cell = 'w-full min-w-20 rounded-md border border-secondary-light bg-white px-2 py-1.5 text-sm text-secondary-dark disabled:opacity-60 dark:border-field-line dark:bg-surface-2 dark:text-ink';
-    $badgeColors = ['draft' => 'zinc', 'submitted' => 'amber', 'approved' => 'green', 'rejected' => 'red', 'closed' => 'zinc'];
+    $badgeColors = ['draft' => 'zinc', 'submitted' => 'amber', 'approved' => 'green', 'rejected' => 'red', 'returned' => 'orange', 'closed' => 'zinc'];
 @endphp
 
 <div class="flex flex-col gap-6 px-4 pb-10 lg:px-8" data-test="requests">
@@ -170,6 +170,23 @@
             </div>
         @endif
 
+        @if ($current->status === 'returned')
+            <div class="rounded-lg border border-status-warning bg-status-warning-soft px-4 py-3 text-sm" data-test="returned-note">
+                <p class="font-semibold">{{ __('requests.returned_title') }}</p>
+                <p class="mt-1">{{ $current->return_reason }}</p>
+            </div>
+        @endif
+
+        @if ($allocationMissing !== null)
+            <div class="rounded-lg border border-status-warning bg-status-warning-soft px-4 py-3 text-sm" data-test="allocation-missing">
+                <p class="font-semibold">{{ __('requests.allocation.missing_title') }}</p>
+                <p class="mt-1">{{ $allocationMissing !== '' ? $allocationMissing : __('requests.allocation.not_yet') }}</p>
+                @if ($canClose)
+                    <x-ui.button class="mt-2" wire:click="allocate" data-test="allocate-request">{{ __('requests.allocation.retry') }}</x-ui.button>
+                @endif
+            </div>
+        @endif
+
         @if ($pendingRole)
             <div class="rounded-lg border border-secondary-soft bg-white px-4 py-2 text-sm dark:border-line dark:bg-surface-1" data-test="waiting-for">
                 {{ __('requests.waiting_for', ['role' => $pendingRole->label()]) }}
@@ -198,12 +215,13 @@
             <x-ui.panel class="flex flex-wrap items-center gap-3 p-4" data-test="request-actions">
                 @if ($canEdit)
                     <x-ui.button wire:click="editRequest" data-test="edit-request">{{ __('requests.edit') }}</x-ui.button>
-                    @if ($current->status === 'draft')
+                    @if (in_array($current->status, ['draft', 'returned'], true))
                         <x-ui.button tone="primary" wire:click="submit" data-test="submit-request">{{ __('requests.submit') }}</x-ui.button>
                     @endif
                 @endif
                 @if ($canDecide)
                     <x-ui.button tone="primary" wire:click="approve" data-test="approve-request">{{ __('requests.approve') }}</x-ui.button>
+                    <x-ui.button wire:click="openReturn" data-test="return-request">{{ __('requests.return') }}</x-ui.button>
                     <x-ui.button wire:click="openReject" data-test="reject-request">{{ __('requests.reject') }}</x-ui.button>
                 @endif
                 @if ($canClose)
@@ -335,6 +353,14 @@
         </section>
 
         @if ($canDecide)
+            <x-ui.modal wire:model.self="showReturn" size="md" :title="__('requests.return_title', ['number' => $current->id])" submit="sendBack" close="closeReturn" :required-note="true" data-test="return-modal">
+                <x-ui.form-textarea wire:model="returnReason" :label="__('requests.return_reason_label')" :help="__('requests.return_help')" required />
+
+                <x-slot:actions>
+                    <x-ui.button type="submit" tone="primary" data-test="confirm-return">{{ __('requests.return') }}</x-ui.button>
+                </x-slot:actions>
+            </x-ui.modal>
+
             <x-ui.modal wire:model.self="showReject" size="md" :title="__('requests.reject_title', ['number' => $current->id])" submit="reject" close="closeReject" :required-note="true" data-test="reject-modal">
                 <x-ui.form-textarea wire:model="rejectReason" :label="__('requests.reject_reason_label')" :help="__('requests.reject_help')" required />
 

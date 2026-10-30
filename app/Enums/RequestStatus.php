@@ -10,6 +10,7 @@ enum RequestStatus: string
     case Submitted = 'submitted';
     case Approved = 'approved';
     case Rejected = 'rejected';
+    case Returned = 'returned';
     case Closed = 'closed';
 
     public function label(): string

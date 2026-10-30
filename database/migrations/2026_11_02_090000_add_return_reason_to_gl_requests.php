@@ -1,0 +1,19 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+/** F-07: a request sent back for changes keeps the reason (the new status `returned` fits the existing status column). */
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('gl_requests', fn (Blueprint $table) => $table->text('return_reason')->nullable()->after('reject_reason'));
+    }
+
+    public function down(): void
+    {
+        Schema::table('gl_requests', fn (Blueprint $table) => $table->dropColumn('return_reason'));
+    }
+};
