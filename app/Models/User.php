@@ -68,10 +68,26 @@ class User extends Authenticatable
         }
 
         foreach ($this->webRoles as $webRole) {
+            if ($webRole->role_id === RoleId::SuperUser && ! self::superUserAllowed()) {
+                continue;
+            }
+
             $roles[] = $webRole->role_id;
         }
 
         return array_values(array_unique($roles, SORT_REGULAR));
+    }
+
+    /** The Super User role works only when FINANCE_SUPER_USER is on and the app is not in production. */
+    public static function superUserAllowed(): bool
+    {
+        return config('finance.super_user') === true && ! app()->environment('production');
+    }
+
+    /** Whether the person holds the Super User role and it is switched on: every screen, all data, every approval step. */
+    public function isSuperUser(): bool
+    {
+        return in_array(RoleId::SuperUser, $this->roleIds(), true);
     }
 
     /**
@@ -89,6 +105,10 @@ class User extends Authenticatable
      */
     public function canOnScreen(string $slug, ScreenAction $action = ScreenAction::View): bool
     {
+        if ($this->isSuperUser()) {
+            return true;
+        }
+
         foreach ($this->roleIds() as $role) {
             $actions = config("permissions.roles.{$role->value}.{$slug}", []);
 

@@ -4,6 +4,9 @@
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-ground antialiased dark:bg-surface-0">
+        @if (auth()->user()?->isSuperUser())
+            <div class="bg-status-critical px-4 py-2 text-center text-sm font-semibold text-white" role="alert" data-test="super-user-banner">{{ __('roles.super_banner') }}</div>
+        @endif
         <x-navigation.topbar />
         <x-navigation.sidebar />
 

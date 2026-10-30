@@ -31,7 +31,7 @@ class LegacyDataScope
             return new DataScope(false);
         }
 
-        foreach ([RoleId::HeadOffice, RoleId::GeneralManager, RoleId::Donor] as $unlimited) {
+        foreach ([RoleId::HeadOffice, RoleId::GeneralManager, RoleId::Donor, RoleId::SuperUser] as $unlimited) {
             if (in_array($unlimited, $roles, true)) {
                 return DataScope::everything();
             }

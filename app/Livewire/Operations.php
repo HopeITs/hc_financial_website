@@ -386,7 +386,7 @@ class Operations extends Component
                 return false;
             }
 
-            return $type !== 'JV' || array_intersect(array_map(fn (RoleId $role) => $role->value, $user->roleIds()), [RoleId::FinancialManager->value, RoleId::HeadOffice->value]) !== [];
+            return $type !== 'JV' || array_intersect(array_map(fn (RoleId $role) => $role->value, $user->roleIds()), [RoleId::FinancialManager->value, RoleId::HeadOffice->value, RoleId::SuperUser->value]) !== [];
         }));
     }
 

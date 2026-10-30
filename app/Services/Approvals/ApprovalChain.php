@@ -56,6 +56,7 @@ class ApprovalChain
         }
 
         return in_array($next, $roles, true)
+            || in_array(RoleId::SuperUser, $roles, true)
             || ($next === RoleId::FinancialManager && in_array(RoleId::HeadOffice, $roles, true));
     }
 }

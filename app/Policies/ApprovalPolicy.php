@@ -19,6 +19,10 @@ class ApprovalPolicy
 
     public function approve(User $user, Approvable $subject): bool
     {
+        if ($user->isSuperUser()) {
+            return true;
+        }
+
         if ($subject->preparedBy() === (int) $user->getAuthIdentifier()) {
             return false;
         }
