@@ -63,6 +63,32 @@
                         </tbody>
                     </table>
                 </x-ui.scroll-table>
+
+                @if ($ledgerShares !== [])
+                    <flux:heading level="2">{{ __('tills.project_shares') }}</flux:heading>
+                    <x-ui.scroll-table :paginate="false">
+                        <table class="fin-table" data-test="ledger-shares-table">
+                            <thead>
+                                <tr>
+                                    <th>{{ __('tills.till') }}</th>
+                                    <th>{{ __('projects.currency') }}</th>
+                                    <th class="fin-num">{{ __('tills.amount') }}</th>
+                                    <th class="fin-num">USD</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($ledgerShares as $share)
+                                    <tr wire:key="share-{{ $share['account_code'] }}-{{ $share['currency'] }}">
+                                        <td><span dir="ltr">{{ $share['account_code'] }}</span> · {{ app()->getLocale() === 'ar' ? $share['account_name_ar'] : $share['account_name_en'] }}</td>
+                                        <td>{{ $share['currency'] }}</td>
+                                        <td class="fin-num"><x-money :amount="$share['amount']" /></td>
+                                        <td class="fin-num"><x-money :amount="$share['usd']" /></td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </x-ui.scroll-table>
+                @endif
             @endif
         </section>
     @elseif ($tab === 'accounts')

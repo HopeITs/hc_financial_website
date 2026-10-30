@@ -24,6 +24,7 @@ use App\Livewire\ReferenceList;
 use App\Livewire\Requests;
 use App\Livewire\Salaries;
 use App\Livewire\Statement;
+use App\Livewire\Tills;
 use App\Livewire\Transfers;
 use App\Livewire\Treasury;
 use App\Livewire\TrialBalance;
@@ -93,6 +94,7 @@ Route::middleware('auth')->group(function () {
     Route::get('entries/requests/quotes/{quote}', RequestQuoteController::class)->whereNumber('quote')->defaults('screen', 'requests')->middleware('screen')->name('entries.requests.quote');
 
     $screen('treasury', Treasury::class);
+    $screen('tills', Tills::class);
     $screen('alloc', Transfers::class);
 
     foreach (['rexp', 'rcash', 'rbl', 'rrev', 'rfixed', 'rattach'] as $report) {
@@ -119,7 +121,7 @@ Route::middleware('auth')->group(function () {
     $screen('currency', CurrencySettings::class);
 
     // Master data (task 38): the old program's lists are read-only references.
-    foreach (array_diff(ReferenceData::SLUGS, ['currency']) as $slug) {
+    foreach (array_diff(ReferenceData::SLUGS, ['currency', 'tills']) as $slug) {
         $screen($slug, ReferenceList::class);
     }
 
