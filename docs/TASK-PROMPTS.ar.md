@@ -5036,6 +5036,7 @@ Start from an up-to-date `main`, create branch `f-02-operations-hub`, commit wit
 - **المجموعة:** طلبات المدير المالي وإجراء الخزينة · **المجال:** الإدخال · **الأولوية:** عالية
 - **الجهد المقدّر:** 1.5 أيام
 - **الاعتماديات:** F-02
+- **الحالة:** خالصة ومدموجة في main
 
 #### Objective
 المدير المالي ذكر EXG بين أنواع السندات الستة، والتصريف اليوم يُحفظ كسند TRF من نوع local_exchange. وقرّر (R5-1، 2026-10-30) أن ALC = الرواتب كما في R1-2، فيبقى التخصيص من الحساب العام إلى المشروع TRF.
@@ -5088,6 +5089,7 @@ Start from an up-to-date `main`, create branch `f-03-exchange-voucher`, commit w
 - **المجموعة:** طلبات المدير المالي وإجراء الخزينة · **المجال:** الإدخال · **الأولوية:** عالية
 - **الجهد المقدّر:** 3 أيام
 - **الاعتماديات:** F-02
+- **الحالة:** خالصة ومدموجة في main
 
 #### Objective
 الإدخال المتعدد اليوم لصق نص مفصول بـ Tab بأعمدة يجب حفظ ترتيبها، ولا يوجد قالب يُنزَّل ولا رفع ملف. المدير المالي يريد من داخل شاشة العمليات تنزيل نموذج Excel يولّده البرنامج، تُعبّأ فيه العمليات ثم يُرفع.
@@ -5171,7 +5173,7 @@ You are implementing improvement F-05 of the HC Financial Web plan (Net assets c
 Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
 
 ## Task
-Show net assets as computed, not posted: in the chart of accounts, the trial balance and the statement of financial position, a Net assets line = assets − liabilities from approved vouchers, split into without donor restrictions (3100) and with donor restrictions (3200) by the project's restriction, with a note that it is computed. Refuse manual lines on 3xxx accounts in every entry screen except an opening-balance voucher (OPN) and the year-end closing voucher. Build the opening-balances screen (the `opening` slug is a placeholder): one OPN voucher per city at go-live, the difference to 3901, which must be zero. Add a year-end close that writes a JV closing income and expenses into 3101/3201 per project restriction, and is refused while the year has pending vouchers. Use bcmath. Status 2026-10-30: net assets are computed (`App\Services\Ledger\NetAssets`): total = assets − liabilities, with donor restrictions = income − expenses of restricted lines (the measure ProjectBalances uses), shown on the chart (3000/3100/3200 marked computed), the trial balance and the statements. Rule 16 (`NetAssetsAreComputed`) refuses web lines on 3xxx accounts; migrated vouchers keep theirs. Left: the opening-balances screen (overlaps plan task 34, `opening`) and the year-end close, which waits for the Financial Manager's decision.
+Show net assets as computed, not posted: in the chart of accounts, the trial balance and the statement of financial position, a Net assets line = assets − liabilities from approved vouchers, split into without donor restrictions (3100) and with donor restrictions (3200) by the project's restriction, with a note that it is computed. Refuse manual lines on 3xxx accounts in every entry screen except an opening-balance voucher (OPN) and the year-end closing voucher. Build the opening-balances screen (the `opening` slug is a placeholder): one OPN voucher per city at go-live, the difference to 3901, which must be zero. Add a year-end close that writes a JV closing income and expenses into 3101/3201 per project restriction, and is refused while the year has pending vouchers. Use bcmath. Status 2026-10-30: net assets are computed (`App\Services\Ledger\NetAssets`): total = assets − liabilities, with donor restrictions = income − expenses of restricted lines (the measure ProjectBalances uses), shown on the chart (3000/3100/3200 marked computed), the trial balance and the statements. Rule 16 (`NetAssetsAreComputed`) refuses web lines on 3xxx accounts; migrated vouchers keep theirs. Decisions R5-2 and R5-3 (2026-10-30): opening balances yes (one OPN voucher per city at go-live, the difference to 3901 must be zero); no year-end close, net assets stay computed. Left: only the opening-balances screen (plan task 34, `opening`).
 
 ## Done when
 Net assets equal assets minus liabilities everywhere after every operation, with no manual entry.
@@ -5190,6 +5192,7 @@ Start from an up-to-date `main`, create branch `f-05-net-assets`, commit with me
 - **المجموعة:** طلبات المدير المالي وإجراء الخزينة · **المجال:** الصلاحيات · **الأولوية:** متوسطة
 - **الجهد المقدّر:** 1.5 أيام
 - **الاعتماديات:** لا يوجد
+- **الحالة:** خالصة ومدموجة في main
 
 #### Objective
 لا يوجد دور يستطيع كل شيء. الإدارة (Head Office) ترى كل الشاشات وكل الإجراءات وبلا حد للبيانات، لكنها لا تأخذ دور المدير العام في سلسلة الاعتماد، ودور مدير البرنامج في الطلبات دور مستقل، ولا أحد يعتمد ما أعدّه (القاعدة 7)، ولا يأخذ الشخص نفسه خطوتين.
@@ -5243,6 +5246,7 @@ Start from an up-to-date `main`, create branch `f-06-super-user`, commit with me
 - **المجموعة:** طلبات المدير المالي وإجراء الخزينة · **المجال:** الطلبات · **الأولوية:** عالية
 - **الجهد المقدّر:** 2.5 أيام
 - **الاعتماديات:** لا يوجد
+- **الحالة:** خالصة ومدموجة في main
 
 #### Objective
 إجراء الخزينة يقول إن المراجع يستطيع إعادة الطلب للتعديل، وإن الاعتماد النهائي يولّد التخصيص تلقائياً (الليرة من الحساب العام للمدينة إلى المشروع، والدولار إلى صندوق الدولار). اليوم حالات الطلب: مسودة، مقدّم، معتمد، مرفوض، مغلق، ولا يوجد «أعيد للتعديل»، والاعتماد يغيّر الحالة فقط والتخصيص يُحضَّر يدوياً من شاشة التحويلات.
@@ -5293,6 +5297,7 @@ Start from an up-to-date `main`, create branch `f-07-request-flow`, commit with 
 - **المجموعة:** طلبات المدير المالي وإجراء الخزينة · **المجال:** الخزينة · **الأولوية:** متوسطة
 - **الجهد المقدّر:** يومان
 - **الاعتماديات:** لا يوجد
+- **الحالة:** خالصة ومدموجة في main
 
 #### Objective
 القاعدة الأساسية في الإجراء: رصيد الصندوق = مجموع حصص المالكين (المشاريع + الحساب العام). البرنامج يسجّل المالك في كل سطر، لكن شاشة الصناديق (tills) ما زالت placeholder، وصفحة المشروع تقرأ أرصدة البرنامج القديم.
@@ -5343,6 +5348,7 @@ Start from an up-to-date `main`, create branch `f-08-till-owners`, commit with m
 - **المجموعة:** طلبات المدير المالي وإجراء الخزينة · **المجال:** الخزينة · **الأولوية:** متوسطة
 - **الجهد المقدّر:** 3 أيام
 - **الاعتماديات:** F-08
+- **الحالة:** خالصة ومدموجة في main
 
 #### Objective
 الإجراء يطلب في آخر الشهر: رصيد الصندوق = الجرد النقدي، و1161 = كشف شركة الحوالات، و1171/1172 = كشف البنك، و2901 صفر. في الكود قاعدة الإقفال 12 (حسابات الطريق و2901 صفر) فقط، ولا مكان لإدخال الجرد أو رصيد الكشف، ولا شاشة إقفال.

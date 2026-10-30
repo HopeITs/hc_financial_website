@@ -133,6 +133,8 @@ R4-13 and R4-14 were given in chat on 2026-10-28, after the FM's procedure docum
 | # | Decision | Decided by | Status | Affects |
 |---|----------|-----------|--------|---------|
 | R5-1 | `ALC` = payroll: the split of a salary over projects, as R1-2 says. The allocation from a city general account to a project stays a `TRF` with its sub-type (R1-10) and is shown as "Allocation" in the Operations screen | FM | Decided (2026-10-30, confirms R1-2) | F-03 (now EXG only), Operations screen |
+| R5-2 | Opening balances: one opening voucher (OPN) per city when work starts on the program; any difference goes to 3901 and must be zero before the voucher is approved | FM | Decided (2026-10-30) | F-05, `opening` screen (plan task 34) |
+| R5-3 | No year-end close: net assets stay computed (assets minus liabilities), and yearly figures come from the reports' dates. Income and expenses are never closed into 3101/3201 | FM | Decided (2026-10-30) | F-05 (year-end close dropped) |
 
 The other questions of `FM-DECISIONS-2026-10-30.ar.md` are still open.
 

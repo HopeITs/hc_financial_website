@@ -663,7 +663,7 @@
     "depends_on": [
       "F-02"
     ],
-    "status": null,
+    "status": "done",
     "title_ar": "نوع سند EXG مستقل للتصريف (ALC يبقى للرواتب)",
     "title_en": "EXG as its own voucher type for exchange (ALC stays payroll)",
     "area_ar": "الإدخال",
@@ -690,7 +690,7 @@
     "depends_on": [
       "F-02"
     ],
-    "status": null,
+    "status": "done",
     "title_ar": "قالب Excel يولّده البرنامج لإدخال عدة عمليات",
     "title_en": "Program-generated Excel template for many operations",
     "area_ar": "الإدخال",
@@ -720,7 +720,7 @@
     "why_ar": "لا يُرحَّل أي سطر تلقائياً إلى حسابات صافي الأصول 3101 و3201 و3901، فرصيدها في دليل الحسابات وميزان المراجعة صفر، وهذا يربك القارئ. قائمة المركز المالي تحسب «نتيجة غير مقفلة» = الإيرادات − المصاريف وتضيفها، فالمعادلة الأصول = الالتزامات + صافي الأصول متوازنة فعلاً، لكن لا يوجد عرض واضح لصافي الأصول = الأصول − الالتزامات، ولا تقسيم بين المقيد وغير المقيد، ولا إقفال سنة، ولا أرصدة افتتاحية (شاشة opening ما زالت placeholder). وVoucherBuilder يسمح بالترحيل اليدوي إلى 3xxx.",
     "what_ar": "في دليل الحسابات وميزان المراجعة والمركز المالي: سطر «صافي الأصول» محسوب = الأصول − الالتزامات، مقسوم إلى بلا قيود مانحين (3100) ومقيد من المانحين (3200) حسب قيد المشروع، مع ملاحظة تشرح أنه محسوب. منع الترحيل اليدوي إلى 3xxx إلا عبر سند الأرصدة الافتتاحية (OPN) وسند إقفال السنة. شاشة الأرصدة الافتتاحية (لمرة واحدة عند الانتقال، والفرق إلى 3901 ويجب أن يكون صفراً). إقفال السنة يولّد سند JV يغلق الإيرادات والمصاريف إلى 3101/3201.",
     "done_when_ar": "صافي الأصول يظهر في كل مكان مساوياً للأصول ناقص الالتزامات بعد كل عملية، دون أي إدخال يدوي.",
-    "prompt_en": "Show net assets as computed, not posted: in the chart of accounts, the trial balance and the statement of financial position, a Net assets line = assets − liabilities from approved vouchers, split into without donor restrictions (3100) and with donor restrictions (3200) by the project's restriction, with a note that it is computed. Refuse manual lines on 3xxx accounts in every entry screen except an opening-balance voucher (OPN) and the year-end closing voucher. Build the opening-balances screen (the `opening` slug is a placeholder): one OPN voucher per city at go-live, the difference to 3901, which must be zero. Add a year-end close that writes a JV closing income and expenses into 3101/3201 per project restriction, and is refused while the year has pending vouchers. Use bcmath. Status 2026-10-30: net assets are computed (`App\\Services\\Ledger\\NetAssets`): total = assets − liabilities, with donor restrictions = income − expenses of restricted lines (the measure ProjectBalances uses), shown on the chart (3000/3100/3200 marked computed), the trial balance and the statements. Rule 16 (`NetAssetsAreComputed`) refuses web lines on 3xxx accounts; migrated vouchers keep theirs. Left: the opening-balances screen (overlaps plan task 34, `opening`) and the year-end close, which waits for the Financial Manager's decision.",
+    "prompt_en": "Show net assets as computed, not posted: in the chart of accounts, the trial balance and the statement of financial position, a Net assets line = assets − liabilities from approved vouchers, split into without donor restrictions (3100) and with donor restrictions (3200) by the project's restriction, with a note that it is computed. Refuse manual lines on 3xxx accounts in every entry screen except an opening-balance voucher (OPN) and the year-end closing voucher. Build the opening-balances screen (the `opening` slug is a placeholder): one OPN voucher per city at go-live, the difference to 3901, which must be zero. Add a year-end close that writes a JV closing income and expenses into 3101/3201 per project restriction, and is refused while the year has pending vouchers. Use bcmath. Status 2026-10-30: net assets are computed (`App\\Services\\Ledger\\NetAssets`): total = assets − liabilities, with donor restrictions = income − expenses of restricted lines (the measure ProjectBalances uses), shown on the chart (3000/3100/3200 marked computed), the trial balance and the statements. Rule 16 (`NetAssetsAreComputed`) refuses web lines on 3xxx accounts; migrated vouchers keep theirs. Decisions R5-2 and R5-3 (2026-10-30): opening balances yes (one OPN voucher per city at go-live, the difference to 3901 must be zero); no year-end close, net assets stay computed. Left: only the opening-balances screen (plan task 34, `opening`).",
     "done_when_en": "Net assets equal assets minus liabilities everywhere after every operation, with no manual entry.",
     "evidence": [
       "app/Services/Ledger/FinancialStatements.php",
@@ -737,7 +737,7 @@
     "effort_days": 1.5,
     "branch": "f-06-super-user",
     "depends_on": [],
-    "status": null,
+    "status": "done",
     "title_ar": "مستخدم Super User للاختبار (طلب 04)",
     "title_en": "Super User for testing (request 04)",
     "area_ar": "الصلاحيات",
@@ -763,7 +763,7 @@
     "effort_days": 2.5,
     "branch": "f-07-request-flow",
     "depends_on": [],
-    "status": null,
+    "status": "done",
     "title_ar": "الطلب الشهري: «إعادة للتعديل» والتخصيص التلقائي بعد الاعتماد",
     "title_en": "Monthly request: return for changes, and automatic allocation on approval",
     "area_ar": "الطلبات",
@@ -786,7 +786,7 @@
     "effort_days": 2,
     "branch": "f-08-till-owners",
     "depends_on": [],
-    "status": null,
+    "status": "done",
     "title_ar": "شاشة الصناديق: رصيد كل صندوق موزّعاً على أصحابه",
     "title_en": "Tills screen: each till split by its owners",
     "area_ar": "الخزينة",
@@ -811,7 +811,7 @@
     "depends_on": [
       "F-08"
     ],
-    "status": null,
+    "status": "done",
     "title_ar": "إقفال الشهر والمطابقات",
     "title_en": "Month-end close and reconciliations",
     "area_ar": "الخزينة",
