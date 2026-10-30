@@ -233,17 +233,17 @@ Status key: T = task, P = phase of the plan.
 None of these needs a finance decision or overlaps tasks 01 to 45. The source is `docs/improvement-tasks.json` (the Arabic prompts are generated from it). They go to ClickUp by CSV import, not through `scripts/clickup_sync.py`. Branches are `u-NN-…`, `it-NN-…` or `ai-NN-…`, and commit messages start with the task id. The AI tasks need management approval before any data is sent out.
 
 ### U-01 In-app notifications bell
-**Group:** Users · **Priority:** High · **Effort:** 2 days · **Branch:** `u-01-notifications` · **Depends on:** none · **Status:** built on its branch, waiting to be merged
+**Group:** Users · **Priority:** High · **Effort:** 2 days · **Branch:** `u-01-notifications` · **Depends on:** none · **Status:** done and merged into main
 **Prompt:** Add a bell in the top bar with the person's unread count and latest notifications, refreshed every minute (Livewire poll). Send them from the voucher and request audit trails, after the change is committed: a voucher waiting for approval goes to everyone the ApprovalPolicy lets approve it now (role, limit, donor-receipt chain), never the preparer; an approved or rejected voucher (with the reason) goes to its preparer; a submitted request, or one past a step, goes to whoever RequestPolicy::decide allows next; an approved or rejected request (with the reason) goes to the requester. Migrated vouchers notify no one. Table `web_notifications` (migration); texts in lang en/ar built when shown; opening one marks it read and goes to the voucher or request.
 **Done when:** Rejecting a voucher shows a notification to its preparer within a minute, and clicking it opens the voucher.
 
 ### U-02 Arabic error pages
-**Group:** Users · **Priority:** High · **Effort:** 1 day · **Branch:** `u-02-error-pages` · **Depends on:** none
+**Group:** Users · **Priority:** High · **Effort:** 1 day · **Branch:** `u-02-error-pages` · **Depends on:** none · **Status:** done and merged into main
 **Prompt:** Add `resources/views/errors` pages for 403, 404, 419, 500 and 503 in the app's design and the person's language (en/ar), with a link back home. Replace Livewire's default English session-expired prompt with a localized message that sends the person to sign in.
 **Done when:** All five error pages and the session-expired notice show in the person's language and the app's design.
 
 ### U-03 Home panel: what is waiting for me
-**Group:** Users · **Priority:** Normal · **Effort:** 1.5 days · **Branch:** `u-03-waiting-panel` · **Depends on:** none
+**Group:** Users · **Priority:** Normal · **Effort:** 1.5 days · **Branch:** `u-03-waiting-panel` · **Depends on:** none · **Status:** done and merged into main
 **Prompt:** At the top of Home, per role: vouchers waiting for my approval, my rejected vouchers, requests waiting for my decision, my pending requests; each opens the filtered list. Use the same approval rules as the bell (U-01) to decide what counts.
 **Done when:** Each role sees its pending work on sign-in, and a click opens the filtered list.
 
@@ -258,12 +258,12 @@ None of these needs a finance decision or overlaps tasks 01 to 45. The source is
 **Done when:** The notice appears before expiry, and Keep working extends the session without losing the form.
 
 ### U-06 Global search (Ctrl+K)
-**Group:** Users · **Priority:** Normal · **Effort:** 2 days · **Branch:** `u-06-global-search` · **Depends on:** none
+**Group:** Users · **Priority:** Normal · **Effort:** 2 days · **Branch:** `u-06-global-search` · **Depends on:** none · **Status:** done and merged into main
 **Prompt:** A search dialog opened with Ctrl+K from any screen: vouchers by number and description, accounts by code and name, projects, and screens. Results respect the person's screen permissions and data scope.
 **Done when:** Typing a voucher number opens it directly, and results never show what the person may not see.
 
 ### U-07 Keyboard shortcuts on entry screens
-**Group:** Users · **Priority:** Normal · **Effort:** 1 day · **Branch:** `u-07-shortcuts` · **Depends on:** none
+**Group:** Users · **Priority:** Normal · **Effort:** 1 day · **Branch:** `u-07-shortcuts` · **Depends on:** none · **Status:** done and merged into main
 **Prompt:** Ctrl+S saves, Ctrl+Enter saves and starts a new entry, Alt+N adds a line in the voucher builder, Esc closes dialogs, and ? shows the list of shortcuts.
 **Done when:** The shortcuts work on single entry, the voucher builder and multi entry, and ? shows the list.
 
@@ -278,7 +278,7 @@ None of these needs a finance decision or overlaps tasks 01 to 45. The source is
 **Done when:** The Financial Manager cannot sign in without the app's code, and each recovery code works once.
 
 ### U-10 Load heavy reports progressively
-**Group:** Users · **Priority:** Normal · **Effort:** 1 day · **Branch:** `u-10-lazy-reports` · **Depends on:** none
+**Group:** Users · **Priority:** Normal · **Effort:** 1 day · **Branch:** `u-10-lazy-reports` · **Depends on:** none · **Status:** done and merged into main
 **Prompt:** Make the trial balance, account statement, financial statements, project balances and operational reports `#[Lazy]` with a skeleton, and show a loading indicator when a filter changes.
 **Done when:** The page shows at once with a skeleton, then the report; changing a filter shows an indicator.
 
@@ -288,7 +288,7 @@ None of these needs a finance decision or overlaps tasks 01 to 45. The source is
 **Done when:** A linked user gets the rejection of their voucher on Telegram within a minute.
 
 ### U-12 Remember each user's interface language
-**Group:** Users · **Priority:** Low · **Effort:** half a day · **Branch:** `u-12-user-locale` · **Depends on:** none
+**Group:** Users · **Priority:** Low · **Effort:** half a day · **Branch:** `u-12-user-locale` · **Depends on:** none · **Status:** done and merged into main
 **Prompt:** The interface language lives in the session only (`SetLocale`, `SwitchLocaleController`), so it is lost at sign-out. When a signed-in person switches language, save it with `UserPreferences` under the key `locale` (table `web_user_preferences`, never the Windows program's `user` table). On sign-in (Fortify's Login event), put the saved language into the session; if the person has none saved yet, save the language they picked on the sign-in page. Test: switch to Arabic, sign out, sign in again from a fresh session, and see Arabic.
 **Done when:** A person who chose Arabic, signed out and signed in again, from any browser, sees the app in Arabic.
 
@@ -371,6 +371,80 @@ None of these needs a finance decision or overlaps tasks 01 to 45. The source is
 **Group:** AI (needs management approval) · **Priority:** Low · **Effort:** 2 days · **Branch:** `ai-05-monthly-summary` · **Depends on:** AI-01, U-01
 **Prompt:** At the end of each month a scheduled job writes an Arabic summary from the report numbers (largest movements, spending by project, budget lines near their end, pending vouchers) through the Batch API, and notifies the Financial Manager (U-01) with a link.
 **Done when:** The summary arrives on the 1st of each month, and every number in it matches its report.
+
+## Phase 10: The Financial Manager's requests and the treasury procedure (F)
+
+From the Financial Manager's notes of 2026-10-30 (requests 01 to 05) and the comparison of `CHC-Treasury-Procedure` with the program. The findings and the decisions still needed are in `docs/REVIEW-2026-10-30-treasury-procedure.ar.md`. F-03, F-05, F-06 and F-11 need a decision before work starts. Branches are `f-NN-…`, and commit messages start with the task id.
+
+### F-01 Table paging across pages (request 01)
+**Group:** Financial Manager's requests · **Priority:** High · **Effort:** half a day · **Branch:** `f-01-table-paging` · **Depends on:** none
+**Prompt:** The Financial Manager reports that paging through long lists does not work, for example the chart of accounts. On current main, Next/Prev on the chart list works in a browser (1–10, then 11–20 of 169), so first rebuild the assets (`npm run build`; `public/build` is not in git) on the machine where it failed and retry. Then test paging after a search, after a filter change, and after arriving with `wire:navigate`, on the chart and every table that uses `x-ui.scroll-table`. Fix `resources/js/paged-table.js` if any case fails (a filter should return to page 1; a Livewire morph must keep the current page valid). Add an automated check of these cases.
+**Done when:** Next and Prev work on every multi-page table, before and after a search or filter and after navigating between screens.
+
+### F-02 One place for financial operations (request 02)
+**Group:** Financial Manager's requests · **Priority:** High · **Effort:** 6 days · **Branch:** `f-02-operations-hub` · **Depends on:** none
+**Prompt:** Build one Operations screen in the top menu that replaces Single entry, the Voucher builder and Multi entry in the navigation (their old addresses redirect to it). Step 1: pick the type: CRV (receipt), CPV (payment), TRF (move cash between tills of one currency, or between projects, with the in-transit accounts 11x3/11x4), ALC (allocation from a city general account to a project, see F-03), EXG (currency exchange), JV (manual entry). Step 2: a guided form per type whose fields and lists depend on the type, e.g. CPV asks project → budget line (fills the expense account) → till → amount → paid to; the person never picks a debit or credit account except in JV. Step 3: show the generated lines (Dr/Cr, owner, USD value) read-only for review, then save as pending. JV is limited to the Financial Manager and Head Office. Reuse the existing builders (`OperationEntry`, `TransferBuilder`, `SalaryAllocation`, `MicroLoans`, `VoucherDraftBuilder`) and the posting rules; do not duplicate them. Keep drafts (U-04) and shortcuts (U-07) working. Depends on the ALC meaning decided in F-03.
+**Done when:** Each of the six types is entered from one screen by picking from lists; the lines are written automatically and shown before saving; only JV asks for debit and credit accounts.
+
+### F-03 ALC as allocation and EXG as exchange
+**Group:** Financial Manager's requests · **Priority:** High · **Effort:** 2.5 days · **Branch:** `f-03-allocation-and-exchange` · **Depends on:** F-02
+**Prompt:** After the decision in the review report: make ALC mean an allocation from a city general account to a project (today `TransferKind::SypToProject` / `UsdToProject` posted as TRF) and move the salary and invoice split (`SalaryAllocation`, today ALC) to a "split" option of CPV. Add a voucher type EXG for currency exchange: SYP bought by the city general account (today `TransferKind::LocalExchange`), with the difference to 5503 under the general account, and a project exchanging its own EUR to USD. A plain exchange by a project into SYP is refused (rule 2 of the treasury procedure). Saved and approved vouchers keep their type; add a migration only for the enum value. Update the posting-rule catalogue and the bridge pages.
+**Done when:** An allocation saves as ALC and an exchange as EXG, and the existing rules (no cash moves in an allocation, difference to 5503 under the general account, average cost) still hold.
+
+### F-04 Program-generated Excel template for many operations
+**Group:** Financial Manager's requests · **Priority:** High · **Effort:** 3 days · **Branch:** `f-04-excel-template` · **Depends on:** F-02
+**Prompt:** In the Operations screen (F-02) add Download template (XLSX, per type or one sheet with a Type column) and Upload. The template has the entry sheet with bilingual headers and a Lists sheet holding the projects, budget lines, tills and accounts this person may use (data scope). Upload parses the rows with OpenSpout (already installed), shows a preview of every row with the lines it will post and its errors next to it, and saves only when every row is valid, in one transaction, up to `OperationSheet::MAX_ROWS`. Keep the paste box as a fallback. Reuse `OperationSheet` for validation and posting.
+**Done when:** A person downloads the template, fills it, uploads it, sees each row with its lines and errors, and saves all rows at once.
+
+### F-05 Net assets computed automatically, opening balances and year-end close (request 03)
+**Group:** Financial Manager's requests · **Priority:** High · **Effort:** 3 days · **Branch:** `f-05-net-assets` · **Depends on:** none
+**Prompt:** Show net assets as computed, not posted: in the chart of accounts, the trial balance and the statement of financial position, a Net assets line = assets − liabilities from approved vouchers, split into without donor restrictions (3100) and with donor restrictions (3200) by the project's restriction, with a note that it is computed. Refuse manual lines on 3xxx accounts in every entry screen except an opening-balance voucher (OPN) and the year-end closing voucher. Build the opening-balances screen (the `opening` slug is a placeholder): one OPN voucher per city at go-live, the difference to 3901, which must be zero. Add a year-end close that writes a JV closing income and expenses into 3101/3201 per project restriction, and is refused while the year has pending vouchers. Use bcmath.
+**Done when:** Net assets equal assets minus liabilities everywhere after every operation, with no manual entry.
+
+### F-06 Super User for testing (request 04)
+**Group:** Financial Manager's requests · **Priority:** Normal · **Effort:** 1.5 days · **Branch:** `f-06-super-user` · **Depends on:** none
+**Prompt:** Add a web-only role SuperUser (next free RoleId, stored in `web_user_roles`, assignable on the Users screen by someone with users.delete). It is active only when `FINANCE_SUPER_USER=true` and never when `APP_ENV=production`. While active it can open every screen with every action, sees all data (no `LegacyDataScope` limit), may take any approval step (Program Manager, Financial Manager, General Manager) in `ApprovalChain`, `ApprovalPolicy` and `RequestPolicy`, and may approve its own voucher or request (bypassing rule 7 `ApproverIsNotPreparer` only for this role). Every action it takes is audited with a `super` marker, and a warning band shows at the top of every page while signed in as it. Tests: the role does nothing when the flag is off or in production.
+**Done when:** One user can walk every workflow from entry to final approval, and the feature is off by itself in production.
+
+### F-07 Monthly request: return for changes, and automatic allocation on approval
+**Group:** Financial Manager's requests · **Priority:** High · **Effort:** 2.5 days · **Branch:** `f-07-request-flow` · **Depends on:** none
+**Prompt:** Add a request status `returned` (with a reason) that sends the request back to its requester to edit and resubmit; audit it and notify (U-01). On final approval in `RequestWorkflow::approve`, create a pending allocation voucher automatically from the approved lines: the SYP total from the city general account to the project at the approved city rate, and the USD total likewise, with the project repaying the dollar value from its 1161 share, exactly as `TransferBuilder` posts `SypToProject` / `UsdToProject` today; link it with `request_id`. If no approved city rate exists, keep the request approved and show what is missing. Migration for the status only.
+**Done when:** A reviewer can return a request with a reason, and the final approval creates the allocation voucher linked to the request.
+
+### F-08 Tills screen: each till split by its owners
+**Group:** Financial Manager's requests · **Priority:** Normal · **Effort:** 2 days · **Branch:** `f-08-till-owners` · **Depends on:** none
+**Prompt:** Build the `tills` screen from approved ledger lines: one block per cash account with its balance, and under it every general account and project that owns part of it, with the USD value of each row; the rows must add up to the till balance exactly (bcmath), and any difference is shown as unowned. Respect data scope. On the project page, show the project's share of each till from the ledger (`ProjectBalances::fundLocations`) next to the legacy figures.
+**Done when:** Every till shows its owners, and the shares add up to its balance exactly.
+
+### F-09 Month-end close and reconciliations
+**Group:** Financial Manager's requests · **Priority:** Normal · **Effort:** 3 days · **Branch:** `f-09-month-end` · **Depends on:** F-08
+**Prompt:** Build a month-end screen per city: enter the cash count of each safe, the transfer company statement balance for 1161 and the bank statement balance for 1171/1172; show the ledger balance and the difference for each; check that in-transit accounts and 2901 are zero (rule 12). Closing a month is allowed only when every difference is zero or has a written explanation, stores who closed it and when (own table via migration), and afterwards no voucher dated inside the closed month is accepted (wire the existing rule 12). Head Office can reopen with a reason.
+**Done when:** The Financial Manager closes a month after every till and statement agrees, and no voucher dated in that month is accepted afterwards.
+
+### F-10 Monthly approvals report
+**Group:** Financial Manager's requests · **Priority:** Normal · **Effort:** 1.5 days · **Branch:** `f-10-monthly-approvals-report` · **Depends on:** F-07
+**Prompt:** Add a report "Monthly approvals" (all projects, one month): USD at the transfer company (1161) at the start of the month → approved in SYP and its USD cost → approved in USD → other movements → USD at the end, plus SYP held at the start and end, per project and in total, from approved vouchers and approved requests. CSV and XLSX export like the other reports.
+**Done when:** The report agrees with the 1161 balance at the start and end of the month, and its approved totals match the approved requests.
+
+### F-11 Expenses sheet columns and the 2901 suspense account
+**Group:** Financial Manager's requests · **Priority:** Normal · **Effort:** 1.5 days · **Branch:** `f-11-expense-sheet` · **Depends on:** F-02
+**Prompt:** Add bill number, paid to and place to the CPV form, the Excel template (F-04) and the expense rows (columns on `gl_voucher_lines` or the voucher, via migration). After the Financial Manager decides (review report): post an expense with no budget line to 2901 Suspense with a warning, list open 2901 lines in a follow-up report until they are cleared; and refuse an expense dated outside the contract's funding period instead of warning (today `VoucherWarnings` only warns, and only on the end date).
+**Done when:** Every expense carries its bill number and payee, and an expense with no budget line shows in 2901 until it is corrected.
+
+### F-12 Reversal vouchers and advance settlement
+**Group:** Financial Manager's requests · **Priority:** Normal · **Effort:** 1.5 days · **Branch:** `f-12-reversal-and-settlement` · **Depends on:** F-02
+**Prompt:** Add Reverse on an approved voucher: it creates a pending voucher with the same lines on the opposite sides, linked to the original (column via migration), with a reason; the original is never edited. Add "Advance settlement" to CPV in the Operations screen: pick the employee and an open advance (account 1201 by contact), enter the bills on budget lines (Dr expense / Cr 1201), and the difference is repaid in cash (CRV) or paid out (CPV). Show open advances per employee (the `advances` report exists).
+**Done when:** A wrong voucher is corrected by a linked reversal, and an advance is settled with its bills showing what remains open.
+
+### F-13 Donor report: budget against actual in the donor currency
+**Group:** Financial Manager's requests · **Priority:** Normal · **Effort:** 2 days · **Branch:** `f-13-donor-report` · **Depends on:** none
+**Prompt:** Add a donor report per project: for each budget line the budget, actual, remaining and percentage spent, in the donor currency (at the project's real rate from its receipts) and USD; money received from the donor in its currency; the funding period. XLSX and PDF export in English and Arabic (reuse `StatementExport`).
+**Done when:** A project's report exports ready for the donor, and its figures agree with the financial statements.
+
+### F-14 Audit log screen
+**Group:** Financial Manager's requests · **Priority:** Low · **Effort:** 1.5 days · **Branch:** `f-14-audit-log` · **Depends on:** none
+**Prompt:** Add an audit log screen for the Financial Manager and Head Office: voucher audits, request audits and web logins in one list (date, person, action, voucher or request with a link, reason), with filters by person, action and date and a CSV export. Read-only.
+**Done when:** An auditor finds every change to any voucher or request, with who and when, on one screen.
 
 ---
 

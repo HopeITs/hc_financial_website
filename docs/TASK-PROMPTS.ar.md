@@ -3563,7 +3563,7 @@ Start from an up-to-date `main`, create branch `t7-3-bridge-pages`, commit with 
 - **المجموعة:** تحسينات يحسّها المستخدم · **المجال:** الإشعارات · **الأولوية:** عالية
 - **الجهد المقدّر:** يومان
 - **الاعتماديات:** لا يوجد
-- **الحالة:** مبنية على فرعها، بانتظار الدمج
+- **الحالة:** خالصة ومدموجة في main
 
 #### Objective
 لا يوجد جدول notifications ولا أي إشعار. الموجود فقط رقم بجانب قائمة السندات يعدّ السندات المعلقة (Navigation.php badges، topbar.blade.php:43)، فلا يعرف المحاسب أن سنده رُفض ولا يعرف مدير المشروع أن طلبه اعتُمد.
@@ -3613,6 +3613,7 @@ Start from an up-to-date `main`, create branch `u-01-notifications`, commit with
 - **المجموعة:** تحسينات يحسّها المستخدم · **المجال:** الواجهة · **الأولوية:** عالية
 - **الجهد المقدّر:** يوم
 - **الاعتماديات:** لا يوجد
+- **الحالة:** خالصة ومدموجة في main
 
 #### Objective
 لا يوجد مجلد resources/views/errors، فتظهر صفحات Laravel الافتراضية بالإنكليزية عند 403 و404 و419 و500 و503. وعند انتهاء الجلسة يظهر سؤال Livewire الافتراضي بالإنكليزية.
@@ -3661,6 +3662,7 @@ Start from an up-to-date `main`, create branch `u-02-error-pages`, commit with m
 - **المجموعة:** تحسينات يحسّها المستخدم · **المجال:** الواجهة · **الأولوية:** متوسطة
 - **الجهد المقدّر:** 1.5 أيام
 - **الاعتماديات:** لا يوجد
+- **الحالة:** خالصة ومدموجة في main
 
 #### Objective
 الصفحة الرئيسية تعرض أرصدة المشاريع فقط (Home.php:17-39)، ولا تُظهر للمستخدم ما عليه فعله اليوم.
@@ -3805,6 +3807,7 @@ Start from an up-to-date `main`, create branch `u-05-session-warning`, commit wi
 - **المجموعة:** تحسينات يحسّها المستخدم · **المجال:** الواجهة · **الأولوية:** متوسطة
 - **الجهد المقدّر:** يومان
 - **الاعتماديات:** لا يوجد
+- **الحالة:** خالصة ومدموجة في main
 
 #### Objective
 البحث الوحيد هو بحث شجرة الحسابات في الشريط الجانبي (sidebar.blade.php:72-76)، ولا توجد طريقة سريعة للوصول إلى سند برقمه أو مشروع باسمه.
@@ -3852,6 +3855,7 @@ Start from an up-to-date `main`, create branch `u-06-global-search`, commit with
 - **المجموعة:** تحسينات يحسّها المستخدم · **المجال:** الواجهة · **الأولوية:** متوسطة
 - **الجهد المقدّر:** يوم
 - **الاعتماديات:** لا يوجد
+- **الحالة:** خالصة ومدموجة في main
 
 #### Objective
 الاختصارات الموجودة للتنقل داخل الحقول فقط (form-fields.js:283، form-segmented.blade.php:59-62)، ولا يوجد اختصار للحفظ أو لإضافة سطر، والمحاسبون معتادون على الكيبورد في البرنامج القديم.
@@ -3996,6 +4000,7 @@ Start from an up-to-date `main`, create branch `u-09-two-factor`, commit with me
 - **المجموعة:** تحسينات يحسّها المستخدم · **المجال:** الأداء · **الأولوية:** متوسطة
 - **الجهد المقدّر:** يوم
 - **الاعتماديات:** لا يوجد
+- **الحالة:** خالصة ومدموجة في main
 
 #### Objective
 لا يوجد أي مكوّن Livewire يستخدم #[Lazy]، فتنتظر الصفحة حساب التقرير كاملاً قبل أن يظهر أي شيء، وأدوات التصفية لا تُظهر أنها تعمل (wire:loading مستخدم مرة واحدة فقط في المشروع).
@@ -4091,6 +4096,7 @@ Start from an up-to-date `main`, create branch `u-11-telegram`, commit with mess
 - **المجموعة:** تحسينات يحسّها المستخدم · **المجال:** الواجهة · **الأولوية:** منخفضة
 - **الجهد المقدّر:** نصف يوم
 - **الاعتماديات:** لا يوجد
+- **الحالة:** خالصة ومدموجة في main
 
 #### Objective
 اللغة محفوظة في الجلسة فقط (SetLocale.php:14-15، SwitchLocaleController.php:18)، فتضيع عند تسجيل الخروج أو انتهاء الجلسة، ويرجع المستخدم إلى اللغة الافتراضية. والجدول web_user_preferences والصنف UserPreferences موجودان أصلاً لإعدادات كل مستخدم.
@@ -4912,6 +4918,713 @@ These must be merged first: AI-01, U-01. If one is missing, stop and report.
 
 ## Git
 Start from an up-to-date `main`, create branch `ai-05-monthly-summary`, commit with messages starting `AI-05:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+## المرحلة 10: طلبات المدير المالي وإجراء الخزينة (F) · 2026-10-30
+
+من ملاحظات المدير المالي (الطلبات 01 إلى 05) ومن مقارنة `CHC-Treasury-Procedure` بالبرنامج. التفاصيل والقرارات المطلوبة في `docs/REVIEW-2026-10-30-treasury-procedure.ar.md`. المهام F-03 وF-05 وF-06 وF-11 تحتاج قراراً قبل البدء. الفرع `f-NN-…`، ورسائل الـ commit تبدأ برقم المهمة.
+
+
+### F-01 · التنقل بين صفحات الجداول (طلب 01)
+
+- **المجموعة:** طلبات المدير المالي وإجراء الخزينة · **المجال:** الجداول · **الأولوية:** عالية
+- **الجهد المقدّر:** نصف يوم
+- **الاعتماديات:** لا يوجد
+
+#### Objective
+المدير المالي أبلغ أن التنقل بين صفحات القوائم الطويلة لا يعمل، مثل دليل الحسابات. على النسخة الحالية من main يعمل التالي والسابق في دليل الحسابات (1–10 ثم 11–20 من 169)، فالأرجح أن الجهاز الذي جُرّب عليه يحمل JavaScript قديماً (مجلد public/build لا يُرفع إلى git وإصلاح مي للترقيم كان في 28 تشرين الأول)، أو أن الخلل يظهر فقط بعد تحديث Livewire (بحث أو فلتر).
+
+#### Implementation scope
+إعادة التجربة بعد npm run build على الجهاز الذي ظهر فيه الخلل. ثم تجربة الترقيم بعد البحث وتغيير الفلتر وبعد wire:navigate في دليل الحسابات وكل جدول يستعمل x-ui.scroll-table. إن ظهر الخلل يُصلَّح في resources/js/paged-table.js، ويُضاف اختبار متصفح (أو اختبار JS) يغطي: صفحة تالية، فلتر يعيد الترقيم إلى الصفحة الأولى، وصفحة بعد التنقل.
+
+#### Acceptance criteria
+التالي والسابق يعملان في كل جدول فيه أكثر من صفحة، قبل البحث وبعده وبعد الانتقال بين الشاشات.
+
+#### References in the code
+- `resources/js/paged-table.js`
+- `resources/views/components/ui/scroll-table.blade.php`
+- `resources/views/livewire/chart.blade.php`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement F-01 of the HC Financial Web plan (Table paging across pages (request 01)). Branch: `f-01-table-paging`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+The Financial Manager reports that paging through long lists does not work, for example the chart of accounts. On current main, Next/Prev on the chart list works in a browser (1–10, then 11–20 of 169), so first rebuild the assets (`npm run build`; `public/build` is not in git) on the machine where it failed and retry. Then test paging after a search, after a filter change, and after arriving with `wire:navigate`, on the chart and every table that uses `x-ui.scroll-table`. Fix `resources/js/paged-table.js` if any case fails (a filter should return to page 1; a Livewire morph must keep the current page valid). Add an automated check of these cases.
+
+## Done when
+Next and Prev work on every multi-page table, before and after a search or filter and after navigating between screens.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `f-01-table-paging`, commit with messages starting `F-01:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### F-02 · مكان واحد للعمليات المالية (طلب 02)
+
+- **المجموعة:** طلبات المدير المالي وإجراء الخزينة · **المجال:** الإدخال · **الأولوية:** عالية
+- **الجهد المقدّر:** 6 أيام
+- **الاعتماديات:** لا يوجد
+
+#### Objective
+اليوم هناك ثلاثة أماكن للإدخال: الإدخال المفرد (خمسة أنواع: إيراد، مصروف، صرف، سلفة، استرداد)، ومنشئ السندات (أسطر مدين ودائن تُكتب يدوياً)، والإدخال المتعدد (لصق نص مفصول بـ Tab). ويوجد إدخال آخر في شاشة التحويلات وشاشة الرواتب وشاشة القروض. المدير المالي يريد مكاناً واحداً من القائمة العلوية، تختار فيه نوع العملية فتظهر لك قوائم تناسبها، والبرنامج يكتب القيد وحده.
+
+#### Implementation scope
+شاشة «العمليات» في القائمة العلوية تحل محل الإدخال المفرد ومنشئ السندات والإدخال المتعدد في القائمة (العناوين القديمة تحوّل إليها). أولاً تختار النوع: CRV استلام، CPV دفع، TRF تحويل بين صناديق أو بين مشاريع، ALC تخصيص من الحساب العام إلى مشروع، EXG تصريف عملة، JV قيد يدوي. لكل نوع نموذج موجّه: الحقول والقوائم تتغير حسب النوع (مثلاً في CPV: المشروع ثم البند ثم الصندوق، والحساب يُملأ من البند)، والقيد المزدوج يُولَّد تلقائياً ويُعرض للمراجعة قبل الحفظ. لا تُختار الحسابات يدوياً إلا في JV، وJV للمدير المالي والإدارة فقط. تُستعمل الخدمات الموجودة: OperationEntry وTransferBuilder وSalaryAllocation وMicroLoans، فلا تتكرر قواعد الترحيل. المسودات (U-04) والاختصارات (U-07) تعمل فيها.
+
+#### Acceptance criteria
+كل عملية من الأنواع الستة تُدخل من مكان واحد باختيار من قوائم، والقيد يُكتب تلقائياً ويُعرض قبل الحفظ، ولا يحتاج المستخدم إلى اختيار مدين ودائن إلا في القيد اليدوي.
+
+#### References in the code
+- `app/Livewire/SingleEntry.php`
+- `app/Livewire/VoucherBuilder.php`
+- `app/Livewire/MultiEntry.php`
+- `app/Services/Ledger/OperationEntry.php`
+- `app/Services/Ledger/TransferBuilder.php`
+- `app/Enums/VoucherType.php`
+- `config/navigation.php`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement F-02 of the HC Financial Web plan (One place for financial operations (request 02)). Branch: `f-02-operations-hub`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+Build one Operations screen in the top menu that replaces Single entry, the Voucher builder and Multi entry in the navigation (their old addresses redirect to it). Step 1: pick the type: CRV (receipt), CPV (payment), TRF (move cash between tills of one currency, or between projects, with the in-transit accounts 11x3/11x4), ALC (allocation from a city general account to a project, see F-03), EXG (currency exchange), JV (manual entry). Step 2: a guided form per type whose fields and lists depend on the type, e.g. CPV asks project → budget line (fills the expense account) → till → amount → paid to; the person never picks a debit or credit account except in JV. Step 3: show the generated lines (Dr/Cr, owner, USD value) read-only for review, then save as pending. JV is limited to the Financial Manager and Head Office. Reuse the existing builders (`OperationEntry`, `TransferBuilder`, `SalaryAllocation`, `MicroLoans`, `VoucherDraftBuilder`) and the posting rules; do not duplicate them. Keep drafts (U-04) and shortcuts (U-07) working. Depends on the ALC meaning decided in F-03.
+
+## Done when
+Each of the six types is entered from one screen by picking from lists; the lines are written automatically and shown before saving; only JV asks for debit and credit accounts.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `f-02-operations-hub`, commit with messages starting `F-02:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### F-03 · نوعا ALC (تخصيص) وEXG (تصريف) كما يعرّفهما المدير المالي
+
+- **المجموعة:** طلبات المدير المالي وإجراء الخزينة · **المجال:** الإدخال · **الأولوية:** عالية
+- **الجهد المقدّر:** 2.5 أيام
+- **الاعتماديات:** F-02
+
+#### Objective
+في الكود اليوم ALC تعني توزيع راتب أو فاتورة على عدة مشاريع (SalaryAllocation)، بينما المدير المالي يعرّفها تخصيص مبلغ من الحساب العام إلى حساب مشروع، وهذا موجود فعلاً لكن كـ TRF من نوع syp_to_project أو usd_to_project. ولا يوجد نوع EXG: التصريف اليوم TRF من نوع local_exchange أو «صرف» في الإدخال المفرد، والأخير يسمح لأي مالك بالتصريف مع أن القاعدة 2 تقول إن التصريف إلى الليرة للحساب العام فقط.
+
+#### Implementation scope
+يحتاج قراراً أولاً (انظر تقرير المراجعة): ALC = التخصيص من الحساب العام إلى المشروع، وتوزيع الراتب أو الفاتورة يصبح خيار «تقسيم» داخل CPV. ثم: نوع سند EXG جديد للتصريف، تملكه حسابات المدينة العامة عند الشراء بالليرة، والفرق إلى 5503 تحت الحساب العام. التصريف بين EUR وUSD لمشروع يبقى للمشروع. الأنواع القديمة للسندات المحفوظة تبقى كما هي (لا تُعدَّل السندات المعتمدة).
+
+#### Acceptance criteria
+التخصيص يُحفظ كسند ALC والتصريف كسند EXG، وقواعد الترحيل الحالية (لا حركة نقد في التخصيص، الفرق إلى 5503 تحت الحساب العام، متوسط الكلفة) تبقى صحيحة.
+
+#### References in the code
+- `app/Enums/VoucherType.php`
+- `app/Enums/TransferKind.php`
+- `app/Services/Ledger/TransferBuilder.php`
+- `app/Services/Payroll/SalaryAllocation.php`
+- `app/Services/Bridge/PostingRuleCatalogue.php`
+- `docs/DECISIONS.md`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement F-03 of the HC Financial Web plan (ALC as allocation and EXG as exchange). Branch: `f-03-allocation-and-exchange`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+After the decision in the review report: make ALC mean an allocation from a city general account to a project (today `TransferKind::SypToProject` / `UsdToProject` posted as TRF) and move the salary and invoice split (`SalaryAllocation`, today ALC) to a "split" option of CPV. Add a voucher type EXG for currency exchange: SYP bought by the city general account (today `TransferKind::LocalExchange`), with the difference to 5503 under the general account, and a project exchanging its own EUR to USD. A plain exchange by a project into SYP is refused (rule 2 of the treasury procedure). Saved and approved vouchers keep their type; add a migration only for the enum value. Update the posting-rule catalogue and the bridge pages.
+
+## Done when
+An allocation saves as ALC and an exchange as EXG, and the existing rules (no cash moves in an allocation, difference to 5503 under the general account, average cost) still hold.
+
+## Preconditions
+These must be merged first: F-02. If one is missing, stop and report.
+
+## Git
+Start from an up-to-date `main`, create branch `f-03-allocation-and-exchange`, commit with messages starting `F-03:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### F-04 · قالب Excel يولّده البرنامج لإدخال عدة عمليات
+
+- **المجموعة:** طلبات المدير المالي وإجراء الخزينة · **المجال:** الإدخال · **الأولوية:** عالية
+- **الجهد المقدّر:** 3 أيام
+- **الاعتماديات:** F-02
+
+#### Objective
+الإدخال المتعدد اليوم لصق نص مفصول بـ Tab بأعمدة يجب حفظ ترتيبها، ولا يوجد قالب يُنزَّل ولا رفع ملف. المدير المالي يريد من داخل شاشة العمليات تنزيل نموذج Excel يولّده البرنامج، تُعبّأ فيه العمليات ثم يُرفع.
+
+#### Implementation scope
+في شاشة العمليات زر «تنزيل قالب» لكل نوع (أو قالب عام فيه عمود النوع): ملف XLSX فيه ورقة الإدخال بأعمدة النوع وأسماء عربية وإنكليزية، وورقة «قوائم» فيها المشاريع والبنود والصناديق والحسابات المسموحة لهذا المستخدم. ثم «رفع الملف»: يقرأ البرنامج الأسطر، ويعرض معاينة فيها كل سطر مع القيد الذي سيُكتب والأخطاء بجانب كل سطر، ولا يحفظ إلا إذا صحت كل الأسطر (كما اليوم: الكل أو لا شيء، حتى 500 سطر). يُستعمل OpenSpout الموجود في المشروع.
+
+#### Acceptance criteria
+المستخدم ينزّل قالباً، يعبّئه، يرفعه، يرى المعاينة والأخطاء لكل سطر، ثم يحفظ كل العمليات دفعة واحدة.
+
+#### References in the code
+- `app/Services/Ledger/OperationSheet.php`
+- `app/Livewire/MultiEntry.php`
+- `app/Services/Ledger/StatementExport.php`
+- `app/Services/Projects/BudgetSheetReader.php`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement F-04 of the HC Financial Web plan (Program-generated Excel template for many operations). Branch: `f-04-excel-template`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+In the Operations screen (F-02) add Download template (XLSX, per type or one sheet with a Type column) and Upload. The template has the entry sheet with bilingual headers and a Lists sheet holding the projects, budget lines, tills and accounts this person may use (data scope). Upload parses the rows with OpenSpout (already installed), shows a preview of every row with the lines it will post and its errors next to it, and saves only when every row is valid, in one transaction, up to `OperationSheet::MAX_ROWS`. Keep the paste box as a fallback. Reuse `OperationSheet` for validation and posting.
+
+## Done when
+A person downloads the template, fills it, uploads it, sees each row with its lines and errors, and saves all rows at once.
+
+## Preconditions
+These must be merged first: F-02. If one is missing, stop and report.
+
+## Git
+Start from an up-to-date `main`, create branch `f-04-excel-template`, commit with messages starting `F-04:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### F-05 · صافي الأصول محسوب تلقائياً، والأرصدة الافتتاحية وإقفال السنة (طلب 03)
+
+- **المجموعة:** طلبات المدير المالي وإجراء الخزينة · **المجال:** القوائم المالية · **الأولوية:** عالية
+- **الجهد المقدّر:** 3 أيام
+- **الاعتماديات:** لا يوجد
+
+#### Objective
+لا يُرحَّل أي سطر تلقائياً إلى حسابات صافي الأصول 3101 و3201 و3901، فرصيدها في دليل الحسابات وميزان المراجعة صفر، وهذا يربك القارئ. قائمة المركز المالي تحسب «نتيجة غير مقفلة» = الإيرادات − المصاريف وتضيفها، فالمعادلة الأصول = الالتزامات + صافي الأصول متوازنة فعلاً، لكن لا يوجد عرض واضح لصافي الأصول = الأصول − الالتزامات، ولا تقسيم بين المقيد وغير المقيد، ولا إقفال سنة، ولا أرصدة افتتاحية (شاشة opening ما زالت placeholder). وVoucherBuilder يسمح بالترحيل اليدوي إلى 3xxx.
+
+#### Implementation scope
+في دليل الحسابات وميزان المراجعة والمركز المالي: سطر «صافي الأصول» محسوب = الأصول − الالتزامات، مقسوم إلى بلا قيود مانحين (3100) ومقيد من المانحين (3200) حسب قيد المشروع، مع ملاحظة تشرح أنه محسوب. منع الترحيل اليدوي إلى 3xxx إلا عبر سند الأرصدة الافتتاحية (OPN) وسند إقفال السنة. شاشة الأرصدة الافتتاحية (لمرة واحدة عند الانتقال، والفرق إلى 3901 ويجب أن يكون صفراً). إقفال السنة يولّد سند JV يغلق الإيرادات والمصاريف إلى 3101/3201.
+
+#### Acceptance criteria
+صافي الأصول يظهر في كل مكان مساوياً للأصول ناقص الالتزامات بعد كل عملية، دون أي إدخال يدوي.
+
+#### References in the code
+- `app/Services/Ledger/FinancialStatements.php`
+- `app/Services/Ledger/TrialBalance.php`
+- `app/Services/Chart/AccountBalances.php`
+- `database/seeders/data/chart_accounts.json`
+- `app/Livewire/VoucherBuilder.php`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement F-05 of the HC Financial Web plan (Net assets computed automatically, opening balances and year-end close (request 03)). Branch: `f-05-net-assets`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+Show net assets as computed, not posted: in the chart of accounts, the trial balance and the statement of financial position, a Net assets line = assets − liabilities from approved vouchers, split into without donor restrictions (3100) and with donor restrictions (3200) by the project's restriction, with a note that it is computed. Refuse manual lines on 3xxx accounts in every entry screen except an opening-balance voucher (OPN) and the year-end closing voucher. Build the opening-balances screen (the `opening` slug is a placeholder): one OPN voucher per city at go-live, the difference to 3901, which must be zero. Add a year-end close that writes a JV closing income and expenses into 3101/3201 per project restriction, and is refused while the year has pending vouchers. Use bcmath.
+
+## Done when
+Net assets equal assets minus liabilities everywhere after every operation, with no manual entry.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `f-05-net-assets`, commit with messages starting `F-05:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### F-06 · مستخدم Super User للاختبار (طلب 04)
+
+- **المجموعة:** طلبات المدير المالي وإجراء الخزينة · **المجال:** الصلاحيات · **الأولوية:** متوسطة
+- **الجهد المقدّر:** 1.5 أيام
+- **الاعتماديات:** لا يوجد
+
+#### Objective
+لا يوجد دور يستطيع كل شيء. الإدارة (Head Office) ترى كل الشاشات وكل الإجراءات وبلا حد للبيانات، لكنها لا تأخذ دور المدير العام في سلسلة الاعتماد، ودور مدير البرنامج في الطلبات دور مستقل، ولا أحد يعتمد ما أعدّه (القاعدة 7)، ولا يأخذ الشخص نفسه خطوتين.
+
+#### Implementation scope
+دور ويب جديد «Super User» يُمنح من شاشة المستخدمين، ويعمل فقط عندما يكون FINANCE_SUPER_USER=true في .env، ويُرفض تلقائياً إذا APP_ENV=production. يرى كل الشاشات وكل الإجراءات وكل البيانات، ويأخذ أي خطوة في سلسلة الاعتماد (مدير البرنامج، المدير المالي، المدير العام)، ويستطيع اعتماد ما أعدّه بنفسه أثناء الاختبار. كل إجراء يقوم به يُسجَّل في سجل التدقيق مع علامة «super». يظهر شريط تحذير في أعلى الشاشة أثناء الدخول به.
+
+#### Acceptance criteria
+مستخدم واحد يجرّب كل دورة عمل من الإدخال إلى الاعتماد النهائي، والميزة مطفأة تلقائياً على الإنتاج.
+
+#### References in the code
+- `app/Enums/RoleId.php`
+- `config/permissions.php`
+- `app/Models/User.php`
+- `app/Policies/ApprovalPolicy.php`
+- `app/Policies/RequestPolicy.php`
+- `app/Services/Approvals/ApprovalChain.php`
+- `app/Services/Ledger/Rules/ApproverIsNotPreparer.php`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement F-06 of the HC Financial Web plan (Super User for testing (request 04)). Branch: `f-06-super-user`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+Add a web-only role SuperUser (next free RoleId, stored in `web_user_roles`, assignable on the Users screen by someone with users.delete). It is active only when `FINANCE_SUPER_USER=true` and never when `APP_ENV=production`. While active it can open every screen with every action, sees all data (no `LegacyDataScope` limit), may take any approval step (Program Manager, Financial Manager, General Manager) in `ApprovalChain`, `ApprovalPolicy` and `RequestPolicy`, and may approve its own voucher or request (bypassing rule 7 `ApproverIsNotPreparer` only for this role). Every action it takes is audited with a `super` marker, and a warning band shows at the top of every page while signed in as it. Tests: the role does nothing when the flag is off or in production.
+
+## Done when
+One user can walk every workflow from entry to final approval, and the feature is off by itself in production.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `f-06-super-user`, commit with messages starting `F-06:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### F-07 · الطلب الشهري: «إعادة للتعديل» والتخصيص التلقائي بعد الاعتماد
+
+- **المجموعة:** طلبات المدير المالي وإجراء الخزينة · **المجال:** الطلبات · **الأولوية:** عالية
+- **الجهد المقدّر:** 2.5 أيام
+- **الاعتماديات:** لا يوجد
+
+#### Objective
+إجراء الخزينة يقول إن المراجع يستطيع إعادة الطلب للتعديل، وإن الاعتماد النهائي يولّد التخصيص تلقائياً (الليرة من الحساب العام للمدينة إلى المشروع، والدولار إلى صندوق الدولار). اليوم حالات الطلب: مسودة، مقدّم، معتمد، مرفوض، مغلق، ولا يوجد «أعيد للتعديل»، والاعتماد يغيّر الحالة فقط والتخصيص يُحضَّر يدوياً من شاشة التحويلات.
+
+#### Implementation scope
+حالة جديدة «أعيد للتعديل» مع سبب، يرجع بها الطلب لمقدّمه ليعدّله ويعيد تقديمه، وتُسجَّل في سجل التدقيق وتصل كإشعار. وعند الاعتماد النهائي يُولَّد تلقائياً سند تخصيص بانتظار الاعتماد: مجموع الليرة من الحساب العام للمدينة إلى المشروع بسعر المدينة المعتمد، ومجموع الدولار كذلك، والمشروع يدفع قيمة الدولار من حصته في 1161 (كما TransferBuilder اليوم)، ويرتبط السند بالطلب.
+
+#### Acceptance criteria
+المراجع يعيد الطلب للتعديل بسبب، والاعتماد النهائي يُنشئ سند التخصيص تلقائياً مربوطاً بالطلب.
+
+#### References in the code
+- `app/Services/Requests/RequestWorkflow.php`
+- `app/Enums/RequestStatus.php`
+- `app/Services/Ledger/TransferBuilder.php`
+- `app/Models/AllocationRate.php`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement F-07 of the HC Financial Web plan (Monthly request: return for changes, and automatic allocation on approval). Branch: `f-07-request-flow`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+Add a request status `returned` (with a reason) that sends the request back to its requester to edit and resubmit; audit it and notify (U-01). On final approval in `RequestWorkflow::approve`, create a pending allocation voucher automatically from the approved lines: the SYP total from the city general account to the project at the approved city rate, and the USD total likewise, with the project repaying the dollar value from its 1161 share, exactly as `TransferBuilder` posts `SypToProject` / `UsdToProject` today; link it with `request_id`. If no approved city rate exists, keep the request approved and show what is missing. Migration for the status only.
+
+## Done when
+A reviewer can return a request with a reason, and the final approval creates the allocation voucher linked to the request.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `f-07-request-flow`, commit with messages starting `F-07:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### F-08 · شاشة الصناديق: رصيد كل صندوق موزّعاً على أصحابه
+
+- **المجموعة:** طلبات المدير المالي وإجراء الخزينة · **المجال:** الخزينة · **الأولوية:** متوسطة
+- **الجهد المقدّر:** يومان
+- **الاعتماديات:** لا يوجد
+
+#### Objective
+القاعدة الأساسية في الإجراء: رصيد الصندوق = مجموع حصص المالكين (المشاريع + الحساب العام). البرنامج يسجّل المالك في كل سطر، لكن شاشة الصناديق (tills) ما زالت placeholder، وصفحة المشروع تقرأ أرصدة البرنامج القديم.
+
+#### Implementation scope
+شاشة الصناديق: لكل صندوق رصيده من السندات المعتمدة، وتحته قائمة الحسابات العامة والمشاريع التي تملك منه، ومجموعها يساوي الرصيد، مع قيمة كل سطر بالدولار. وصفحة المشروع تعرض حصته من كل صندوق من دفتر الويب.
+
+#### Acceptance criteria
+كل صندوق يظهر مع أصحابه ومجموع الحصص يساوي رصيده تماماً.
+
+#### References in the code
+- `app/Services/Ledger/ProjectBalances.php`
+- `app/Services/Ledger/TreasuryPosition.php`
+- `app/Livewire/ProjectPage.php`
+- `routes/web.php`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement F-08 of the HC Financial Web plan (Tills screen: each till split by its owners). Branch: `f-08-till-owners`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+Build the `tills` screen from approved ledger lines: one block per cash account with its balance, and under it every general account and project that owns part of it, with the USD value of each row; the rows must add up to the till balance exactly (bcmath), and any difference is shown as unowned. Respect data scope. On the project page, show the project's share of each till from the ledger (`ProjectBalances::fundLocations`) next to the legacy figures.
+
+## Done when
+Every till shows its owners, and the shares add up to its balance exactly.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `f-08-till-owners`, commit with messages starting `F-08:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### F-09 · إقفال الشهر والمطابقات
+
+- **المجموعة:** طلبات المدير المالي وإجراء الخزينة · **المجال:** الخزينة · **الأولوية:** متوسطة
+- **الجهد المقدّر:** 3 أيام
+- **الاعتماديات:** F-08
+
+#### Objective
+الإجراء يطلب في آخر الشهر: رصيد الصندوق = الجرد النقدي، و1161 = كشف شركة الحوالات، و1171/1172 = كشف البنك، و2901 صفر. في الكود قاعدة الإقفال 12 (حسابات الطريق و2901 صفر) فقط، ولا مكان لإدخال الجرد أو رصيد الكشف، ولا شاشة إقفال.
+
+#### Implementation scope
+شاشة إقفال الشهر لكل مدينة: إدخال الجرد النقدي لكل صندوق، ورصيد كشف شركة الحوالات لـ 1161، ورصيد كشف البنك لـ 1171/1172، فيظهر الفرق بجانب كل منها. وفحص حسابات الطريق و2901. الإقفال يُسمح فقط عندما تكون الفروق صفراً أو مشروحة، وبعده لا يُقبل سند بتاريخ داخل الشهر المقفل (القاعدة 12).
+
+#### Acceptance criteria
+المدير المالي يقفل الشهر بعد مطابقة كل صندوق والكشوفات، ولا يقبل البرنامج بعدها سنداً بتاريخ ذلك الشهر.
+
+#### References in the code
+- `app/Services/Ledger/Rules/MonthClosesOnlyWhenClearingIsZero.php`
+- `app/Services/Ledger/FollowUpReports.php`
+- `config/ledger.php`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement F-09 of the HC Financial Web plan (Month-end close and reconciliations). Branch: `f-09-month-end`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+Build a month-end screen per city: enter the cash count of each safe, the transfer company statement balance for 1161 and the bank statement balance for 1171/1172; show the ledger balance and the difference for each; check that in-transit accounts and 2901 are zero (rule 12). Closing a month is allowed only when every difference is zero or has a written explanation, stores who closed it and when (own table via migration), and afterwards no voucher dated inside the closed month is accepted (wire the existing rule 12). Head Office can reopen with a reason.
+
+## Done when
+The Financial Manager closes a month after every till and statement agrees, and no voucher dated in that month is accepted afterwards.
+
+## Preconditions
+These must be merged first: F-08. If one is missing, stop and report.
+
+## Git
+Start from an up-to-date `main`, create branch `f-09-month-end`, commit with messages starting `F-09:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### F-10 · تقرير الموافقات الشهري لكل المشاريع
+
+- **المجموعة:** طلبات المدير المالي وإجراء الخزينة · **المجال:** التقارير · **الأولوية:** متوسطة
+- **الجهد المقدّر:** 1.5 أيام
+- **الاعتماديات:** F-07
+
+#### Objective
+الإجراء يطلب تقريراً شهرياً: الدولار عند شركة الحوالات أول الشهر، ثم المعتمد بالليرة وكلفته بالدولار، ثم المعتمد بالدولار، ثم الحركات الأخرى، ثم الدولار آخر الشهر، مع الليرة أول الشهر وآخره، وتصدير CSV. غير موجود اليوم.
+
+#### Implementation scope
+تقرير جديد في مجموعة التقارير يبني هذه الأعمدة لكل مشروع ولكل شهر من السندات المعتمدة والطلبات المعتمدة، مع تصدير CSV وXLSX.
+
+#### Acceptance criteria
+التقرير يطابق رصيد 1161 أول الشهر وآخره، ومجموع المعتمد يطابق الطلبات المعتمدة.
+
+#### References in the code
+- `app/Services/Ledger/FollowUpReports.php`
+- `app/Livewire/FollowUpReport.php`
+- `app/Services/Requests/RequestWorkflow.php`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement F-10 of the HC Financial Web plan (Monthly approvals report). Branch: `f-10-monthly-approvals-report`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+Add a report "Monthly approvals" (all projects, one month): USD at the transfer company (1161) at the start of the month → approved in SYP and its USD cost → approved in USD → other movements → USD at the end, plus SYP held at the start and end, per project and in total, from approved vouchers and approved requests. CSV and XLSX export like the other reports.
+
+## Done when
+The report agrees with the 1161 balance at the start and end of the month, and its approved totals match the approved requests.
+
+## Preconditions
+These must be merged first: F-07. If one is missing, stop and report.
+
+## Git
+Start from an up-to-date `main`, create branch `f-10-monthly-approvals-report`, commit with messages starting `F-10:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### F-11 · ورقة المصاريف: رقم الفاتورة والمستفيد والمكان، والحساب المعلّق 2901
+
+- **المجموعة:** طلبات المدير المالي وإجراء الخزينة · **المجال:** الإدخال · **الأولوية:** متوسطة
+- **الجهد المقدّر:** 1.5 أيام
+- **الاعتماديات:** F-02
+
+#### Objective
+الإجراء يطلب في كل سطر مصروف: رقم الفاتورة، المستفيد، والمكان. وإن لم يوجد بند يذهب المصروف إلى 2901 (معلّق) حتى يُصحَّح. اليوم لا توجد هذه الأعمدة، ولا يذهب شيء إلى 2901 تلقائياً. والمصروف خارج فترة التمويل تحذير فقط، بينما الإجراء يقول يُرفض.
+
+#### Implementation scope
+إضافة رقم الفاتورة والمستفيد والمكان إلى نموذج CPV والقالب (F-04) وورقة المصاريف. وحسب قرار المدير المالي: مصروف بلا بند يُرحَّل إلى 2901 مع تنبيه، وشاشة متابعة لأرصدة 2901 حتى تصفيرها. والمصروف خارج فترة التمويل يُرفض بدل التحذير (أو يبقى تحذيراً، حسب القرار).
+
+#### Acceptance criteria
+كل مصروف يحمل رقم فاتورته ومستفيده، والمصروف بلا بند لا يضيع بل يظهر في 2901 حتى يُصحَّح.
+
+#### References in the code
+- `app/Services/Ledger/OperationEntry.php`
+- `app/Services/Ledger/VoucherWarnings.php`
+- `app/Services/Ledger/OperationSheet.php`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement F-11 of the HC Financial Web plan (Expenses sheet columns and the 2901 suspense account). Branch: `f-11-expense-sheet`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+Add bill number, paid to and place to the CPV form, the Excel template (F-04) and the expense rows (columns on `gl_voucher_lines` or the voucher, via migration). After the Financial Manager decides (review report): post an expense with no budget line to 2901 Suspense with a warning, list open 2901 lines in a follow-up report until they are cleared; and refuse an expense dated outside the contract's funding period instead of warning (today `VoucherWarnings` only warns, and only on the end date).
+
+## Done when
+Every expense carries its bill number and payee, and an expense with no budget line shows in 2901 until it is corrected.
+
+## Preconditions
+These must be merged first: F-02. If one is missing, stop and report.
+
+## Git
+Start from an up-to-date `main`, create branch `f-11-expense-sheet`, commit with messages starting `F-11:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### F-12 · سند عكسي للتصحيح، وتسوية السلف
+
+- **المجموعة:** طلبات المدير المالي وإجراء الخزينة · **المجال:** الإدخال · **الأولوية:** متوسطة
+- **الجهد المقدّر:** 1.5 أيام
+- **الاعتماديات:** F-02
+
+#### Objective
+لا توجد طريقة لتصحيح سند معتمد إلا قيد يدوي. والسلفة اليوم تُصرف (مدين 1201) وتُسترد نقداً فقط، ولا توجد «تسوية سلفة» بفواتير (مدين مصروف / دائن 1201)، وهي من أكثر العمليات اليومية في المنظمات.
+
+#### Implementation scope
+زر «عكس السند» على السند المعتمد يولّد سنداً عكسياً مربوطاً به (بانتظار الاعتماد) بنفس الأسطر معكوسة، ثم يُدخل الصحيح. وفي CPV خيار «تسوية سلفة»: تختار الموظف وسلفته المفتوحة، وتدخل الفواتير على البنود، والفرق يُسترد نقداً أو يُدفع.
+
+#### Acceptance criteria
+السند الخاطئ يُصحَّح بسند عكسي مربوط به، والسلفة تُسوّى بفواتيرها ويظهر رصيدها المتبقي.
+
+#### References in the code
+- `app/Services/Ledger/PostVoucher.php`
+- `app/Services/Ledger/OperationEntry.php`
+- `app/Services/Ledger/FollowUpReports.php`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement F-12 of the HC Financial Web plan (Reversal vouchers and advance settlement). Branch: `f-12-reversal-and-settlement`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+Add Reverse on an approved voucher: it creates a pending voucher with the same lines on the opposite sides, linked to the original (column via migration), with a reason; the original is never edited. Add "Advance settlement" to CPV in the Operations screen: pick the employee and an open advance (account 1201 by contact), enter the bills on budget lines (Dr expense / Cr 1201), and the difference is repaid in cash (CRV) or paid out (CPV). Show open advances per employee (the `advances` report exists).
+
+## Done when
+A wrong voucher is corrected by a linked reversal, and an advance is settled with its bills showing what remains open.
+
+## Preconditions
+These must be merged first: F-02. If one is missing, stop and report.
+
+## Git
+Start from an up-to-date `main`, create branch `f-12-reversal-and-settlement`, commit with messages starting `F-12:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### F-13 · تقرير المانح: الميزانية مقابل الصرف بعملة المانح
+
+- **المجموعة:** طلبات المدير المالي وإجراء الخزينة · **المجال:** التقارير · **الأولوية:** متوسطة
+- **الجهد المقدّر:** يومان
+- **الاعتماديات:** لا يوجد
+
+#### Objective
+المانح يطلب عادة تقريراً بالبنود: الميزانية، المصروف، المتبقي، بعملة المانح وبالسعر الحقيقي للمشروع. البرنامج يحسب هذا جزئياً للتحذيرات، لكن لا يوجد تقرير جاهز يُرسل للمانح، ولا عرض للمستلم بعملة المانح واليورو.
+
+#### Implementation scope
+تقرير لكل مشروع: لكل بند الميزانية والمصروف والمتبقي ونسبة الصرف بعملة المانح والدولار، والمبالغ المستلمة من المانح بعملته، وفترة التمويل، مع تصدير XLSX وPDF بالعربي والإنكليزي.
+
+#### Acceptance criteria
+تقرير المشروع يُصدَّر جاهزاً للمانح، وأرقامه تطابق القوائم المالية.
+
+#### References in the code
+- `app/Services/Ledger/ProjectBalances.php`
+- `app/Services/Ledger/VoucherWarnings.php`
+- `app/Services/Ledger/StatementExport.php`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement F-13 of the HC Financial Web plan (Donor report: budget against actual in the donor currency). Branch: `f-13-donor-report`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+Add a donor report per project: for each budget line the budget, actual, remaining and percentage spent, in the donor currency (at the project's real rate from its receipts) and USD; money received from the donor in its currency; the funding period. XLSX and PDF export in English and Arabic (reuse `StatementExport`).
+
+## Done when
+A project's report exports ready for the donor, and its figures agree with the financial statements.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `f-13-donor-report`, commit with messages starting `F-13:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+````
+
+---
+
+### F-14 · شاشة سجل التدقيق
+
+- **المجموعة:** طلبات المدير المالي وإجراء الخزينة · **المجال:** الرقابة · **الأولوية:** منخفضة
+- **الجهد المقدّر:** 1.5 أيام
+- **الاعتماديات:** لا يوجد
+
+#### Objective
+كل إجراء على السندات والطلبات يُسجَّل (VoucherAudit وRequestAudit)، والدخول يُسجَّل في جدول log، لكن لا توجد شاشة واحدة تعرض من فعل ماذا ومتى، وهي أول ما يطلبه المدقق.
+
+#### Implementation scope
+شاشة للمدير المالي والإدارة: كل الإجراءات مع التاريخ والشخص ونوع الإجراء والسند أو الطلب والسبب، مع فلاتر وتصدير CSV.
+
+#### Acceptance criteria
+المدقق يجد كل تغيير على أي سند أو طلب مع صاحبه وتاريخه من شاشة واحدة.
+
+#### References in the code
+- `app/Models/VoucherAudit.php`
+- `app/Models/RequestAudit.php`
+- `app/Listeners/LogWebLogin.php`
+
+#### Claude prompt
+
+````text
+## Role and goal
+You are implementing improvement F-14 of the HC Financial Web plan (Audit log screen). Branch: `f-14-audit-log`. Do only this task.
+
+## Read before writing any code
+1. `CLAUDE.md` and `AGENTS.md`.
+2. `docs/PLAN-hcsyria_financial_test.md` and `docs/DECISIONS.md`.
+3. The files under References in the code above.
+
+## Common rules
+Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
+
+## Task
+Add an audit log screen for the Financial Manager and Head Office: voucher audits, request audits and web logins in one list (date, person, action, voucher or request with a link, reason), with filters by person, action and date and a CSV export. Read-only.
+
+## Done when
+An auditor finds every change to any voucher or request, with who and when, on one screen.
+
+## Preconditions
+None.
+
+## Git
+Start from an up-to-date `main`, create branch `f-14-audit-log`, commit with messages starting `F-14:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
