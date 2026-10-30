@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\DefersLoading;
 use App\Livewire\Concerns\HasMonthFilter;
 use App\Models\GlProject;
 use App\Models\User;
@@ -23,6 +24,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 #[Layout('components.layouts.app')]
 class FollowUpReport extends Component
 {
+    use DefersLoading;
     use HasMonthFilter;
 
     public string $screen = '';

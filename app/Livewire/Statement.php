@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\DefersLoading;
 use App\Livewire\Concerns\HasMonthFilter;
 use App\Models\GlAccount;
 use App\Models\GlProject;
@@ -20,6 +21,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 #[Layout('components.layouts.app')]
 class Statement extends Component
 {
+    use DefersLoading;
     use HasMonthFilter;
 
     #[Url(as: 'account')]

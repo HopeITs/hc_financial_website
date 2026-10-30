@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\DefersLoading;
 use App\Livewire\Concerns\HasReportCurrency;
 use App\Services\Ledger\TrialBalance as TrialBalanceReport;
 use Illuminate\Contracts\View\View;
@@ -15,6 +16,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 #[Layout('components.layouts.app')]
 class TrialBalance extends Component
 {
+    use DefersLoading;
     use HasReportCurrency;
 
     #[Url]

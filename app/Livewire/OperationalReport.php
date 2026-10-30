@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\DefersLoading;
 use App\Livewire\Concerns\HasMonthFilter;
 use App\Livewire\Concerns\HasReportCurrency;
 use App\Models\GlAccount;
@@ -22,6 +23,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 #[Layout('components.layouts.app')]
 class OperationalReport extends Component
 {
+    use DefersLoading;
     use HasMonthFilter;
     use HasReportCurrency;
 

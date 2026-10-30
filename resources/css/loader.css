@@ -1,0 +1,117 @@
+/*
+ * The loading mark (U-10): three figure columns rise one after another and a total rule draws under them, like a sum
+ * being added up. Brand red, the app's one moving thing; with reduced motion it stands still as a finished sum.
+ * The rail is a thin line under the top bar that runs while a report works.
+ */
+
+@layer components {
+    .hc-loader {
+        display: inline-grid;
+        grid-template-columns: repeat(3, 0.1875em);
+        grid-template-rows: 1fr auto;
+        column-gap: 0.125em;
+        row-gap: 0.125em;
+        align-items: end;
+        width: 0.8125em;
+        height: 1em;
+        flex-shrink: 0;
+        color: var(--color-primary);
+    }
+
+    .dark .hc-loader {
+        color: var(--color-brand-text);
+    }
+
+    .hc-loader > i {
+        display: block;
+        border-radius: 1px;
+        background: currentColor;
+        transform-origin: bottom;
+        animation: hc-loader-rise 1.6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+
+    .hc-loader > i:nth-child(1) { height: 45%; }
+    .hc-loader > i:nth-child(2) { height: 75%; animation-delay: 0.12s; }
+    .hc-loader > i:nth-child(3) { height: 100%; animation-delay: 0.24s; }
+
+    /* The total rule under the columns. */
+    .hc-loader > b {
+        grid-column: 1 / -1;
+        height: 0.0625em;
+        min-height: 1.5px;
+        border-radius: 1px;
+        background: currentColor;
+        transform-origin: left;
+        animation: hc-loader-total 1.6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+
+    [dir='rtl'] .hc-loader > b {
+        transform-origin: right;
+    }
+
+    @keyframes hc-loader-rise {
+        0% { transform: scaleY(0.15); opacity: 0.35; }
+        30%, 70% { transform: scaleY(1); opacity: 1; }
+        100% { transform: scaleY(0.15); opacity: 0.35; }
+    }
+
+    @keyframes hc-loader-total {
+        0%, 25% { transform: scaleX(0); }
+        55%, 75% { transform: scaleX(1); }
+        100% { transform: scaleX(0); }
+    }
+
+    /* The rail under the top bar: a short brand segment that runs across, start to end in either direction. */
+    .hc-rail {
+        position: fixed;
+        inset-inline: 0;
+        top: 4rem;
+        z-index: 45;
+        height: 2px;
+        overflow: hidden;
+        pointer-events: none;
+        background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    }
+
+    .hc-rail::after {
+        content: '';
+        position: absolute;
+        inset-block: 0;
+        inset-inline-start: 0;
+        width: 30%;
+        border-radius: 2px;
+        background: var(--color-primary);
+        animation: hc-rail-run 1.3s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+    }
+
+    .dark .hc-rail::after {
+        background: var(--color-brand);
+    }
+
+    @keyframes hc-rail-run {
+        from { transform: translateX(-100%); }
+        to { transform: translateX(340%); }
+    }
+
+    [dir='rtl'] .hc-rail::after {
+        animation-name: hc-rail-run-rtl;
+    }
+
+    @keyframes hc-rail-run-rtl {
+        from { transform: translateX(100%); }
+        to { transform: translateX(-340%); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .hc-loader > i,
+        .hc-loader > b,
+        .hc-rail::after {
+            animation: none;
+        }
+
+        .hc-rail::after {
+            width: 100%;
+            opacity: 0.6;
+        }
+    }
+}
