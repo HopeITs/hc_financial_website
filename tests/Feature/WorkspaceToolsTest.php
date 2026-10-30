@@ -184,7 +184,8 @@ it('marks the entry screens\' buttons for the shortcuts and lists them', functio
 
     $this->actingAs(wtUser(RoleId::HeadOffice, 'Ho'))->get(route('entries.vouchers.create'))->assertOk()
         ->assertSee('data-shortcut="save"', false)->assertSee('data-shortcut="add-line"', false)
-        ->assertSee('data-test="shortcuts-help"', false);
+        ->assertSee('data-test="shortcuts-help"', false)
+        ->assertSee('data-test="shortcuts-button"', false);
 });
 
 it('opens a fresh form after Ctrl+Enter saved an entry, and says what was saved', function () {
