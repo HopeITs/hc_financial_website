@@ -4,7 +4,8 @@
  * The wrapper scrolls (see `.fin-table-wrap` in finance.css) and shows `perPage`
  * rows at a time with a Prev / Next footer. Rows are hidden, not removed, so the
  * server-rendered table still works with JavaScript off. A MutationObserver
- * re-applies the page after Livewire morphs the table (filters, sorting).
+ * re-applies the page after Livewire morphs the table, and goes back to page 1
+ * when the rows themselves change (a search or filter).
  * Pass `{ paginate: false }` for tables that Livewire already paginates.
  */
 document.addEventListener('alpine:init', () => {
@@ -15,6 +16,7 @@ document.addEventListener('alpine:init', () => {
         total: 0,
         observer: null,
         root: null,
+        signature: null,
 
         init() {
             if (!this.paginate) return;
@@ -59,6 +61,13 @@ document.addEventListener('alpine:init', () => {
 
         render() {
             const rows = this.rows();
+
+            // A search or filter changes which rows there are: start again from page 1, as the user expects, instead
+            // of keeping a page number that now points into a different list. Re-renders of the same rows keep it.
+            const signature = rows.map((row) => row.getAttribute('wire:key') ?? row.textContent.trim()).join('\n');
+            if (this.signature !== null && signature !== this.signature) this.page = 1;
+            this.signature = signature;
+
             this.total = rows.length;
             if (this.page > this.pages) this.page = this.pages;
             const start = (this.page - 1) * this.perPage;
