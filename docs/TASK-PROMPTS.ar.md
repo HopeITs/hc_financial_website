@@ -4932,6 +4932,7 @@ Start from an up-to-date `main`, create branch `ai-05-monthly-summary`, commit w
 - **المجموعة:** طلبات المدير المالي وإجراء الخزينة · **المجال:** الجداول · **الأولوية:** عالية
 - **الجهد المقدّر:** نصف يوم
 - **الاعتماديات:** لا يوجد
+- **الحالة:** خالصة ومدموجة في main
 
 #### Objective
 المدير المالي أبلغ أن التنقل بين صفحات القوائم الطويلة لا يعمل، مثل دليل الحسابات. على النسخة الحالية من main يعمل التالي والسابق في دليل الحسابات (1–10 ثم 11–20 من 169)، فالأرجح أن الجهاز الذي جُرّب عليه يحمل JavaScript قديماً (مجلد public/build لا يُرفع إلى git وإصلاح مي للترقيم كان في 28 تشرين الأول)، أو أن الخلل يظهر فقط بعد تحديث Livewire (بحث أو فلتر).
@@ -4981,6 +4982,7 @@ Start from an up-to-date `main`, create branch `f-01-table-paging`, commit with 
 - **المجموعة:** طلبات المدير المالي وإجراء الخزينة · **المجال:** الإدخال · **الأولوية:** عالية
 - **الجهد المقدّر:** 6 أيام
 - **الاعتماديات:** لا يوجد
+- **الحالة:** مبنية جزئياً، والباقي في الهدف أدناه
 
 #### Objective
 اليوم هناك ثلاثة أماكن للإدخال: الإدخال المفرد (خمسة أنواع: إيراد، مصروف، صرف، سلفة، استرداد)، ومنشئ السندات (أسطر مدين ودائن تُكتب يدوياً)، والإدخال المتعدد (لصق نص مفصول بـ Tab). ويوجد إدخال آخر في شاشة التحويلات وشاشة الرواتب وشاشة القروض. المدير المالي يريد مكاناً واحداً من القائمة العلوية، تختار فيه نوع العملية فتظهر لك قوائم تناسبها، والبرنامج يكتب القيد وحده.
@@ -5015,7 +5017,7 @@ You are implementing improvement F-02 of the HC Financial Web plan (One place fo
 Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
 
 ## Task
-Build one Operations screen in the top menu that replaces Single entry, the Voucher builder and Multi entry in the navigation (their old addresses redirect to it). Step 1: pick the type: CRV (receipt), CPV (payment), TRF (move cash between tills of one currency, or between projects, with the in-transit accounts 11x3/11x4), ALC (allocation from a city general account to a project, see F-03), EXG (currency exchange), JV (manual entry). Step 2: a guided form per type whose fields and lists depend on the type, e.g. CPV asks project → budget line (fills the expense account) → till → amount → paid to; the person never picks a debit or credit account except in JV. Step 3: show the generated lines (Dr/Cr, owner, USD value) read-only for review, then save as pending. JV is limited to the Financial Manager and Head Office. Reuse the existing builders (`OperationEntry`, `TransferBuilder`, `SalaryAllocation`, `MicroLoans`, `VoucherDraftBuilder`) and the posting rules; do not duplicate them. Keep drafts (U-04) and shortcuts (U-07) working. Depends on the ALC meaning decided in F-03.
+Build one Operations screen in the top menu that replaces Single entry, the Voucher builder and Multi entry in the navigation (their old addresses redirect to it). Step 1: pick the type: CRV (receipt), CPV (payment), TRF (move cash between tills of one currency, or between projects, with the in-transit accounts 11x3/11x4), ALC (allocation from a city general account to a project, see F-03), EXG (currency exchange), JV (manual entry). Step 2: a guided form per type whose fields and lists depend on the type, e.g. CPV asks project → budget line (fills the expense account) → till → amount → paid to; the person never picks a debit or credit account except in JV. Step 3: show the generated lines (Dr/Cr, owner, USD value) read-only for review, then save as pending. JV is limited to the Financial Manager and Head Office. Reuse the existing builders (`OperationEntry`, `TransferBuilder`, `SalaryAllocation`, `MicroLoans`, `VoucherDraftBuilder`) and the posting rules; do not duplicate them. Keep drafts (U-04) and shortcuts (U-07) working. Depends on the ALC meaning decided in F-03. Status 2026-10-30: the Operations screen is built (`App\Livewire\Operations`, path `entries/operations`, permission key `single`) with CRV, CPV, TRF (project to project, project back to general), ALC, EXG and JV. Left: TRF between two tills of one currency through the in-transit accounts (no builder yet); ALC and EXG still save as TRF with their transfer kind until F-03; Multi entry stays in the menu until F-04 replaces it; the voucher builder itself is still open to accountants (only the JV card is limited).
 
 ## Done when
 Each of the six types is entered from one screen by picking from lists; the lines are written automatically and shown before saving; only JV asks for debit and credit accounts.

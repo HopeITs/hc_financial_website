@@ -40,7 +40,7 @@ return [
         'programs' => 'projects/programs',
         'projects' => 'projects/balances',
 
-        'single' => 'entries/single',
+        'single' => 'entries/operations',
         'multi' => 'entries/multi',
         'multiatt' => 'entries/attachments',
         'payments' => 'entries/micro-loans',

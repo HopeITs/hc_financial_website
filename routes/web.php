@@ -15,6 +15,7 @@ use App\Livewire\MultiAttachments;
 use App\Livewire\MultiEntry;
 use App\Livewire\Notifications;
 use App\Livewire\OperationalReport;
+use App\Livewire\Operations;
 use App\Livewire\Programs;
 use App\Livewire\ProjectEditor;
 use App\Livewire\ProjectPage;
@@ -22,7 +23,6 @@ use App\Livewire\Projects;
 use App\Livewire\ReferenceList;
 use App\Livewire\Requests;
 use App\Livewire\Salaries;
-use App\Livewire\SingleEntry;
 use App\Livewire\Statement;
 use App\Livewire\Transfers;
 use App\Livewire\Treasury;
@@ -79,7 +79,9 @@ Route::middleware('auth')->group(function () {
     Route::get('entries/vouchers/{voucher}/print', VoucherPrintController::class)->defaults('screen', 'vouchers')->middleware('screen')->name('entries.vouchers.print');
     $screen('vouchers', Vouchers::class);
 
-    $screen('single', SingleEntry::class);
+    // Operations (F-02) took the place of Single entry: same permission key, new address; the old one redirects.
+    $screen('single', Operations::class);
+    Route::get('entries/single', fn (Request $request) => redirect()->route(Navigation::routeName('single'), $request->query(), 301))->middleware('screen:single');
     $screen('multi', MultiEntry::class);
     $screen('multiatt', MultiAttachments::class);
     $screen('payments', MicroLoans::class);
