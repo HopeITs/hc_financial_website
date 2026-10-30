@@ -196,7 +196,8 @@ it('lists the issues of an import batch and deletes them with it', function () {
 });
 
 it('labels the voucher enums in English and Arabic', function () {
-    expect(VoucherType::Allocation->label())->toBe('Allocation')
+    expect(VoucherType::Allocation->label())->toBe('Payroll allocation')
+        ->and(VoucherType::Exchange->label())->toBe('Exchange')
         ->and(VoucherStatus::PendingApproval->label())->toBe('Pending approval')
         ->and(FundSource::ChcOwnFunds->label())->toBe('CHC own funds');
 

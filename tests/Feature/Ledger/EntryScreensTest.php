@@ -103,7 +103,7 @@ it('saves every pasted row as a pending voucher', function () {
         ->assertSet('failures', []);
 
     expect(Voucher::query()->count())->toBe(3)
-        ->and(Voucher::query()->pluck('type')->map->value->sort()->values()->all())->toBe(['CRV', 'CRV', 'TRF']);
+        ->and(Voucher::query()->pluck('type')->map->value->sort()->values()->all())->toBe(['CRV', 'CRV', 'EXG']);
 });
 
 it('saves nothing when one pasted row is wrong', function () {

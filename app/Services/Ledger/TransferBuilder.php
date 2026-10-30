@@ -12,7 +12,7 @@ use Carbon\CarbonImmutable;
 use InvalidArgumentException;
 
 /**
- * Builds the transfer voucher (TRF with its kind) that moves money between a city's general accounts and a project, or
+ * Builds the transfer voucher (TRF with its kind; EXG for a local exchange, F-03) that moves money between a city's general accounts and a project, or
  * between two projects. Money moves by tag: the same cash account, a different project on each side.
  *
  *  - general USD to project: dollars, one for one.
@@ -255,7 +255,7 @@ class TransferBuilder
     private function draft(TransferKind $kind, CarbonImmutable $day, int $preparedBy, array $lines, string $description): VoucherDraft
     {
         return new VoucherDraft(
-            type: VoucherType::Transfer, date: $day, preparedBy: $preparedBy, lines: $lines,
+            type: $kind === TransferKind::LocalExchange ? VoucherType::Exchange : VoucherType::Transfer, date: $day, preparedBy: $preparedBy, lines: $lines,
             description: $description, transferKind: $kind->value,
         );
     }
