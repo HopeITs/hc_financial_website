@@ -84,7 +84,7 @@ return [
             13 => ['title' => 'Migrated vouchers keep their legacy id', 'detail' => 'A voucher migrated from the Windows program keeps the id of its operation, once.'],
             14 => ['title' => 'A request is needed above USD 500', 'detail' => 'A payment not linked to an approved request is refused above USD 500 per voucher (R3-3).'],
             15 => ['title' => 'A hawala receipt is consistent', 'detail' => 'A donor receipt through the transfer company keeps the amount sent, the real rate and the commission; the dollars received equal amount times rate minus commission, and the commission is posted to 5504 (R1-6b, R4-6).'],
-            16 => ['title' => 'Net assets are computed', 'detail' => 'Net assets are assets minus liabilities, worked out by the program. No line typed in an entry screen may post to a 3xxx account; migrated vouchers keep theirs, and opening balances and the year-end close write them through their own vouchers.'],
+            16 => ['title' => 'Net assets are computed', 'detail' => 'Net assets are assets minus liabilities, worked out by the program. No line typed in an entry screen may post to a 3xxx account; migrated vouchers keep theirs, and only the opening voucher (OPN) writes them, from the balances it is given. There is no year-end close.'],
         ],
     ],
 ];

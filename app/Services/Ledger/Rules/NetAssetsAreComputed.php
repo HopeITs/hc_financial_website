@@ -4,14 +4,15 @@ namespace App\Services\Ledger\Rules;
 
 use App\Enums\AccountClass;
 use App\Enums\VoucherSource;
+use App\Enums\VoucherType;
 use App\Services\Ledger\LedgerContext;
 use App\Services\Ledger\Violation;
 use App\Services\Ledger\VoucherDraft;
 
 /**
  * Rule 16 (F-05): net assets are computed as assets − liabilities, so no one types a line on a 3xxx account in the entry
- * screens. Vouchers migrated from the Windows program keep what they had; opening balances and the year-end close will
- * write these accounts through their own vouchers.
+ * screens. Vouchers migrated from the Windows program keep what they had, and the opening voucher (OPN) writes them from
+ * the balances it is given (OpeningBalances). There is no year-end close (R5-3).
  */
 final class NetAssetsAreComputed implements PostingRule
 {
@@ -22,7 +23,7 @@ final class NetAssetsAreComputed implements PostingRule
 
     public function check(VoucherDraft $draft, LedgerContext $context): array
     {
-        if ($draft->source !== VoucherSource::Web) {
+        if ($draft->source !== VoucherSource::Web || $draft->type === VoucherType::Opening) {
             return [];
         }
 
