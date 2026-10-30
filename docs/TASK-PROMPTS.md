@@ -437,7 +437,7 @@ From the Financial Manager's notes of 2026-10-30 (requests 01 to 05) and the com
 **Done when:** A wrong voucher is corrected by a linked reversal, and an advance is settled with its bills showing what remains open.
 
 ### F-13 Donor report: budget against actual in the donor currency
-**Group:** Financial Manager's requests · **Priority:** Normal · **Effort:** 2 days · **Branch:** `f-13-donor-report` · **Depends on:** none
+**Group:** Financial Manager's requests · **Priority:** Normal · **Effort:** 2 days · **Branch:** `f-13-donor-report` · **Depends on:** none · **Status:** done and merged into main
 **Prompt:** Add a donor report per project: for each budget line the budget, actual, remaining and percentage spent, in the donor currency (at the project's real rate from its receipts) and USD; money received from the donor in its currency; the funding period. XLSX and PDF export in English and Arabic (reuse `StatementExport`).
 **Done when:** A project's report exports ready for the donor, and its figures agree with the financial statements.
 
