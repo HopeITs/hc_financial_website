@@ -9,6 +9,7 @@ use App\Livewire\Concerns\HasMonthFilter;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Services\Ledger\LedgerRuleException;
+use App\Services\Ledger\ReverseVoucher;
 use App\Services\Ledger\VoucherApprovals;
 use App\Support\Money;
 use Illuminate\Contracts\View\View;
@@ -63,6 +64,10 @@ class Vouchers extends Component
     public array $selected = [];
 
     public bool $showReject = false;
+
+    public bool $showReverse = false;
+
+    public string $reverseReason = '';
 
     public string $rejectReason = '';
 
@@ -130,6 +135,40 @@ class Vouchers extends Component
         $this->reset('notice', 'failures', 'rejectReason');
         $this->resetErrorBag();
         $this->showReject = true;
+    }
+
+    public function openReverse(): void
+    {
+        Gate::authorize('screen', ['vouchers', 'create']);
+        $this->reverseReason = '';
+        $this->failures = [];
+        $this->showReverse = true;
+    }
+
+    public function closeReverse(): void
+    {
+        $this->showReverse = false;
+    }
+
+    /** Creates the pending reversal of the open voucher and opens it. */
+    public function reverse(ReverseVoucher $reversal): void
+    {
+        Gate::authorize('screen', ['vouchers', 'create']);
+        $this->failures = [];
+        $voucher = $this->load((string) $this->number);
+        abort_if($voucher === null, 404);
+
+        try {
+            $created = $reversal->reverse($voucher, (int) $this->user()->getAuthIdentifier(), $this->reverseReason);
+        } catch (LedgerRuleException $e) {
+            $this->failures = array_map(fn ($violation) => (string) $violation->message, $e->violations);
+
+            return;
+        }
+
+        $this->showReverse = false;
+        session()->flash('notice', __('vouchers.reverse.created', ['number' => $created->id]));
+        $this->redirectRoute('entries.vouchers', ['voucher' => $created->id], navigate: true);
     }
 
     public function closeReject(): void
@@ -213,6 +252,8 @@ class Vouchers extends Component
             'showActions' => $mayApprove,
             'canApprove' => $mayApprove && Gate::allows('approve', $voucher),
             'isOwn' => $own,
+            'canReverse' => $user instanceof User && $user->canOnScreen('vouchers', ScreenAction::Create) && app(ReverseVoucher::class)->problem($voucher) === null,
+            'reversedBy' => Voucher::query()->where('reverses_id', $voucher->id)->value('id'),
             'rejection' => $rejection,
             'totalDebit' => $voucher->lines->reduce(fn (string $sum, $line) => bcadd($sum, Money::normalize($line->debit_usd), 2), Money::zero()),
             'totalCredit' => $voucher->lines->reduce(fn (string $sum, $line) => bcadd($sum, Money::normalize($line->credit_usd), 2), Money::zero()),

@@ -147,6 +147,34 @@
             </div>
         </x-ui.panel>
 
+        @if ($voucher->reverses_id)
+            <div class="rounded-lg border border-status-warning bg-status-warning-soft px-4 py-3 text-sm" data-test="reversal-note">
+                <p class="font-semibold">{{ __('vouchers.reverse.reverses') }} <a href="{{ route('entries.vouchers', ['voucher' => $voucher->reverses_id]) }}" wire:navigate class="underline" dir="ltr">{{ $voucher->reverses_id }}</a></p>
+                <p class="mt-1">{{ $voucher->reversal_reason }}</p>
+            </div>
+        @endif
+
+        @if ($reversedBy)
+            <div class="rounded-lg border border-secondary-light px-4 py-3 text-sm dark:border-ink-muted/30" data-test="reversed-note">
+                {{ __('vouchers.reverse.reversed_by') }} <a href="{{ route('entries.vouchers', ['voucher' => $reversedBy]) }}" wire:navigate class="underline" dir="ltr">{{ $reversedBy }}</a>
+            </div>
+        @endif
+
+        @if ($canReverse)
+            <x-ui.panel class="flex flex-wrap items-center gap-3 p-4" data-test="reverse-actions">
+                <x-ui.button wire:click="openReverse" data-test="reverse">{{ __('vouchers.reverse.button') }}</x-ui.button>
+                <p class="text-sm text-secondary-medium dark:text-ink-muted">{{ __('vouchers.reverse.hint') }}</p>
+            </x-ui.panel>
+
+            <x-ui.modal wire:model.self="showReverse" size="md" :title="__('vouchers.reverse.title', ['number' => $voucher->id])" submit="reverse" close="closeReverse" :required-note="true" data-test="reverse-modal">
+                <x-ui.form-textarea wire:model="reverseReason" :label="__('vouchers.reverse.reason')" required />
+
+                <x-slot:actions>
+                    <x-ui.button type="submit" tone="primary" data-test="confirm-reverse">{{ __('vouchers.reverse.button') }}</x-ui.button>
+                </x-slot:actions>
+            </x-ui.modal>
+        @endif
+
         @if ($showActions)
             <x-ui.panel class="flex flex-wrap items-center gap-3 p-4" data-test="approval-actions">
                 <x-ui.button tone="primary" wire:click="approve" :disabled="! $canApprove" data-test="approve">{{ __('vouchers.approve') }}</x-ui.button>

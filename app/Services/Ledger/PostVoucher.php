@@ -62,7 +62,7 @@ class PostVoucher
                 'is_temporary' => $draft->isTemporary,
                 'source' => $draft->source,
                 'legacy_action_id' => $draft->legacyActionId,
-            ]);
+            ] + ($draft->reversesId !== null ? ['reverses_id' => $draft->reversesId, 'reversal_reason' => $draft->reversalReason] : []));
 
             foreach ($draft->lines as $index => $line) {
                 VoucherLine::query()->create($line->toRow($index + 1, $id));

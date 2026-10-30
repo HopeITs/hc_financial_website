@@ -67,4 +67,18 @@ return [
         'reject' => 'Rejected',
         'amend' => 'Changed',
     ],
+    'reverse' => [
+        'button' => 'Reverse',
+        'hint' => 'Creates a pending voucher with the same lines on the opposite sides. This voucher is not changed.',
+        'title' => 'Reverse voucher :number',
+        'reason' => 'Why is it reversed',
+        'reverses' => 'Reverses voucher',
+        'reversed_by' => 'Reversed by voucher',
+        'created' => 'Reversal :number is created and waits for approval.',
+        'description' => 'Reversal of :number',
+        'reason_needed' => 'Write the reason for the reversal.',
+        'not_approved' => 'Only an approved voucher can be reversed.',
+        'is_reversal' => 'A reversal cannot be reversed. Enter the voucher again instead.',
+        'already' => 'This voucher is already reversed by :number.',
+    ],
 ];
