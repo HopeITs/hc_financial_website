@@ -1,6 +1,7 @@
 <div class="flex flex-col gap-6 px-4 pb-10 lg:px-8" x-data="unsavedGuard" data-unsaved-message="{{ __('drafts.leave_warning') }}" x-on:form-clean.window="clean()">
     <x-ui.page-header :title="__('navigation.screens.multi')" :subtitle="__('ledger.multi.intro')" />
 
+    <x-ui.saved-notice />
     <x-ui.form-draft :saved-at="$draftSavedAt" :notice="$draftNotice" />
 
     @if ($failures !== [])
@@ -66,7 +67,7 @@
     @endif
 
     <div class="flex items-center gap-3">
-        <x-ui.button tone="primary" wire:click="save" x-on:click="leaving()" :disabled="$rows === [] || $bad > 0" data-test="save-multi">{{ __('ledger.multi.save', ['count' => count($rows)]) }}</x-ui.button>
+        <x-ui.button tone="primary" wire:click="save" x-on:click="leaving()" :disabled="$rows === [] || $bad > 0" data-shortcut="save" aria-keyshortcuts="Control+S" data-test="save-multi">{{ __('ledger.multi.save', ['count' => count($rows)]) }}</x-ui.button>
         <x-ui.button wire:click="saveDraft" :disabled="$sheet === ''" data-test="save-draft">{{ __('drafts.save') }}</x-ui.button>
         @if ($bad > 0)
             <p class="text-sm text-secondary-medium dark:text-ink-muted">{{ __('ledger.multi.all_or_nothing') }}</p>

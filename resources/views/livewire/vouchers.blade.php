@@ -40,10 +40,16 @@
             <x-ui.form-input type="date" wire:model.live="to" :label="__('vouchers.to')" />
         </div>
 
-        <label class="flex items-center gap-2 text-sm text-secondary-dark dark:text-ink">
-            <input type="checkbox" wire:model.live="withRejected" @disabled($status !== '') data-test="with-rejected" />
-            {{ __('vouchers.include_rejected') }}
-        </label>
+        <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+            <label class="flex items-center gap-2 text-sm text-secondary-dark dark:text-ink">
+                <input type="checkbox" wire:model.live="withRejected" @disabled($status !== '') data-test="with-rejected" />
+                {{ __('vouchers.include_rejected') }}
+            </label>
+            <label class="flex items-center gap-2 text-sm text-secondary-dark dark:text-ink">
+                <input type="checkbox" wire:model.live="mine" data-test="only-mine" />
+                {{ __('vouchers.only_mine') }}
+            </label>
+        </div>
 
         <x-ui.scroll-table :paginate="false">
             <table class="fin-table" data-test="voucher-list">

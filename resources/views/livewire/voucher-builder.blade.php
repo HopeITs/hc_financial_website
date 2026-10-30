@@ -10,6 +10,7 @@
 
     <x-ui.page-header :title="__('ledger.builder.title')" :subtitle="__('ledger.builder.intro')" />
 
+    <x-ui.saved-notice />
     <x-ui.form-draft :saved-at="$draftSavedAt" :notice="$draftNotice" />
 
     @if ($failures !== [])
@@ -188,7 +189,7 @@
         </x-ui.scroll-table>
 
         <div>
-            <x-ui.button wire:click="addLine" icon="plus" data-test="add-line">{{ __('ledger.builder.add_line') }}</x-ui.button>
+            <x-ui.button wire:click="addLine" icon="plus" data-shortcut="add-line" aria-keyshortcuts="Alt+N" data-test="add-line">{{ __('ledger.builder.add_line') }}</x-ui.button>
         </div>
         @if (bccomp($difference, '0', 2) !== 0 && bccomp(ltrim($difference, '-'), (string) config('ledger.rounding_tolerance_usd'), 2) <= 0)
             <p class="type-meta text-secondary-medium dark:text-ink-muted" data-test="rounding-note">{{ __('ledger.builder.rounding_note') }}</p>
@@ -250,7 +251,7 @@
     </section>
 
     <div class="flex flex-wrap items-center gap-3">
-        <x-ui.button tone="primary" wire:click="save" x-on:click="leaving()" :disabled="! $ready" wire:loading.attr="disabled" wire:target="save" data-test="save-voucher">{{ __('ledger.builder.save') }}</x-ui.button>
+        <x-ui.button tone="primary" wire:click="save" x-on:click="leaving()" :disabled="! $ready" wire:loading.attr="disabled" wire:target="save" data-shortcut="save" aria-keyshortcuts="Control+S" data-test="save-voucher">{{ __('ledger.builder.save') }}</x-ui.button>
         <x-ui.button wire:click="saveDraft" data-test="save-draft">{{ __('drafts.save') }}</x-ui.button>
         <span class="type-meta text-secondary-medium dark:text-ink-muted">{{ __('ledger.builder.number_note') }}</span>
     </div>

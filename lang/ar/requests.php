@@ -31,6 +31,7 @@ return [
     'total' => 'الإجمالي',
     'requested_by' => 'مقدّم الطلب',
     'status_label' => 'الحالة',
+    'only_mine' => 'طلباتي فقط',
     'all_statuses' => 'كل الحالات',
     'all_projects' => 'كل المشاريع',
     'no_match' => 'لا طلب مطابق.',

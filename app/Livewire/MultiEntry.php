@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Livewire\Concerns\HasFormDraft;
 use App\Services\Ledger\LedgerRuleException;
 use App\Services\Ledger\OperationSheet;
+use App\Support\Navigation;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Layout;
@@ -21,6 +22,9 @@ class MultiEntry extends Component
 
     /** @var list<string> */
     public array $failures = [];
+
+    /** Ctrl+Enter (U-07): after saving, open a fresh form here instead of the saved voucher. */
+    public bool $thenNew = false;
 
     public function save(OperationSheet $operations): void
     {
@@ -62,6 +66,12 @@ class MultiEntry extends Component
 
         $this->forgetDraft();
         session()->flash('notice', __('ledger.multi.saved', ['count' => count($vouchers), 'first' => $vouchers[0]->id]));
+        if ($this->thenNew) {
+            $this->redirectRoute(Navigation::routeName('multi'), navigate: true);
+
+            return;
+        }
+
         $this->redirectRoute('entries.vouchers', ['status' => 'pending_approval'], navigate: true);
     }
 

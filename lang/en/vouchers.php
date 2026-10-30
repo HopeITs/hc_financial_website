@@ -26,6 +26,7 @@ return [
     'approved_by' => 'Approved by',
     'no_match' => 'No voucher matches.',
     'include_rejected' => 'Include rejected vouchers',
+    'only_mine' => 'Only vouchers I prepared',
     'select_page' => 'Select all vouchers on this page',
     'select_row' => 'Select voucher :number',
     'clear_selection' => 'Clear',

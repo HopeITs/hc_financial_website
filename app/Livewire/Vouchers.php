@@ -55,6 +55,10 @@ class Vouchers extends Component
     #[Url(as: 'rejected')]
     public bool $withRejected = false;
 
+    /** Only the vouchers the signed-in person prepared (the home page's "my rejected vouchers" opens this). */
+    #[Url]
+    public bool $mine = false;
+
     /** @var list<string> Numbers ticked in the list; they stay ticked across pages. */
     public array $selected = [];
 
@@ -75,7 +79,7 @@ class Vouchers extends Component
 
     public function updated(string $name): void
     {
-        if (in_array($name, ['type', 'status', 'from', 'to', 'search', 'withRejected', 'month'], true)) {
+        if (in_array($name, ['type', 'status', 'from', 'to', 'search', 'withRejected', 'mine', 'month'], true)) {
             $this->resetPage();
         }
     }
@@ -228,6 +232,7 @@ class Vouchers extends Component
             ->when($this->withRejected && $this->status === '', fn ($query) => $query->withTrashed())
             ->when(VoucherStatus::tryFrom($this->status) !== null, fn ($query) => $query->where('status', $this->status))
             ->when(VoucherType::tryFrom($this->type) !== null, fn ($query) => $query->where('type', $this->type))
+            ->when($this->mine, fn ($query) => $query->where('prepared_by', (int) $this->user()->getAuthIdentifier()))
             ->when($from !== null, fn ($query) => $query->whereDate('date', '>=', $from))
             ->when($to !== null, fn ($query) => $query->whereDate('date', '<=', $to))
             ->when($term !== '', fn ($query) => $query->where(fn ($inner) => $inner

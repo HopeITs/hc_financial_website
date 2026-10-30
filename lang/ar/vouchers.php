@@ -26,6 +26,7 @@ return [
     'approved_by' => 'اعتمده',
     'no_match' => 'لا يوجد سند مطابق.',
     'include_rejected' => 'إظهار السندات المرفوضة',
+    'only_mine' => 'سنداتي فقط',
     'select_page' => 'تحديد كل سندات هذه الصفحة',
     'select_row' => 'تحديد السند :number',
     'clear_selection' => 'مسح',

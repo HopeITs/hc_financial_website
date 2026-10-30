@@ -66,6 +66,9 @@ class VoucherBuilder extends Component
     /** @var list<string> */
     public array $failures = [];
 
+    /** Ctrl+Enter (U-07): after saving, open a fresh form here instead of the saved voucher. */
+    public bool $thenNew = false;
+
     public function mount(): void
     {
         $this->date = now()->toDateString();
@@ -203,6 +206,13 @@ class VoucherBuilder extends Component
 
         $this->forgetDraft();
         session()->flash('notice', __('ledger.builder.saved', ['number' => $voucher->id]));
+
+        if ($this->thenNew) {
+            $this->redirectRoute('entries.vouchers.create', navigate: true);
+
+            return;
+        }
+
         $this->redirectRoute('entries.vouchers', ['voucher' => $voucher->id], navigate: true);
     }
 
