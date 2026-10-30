@@ -128,6 +128,14 @@ Source: the receive-transfer-spend scenario run on the site with the ADISC budge
 
 R4-13 and R4-14 were given in chat on 2026-10-28, after the FM's procedure document `عملية مالية استلام وتحويل وصرف.docx` (the ADISC budget sheet is embedded in it: 28 lines, each with one donor, MCC USD 29,760 and OO USD 67,226 at the budget rate).
 
+## 6c. Round 5: treasury procedure review (`FM-DECISIONS-2026-10-30.ar.md`)
+
+| # | Decision | Decided by | Status | Affects |
+|---|----------|-----------|--------|---------|
+| R5-1 | `ALC` = payroll: the split of a salary over projects, as R1-2 says. The allocation from a city general account to a project stays a `TRF` with its sub-type (R1-10) and is shown as "Allocation" in the Operations screen | FM | Decided (2026-10-30, confirms R1-2) | F-03 (now EXG only), Operations screen |
+
+The other questions of `FM-DECISIONS-2026-10-30.ar.md` are still open.
+
 ## 7. Sign-off
 
 | Name | Role | Date | Signature |

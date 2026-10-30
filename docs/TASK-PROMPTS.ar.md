@@ -5031,20 +5031,20 @@ Start from an up-to-date `main`, create branch `f-02-operations-hub`, commit wit
 
 ---
 
-### F-03 · نوعا ALC (تخصيص) وEXG (تصريف) كما يعرّفهما المدير المالي
+### F-03 · نوع سند EXG مستقل للتصريف (ALC يبقى للرواتب)
 
 - **المجموعة:** طلبات المدير المالي وإجراء الخزينة · **المجال:** الإدخال · **الأولوية:** عالية
-- **الجهد المقدّر:** 2.5 أيام
+- **الجهد المقدّر:** 1.5 أيام
 - **الاعتماديات:** F-02
 
 #### Objective
-في الكود اليوم ALC تعني توزيع راتب أو فاتورة على عدة مشاريع (SalaryAllocation)، بينما المدير المالي يعرّفها تخصيص مبلغ من الحساب العام إلى حساب مشروع، وهذا موجود فعلاً لكن كـ TRF من نوع syp_to_project أو usd_to_project. ولا يوجد نوع EXG: التصريف اليوم TRF من نوع local_exchange أو «صرف» في الإدخال المفرد، والأخير يسمح لأي مالك بالتصريف مع أن القاعدة 2 تقول إن التصريف إلى الليرة للحساب العام فقط.
+المدير المالي ذكر EXG بين أنواع السندات الستة، والتصريف اليوم يُحفظ كسند TRF من نوع local_exchange. وقرّر (R5-1، 2026-10-30) أن ALC = الرواتب كما في R1-2، فيبقى التخصيص من الحساب العام إلى المشروع TRF.
 
 #### Implementation scope
-يحتاج قراراً أولاً (انظر تقرير المراجعة): ALC = التخصيص من الحساب العام إلى المشروع، وتوزيع الراتب أو الفاتورة يصبح خيار «تقسيم» داخل CPV. ثم: نوع سند EXG جديد للتصريف، تملكه حسابات المدينة العامة عند الشراء بالليرة، والفرق إلى 5503 تحت الحساب العام. التصريف بين EUR وUSD لمشروع يبقى للمشروع. الأنواع القديمة للسندات المحفوظة تبقى كما هي (لا تُعدَّل السندات المعتمدة).
+نوع سند EXG جديد للتصريف تملكه حسابات المدينة العامة، والفرق إلى 5503 تحت الحساب العام كما اليوم. شاشة العمليات والقالب يحفظان التصريف كـ EXG. السندات المحفوظة سابقاً تبقى بنوعها. لا تغيير على ALC ولا على التخصيص.
 
 #### Acceptance criteria
-التخصيص يُحفظ كسند ALC والتصريف كسند EXG، وقواعد الترحيل الحالية (لا حركة نقد في التخصيص، الفرق إلى 5503 تحت الحساب العام، متوسط الكلفة) تبقى صحيحة.
+التصريف يُحفظ كسند EXG، وقواعد الترحيل (الفرق إلى 5503 تحت الحساب العام، متوسط الكلفة) تبقى صحيحة.
 
 #### References in the code
 - `app/Enums/VoucherType.php`
@@ -5058,7 +5058,7 @@ Start from an up-to-date `main`, create branch `f-02-operations-hub`, commit wit
 
 ````text
 ## Role and goal
-You are implementing improvement F-03 of the HC Financial Web plan (ALC as allocation and EXG as exchange). Branch: `f-03-allocation-and-exchange`. Do only this task.
+You are implementing improvement F-03 of the HC Financial Web plan (EXG as its own voucher type for exchange (ALC stays payroll)). Branch: `f-03-exchange-voucher`. Do only this task.
 
 ## Read before writing any code
 1. `CLAUDE.md` and `AGENTS.md`.
@@ -5069,16 +5069,16 @@ You are implementing improvement F-03 of the HC Financial Web plan (ALC as alloc
 Project: Laravel 13, Livewire, Flux, Fortify, Pest, PHPStan. Run PHP with `.\php.cmd` (PHP 8.5). The database `hcsyria_financial_test` belongs to the Windows program: never alter or write legacy tables (the only allowed write is a password change on `user`, through `FinancePassword::make`), never run `migrate:fresh`, `migrate:refresh` or `db:wipe` against it. Money is `decimal(18,2)` and `bcmath`, never float. Every user-facing label has an `en` and an `ar` key in `lang/`. Finish with `.\php.cmd artisan test`, Pint and PHPStan green. One task = one branch = one pull request. No credentials in the repository.
 
 ## Task
-After the decision in the review report: make ALC mean an allocation from a city general account to a project (today `TransferKind::SypToProject` / `UsdToProject` posted as TRF) and move the salary and invoice split (`SalaryAllocation`, today ALC) to a "split" option of CPV. Add a voucher type EXG for currency exchange: SYP bought by the city general account (today `TransferKind::LocalExchange`), with the difference to 5503 under the general account, and a project exchanging its own EUR to USD. A plain exchange by a project into SYP is refused (rule 2 of the treasury procedure). Saved and approved vouchers keep their type; add a migration only for the enum value. Update the posting-rule catalogue and the bridge pages.
+Decision R5-1 (docs/DECISIONS.md): ALC stays payroll (the salary split, `SalaryAllocation`) and the allocation from a city general account to a project stays TRF with its sub-type. Add a voucher type EXG for currency exchange: the city general account buys SYP (today `TransferKind::LocalExchange`, saved as TRF), with the difference to 5503 under the general account as today. The Operations screen and the Excel template (F-04) save an exchange as EXG. Saved and approved vouchers keep their type; add a migration only for the enum value. Update the posting-rule catalogue, the voucher numbering (EXG-YYYY-NNNN) and the bridge pages.
 
 ## Done when
-An allocation saves as ALC and an exchange as EXG, and the existing rules (no cash moves in an allocation, difference to 5503 under the general account, average cost) still hold.
+An exchange saves as EXG, and the existing rules (difference to 5503 under the general account, average cost) still hold.
 
 ## Preconditions
 These must be merged first: F-02. If one is missing, stop and report.
 
 ## Git
-Start from an up-to-date `main`, create branch `f-03-allocation-and-exchange`, commit with messages starting `F-03:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
+Start from an up-to-date `main`, create branch `f-03-exchange-voucher`, commit with messages starting `F-03:`, push, merge (pull request preferred), push `main`. Do not delete the branch.
 ````
 
 ---
