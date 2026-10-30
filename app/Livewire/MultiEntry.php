@@ -5,11 +5,16 @@ namespace App\Livewire;
 use App\Livewire\Concerns\HasFormDraft;
 use App\Services\Ledger\LedgerRuleException;
 use App\Services\Ledger\OperationSheet;
+use App\Services\Ledger\OperationTemplate;
 use App\Support\Navigation;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
+use InvalidArgumentException;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 
 /** Multi entry: operations pasted from Excel, checked row by row and saved as pending vouchers all together or not at all. */
@@ -17,14 +22,54 @@ use Throwable;
 class MultiEntry extends Component
 {
     use HasFormDraft;
+    use WithFileUploads;
 
     public string $sheet = '';
+
+    public ?TemporaryUploadedFile $upload = null;
+
+    public string $uploadedName = '';
 
     /** @var list<string> */
     public array $failures = [];
 
     /** Ctrl+Enter (U-07): after saving, open a fresh form here instead of the saved voucher. */
     public bool $thenNew = false;
+
+    /** The program-made Excel file: the entry sheet and the lists to copy codes from. */
+    public function template(OperationTemplate $template): StreamedResponse
+    {
+        Gate::authorize('screen', ['multi', 'create']);
+
+        $path = $template->write(app()->getLocale() === 'ar');
+
+        return response()->streamDownload(function () use ($path) {
+            readfile($path);
+            @unlink($path);
+        }, __('ledger.template.filename').'.xlsx', ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']);
+    }
+
+    /** The uploaded file replaces the text in the box, so the preview and the checks are the same as for pasted rows. */
+    public function updatedUpload(OperationTemplate $template): void
+    {
+        Gate::authorize('screen', ['multi', 'create']);
+        $this->failures = [];
+
+        if ($this->upload === null) {
+            return;
+        }
+
+        $this->validate(['upload' => ['file', 'max:5120', 'mimes:xlsx']], [], ['upload' => __('ledger.template.upload')]);
+
+        try {
+            $this->sheet = $template->read((string) $this->upload->getRealPath());
+            $this->uploadedName = $this->upload->getClientOriginalName();
+        } catch (InvalidArgumentException $e) {
+            $this->failures = [$e->getMessage()];
+        }
+
+        $this->upload = null;
+    }
 
     public function save(OperationSheet $operations): void
     {

@@ -138,7 +138,7 @@ class OperationSheet
 
     private function column(string $header): string
     {
-        $key = strtolower(str_replace([' ', '-'], '_', trim($header)));
+        $key = strtolower(str_replace([' ', '-'], '_', trim(explode('|', $header)[0])));
 
         return match ($key) {
             'date' => 'date',
