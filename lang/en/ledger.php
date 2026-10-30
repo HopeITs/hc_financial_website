@@ -344,6 +344,7 @@ return [
     ],
     'rules' => [
         'account_unusable' => 'Account :account does not exist or is not an active posting account.',
+        'net_assets_computed' => 'Account :account is a net assets account: net assets are computed as assets minus liabilities, so no line may post to it here.',
         'currency_fixed' => 'Account :account only takes :currency, not :line_currency.',
         'currency_unsupported' => 'Currency :currency is not allowed; use USD or SYP.',
         'debit_or_credit' => 'Line must be either a debit or a credit with a positive amount, never both and never negative.',
@@ -512,5 +513,12 @@ return [
             'beneficiary' => 'Beneficiary', 'project' => 'Project', 'currency' => 'Currency', 'loan' => 'Loan', 'grant' => 'Grant',
             'due' => 'Due', 'collected' => 'Collected', 'arrears' => 'Arrears', 'late' => 'Late payments',
         ],
+    ],
+    'net_assets_panel' => [
+        'title' => 'Net assets (computed)',
+        'note' => 'Assets minus liabilities, from approved vouchers. Never posted by hand.',
+        'total' => 'Net assets',
+        'unrestricted' => 'Without donor restrictions (3100)',
+        'restricted' => 'With donor restrictions (3200)',
     ],
 ];

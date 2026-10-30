@@ -9,6 +9,7 @@ use App\Livewire\Concerns\HasFormDraft;
 use App\Models\GlAccount;
 use App\Services\Chart\AccountBalances;
 use App\Services\Ledger\Currencies;
+use App\Services\Ledger\NetAssets;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
@@ -315,7 +316,9 @@ class Chart extends Component
             'postingCounts' => $postingCounts,
             'total' => GlAccount::query()->count(),
             'listed' => $listed,
-            'balances' => $balances->all(),
+            // Net assets are computed (F-05), so 3000, 3100 and 3200 show assets minus liabilities, not what was posted.
+            'balances' => app(NetAssets::class)->onChart($balances->all()),
+            'computed' => NetAssets::CHART_CODES,
             'used' => $account !== null && $balances->isUsed($account->code),
             'editingUsed' => $this->editing !== null && $balances->isUsed($this->editing),
             'headers' => GlAccount::query()->where('level', 'header')->orderBy('code')->get(['code', 'name_en', 'name_ar']),
