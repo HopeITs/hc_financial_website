@@ -54,7 +54,7 @@ class Operations extends Component
     /** The variants of each type, the first being the default; a variant is an OperationEntry kind or a TransferKind. */
     public const MODES = [
         'CRV' => ['income', 'repayment'],
-        'CPV' => ['expense', 'advance'],
+        'CPV' => ['expense', 'advance', 'settlement'],
         'TRF' => ['between_projects', 'return'],
         'ALC' => ['usd_to_project', 'syp_to_project'],
         'EXG' => ['local_exchange'],
@@ -250,7 +250,7 @@ class Operations extends Component
     {
         $draft = null;
         $problems = [];
-        if ($this->type !== '' && $this->type !== 'JV' && $this->amount !== '') {
+        if ($this->type !== '' && $this->type !== 'JV' && $this->mode !== 'settlement' && $this->amount !== '') {
             [$draft, $problems] = $this->built();
         }
         $violations = $draft !== null && $problems === [] ? $posting->check($draft) : [];

@@ -31,6 +31,7 @@ return [
     ],
 
     'modes' => [
+        'settlement' => 'Settle an advance',
         'income' => 'Income or grant',
         'repayment' => 'Advance paid back',
         'expense' => 'Expense',

@@ -25,6 +25,8 @@ final readonly class VoucherDraft
         public bool $isTemporary = false,
         public ?int $requestId = null,
         public ?string $transferKind = null,
+        public ?string $reversesId = null,
+        public ?string $reversalReason = null,
     ) {}
 
     /** The month the voucher belongs to, as in `gl_month_closes` (YYYY-MM). */
@@ -39,6 +41,7 @@ final readonly class VoucherDraft
         return new self(
             $this->type, $this->date, $this->preparedBy, $this->lines, $this->description,
             $this->source, $this->legacyActionId, $this->isCarryForward, $this->isTemporary, $requestId, $this->transferKind,
+            $this->reversesId, $this->reversalReason,
         );
     }
 
@@ -48,6 +51,7 @@ final readonly class VoucherDraft
         return new self(
             $this->type, $this->date, $this->preparedBy, $lines, $this->description,
             $this->source, $this->legacyActionId, $this->isCarryForward, $this->isTemporary, $this->requestId, $this->transferKind,
+            $this->reversesId, $this->reversalReason,
         );
     }
 }

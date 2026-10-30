@@ -33,6 +33,17 @@
             <p class="max-w-prose text-sm">{{ __('operations.jv_note') }}</p>
             <x-ui.button tone="primary" :href="route('entries.vouchers.create')" wire:navigate data-test="open-builder">{{ __('operations.open_builder') }}</x-ui.button>
         </x-ui.panel>
+    @elseif ($type === 'CPV' && $mode === 'settlement')
+        <section class="flex flex-col gap-3" data-test="settlement-panel">
+            <x-ui.panel class="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3">
+                <x-ui.form-select wire:model.live="mode" :label="__('operations.mode')" required data-test="mode">
+                    @foreach ($modes as $option)
+                        <option value="{{ $option }}">{{ __('operations.modes.'.$option) }}</option>
+                    @endforeach
+                </x-ui.form-select>
+            </x-ui.panel>
+            <livewire:advance-settlement-form />
+        </section>
     @elseif ($type !== '')
         @if ($failures !== [])
             <div class="rounded-lg border border-status-critical bg-status-critical-soft px-4 py-2 text-sm text-status-critical" role="alert" data-test="failures">

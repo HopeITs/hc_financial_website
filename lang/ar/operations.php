@@ -31,6 +31,7 @@ return [
     ],
 
     'modes' => [
+        'settlement' => 'تسوية سلفة',
         'income' => 'إيراد أو منحة',
         'repayment' => 'استرداد سلفة',
         'expense' => 'مصروف',

@@ -20,6 +20,8 @@ use Illuminate\Support\Carbon;
  * @property VoucherType $type
  * @property string|null $transfer_kind
  * @property int|null $request_id
+ * @property string|null $reverses_id
+ * @property string|null $reversal_reason
  * @property Carbon $date
  * @property string|null $description
  * @property VoucherStatus $status
@@ -42,7 +44,7 @@ class Voucher extends Model implements Approvable
     protected $keyType = 'string';
 
     protected $fillable = [
-        'id', 'type', 'transfer_kind', 'request_id', 'date', 'description', 'status', 'prepared_by', 'approved_by', 'approved_at',
+        'id', 'type', 'transfer_kind', 'request_id', 'reverses_id', 'reversal_reason', 'date', 'description', 'status', 'prepared_by', 'approved_by', 'approved_at',
         'is_carry_forward', 'is_temporary', 'source', 'legacy_action_id',
     ];
 
