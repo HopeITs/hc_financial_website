@@ -14,6 +14,11 @@ use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
 use Livewire\Component;
+use OpenSpout\Common\Entity\Cell;
+use OpenSpout\Common\Entity\Row;
+use OpenSpout\Common\Entity\Style\Style;
+use OpenSpout\Writer\XLSX\Entity\SheetView;
+use OpenSpout\Writer\XLSX\Writer as XlsxWriter;
 use SplFileObject;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -62,6 +67,36 @@ class FollowUpReport extends Component
                 $out->fputcsv(array_map(fn (array $column, int $index) => $data['totals'][$column['key']] ?? ($index === 0 ? __('ledger.op.total') : ''), $data['columns'], array_keys($data['columns'])));
             }
         }, $this->screen.'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    /** The same rows as the CSV, as an Excel file (right to left in Arabic). */
+    public function exportXlsx(FollowUpReports $reports): StreamedResponse
+    {
+        $data = $this->data($reports);
+        $path = (string) tempnam(sys_get_temp_dir(), 'fur');
+        $writer = new XlsxWriter;
+        $writer->openToFile($path);
+        $writer->getCurrentSheet()->setName(mb_substr(__('navigation.screens.'.$this->screen), 0, 31));
+        $writer->getCurrentSheet()->setSheetView((new SheetView)->withRightToLeft(app()->getLocale() === 'ar'));
+        $bold = (new Style)->withFontBold(true);
+
+        $writer->addRow(new Row(array_map(fn (array $column) => Cell::fromValue(__("ledger.follow.columns.{$column['key']}"), $bold), $data['columns'])));
+        $cell = fn (array $column, mixed $value, ?Style $style = null) => Cell::fromValue($column['type'] === 'money' && is_numeric($value) ? (float) $value : (string) ($value ?? ''), $style);
+
+        foreach ($data['rows'] as $row) {
+            $writer->addRow(new Row(array_map(fn (array $column) => $cell($column, $row[$column['key']] ?? ''), $data['columns'])));
+        }
+
+        if ($data['totals'] !== []) {
+            $writer->addRow(new Row(array_map(fn (array $column, int $index) => $cell($column, $data['totals'][$column['key']] ?? ($index === 0 ? __('ledger.op.total') : ''), $bold), $data['columns'], array_keys($data['columns']))));
+        }
+
+        $writer->close();
+
+        return response()->streamDownload(function () use ($path) {
+            readfile($path);
+            @unlink($path);
+        }, $this->screen.'.xlsx', ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']);
     }
 
     public function render(FollowUpReports $reports): View

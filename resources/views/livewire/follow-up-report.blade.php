@@ -4,6 +4,7 @@
     <x-ui.page-header :title="__('navigation.screens.'.$screen)" :subtitle="__('ledger.follow.intro.'.$screen)">
         <x-slot:actions>
             <x-ui.button tone="primary" wire:click="export" data-test="export-csv">{{ __('ledger.op.export') }}</x-ui.button>
+            <x-ui.button wire:click="exportXlsx" data-test="export-xlsx">{{ __('ledger.follow.export_xlsx') }}</x-ui.button>
         </x-slot:actions>
     </x-ui.page-header>
 

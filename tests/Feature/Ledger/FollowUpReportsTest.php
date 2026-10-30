@@ -136,3 +136,38 @@ it('opens the four screens for head office and exports csv', function () {
 
     Livewire::actingAs($user)->test(FollowUpReport::class, ['screen' => 'nope'])->assertNotFound();
 });
+
+it('bridges the transfer company balance of each project through one month, with the approved requests beside it', function () {
+    (require database_path('migrations/2026_10_25_090000_create_request_module_tables.php'))->up();
+    DB::statement('PRAGMA foreign_keys = OFF');
+
+    followVoucher('M-1', '2026-02-10', [['account' => '1161', 'debit' => 1000, 'project' => 'SZ'], ['account' => '1111', 'credit' => 1000]]);
+    followVoucher('M-2', '2026-03-05', [['account' => '1161', 'credit' => 300, 'project' => 'SZ'], ['account' => '1111', 'debit' => 300]]);
+    followVoucher('M-3', '2026-03-20', [['account' => '1161', 'debit' => 70, 'project' => 'SZ'], ['account' => '1111', 'credit' => 70]]);
+    followVoucher('M-4', '2026-03-22', [['account' => '1161', 'debit' => 9999, 'project' => 'SZ']], 'pending_approval');
+    DB::table('gl_vouchers')->where('id', 'M-2')->update(['transfer_kind' => 'syp_to_project']);
+
+    $request = DB::table('gl_requests')->insertGetId(['type' => 'monthly', 'project_code' => 'SZ', 'amount' => 500, 'currency' => 'USD', 'status' => 'approved', 'requested_by' => 5, 'decided_at' => '2026-03-15 10:00:00', 'created_at' => now(), 'updated_at' => now()]);
+    DB::table('gl_request_lines')->insert([
+        ['request_id' => $request, 'budget_line_key' => 'k', 'amount' => 4500000, 'currency' => 'SYP', 'rate' => 15000, 'amount_usd' => 300, 'created_at' => now(), 'updated_at' => now()],
+        ['request_id' => $request, 'budget_line_key' => 'k2', 'amount' => 200, 'currency' => 'USD', 'rate' => 1, 'amount_usd' => 200, 'created_at' => now(), 'updated_at' => now()],
+    ]);
+
+    $report = app(FollowUpReports::class)->run('mapprovals', new FollowUpFilters(from: '2026-03-01', to: '2026-03-31'));
+
+    expect($report['rows'])->toHaveCount(1)
+        ->and($report['rows'][0])->toMatchArray([
+            'project' => 'SZ', 'usd_start' => '1000.00', 'syp_approved' => '4500000.00', 'syp_cost' => '-300.00',
+            'usd_approved' => '200.00', 'other' => '70.00', 'usd_end' => '770.00',
+        ])
+        ->and(bcadd(bcadd($report['rows'][0]['usd_start'], $report['rows'][0]['syp_cost'], 2), $report['rows'][0]['other'], 2))->toBe($report['rows'][0]['usd_end'])
+        ->and($report['totals']['usd_end'])->toBe('770.00');
+});
+
+it('exports the monthly approvals as CSV and as an Excel file', function () {
+    $user = User::query()->findOrFail(createFinanceUser('Fay', 'secret pass', RoleId::HeadOffice->name, RoleId::HeadOffice->value));
+
+    Livewire::actingAs($user)->test(FollowUpReport::class, ['screen' => 'mapprovals'])
+        ->call('export')->assertFileDownloaded('mapprovals.csv')
+        ->call('exportXlsx')->assertFileDownloaded('mapprovals.xlsx');
+});

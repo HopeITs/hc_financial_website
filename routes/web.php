@@ -107,7 +107,7 @@ Route::middleware('auth')->group(function () {
     $screen('statement', Statement::class)->defer($defer);
     $screen('statements', FinancialStatements::class)->defer($defer);
 
-    foreach (['recon', 'uncomp', 'xreserve', 'advances', 'loans'] as $report) {
+    foreach (['recon', 'mapprovals', 'uncomp', 'xreserve', 'advances', 'loans'] as $report) {
         $screen($report, FollowUpReport::class)->defer($defer);
     }
 

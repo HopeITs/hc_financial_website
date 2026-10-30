@@ -9,10 +9,12 @@ use App\Support\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * The follow-up reports on approved voucher lines (amounts are USD unless a column says otherwise):
  * `recon` the transfer company's pool (1161) against project and city general balances, month by month;
+ * `mapprovals` one month, per project: USD at the transfer company (1161) at the start, the SYP approved and its USD cost, the USD approved, other movements, USD at the end, and the SYP held at the start and end;
  * `uncomp` cash received without a project that is still uncompensated, per city, in age buckets;
  * `xreserve` the 5503 exchange differences booked by allocation and local-exchange transfers under each city's general SYP account;
  * `advances` open advances (1201) by person, no ageing: a settlement difference stays on the person as a receivable;
@@ -23,7 +25,7 @@ use Illuminate\Support\Facades\DB;
  */
 class FollowUpReports
 {
-    public const REPORTS = ['recon', 'uncomp', 'xreserve', 'advances', 'loans'];
+    public const REPORTS = ['recon', 'mapprovals', 'uncomp', 'xreserve', 'advances', 'loans'];
 
     public const ADVANCES_ACCOUNT = '1201';
 
@@ -35,6 +37,7 @@ class FollowUpReports
 
         return match ($report) {
             'recon' => $this->reconciliation($filters, $today),
+            'mapprovals' => $this->monthlyApprovals($filters, $today),
             'uncomp' => $this->uncompensated($filters, $today),
             'xreserve' => $this->exchangeReserve($filters),
             'advances' => $this->advances($filters),
@@ -102,6 +105,97 @@ class FollowUpReports
             'rows' => $rows,
             'totals' => [],
         ];
+    }
+
+    /**
+     * Monthly approvals: one month (the month of the "from" date, else of the "to" date, else of today), one row per project.
+     * `usd_start` and `usd_end` are the project's balance on 1161 (debits less credits, USD) before the month and at its end,
+     * from approved vouchers. `syp_approved` and `usd_approved` are what approved requests (final decision in the month)
+     * asked for, in pounds and in dollars; `syp_cost` is what the pound allocations of the month moved on 1161 (the dollar value
+     * the project repays). `other` is every other movement on 1161, so start + cost + other = end exactly. `syp_start` and
+     * `syp_end` are the pounds the project holds in cash.
+     *
+     * @return Report
+     */
+    private function monthlyApprovals(FollowUpFilters $filters, CarbonImmutable $today): array
+    {
+        $anchor = CarbonImmutable::parse($filters->from ?? $filters->to ?? $today->toDateString())->startOfMonth();
+        $start = $anchor->toDateString();
+        $end = $anchor->endOfMonth()->toDateString();
+        $scope = new FollowUpFilters(null, $end, $filters->city, $filters->project, $filters->limitedTo);
+        $rows = [];
+
+        $pool = $this->lines($scope)->where('l.account_code', (string) config('ledger.transfer_company_account'))
+            ->get(['v.date', 'v.transfer_kind', 'l.project_code', 'l.debit_usd', 'l.credit_usd']);
+
+        foreach ($pool as $line) {
+            $code = (string) ($line->project_code ?? '');
+            $rows[$code] ??= $this->blankApprovalRow($code);
+            $net = bcsub(Money::normalize($line->debit_usd), Money::normalize($line->credit_usd), 2);
+            $rows[$code]['usd_end'] = bcadd($rows[$code]['usd_end'], $net, 2);
+
+            if (substr((string) $line->date, 0, 10) < $start) {
+                $rows[$code]['usd_start'] = bcadd($rows[$code]['usd_start'], $net, 2);
+            } elseif ($line->transfer_kind === TransferKind::SypToProject->value) {
+                $rows[$code]['syp_cost'] = bcadd($rows[$code]['syp_cost'], $net, 2);
+            }
+        }
+
+        $cash = $this->lines($scope)->join('gl_accounts as a', 'a.code', '=', 'l.account_code')->where('a.is_cash', true)->where('l.currency', 'SYP')
+            ->get(['v.date', 'l.project_code', 'l.debit_orig', 'l.credit_orig']);
+
+        foreach ($cash as $line) {
+            $code = (string) ($line->project_code ?? '');
+            $rows[$code] ??= $this->blankApprovalRow($code);
+            $net = bcsub(Money::normalize($line->debit_orig), Money::normalize($line->credit_orig), 2);
+            $rows[$code]['syp_end'] = bcadd($rows[$code]['syp_end'], $net, 2);
+
+            if (substr((string) $line->date, 0, 10) < $start) {
+                $rows[$code]['syp_start'] = bcadd($rows[$code]['syp_start'], $net, 2);
+            }
+        }
+
+        $requests = ! Schema::hasTable('gl_request_lines') ? collect() : DB::table('gl_request_lines as rl')
+            ->join('gl_requests as r', 'r.id', '=', 'rl.request_id')
+            ->leftJoin('gl_projects as p', 'p.code', '=', 'r.project_code')
+            ->whereIn('r.status', ['approved', 'closed'])
+            ->whereDate('r.decided_at', '>=', $start)->whereDate('r.decided_at', '<=', $end)
+            ->when($filters->city, fn (Builder $query, string $value) => $query->where('p.city', $value))
+            ->when($filters->project, fn (Builder $query, string $value) => $query->where('r.project_code', $value))
+            ->when($filters->limitedTo !== null, fn (Builder $query) => $query->whereIn('r.project_code', $filters->limitedTo ?? []))
+            ->get(['r.project_code', 'rl.currency', 'rl.amount', 'rl.amount_usd']);
+
+        foreach ($requests as $line) {
+            $code = (string) $line->project_code;
+            $rows[$code] ??= $this->blankApprovalRow($code);
+            $key = $line->currency === 'SYP' ? 'syp_approved' : 'usd_approved';
+            $rows[$code][$key] = bcadd($rows[$code][$key], Money::normalize($line->currency === 'SYP' ? $line->amount : $line->amount_usd), 2);
+        }
+
+        foreach ($rows as $code => $values) {
+            $rows[$code]['other'] = bcsub(bcsub($values['usd_end'], $values['usd_start'], 2), $values['syp_cost'], 2);
+
+            if (count(array_filter(array_slice($rows[$code], 1), fn (string $amount) => bccomp($amount, '0', 2) !== 0)) === 0) {
+                unset($rows[$code]);
+            }
+        }
+        ksort($rows);
+
+        $keys = ['usd_start', 'syp_approved', 'syp_cost', 'usd_approved', 'other', 'usd_end', 'syp_start', 'syp_end'];
+
+        return [
+            'columns' => [['key' => 'project', 'type' => 'ltr'], ...array_map(fn (string $key) => ['key' => $key, 'type' => 'money'], $keys)],
+            'rows' => array_values($rows),
+            'totals' => $this->sum($rows, $keys),
+        ];
+    }
+
+    /** @return array{project: string, usd_start: numeric-string, syp_approved: numeric-string, syp_cost: numeric-string, usd_approved: numeric-string, other: numeric-string, usd_end: numeric-string, syp_start: numeric-string, syp_end: numeric-string} */
+    private function blankApprovalRow(string $code): array
+    {
+        $zero = Money::zero();
+
+        return ['project' => $code, 'usd_start' => $zero, 'syp_approved' => $zero, 'syp_cost' => $zero, 'usd_approved' => $zero, 'other' => $zero, 'usd_end' => $zero, 'syp_start' => $zero, 'syp_end' => $zero];
     }
 
     /**
