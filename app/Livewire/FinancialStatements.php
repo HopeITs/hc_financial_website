@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\DefersLoading;
 use App\Livewire\Concerns\HasReportCurrency;
 use App\Services\Ledger\FinancialStatements as Statements;
 use App\Services\Ledger\StatementExport;
@@ -19,6 +20,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 #[Layout('components.layouts.app')]
 class FinancialStatements extends Component
 {
+    use DefersLoading;
     use HasReportCurrency;
 
     #[Url]

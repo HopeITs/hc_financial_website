@@ -18,4 +18,8 @@ return [
     // add FinancialManager, Cashier, Accountant and Employee once the Financial Manager approves.
     'scoped_roles' => array_filter(array_map('trim', explode(',', (string) env('FINANCE_SCOPED_ROLES', 'ProjectManager')))),
 
+    // The home page and the reports open at once with a skeleton and load their figures right after (U-10).
+    // The tests turn it off (phpunit.xml) so they read each screen's content from the first response.
+    'defer_reports' => (bool) env('DEFER_REPORTS', true),
+
 ];

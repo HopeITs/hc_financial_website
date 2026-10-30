@@ -42,7 +42,10 @@ Route::post('locale', SwitchLocaleController::class)->middleware('throttle:30,1'
 
 // Every signed-in route names its screen: `screen:<slug>` checks config/permissions.php.
 Route::middleware('auth')->group(function () {
-    Route::get('home', Home::class)->middleware('screen:home')->name('home');
+    // The home page and the reports open with a skeleton and load their figures right after (U-10).
+    $defer = (bool) config('finance.defer_reports');
+
+    Route::get('home', Home::class)->middleware('screen:home')->name('home')->defer($defer);
     // Everyone who can sign in sees their own notifications, so the page follows the home screen's permission.
     Route::get('notifications', Notifications::class)->middleware('screen:home')->name('notifications');
 
@@ -91,15 +94,15 @@ Route::middleware('auth')->group(function () {
     $screen('alloc', Transfers::class);
 
     foreach (['rexp', 'rcash', 'rbl', 'rrev', 'rfixed', 'rattach'] as $report) {
-        $screen($report, OperationalReport::class);
+        $screen($report, OperationalReport::class)->defer($defer);
     }
 
-    $screen('tb', TrialBalance::class);
-    $screen('statement', Statement::class);
-    $screen('statements', FinancialStatements::class);
+    $screen('tb', TrialBalance::class)->defer($defer);
+    $screen('statement', Statement::class)->defer($defer);
+    $screen('statements', FinancialStatements::class)->defer($defer);
 
     foreach (['recon', 'uncomp', 'xreserve', 'advances', 'loans'] as $report) {
-        $screen($report, FollowUpReport::class);
+        $screen($report, FollowUpReport::class)->defer($defer);
     }
 
     $screen('salaries', Salaries::class);

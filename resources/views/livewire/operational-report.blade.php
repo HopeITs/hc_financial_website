@@ -1,4 +1,6 @@
 <div class="flex flex-col gap-6 px-4 pb-10 lg:px-8">
+    <x-ui.report-loading />
+
     <x-ui.page-header :title="__('navigation.screens.'.$screen)" :subtitle="__('ledger.op.intro.'.$screen)">
         <x-slot:actions>
             <x-ui.button tone="primary" wire:click="export" data-test="export-csv">{{ __('ledger.op.export') }}</x-ui.button>

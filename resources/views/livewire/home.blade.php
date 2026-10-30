@@ -1,4 +1,6 @@
 <div class="flex flex-col gap-6 px-4 pb-10 lg:px-8">
+    <x-ui.report-loading />
+
     <x-ui.page-header :title="__('home.title')" :subtitle="__('home.intro', ['name' => auth()->user()->name])" />
 
     <div class="grid grid-cols-2 gap-3 xl:grid-cols-4" data-test="home-totals">

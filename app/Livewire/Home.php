@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Contracts\ProjectBalanceSource;
+use App\Livewire\Concerns\DefersLoading;
 use App\Services\Projects\ProjectAccess;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
@@ -15,6 +16,8 @@ use Livewire\Component;
 #[Layout('components.layouts.app')]
 class Home extends Component
 {
+    use DefersLoading;
+
     #[Url(as: 'city')]
     public ?int $cityId = null;
 

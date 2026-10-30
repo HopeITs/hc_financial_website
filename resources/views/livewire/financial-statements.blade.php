@@ -1,4 +1,6 @@
 <div class="flex flex-col gap-6 px-4 pb-10 lg:px-8">
+    <x-ui.report-loading />
+
     <x-ui.page-header :title="__('navigation.screens.statements')" :subtitle="__('ledger.statements.intro')">
         <x-slot:actions>
             <x-ui.button wire:click="export('xlsx')" data-test="export-xlsx">{{ __('ledger.statements.xlsx') }}</x-ui.button>
