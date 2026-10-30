@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Livewire\Concerns\DefersLoading;
 use App\Livewire\Concerns\HasReportCurrency;
+use App\Services\Ledger\NetAssets;
 use App\Services\Ledger\TrialBalance as TrialBalanceReport;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
@@ -43,7 +44,7 @@ class TrialBalance extends Component
 
     public function render(TrialBalanceReport $report): View
     {
-        return view('livewire.trial-balance', ['data' => $this->data($report), 'unit' => $this->reportCurrency()]);
+        return view('livewire.trial-balance', ['data' => $this->data($report), 'unit' => $this->reportCurrency(), 'netAssets' => app(NetAssets::class)->asAt($this->asAtDate())]);
     }
 
     /** @return array{classes: list<array{class: string, rows: list<array{code: string, name_en: string, name_ar: string, debit: string, credit: string, net: string}>, debit: string, credit: string, net: string}>, debit: string, credit: string, net: string, balanced: bool, difference: string} */

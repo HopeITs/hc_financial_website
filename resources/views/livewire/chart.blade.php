@@ -83,7 +83,7 @@
                                 <td>{{ $row->class->label() }}</td>
                                 <td>{{ $row->currency === 'Any' ? __('chart.any_currency') : ($row->currency ?: '—') }}</td>
                                 <td>{{ $row->city ?: '—' }}</td>
-                                <td class="fin-num"><x-money :amount="$balances[$row->code] ?? '0.00'" /></td>
+                                <td class="fin-num"><x-money :amount="$balances[$row->code] ?? '0.00'" />@if (in_array($row->code, $computed, true))<span class="ms-1 text-xs text-ink-muted" title="{{ __('chart.computed_hint') }}" data-test="computed-{{ $row->code }}">{{ __('chart.computed') }}</span>@endif</td>
                             </tr>
                         @empty
                             <tr><td colspan="6" class="fin-empty">{{ __('chart.no_match') }}</td></tr>
@@ -147,7 +147,7 @@
         </x-ui.panel>
 
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            <x-ui.stat-tile :label="__('chart.balance')" :value="number_format((float) ($balances[$account->code] ?? 0), 2)" />
+            <x-ui.stat-tile :label="in_array($account->code, $computed, true) ? __('chart.balance_computed') : __('chart.balance')" :value="number_format((float) ($balances[$account->code] ?? 0), 2)" />
             <x-ui.stat-tile :label="__('chart.normal_side')" :value="$account->normal_side->label()" />
             <x-ui.stat-tile :label="__('chart.currency')" :value="$account->currency === 'Any' ? __('chart.any_currency') : ($account->currency ?: '—')" />
             <x-ui.stat-tile :label="__('chart.city')" :value="$account->city ?: '—'" />
@@ -177,7 +177,7 @@
                                     <td dir="ltr" class="text-start"><a href="{{ route('chart', ['account' => $child->code]) }}" wire:navigate class="font-medium text-primary hover:underline dark:text-brand-text">{{ $child->code }}</a></td>
                                     <td>{{ $child->localizedName() }}</td>
                                     <td>{{ $child->level->label() }}</td>
-                                    <td class="fin-num"><x-money :amount="$balances[$child->code] ?? '0.00'" /></td>
+                                    <td class="fin-num"><x-money :amount="$balances[$child->code] ?? '0.00'" />@if (in_array($child->code, $computed, true))<span class="ms-1 text-xs text-ink-muted" title="{{ __('chart.computed_hint') }}" data-test="computed-{{ $child->code }}">{{ __('chart.computed') }}</span>@endif</td>
                                 </tr>
                             @endforeach
                         </tbody>
