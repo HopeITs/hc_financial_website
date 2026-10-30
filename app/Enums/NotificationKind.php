@@ -13,6 +13,7 @@ enum NotificationKind: string
     case RequestPending = 'request_pending';
     case RequestApproved = 'request_approved';
     case RequestRejected = 'request_rejected';
+    case RequestReturned = 'request_returned';
 
     public function isAboutVoucher(): bool
     {
@@ -28,14 +29,14 @@ enum NotificationKind: string
     /** @return list<self> */
     public static function aboutRequests(): array
     {
-        return [self::RequestPending, self::RequestApproved, self::RequestRejected];
+        return [self::RequestPending, self::RequestApproved, self::RequestRejected, self::RequestReturned];
     }
 
     /** The status colour of its icon: waiting is amber, approved green, rejected red (the text says the same). */
     public function tone(): string
     {
         return match ($this) {
-            self::VoucherPending, self::RequestPending => 'warn',
+            self::VoucherPending, self::RequestPending, self::RequestReturned => 'warn',
             self::VoucherApproved, self::RequestApproved => 'good',
             self::VoucherRejected, self::RequestRejected => 'critical',
         };

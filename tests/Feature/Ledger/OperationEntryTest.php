@@ -60,7 +60,7 @@ it('turns an expense into a payment: a budget line fills the expense account and
 it('exchanges dollars for pounds at the typed rate: pounds = dollars x rate', function () {
     $voucher = entryPost(operation(['kind' => 'exchange', 'cash' => '1111', 'to_cash' => '1112', 'amount' => '100', 'rate' => '15000', 'account' => '']));
 
-    expect($voucher->type->value)->toBe('TRF')
+    expect($voucher->type->value)->toBe('EXG')
         ->and($voucher->lines->map(fn ($line) => [$line->account_code, $line->debit_orig, $line->credit_orig, $line->debit_usd, $line->credit_usd])->all())
         ->toBe([['1112', '1500000.00', '0.00', '100.00', '0.00'], ['1111', '0.00', '100.00', '0.00', '100.00']]);
 });

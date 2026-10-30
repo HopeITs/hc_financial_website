@@ -108,7 +108,7 @@ it('shows the mapping tables', function () {
 it('lists every posting rule with a status taken from the code', function () {
     $rules = collect(app(PostingRuleCatalogue::class)->rules())->keyBy('number');
 
-    expect($rules->keys()->all())->toBe(range(1, 15))
+    expect($rules->keys()->all())->toBe(range(1, 16))
         ->and($rules[1]['state'])->toBe(PostingRuleCatalogue::LIVE)
         ->and($rules[11]['state'])->toBe(PostingRuleCatalogue::LIVE)
         ->and($rules[9]['state'])->toBe(PostingRuleCatalogue::CODE_ONLY)

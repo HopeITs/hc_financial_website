@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Livewire\Concerns\DefersLoading;
 use App\Livewire\Concerns\HasReportCurrency;
 use App\Services\Ledger\FinancialStatements as Statements;
+use App\Services\Ledger\NetAssets;
 use App\Services\Ledger\StatementExport;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
@@ -70,7 +71,7 @@ class FinancialStatements extends Component
 
     public function render(Statements $statements): View
     {
-        return view('livewire.financial-statements', ['data' => $this->data($statements), 'unit' => $this->reportCurrency()]);
+        return view('livewire.financial-statements', ['data' => $this->data($statements), 'unit' => $this->reportCurrency(), 'netAssets' => app(NetAssets::class)->asAt($this->asAtDate())]);
     }
 
     /** @return array{position: array<string, mixed>, activities: array<string, mixed>} */

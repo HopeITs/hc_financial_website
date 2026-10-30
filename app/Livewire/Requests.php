@@ -79,6 +79,10 @@ class Requests extends Component
 
     public string $rejectReason = '';
 
+    public bool $showReturn = false;
+
+    public string $returnReason = '';
+
     public ?string $notice = null;
 
     /** @var list<string> */
@@ -253,6 +257,49 @@ class Requests extends Component
         $this->showReject = false;
     }
 
+    public function openReturn(): void
+    {
+        $this->resetFeedback();
+        Gate::authorize('decide', $this->current());
+        $this->returnReason = '';
+        $this->showReturn = true;
+    }
+
+    public function closeReturn(): void
+    {
+        $this->showReturn = false;
+    }
+
+    public function sendBack(RequestWorkflow $workflow): void
+    {
+        $reason = $this->returnReason;
+
+        if (trim($reason) === '') {
+            $this->addError('returnReason', __('requests.problem.reason_needed'));
+
+            return;
+        }
+
+        $this->act(fn (User $user, LedgerRequest $request) => $workflow->returnForChanges($user, $request, $reason), 'returned_notice');
+        $this->showReturn = false;
+    }
+
+    /** Tries again to create the allocation voucher(s) of an approved request, after what was missing has been added. */
+    public function allocate(RequestWorkflow $workflow): void
+    {
+        $this->resetFeedback();
+        $request = $this->current();
+        Gate::authorize('close', $request);
+
+        $problems = $workflow->allocate($this->user(), $request);
+
+        if ($problems === []) {
+            $this->notice = __('requests.allocation.created', ['number' => $request->id]);
+        } else {
+            $this->failures = array_values($problems);
+        }
+    }
+
     public function updatedQuoteFiles(RequestWorkflow $workflow): void
     {
         $this->resetFeedback();
@@ -321,6 +368,8 @@ class Requests extends Component
             'canEdit' => $editable && Gate::allows('update', $request),
             'canDecide' => $request->state() === RequestStatus::Submitted && Gate::allows('decide', $request),
             'canClose' => $request->state() === RequestStatus::Approved && Gate::allows('close', $request),
+            'allocationMissing' => $request->state() === RequestStatus::Approved && ! Voucher::query()->where('request_id', $request->id)->whereIn('transfer_kind', ['syp_to_project', 'usd_to_project'])->exists()
+                ? (string) $request->audits->where('action', 'allocation_missing')->last()?->reason : null,
             'pendingRole' => $pending,
             'warnings' => $workflow->budgetWarnings($request),
             'lateWarning' => $this->lateWarning($request, app(SubmissionDeadline::class)),

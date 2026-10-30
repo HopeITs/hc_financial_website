@@ -31,6 +31,7 @@ return [
         'request_pending' => 'طلب بانتظار قرارك',
         'request_approved' => 'اعتُمد طلبك',
         'request_rejected' => 'رُفض طلبك',
+        'request_returned' => 'أُعيد طلبك للتعديل',
     ],
 
     'kinds' => [
@@ -40,5 +41,6 @@ return [
         'request_pending' => 'الطلب رقم :number لمشروع :project بانتظار قرارك (:amount دولار).',
         'request_approved' => 'اعتُمد طلبك رقم :number لمشروع :project.',
         'request_rejected' => 'رُفض طلبك رقم :number لمشروع :project: :reason',
+        'request_returned' => 'أُعيد طلبك رقم :number لمشروع :project للتعديل: :reason',
     ],
 ];

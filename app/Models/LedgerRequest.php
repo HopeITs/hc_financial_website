@@ -29,6 +29,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $submitted_at
  * @property Carbon|null $closed_at
  * @property string|null $reject_reason
+ * @property string|null $return_reason
  */
 class LedgerRequest extends Model
 {
@@ -42,7 +43,7 @@ class LedgerRequest extends Model
 
     protected $fillable = [
         'type', 'project_code', 'month', 'category', 'amount', 'currency', 'description', 'status', 'requested_by', 'decided_by',
-        'decided_at', 'submitted_at', 'closed_at', 'reject_reason',
+        'decided_at', 'submitted_at', 'closed_at', 'reject_reason', 'return_reason',
     ];
 
     protected function casts(): array

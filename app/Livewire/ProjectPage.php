@@ -4,6 +4,8 @@ namespace App\Livewire;
 
 use App\Contracts\ProjectBalanceSource;
 use App\Data\ProjectRow;
+use App\Models\GlProject;
+use App\Services\Ledger\ProjectBalances;
 use App\Services\Projects\ProjectAccess;
 use App\Services\Projects\ProjectDetails;
 use App\Services\Projects\ProjectDirectory;
@@ -56,10 +58,23 @@ class ProjectPage extends Component
             'showMoney' => $showMoney,
             'balance' => $showMoney && in_array($tab, ['overview'], true) ? $balances->balancesFor([$this->accountId])->get($this->accountId) : null,
             'cashAccounts' => $showMoney && $tab === 'overview' ? $balances->byCashAccount($this->accountId, $scope->cashLimit()) : collect(),
+            'ledgerShares' => $showMoney && $tab === 'overview' ? $this->ledgerShares() : [],
             'siblings' => $siblings,
             'siblingBalances' => $showMoney && $tab === 'accounts' ? $balances->balancesFor($siblings->pluck('accountId')->values()->all()) : collect(),
             'budgetLines' => $tab === 'budget' ? $details->budgetLines($this->accountId) : collect(),
             'lifetime' => $tab === 'lifetime' && $showMoney ? $details->lifetime($this->accountId) : collect(),
         ]);
+    }
+
+    /**
+     * The project's share of each till from approved ledger lines (the Windows program's figures above are the legacy ones).
+     *
+     * @return list<array{project_code: string, project_name: string, account_code: string, account_name_en: string, account_name_ar: string, currency: string, amount: numeric-string, usd: numeric-string}>
+     */
+    private function ledgerShares(): array
+    {
+        $code = GlProject::query()->where('legacy_account_id', $this->accountId)->value('code');
+
+        return is_string($code) ? app(ProjectBalances::class)->fundLocations($code) : [];
     }
 }

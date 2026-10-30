@@ -33,6 +33,15 @@ final readonly class VoucherDraft
         return $this->date->format('Y-m');
     }
 
+    /** The same voucher, linked to a request. */
+    public function forRequest(int $requestId): self
+    {
+        return new self(
+            $this->type, $this->date, $this->preparedBy, $this->lines, $this->description,
+            $this->source, $this->legacyActionId, $this->isCarryForward, $this->isTemporary, $requestId, $this->transferKind,
+        );
+    }
+
     /** @param  list<LineDraft>  $lines */
     public function withLines(array $lines): self
     {
