@@ -23,7 +23,7 @@ return [
             ['Project account (account)', 'Project (owner) with donor, restriction, city, currency and rate'],
             ['Donor', 'Income account 4101 to 4602'],
             ['Line and budget line', 'Budget line tag, linked to one expense account 51xx to 58xx'],
-            ['Operation I, E, X, A, R, T', 'Voucher CRV, CPV, TRF, CPV (1201), CRV, and TRF, ALC or JV'],
+            ['Operation I, E, X, A, R, T', 'Voucher CRV, CPV, EXG, CPV (1201), CRV, and TRF, ALC or JV'],
             ['Approval and role limit', 'Voucher approval by the Financial Manager; the preparer never approves'],
         ],
 
@@ -37,8 +37,8 @@ return [
             ['E', 'Expense', 'CPV', 'Debit the expense account of the budget line, credit cash'],
             ['A', 'Advance', 'CPV', 'Debit advances 1201 with the person as contact, credit cash'],
             ['R', 'Returned', 'CRV', 'Credit 1204 when it repays a micro loan, otherwise 1201'],
-            ['X', 'Exchange', 'TRF', 'Debit the SYP cash account, credit the USD cash account'],
-            ['T', 'Transfer', 'TRF, ALC or JV', 'A transfer between accounts with its kind; a split over projects is an ALC'],
+            ['X', 'Exchange', 'EXG', 'Debit the SYP cash account, credit the USD cash account'],
+            ['T', 'Transfer', 'TRF, ALC or JV', 'A transfer between accounts with its kind; a salary split over projects is an ALC'],
         ],
 
         'statuses_title' => 'Operation states',
