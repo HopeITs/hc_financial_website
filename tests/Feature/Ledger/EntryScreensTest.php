@@ -10,12 +10,16 @@ use App\Models\Voucher;
 use App\Models\VoucherAttachment;
 use App\Models\VoucherAudit;
 use App\Services\Ledger\OperationSheet;
+use App\Services\Ledger\OperationTemplate;
 use App\Services\Ledger\PostVoucher;
 use Carbon\CarbonImmutable;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
+use OpenSpout\Common\Entity\Row;
+use OpenSpout\Reader\XLSX\Reader as XlsxReader;
+use OpenSpout\Writer\XLSX\Writer as XlsxWriter;
 
 beforeEach(function () {
     createFinanceSchema();
@@ -189,4 +193,63 @@ it('prints a voucher for paper, with its lines and the places to sign', function
 
     $this->actingAs(entryUser(RoleId::Employee, 'Emp'))->get(route('entries.vouchers.print', ['voucher' => $voucher->id]))->assertForbidden();
     $this->actingAs(entryUser())->get(route('entries.vouchers.print', ['voucher' => 'CRV-2026-9999']))->assertNotFound();
+});
+
+it('writes a template with the entry sheet and the lists, and reads a filled one back', function () {
+    $template = app(OperationTemplate::class);
+    $path = $template->write(false);
+
+    $reader = new XlsxReader;
+    $reader->open($path);
+    $names = [];
+    foreach ($reader->getSheetIterator() as $sheet) {
+        $names[] = $sheet->getName();
+    }
+    $reader->close();
+    unlink($path);
+
+    expect($names)->toBe([OperationTemplate::SHEET, OperationTemplate::LISTS]);
+
+    $filled = tempnam(sys_get_temp_dir(), 'fil');
+    $writer = new XlsxWriter;
+    $writer->openToFile($filled);
+    $writer->getCurrentSheet()->setName(OperationTemplate::SHEET);
+    $writer->addRow(Row::fromValues(['date | التاريخ', 'kind', 'project', 'cash', 'account', 'amount']));
+    $writer->addRow(Row::fromValues([]));
+    $writer->addRow(Row::fromValues(['2026-03-10', 'income', 'F2F', '1111', '4101', 250.5]));
+    $writer->close();
+
+    $text = $template->read($filled);
+    unlink($filled);
+
+    $rows = app(OperationSheet::class)->parse($text);
+
+    expect($rows)->toHaveCount(1)
+        ->and($rows[0]['line'])->toBe(3)
+        ->and($rows[0]['operation']['amount'])->toBe('250.5')
+        ->and($rows[0]['operation']['kind'])->toBe('income');
+});
+
+it('shows the rows of an uploaded workbook in the preview and downloads the template', function () {
+    $path = tempnam(sys_get_temp_dir(), 'up');
+    $writer = new XlsxWriter;
+    $writer->openToFile($path);
+    $writer->addRow(Row::fromValues(['date', 'kind', 'project', 'cash', 'account', 'amount']));
+    $writer->addRow(Row::fromValues(['2026-03-10', 'income', 'F2F', '1111', '4101', 250]));
+    $writer->close();
+
+    Livewire::actingAs(entryUser())->test(MultiEntry::class)
+        ->call('template')->assertFileDownloaded('operations-template.xlsx')
+        ->set('upload', UploadedFile::fake()->createWithContent('rows.xlsx', (string) file_get_contents($path)))
+        ->assertSet('failures', [])
+        ->assertSeeHtml('data-test="multi-row-2"')
+        ->assertSeeHtml('data-test="uploaded-name"');
+
+    unlink($path);
+});
+
+it('refuses a file that is not a workbook', function () {
+    Livewire::actingAs(entryUser())->test(MultiEntry::class)
+        ->set('upload', UploadedFile::fake()->createWithContent('rows.xlsx', 'not a workbook'))
+        ->assertSet('sheet', '');
 });

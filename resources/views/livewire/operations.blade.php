@@ -4,6 +4,10 @@
     <x-ui.saved-notice />
     <x-ui.form-draft :saved-at="$draftSavedAt" :notice="$draftNotice" />
 
+    @can('screen', ['multi', 'create'])
+        <p class="text-sm" data-test="operations-many"><a href="{{ route(\App\Support\Navigation::routeName('multi')) }}" wire:navigate class="font-semibold text-primary-medium hover:underline">{{ __('operations.many') }}</a></p>
+    @endcan
+
     {{-- Step 1: the type of operation. --}}
     <section class="flex flex-col gap-3" aria-labelledby="op-step-type">
         <h2 id="op-step-type" class="op-step"><span class="op-step-no">1</span>{{ __('operations.step_type') }}</h2>

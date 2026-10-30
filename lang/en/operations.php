@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'many' => 'Many operations at once: download the Excel template, fill it and upload it',
     'intro' => 'Pick the type of operation and fill in its form. The program writes the debit and credit lines; check them, then save the voucher for approval.',
     'step_type' => 'Type of operation',
     'step_form' => ':type details',

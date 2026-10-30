@@ -18,6 +18,20 @@
         <p class="text-sm text-secondary-medium dark:text-ink-muted">{{ __('ledger.multi.help') }}</p>
     </x-ui.panel>
 
+    <x-ui.panel class="flex flex-wrap items-center gap-3 p-4" data-test="multi-template">
+        <x-ui.button wire:click="template" data-test="download-template">{{ __('ledger.template.download') }}</x-ui.button>
+        <label class="flex items-center gap-2 text-sm">
+            <span>{{ __('ledger.template.upload') }}</span>
+            <input type="file" wire:model="upload" accept=".xlsx" class="text-sm" data-test="upload-file">
+        </label>
+        @error('upload')
+            <p class="text-sm text-status-critical">{{ $message }}</p>
+        @enderror
+        @if ($uploadedName !== '')
+            <p class="text-sm text-status-success" data-test="uploaded-name">{{ __('ledger.template.uploaded', ['name' => $uploadedName]) }}</p>
+        @endif
+    </x-ui.panel>
+
     <x-ui.form-textarea wire:model.live.debounce.600ms="sheet" :label="__('ledger.multi.paste')" rows="8" dir="ltr" data-test="multi-sheet" />
 
     @if ($rows !== [])
