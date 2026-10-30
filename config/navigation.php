@@ -25,7 +25,7 @@ return [
         'entries' => ['single', 'multi', 'multiatt', 'payments', 'vouchers', 'bonds', 'approval', 'requests'],
         'treasury' => ['tills', 'treasury', 'alloc', 'monthend', 'cities', 'currency', 'denoms'],
         'reports' => ['rexp', 'rcash', 'rbl', 'rdonor', 'rrev', 'rfixed', 'rattach', 'tb', 'statement', 'statements', 'recon', 'mapprovals', 'uncomp', 'xreserve', 'advances', 'loans'],
-        'people' => ['donors', 'employees', 'salaries', 'users', 'log'],
+        'people' => ['donors', 'employees', 'salaries', 'users', 'log', 'auditlog'],
         'migration' => ['dbload', 'opening', 'fixusd', 'legacy', 'merges'],
         'bridge' => ['decisions', 'mapping', 'rules'],
     ],
@@ -79,6 +79,7 @@ return [
         'salaries' => 'people/salaries',
         'users' => 'people/users',
         'log' => 'people/log',
+        'auditlog' => 'people/audit-log',
 
         'dbload' => 'migration/load-database',
         'opening' => 'migration/opening-close',
