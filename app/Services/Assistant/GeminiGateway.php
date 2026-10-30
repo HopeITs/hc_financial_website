@@ -3,6 +3,7 @@
 namespace App\Services\Assistant;
 
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -15,6 +16,12 @@ use Illuminate\Support\Str;
 class GeminiGateway implements ClaudeGateway
 {
     private const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent';
+
+    /**
+     * Waits (milliseconds) before each new try after an overloaded (503) or failing (500) Gemini, or a dropped connection.
+     * Google's own advice for a 503 "high demand" is to try again shortly, and one or two tries usually get through.
+     */
+    private const RETRY_WAITS = [1000, 3000];
 
     /** Finish reasons where Gemini declined to answer, as opposed to simply finishing. */
     private const DECLINED = ['SAFETY', 'PROHIBITED_CONTENT', 'BLOCKLIST', 'SPII', 'RECITATION', 'IMAGE_SAFETY'];
@@ -41,6 +48,8 @@ class GeminiGateway implements ClaudeGateway
             $response = Http::withHeaders(['x-goog-api-key' => $key])
                 ->acceptJson()
                 ->timeout(120)
+                ->retry(self::RETRY_WAITS, when: fn (\Throwable $e) => $e instanceof ConnectionException
+                    || ($e instanceof RequestException && in_array($e->response->status(), [500, 503], true)), throw: false)
                 ->post(sprintf(self::ENDPOINT, (string) config('assistant.gemini.model')), $body);
         } catch (ConnectionException $e) {
             report($e);
@@ -61,7 +70,8 @@ class GeminiGateway implements ClaudeGateway
     {
         $detail = (string) ($response->json('error.message') ?? '');
 
-        if ($response->status() === 429) {
+        // 429 is the account's quota, 503 Google's own load ("high demand"): both pass, so the person is told to wait.
+        if (in_array($response->status(), [429, 503], true)) {
             return new AssistantUnavailable(__('assistant.errors.busy'));
         }
 

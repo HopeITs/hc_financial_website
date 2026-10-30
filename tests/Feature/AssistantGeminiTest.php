@@ -8,6 +8,7 @@ use App\Services\Assistant\GeminiGateway;
 use App\Services\Assistant\Toolbox;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Sleep;
 
 beforeEach(function () {
     config(['assistant.provider' => 'gemini', 'assistant.gemini.api_key' => 'test-key', 'assistant.gemini.model' => 'gemini-test']);
@@ -90,7 +91,7 @@ it('sends earlier tool calls and their results back by tool name, and drops thin
 it('gives Gemini the assistant\'s real tools in the schema subset it accepts', function () {
     Http::fake(['*' => Http::response(geminiReply([['text' => 'ok']]))]);
     createFinanceSchema();
-    $user = User::query()->findOrFail(createFinanceUser("Ann", "secret pass", RoleId::Accountant->name, RoleId::Accountant->value));
+    $user = User::query()->findOrFail(createFinanceUser('Ann', 'secret pass', RoleId::Accountant->name, RoleId::Accountant->value));
     $tools = app(Toolbox::class)->definitions($user);
 
     (new GeminiGateway)->send([], [['role' => 'user', 'content' => 'Hi']], $tools);
@@ -122,6 +123,7 @@ it('reports a cut-short answer as max_tokens', function () {
 });
 
 it('shows the right message for each kind of Gemini failure', function (int $status, array $body, string $message) {
+    Sleep::fake();
     Http::fake(['*' => Http::response($body, $status)]);
 
     expect(fn () => (new GeminiGateway)->send([], [['role' => 'user', 'content' => 'Hi']], []))
@@ -130,4 +132,35 @@ it('shows the right message for each kind of Gemini failure', function (int $sta
     'rate limit' => [429, ['error' => ['message' => 'Quota exceeded']], 'The assistant is busy. Try again in a minute.'],
     'bad key' => [400, ['error' => ['message' => 'API key not valid. Please pass a valid API key.']], 'The assistant\'s API key was refused. Ask the administrator to check it.'],
     'server error' => [500, ['error' => ['message' => 'Internal error']], 'The assistant could not be reached. Try again shortly.'],
+    'overloaded' => [503, ['error' => ['message' => 'This model is currently experiencing high demand.', 'status' => 'UNAVAILABLE']], 'The assistant is busy. Try again in a minute.'],
 ]);
+
+it('tries again when Gemini is overloaded, and answers once it gets through', function () {
+    Sleep::fake();
+    Http::fake(['*' => Http::sequence()
+        ->push(['error' => ['message' => 'This model is currently experiencing high demand.']], 503)
+        ->push(['error' => ['message' => 'Internal error']], 500)
+        ->push(geminiReply([['text' => 'Aleppo holds 4,000 USD.']]))]);
+
+    $reply = (new GeminiGateway)->send([], [['role' => 'user', 'content' => 'Hi']], []);
+
+    expect($reply->content[0]['text'] ?? null)->toBe('Aleppo holds 4,000 USD.');
+    Http::assertSentCount(3);
+});
+
+it('gives up after three tries when Gemini stays overloaded', function () {
+    Sleep::fake();
+    Http::fake(['*' => Http::response(['error' => ['message' => 'high demand']], 503)]);
+
+    expect(fn () => (new GeminiGateway)->send([], [['role' => 'user', 'content' => 'Hi']], []))
+        ->toThrow(AssistantUnavailable::class, 'The assistant is busy. Try again in a minute.');
+    Http::assertSentCount(3);
+});
+
+it('does not try again when the key is refused', function () {
+    Sleep::fake();
+    Http::fake(['*' => Http::response(['error' => ['message' => 'API key not valid. Please pass a valid API key.']], 400)]);
+
+    expect(fn () => (new GeminiGateway)->send([], [['role' => 'user', 'content' => 'Hi']], []))->toThrow(AssistantUnavailable::class);
+    Http::assertSentCount(1);
+});
