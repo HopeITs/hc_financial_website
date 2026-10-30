@@ -31,6 +31,7 @@ return [
     'total' => 'Total',
     'requested_by' => 'Requested by',
     'status_label' => 'Status',
+    'only_mine' => 'Only my requests',
     'all_statuses' => 'All statuses',
     'all_projects' => 'All projects',
     'no_match' => 'No request matches.',

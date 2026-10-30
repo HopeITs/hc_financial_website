@@ -20,6 +20,8 @@
         </flux:footer>
 
         @auth
+            <x-shortcuts-help />
+
             @persist('assistant')
                 <livewire:assistant-panel />
             @endpersist

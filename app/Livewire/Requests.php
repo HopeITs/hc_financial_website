@@ -51,6 +51,10 @@ class Requests extends Component
     #[Url]
     public string $project = '';
 
+    /** Only the requests the signed-in person made (the home page's "my pending requests" opens this). */
+    #[Url]
+    public bool $mine = false;
+
     public bool $showForm = false;
 
     public ?int $editingId = null;
@@ -88,7 +92,7 @@ class Requests extends Component
 
     public function updated(string $name): void
     {
-        if (in_array($name, ['status', 'project'], true)) {
+        if (in_array($name, ['status', 'project', 'mine'], true)) {
             $this->resetPage();
         }
     }
@@ -332,6 +336,7 @@ class Requests extends Component
         $list = $this->visible()
             ->when(RequestStatus::tryFrom($this->status) !== null, fn (Builder $query) => $query->where('status', $this->status))
             ->when($this->project !== '', fn (Builder $query) => $query->where('project_code', $this->project))
+            ->when($this->mine, fn (Builder $query) => $query->where('requested_by', (int) $this->user()->getAuthIdentifier()))
             ->orderByDesc('id')
             ->paginate(self::PER_PAGE);
 

@@ -16,4 +16,17 @@ return [
     'stat_cities' => 'Governorates',
     'stat_usd' => 'Total balance (USD)',
     'stat_syp' => 'Total balance (SYP)',
+
+    'waiting' => [
+        'loading' => 'Checking what waits for you…',
+        'title' => 'Waiting for you',
+        'subtitle' => 'Open a number to see the list.',
+        'all_clear' => 'Nothing waits for you right now.',
+        'items' => [
+            'approve' => 'Vouchers waiting for your approval',
+            'rejected' => 'Your vouchers rejected in the last :days days',
+            'decide' => 'Requests waiting for your decision',
+            'my_requests' => 'Your requests waiting for a decision',
+        ],
+    ],
 ];

@@ -115,6 +115,11 @@
             </x-ui.form-select>
         </div>
 
+        <label class="flex items-center gap-2 text-sm text-secondary-dark dark:text-ink">
+            <input type="checkbox" wire:model.live="mine" data-test="only-mine" />
+            {{ __('requests.only_mine') }}
+        </label>
+
         <x-ui.scroll-table :paginate="false">
             <table class="fin-table" data-test="request-list">
                 <thead>
