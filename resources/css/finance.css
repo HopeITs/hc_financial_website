@@ -78,48 +78,140 @@
         background-color: rgb(255 255 255 / 0.08);
     }
 
+    /*
+     * The ledger table: a quiet header band, generous rows with hairline rules, figures in tabular digits on the end
+     * side, and totals set like an account book (a rule above, a double rule under the figures). The first and last
+     * cells get extra inline room so nothing sits against the card's edge.
+     */
     .fin-table {
         width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
         font-size: 0.875rem;
-        line-height: 1.4;
+        line-height: 1.45;
+        color: var(--color-secondary-dark);
     }
 
-    /* Sentence-case headers: readable in English and Arabic, no tracking tricks. */
+    .dark .fin-table {
+        color: var(--color-ink);
+    }
+
+    /* One line per cell, as in an account book: a date or a voucher number never breaks; a wide table scrolls in its card. */
+    .fin-table :is(th, td) {
+        padding: 0.75rem 0.875rem;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    /* Long free text (a reason, a note) may wrap when its cell says so. */
+    .fin-table :is(th, td).fin-wrap {
+        min-width: 14rem;
+        white-space: normal;
+    }
+
+    .fin-table :is(th, td):first-child {
+        padding-inline-start: 1.25rem;
+    }
+
+    .fin-table :is(th, td):last-child {
+        padding-inline-end: 1.25rem;
+    }
+
+    /* Header: small, semibold, sentence case on the board-head band, with a rule that stays while it sticks. */
     .fin-table thead th {
-        padding: 0.625rem 0.75rem;
+        padding-block: 0.6875rem;
         background-color: var(--color-board-head);
+        box-shadow: inset 0 -1px 0 var(--color-secondary-soft);
         color: var(--color-secondary-medium);
-        font-size: 0.8125rem;
+        font-size: 0.75rem;
         font-weight: 600;
+        letter-spacing: 0.01em;
         text-align: start;
         white-space: nowrap;
     }
 
+    .fin-table thead th:lang(ar) {
+        font-size: 0.8125rem;
+        letter-spacing: 0;
+    }
+
     .dark .fin-table thead th {
         background-color: rgb(255 255 255 / 0.04);
+        box-shadow: inset 0 -1px 0 var(--color-line);
         color: var(--color-ink-muted);
     }
 
-    .fin-table tbody tr + tr {
+    /* Rows: at least 44px, a hairline between them, a light tint under the pointer. */
+    .fin-table tbody td {
+        height: 2.75rem;
         border-top: 1px solid var(--color-secondary-soft);
     }
 
-    .dark .fin-table tbody tr + tr {
+    .fin-table tbody tr:first-child td {
+        border-top-color: transparent;
+    }
+
+    .dark .fin-table tbody td {
         border-top-color: var(--color-line);
     }
 
-    /* Rows are at least 44px tall so they are easy to hit and to scan. */
-    .fin-table tbody td {
-        padding: 0.75rem 0.75rem;
-        vertical-align: middle;
+    .dark .fin-table tbody tr:first-child td {
+        border-top-color: transparent;
     }
 
-    .fin-table tbody tr:hover {
+    .fin-table tbody tr:hover td {
+        background-color: color-mix(in srgb, var(--color-board-head) 70%, transparent);
+    }
+
+    .dark .fin-table tbody tr:hover td {
+        background-color: rgb(255 255 255 / 0.03);
+    }
+
+    /* A summary row inside the body (an opening balance, a class subtotal) reads as a band, not as data. */
+    .fin-table tbody tr.font-semibold td,
+    .fin-table tbody tr.font-bold td {
         background-color: var(--color-board-head);
     }
 
-    .dark .fin-table tbody tr:hover {
+    .dark .fin-table tbody tr.font-semibold td,
+    .dark .fin-table tbody tr.font-bold td {
+        background-color: rgb(255 255 255 / 0.025);
+    }
+
+    /* Links in a table (a voucher number, an account): ink with a soft underline that firms up on hover. */
+    .fin-table td a:not([data-flux-button]) {
+        color: inherit;
+        font-weight: 600;
+        text-decoration-line: underline;
+        text-decoration-color: var(--color-secondary-soft);
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.25em;
+    }
+
+    .fin-table td a:not([data-flux-button]):hover {
+        text-decoration-color: currentColor;
+    }
+
+    .dark .fin-table td a:not([data-flux-button]) {
+        text-decoration-color: var(--color-line-strong);
+    }
+
+    /* Totals: a firm rule above, bold, on the header band; the figures get the account book's double rule. */
+    .fin-table tfoot :is(td, th) {
+        border-top: 1.5px solid var(--color-secondary-medium);
+        background-color: var(--color-board-head);
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .dark .fin-table tfoot :is(td, th) {
+        border-top-color: var(--color-ink-muted);
         background-color: rgb(255 255 255 / 0.04);
+    }
+
+    .fin-table tfoot .fin-money {
+        padding-bottom: 0.125rem;
+        border-bottom: 3px double currentColor;
     }
 
     .fin-table th.fin-num,
@@ -134,9 +226,15 @@
     }
 
     .fin-table .fin-empty {
-        padding: 2rem 1rem;
+        height: auto;
+        padding: 2.5rem 1.25rem;
+        white-space: normal;
         text-align: center;
         color: var(--color-secondary-medium);
+    }
+
+    .fin-table tbody tr:hover .fin-empty {
+        background-color: transparent;
     }
 
     .dark .fin-table .fin-empty {
@@ -195,15 +293,5 @@
 
     .dark .fin-currency {
         color: var(--color-ink-muted);
-    }
-
-    /* Header cells: small, semibold, sentence case on the board-head surface, as in the mockup. */
-    .fin-table thead th {
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-
-    .fin-table thead th:lang(ar) {
-        font-size: 0.8125rem;
     }
 }

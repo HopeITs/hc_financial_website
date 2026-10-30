@@ -137,3 +137,6 @@ Route::middleware('auth')->group(function () {
         ->whereIn('screen', Navigation::slugs())
         ->middleware('screen');
 });
+
+// An unknown address still runs the web middleware, so its 404 page is in the person's chosen language (U-02).
+Route::fallback(fn () => abort(404));

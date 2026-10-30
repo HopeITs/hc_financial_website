@@ -21,6 +21,7 @@
 
         @auth
             <x-shortcuts-help />
+            <x-session-expired />
 
             @persist('assistant')
                 <livewire:assistant-panel />
