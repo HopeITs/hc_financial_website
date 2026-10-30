@@ -124,7 +124,7 @@ class TreasuryPosition
     }
 
     /**
-     * Pounds bought in bulk: debits into a pound cash account on a transfer (TRF), by general SYP account.
+     * Pounds bought in bulk: debits into a pound cash account on a transfer (TRF) or an exchange (EXG), by general SYP account.
      *
      * @param  list<string>  $sypCodes
      * @return array<string, array{pounds: numeric-string, usd: numeric-string, count: int, last: string|null}>
@@ -133,7 +133,7 @@ class TreasuryPosition
     {
         $rows = $this->approved($asAt)
             ->join('gl_accounts as a', 'a.code', '=', 'l.account_code')
-            ->where('v.type', VoucherType::Transfer->value)
+            ->whereIn('v.type', [VoucherType::Transfer->value, VoucherType::Exchange->value])
             ->where('a.is_cash', true)
             ->where('a.currency', 'SYP')
             ->where('l.debit_orig', '>', 0)

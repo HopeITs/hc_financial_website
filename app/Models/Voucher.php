@@ -67,13 +67,13 @@ class Voucher extends Model implements Approvable
     }
 
     /**
-     * The voucher's USD total, which picks the approval chain steps (the sum of its debits). A transfer has
-     * two legs that each post a debit, so it is measured by its larger leg once: per account the larger of its debits
+     * The voucher's USD total, which picks the approval chain steps (the sum of its debits). A transfer or an
+     * exchange has two legs that each post a debit, so it is measured by its larger leg once: per account the larger of its debits
      * and credits, and the biggest of those.
      */
     public function approvalAmount(): string
     {
-        if ($this->type !== VoucherType::Transfer) {
+        if (! in_array($this->type, [VoucherType::Transfer, VoucherType::Exchange], true)) {
             return Money::normalize($this->lines()->reorder()->sum('debit_usd'));
         }
 
