@@ -39,6 +39,10 @@ class RequestPolicy
 
     public function decide(User $user, LedgerRequest $request): bool
     {
+        if ($user->isSuperUser()) {
+            return true;
+        }
+
         if (! $user->canOnScreen(self::SCREEN, ScreenAction::Approve) || $request->requested_by === (int) $user->getAuthIdentifier()) {
             return false;
         }

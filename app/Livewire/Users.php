@@ -198,6 +198,7 @@ class Users extends Component
         // Rights over people stay with those who may delete them: Head Office, or a person given that right.
         $handsOutUserRights = $this->primaryRoleId === RoleId::HeadOffice->value
             || $extra->contains(RoleId::HeadOffice->value)
+            || $extra->contains(RoleId::SuperUser->value)
             || $granted->contains(fn (string $key): bool => str_starts_with($key, 'users.'));
 
         if ($handsOutUserRights && ! $this->actor()?->canOnScreen('users', ScreenAction::Delete)) {

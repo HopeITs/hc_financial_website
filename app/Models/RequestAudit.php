@@ -24,5 +24,17 @@ class RequestAudit extends Model
 
     protected $table = 'gl_request_audit';
 
+    /** A Super User's action carries the `is_super` marker (F-06). */
+    protected static function booted(): void
+    {
+        static::creating(function (self $audit): void {
+            $user = auth()->user();
+
+            if ($user instanceof User && $user->isSuperUser()) {
+                $audit->setAttribute('is_super', true);
+            }
+        });
+    }
+
     protected $fillable = ['request_id', 'action', 'field', 'old_value', 'new_value', 'changed_by', 'reason'];
 }

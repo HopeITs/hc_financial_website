@@ -36,7 +36,9 @@ class VoucherApprovals
             if ($voucher->status !== VoucherStatus::PendingApproval) {
                 $violations[] = new Violation(0, __('ledger.rules.not_pending'));
             } else {
-                array_push($violations, ...(new ApproverIsNotPreparer)->check($voucher, $approverId));
+                if (! $approver->isSuperUser()) {
+                    array_push($violations, ...(new ApproverIsNotPreparer)->check($voucher, $approverId));
+                }
 
                 if ($violations === [] && ! Gate::forUser($approver)->allows('approve', $voucher)) {
                     $violations[] = new Violation(0, __('ledger.rules.approval_not_allowed'));
@@ -81,9 +83,9 @@ class VoucherApprovals
                 $violations[] = new Violation(0, __('ledger.rules.not_pending'));
             } elseif (! $rejector->canOnScreen('vouchers', ScreenAction::Approve)) {
                 $violations[] = new Violation(0, __('ledger.rules.approval_not_allowed'));
-            } elseif (! $voucher->isDonorReceipt() && ! $this->hasLegacyApproval($rejector)) {
+            } elseif (! $voucher->isDonorReceipt() && ! $rejector->isSuperUser() && ! $this->hasLegacyApproval($rejector)) {
                 $violations[] = new Violation(0, __('ledger.rules.approval_not_allowed'));
-            } elseif ($voucher->prepared_by === $rejectorId) {
+            } elseif ($voucher->prepared_by === $rejectorId && ! $rejector->isSuperUser()) {
                 $violations[] = new Violation(0, __('ledger.rules.reject_own'));
             }
 

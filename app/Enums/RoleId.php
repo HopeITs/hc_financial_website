@@ -20,12 +20,15 @@ enum RoleId: int
     case GeneralManager = 100;
     case ProgramManager = 101;
 
+    /** For testing only: see User::isSuperUser(). */
+    case SuperUser = 102;
+
     /**
      * The role is stored in the web table, not in the legacy `role` table.
      */
     public function isWebOnly(): bool
     {
-        return $this === self::GeneralManager || $this === self::ProgramManager;
+        return $this === self::GeneralManager || $this === self::ProgramManager || $this === self::SuperUser;
     }
 
     public function label(): string
