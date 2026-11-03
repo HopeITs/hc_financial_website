@@ -3,18 +3,18 @@
 # Default: IT owns everything. For style-only pull requests to merge without IT (the "fast lane"), do NOT turn on
 # "Require review from Code Owners" in the ruleset: the path-guard check itself demands an IT approval for everything that is not style-only.
 
-*                       @HopeITs/it-team
+*                       @maiyoussef @JudyDad
 
 # Optional: let department leads approve front-end-only pull requests (either team can approve).
-# /resources/views/     @HopeITs/design-leads @HopeITs/it-team
-# /resources/css/       @HopeITs/design-leads @HopeITs/it-team
+# /resources/views/     @HopeITs/design-leads @maiyoussef @JudyDad
+# /resources/css/       @HopeITs/design-leads @maiyoussef @JudyDad
 
 # Safety nets, database and requests: always IT
-/.hc-workflow/         @HopeITs/it-team
-/.claude/               @HopeITs/it-team
-/.githooks/             @HopeITs/it-team
-/.github/               @HopeITs/it-team
-/docs/                  @HopeITs/it-team
-/database/              @HopeITs/it-team
-/config/                @HopeITs/it-team
-/it-requests/           @HopeITs/it-team
+/.hc-workflow/         @maiyoussef @JudyDad
+/.claude/               @maiyoussef @JudyDad
+/.githooks/             @maiyoussef @JudyDad
+/.github/               @maiyoussef @JudyDad
+/docs/                  @maiyoussef @JudyDad
+/database/              @maiyoussef @JudyDad
+/config/                @maiyoussef @JudyDad
+/it-requests/           @maiyoussef @JudyDad
