@@ -50,6 +50,7 @@ function createFinanceSchema(): void
     (require database_path('migrations/2026_10_30_090000_create_gl_currencies_table.php'))->up();
     (require database_path('migrations/2026_10_31_100000_create_web_notifications_table.php'))->up();
     (require database_path('migrations/2026_10_31_110000_create_web_form_drafts_table.php'))->up();
+    (require database_path('migrations/2026_11_03_095051_create_gl_cities_table.php'))->up();
 
     Schema::create('log', function ($table) {
         $table->increments('id');

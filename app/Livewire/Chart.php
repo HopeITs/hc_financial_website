@@ -7,10 +7,14 @@ use App\Enums\AccountLevel;
 use App\Enums\NormalSide;
 use App\Livewire\Concerns\HasFormDraft;
 use App\Models\GlAccount;
+use App\Models\GlCity;
+use App\Models\GlProject;
 use App\Services\Chart\AccountBalances;
+use App\Services\Ledger\AccountMovements;
 use App\Services\Ledger\Currencies;
 use App\Services\Ledger\NetAssets;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -74,6 +78,101 @@ class Chart extends Component
     public ?string $confirmDelete = null;
 
     public ?string $notice = null;
+
+    /** The movements report of an open account: a period, or every movement. */
+    #[Url(as: 'from')]
+    public string $movFrom = '';
+
+    #[Url(as: 'to')]
+    public string $movTo = '';
+
+    #[Url(as: 'all')]
+    public bool $movAll = false;
+
+    public bool $showCities = false;
+
+    public ?int $editingCity = null;
+
+    public string $cityName = '';
+
+    public string $cityNameAr = '';
+
+    public function mount(): void
+    {
+        if ($this->movFrom === '' && $this->movTo === '' && ! $this->movAll) {
+            $this->movFrom = now()->startOfMonth()->toDateString();
+            $this->movTo = now()->toDateString();
+        }
+    }
+
+    public function openCities(): void
+    {
+        Gate::authorize('screen', ['chart', 'edit']);
+
+        $this->resetValidation();
+        $this->reset('editingCity', 'cityName', 'cityNameAr');
+        $this->showCities = true;
+    }
+
+    public function closeCities(): void
+    {
+        $this->showCities = false;
+    }
+
+    public function editCity(int $id): void
+    {
+        Gate::authorize('screen', ['chart', 'edit']);
+
+        $city = GlCity::query()->findOrFail($id);
+        $this->resetValidation();
+        $this->editingCity = $city->id;
+        $this->cityName = $city->name;
+        $this->cityNameAr = (string) $city->name_ar;
+    }
+
+    public function cancelCityEdit(): void
+    {
+        $this->reset('editingCity', 'cityName', 'cityNameAr');
+        $this->resetValidation();
+    }
+
+    /** Adds a city, or renames the one being edited; a rename follows the accounts and projects linked to it. */
+    public function saveCity(): void
+    {
+        Gate::authorize('screen', ['chart', 'edit']);
+
+        $this->cityName = trim($this->cityName);
+        $data = $this->validate([
+            'cityName' => ['required', 'string', 'max:255', Rule::unique('gl_cities', 'name')->ignore($this->editingCity)],
+            'cityNameAr' => ['nullable', 'string', 'max:255'],
+        ]);
+        $nameAr = trim((string) $data['cityNameAr']) ?: null;
+
+        if ($this->editingCity === null) {
+            GlCity::query()->create(['name' => $data['cityName'], 'name_ar' => $nameAr]);
+            $this->notice = __('chart.city_added');
+        } else {
+            $city = GlCity::query()->findOrFail($this->editingCity);
+            DB::transaction(function () use ($city, $data, $nameAr): void {
+                if ($city->name !== $data['cityName']) {
+                    GlAccount::query()->where('city', $city->name)->update(['city' => $data['cityName']]);
+                    GlProject::query()->where('city', $city->name)->update(['city' => $data['cityName']]);
+                }
+                $city->update(['name' => $data['cityName'], 'name_ar' => $nameAr]);
+            });
+            $this->notice = __('chart.city_saved');
+        }
+
+        $this->reset('editingCity', 'cityName', 'cityNameAr');
+    }
+
+    public function toggleCity(int $id): void
+    {
+        Gate::authorize('screen', ['chart', 'edit']);
+
+        $city = GlCity::query()->findOrFail($id);
+        $city->update(['is_active' => ! $city->is_active]);
+    }
 
     public function openAdd(?string $parent = null): void
     {
@@ -282,6 +381,11 @@ class Chart extends Component
         ));
     }
 
+    private function dateOrNull(string $value): ?string
+    {
+        return preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) === 1 ? $value : null;
+    }
+
     public function render(AccountBalances $balances): View
     {
         $account = $this->code !== null ? GlAccount::query()->where('code', $this->code)->first() : null;
@@ -321,6 +425,11 @@ class Chart extends Component
             'computed' => NetAssets::CHART_CODES,
             'used' => $account !== null && $balances->isUsed($account->code),
             'editingUsed' => $this->editing !== null && $balances->isUsed($this->editing),
+            'movements' => $account !== null
+                ? app(AccountMovements::class)->for($account->code, $this->movAll ? null : $this->dateOrNull($this->movFrom), $this->movAll ? null : $this->dateOrNull($this->movTo))
+                : null,
+            'cityList' => GlCity::query()->orderBy('name')->get(),
+            'cityOptions' => array_values(array_unique([...GlCity::activeNames(), ...($this->formCity !== '' ? [$this->formCity] : [])])),
             'headers' => GlAccount::query()->where('level', 'header')->orderBy('code')->get(['code', 'name_en', 'name_ar']),
             'canCreate' => Gate::allows('screen', ['chart', 'create']),
             'canEdit' => Gate::allows('screen', ['chart', 'edit']),

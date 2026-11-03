@@ -1,8 +1,13 @@
 <div class="flex flex-col gap-6 px-4 pb-10 lg:px-8">
     <x-ui.page-header :title="__('navigation.screens.chart')" :subtitle="__('chart.intro')" :count="$total">
-        @if ($canCreate)
+        @if ($canCreate || $canEdit)
             <x-slot:actions>
-                <x-ui.button tone="primary" icon="plus" wire:click="openAdd" data-test="add-account">{{ __('chart.add') }}</x-ui.button>
+                @if ($canEdit)
+                    <x-ui.button wire:click="openCities" data-test="open-cities">{{ __('chart.cities') }}</x-ui.button>
+                @endif
+                @if ($canCreate)
+                    <x-ui.button tone="primary" icon="plus" wire:click="openAdd" data-test="add-account">{{ __('chart.add') }}</x-ui.button>
+                @endif
             </x-slot:actions>
         @endif
     </x-ui.page-header>
@@ -185,6 +190,114 @@
                 </x-ui.scroll-table>
             </div>
         @endif
+
+        <section class="flex flex-col gap-3" data-test="account-movements">
+            <div>
+                <h3 class="text-base font-semibold text-secondary-dark dark:text-ink">{{ __('chart.movements') }}</h3>
+                <p class="type-meta text-secondary-medium dark:text-ink-muted">{{ __('chart.mov_intro') }}</p>
+            </div>
+            <div class="grid items-end gap-4 sm:grid-cols-[12rem_12rem_auto]" data-test="movement-filters">
+                <x-ui.form-input type="date" wire:model.live="movFrom" :label="__('chart.mov_from')" :disabled="$movAll" />
+                <x-ui.form-input type="date" wire:model.live="movTo" :label="__('chart.mov_to')" :disabled="$movAll" />
+                <label class="flex items-center gap-2 pb-2 text-sm text-secondary-dark dark:text-ink">
+                    <input type="checkbox" wire:model.live="movAll" data-test="movements-all" />
+                    {{ __('chart.mov_all') }}
+                </label>
+            </div>
+            <x-ui.scroll-table>
+                <table class="fin-table" data-test="movements-table">
+                    <thead>
+                        <tr>
+                            <th>{{ __('chart.mov_date') }}</th>
+                            <th>{{ __('chart.mov_voucher') }}</th>
+                            @if ($account->level === \App\Enums\AccountLevel::Header)
+                                <th>{{ __('chart.mov_account') }}</th>
+                            @endif
+                            <th>{{ __('chart.mov_description') }}</th>
+                            <th>{{ __('chart.mov_counter') }}</th>
+                            <th>{{ __('chart.mov_currency') }}</th>
+                            <th class="fin-num">{{ __('chart.mov_in') }}</th>
+                            <th class="fin-num">{{ __('chart.mov_out') }}</th>
+                            <th class="fin-num">{{ __('chart.mov_in_usd') }}</th>
+                            <th class="fin-num">{{ __('chart.mov_out_usd') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($movements['rows'] as $index => $row)
+                            <tr wire:key="mov-{{ $index }}">
+                                <td><span dir="ltr">{{ $row['date'] }}</span></td>
+                                <td><a href="{{ route('entries.vouchers', ['voucher' => $row['voucher']]) }}" class="underline" dir="ltr">{{ $row['voucher'] }}</a></td>
+                                @if ($account->level === \App\Enums\AccountLevel::Header)
+                                    <td><span dir="ltr">{{ $row['account'] }}</span></td>
+                                @endif
+                                <td>{{ $row['description'] }}</td>
+                                <td>
+                                    @foreach ($row['counters'] as $counter)
+                                        <div>{{ $counter }}</div>
+                                    @endforeach
+                                </td>
+                                <td><span dir="ltr">{{ $row['currency'] }}</span></td>
+                                <td class="fin-num"><x-money :amount="$row['in']" /></td>
+                                <td class="fin-num"><x-money :amount="$row['out']" /></td>
+                                <td class="fin-num"><x-money :amount="$row['in_usd']" /></td>
+                                <td class="fin-num"><x-money :amount="$row['out_usd']" /></td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="{{ $account->level === \App\Enums\AccountLevel::Header ? 10 : 9 }}" class="fin-empty">{{ __('chart.mov_empty') }}</td></tr>
+                        @endforelse
+                    </tbody>
+                    @if ($movements['rows'] !== [])
+                        <tfoot>
+                            @foreach ($movements['totals'] as $currency => $sum)
+                                <tr class="font-semibold" data-test="movements-total-{{ $currency }}">
+                                    <td colspan="{{ $account->level === \App\Enums\AccountLevel::Header ? 5 : 4 }}">{{ __('chart.mov_totals') }}</td>
+                                    <td><span dir="ltr">{{ $currency }}</span></td>
+                                    <td class="fin-num"><x-money :amount="$sum['in']" /></td>
+                                    <td class="fin-num"><x-money :amount="$sum['out']" /></td>
+                                    <td class="fin-num">@if ($loop->first)<x-money :amount="$movements['in_usd']" />@endif</td>
+                                    <td class="fin-num">@if ($loop->first)<x-money :amount="$movements['out_usd']" />@endif</td>
+                                </tr>
+                            @endforeach
+                        </tfoot>
+                    @endif
+                </table>
+            </x-ui.scroll-table>
+        </section>
+    @endif
+
+    @if ($canEdit)
+        <x-ui.modal wire:model.self="showCities" size="lg" :title="__('chart.cities_title')" close="closeCities" data-test="cities-modal">
+            <p class="type-meta mb-3 text-secondary-medium dark:text-ink-muted">{{ __('chart.cities_intro') }}</p>
+            <form wire:submit="saveCity" class="grid items-end gap-3 sm:grid-cols-[1fr_1fr_auto]">
+                <x-ui.form-input wire:model="cityName" :label="__('chart.city_name')" dir="ltr" required data-test="city-name" />
+                <x-ui.form-input wire:model="cityNameAr" :label="__('chart.city_name_ar')" dir="rtl" />
+                <div class="flex gap-2">
+                    <x-ui.button type="submit" tone="primary" data-test="save-city">{{ $editingCity ? __('chart.save') : __('chart.city_add') }}</x-ui.button>
+                    @if ($editingCity)
+                        <x-ui.button wire:click="cancelCityEdit">{{ __('chart.close') }}</x-ui.button>
+                    @endif
+                </div>
+            </form>
+            <x-ui.scroll-table class="mt-4">
+                <table class="fin-table" data-test="cities-list">
+                    <tbody>
+                        @foreach ($cityList as $city)
+                            <tr wire:key="city-{{ $city->id }}">
+                                <td>{{ $city->name }}@if ($city->name_ar) <span class="text-secondary-medium dark:text-ink-muted" dir="rtl">· {{ $city->name_ar }}</span>@endif
+                                    @unless ($city->is_active)
+                                        <flux:badge size="sm" class="ms-1">{{ __('chart.inactive') }}</flux:badge>
+                                    @endunless
+                                </td>
+                                <td class="text-end">
+                                    <x-ui.button wire:click="editCity({{ $city->id }})">{{ __('chart.edit') }}</x-ui.button>
+                                    <x-ui.button wire:click="toggleCity({{ $city->id }})">{{ $city->is_active ? __('chart.deactivate') : __('chart.reactivate') }}</x-ui.button>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </x-ui.scroll-table>
+        </x-ui.modal>
     @endif
 
     @if ($canCreate || $canEdit)
@@ -219,7 +332,12 @@
                         <option value="{{ $currency }}">{{ $currency === 'Any' ? __('chart.any_currency') : $currency }}</option>
                     @endforeach
                 </x-ui.form-select>
-                <x-ui.form-input wire:model="formCity" :label="__('chart.city')" />
+                <x-ui.form-select wire:model="formCity" :label="__('chart.city')" :placeholder="__('chart.city_none')" data-test="form-city">
+                    <option value="">{{ __('chart.city_none') }}</option>
+                    @foreach ($cityOptions as $name)
+                        <option value="{{ $name }}">{{ $name }}</option>
+                    @endforeach
+                </x-ui.form-select>
                 <x-ui.form-input wire:model="formStatementLine" :label="__('chart.statement_line')" />
                 <label class="flex items-center gap-2 self-end pb-2 text-sm text-secondary-dark dark:text-ink">
                     <input type="checkbox" wire:model="formCash" data-test="form-cash" />
