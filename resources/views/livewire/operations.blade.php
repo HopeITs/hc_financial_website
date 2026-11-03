@@ -78,7 +78,7 @@
                 @if (in_array($type, ['TRF', 'ALC', 'EXG'], true))
                     <x-ui.form-select wire:model.live="city" :label="__('ledger.transfers.city')" required>
                         @foreach ($cities as $name)
-                            <option value="{{ $name }}">{{ __('ledger.treasury.cities.'.$name) }}</option>
+                            <option value="{{ $name }}">{{ \Illuminate\Support\Facades\Lang::has('ledger.treasury.cities.'.$name) ? __('ledger.treasury.cities.'.$name) : $name }}</option>
                         @endforeach
                     </x-ui.form-select>
                     @if ($type === 'TRF')
