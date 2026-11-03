@@ -98,6 +98,8 @@ class Operations extends Component
 
     public string $document = '';
 
+    public string $center = '';
+
     public string $description = '';
 
     /** @var array<int, TemporaryUploadedFile> */
@@ -233,7 +235,7 @@ class Operations extends Component
     {
         return [
             'type', 'mode', 'date', 'city', 'project', 'otherProject', 'budgetLine', 'account', 'cash', 'sypCash', 'currency',
-            'amount', 'rate', 'received', 'commission', 'contact', 'fundSource', 'document', 'description',
+            'amount', 'rate', 'received', 'commission', 'contact', 'fundSource', 'document', 'center', 'description',
         ];
     }
 
@@ -293,7 +295,7 @@ class Operations extends Component
             'kind' => $this->mode, 'date' => $this->date, 'project' => $this->project, 'budget_line' => $this->budgetLine,
             'cash' => $this->cash, 'account' => $this->account, 'amount' => $this->amount, 'rate' => $this->rate,
             'contact' => $this->contact, 'fund_source' => $this->fundSource, 'document' => $this->document,
-            'description' => $this->description,
+            'description' => $this->description, 'center' => $this->center,
         ], $this->userId());
 
         return [$built->draft, $built->problems];
@@ -314,6 +316,7 @@ class Operations extends Component
         $this->received = '';
         $this->commission = '';
         $this->contact = '';
+        $this->center = '';
         $this->cash = $this->defaultCash();
         $this->sypCash = $this->cashOf('SYP')->first()->code ?? '';
     }

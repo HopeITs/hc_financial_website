@@ -39,7 +39,7 @@ function sheetRow(array $with = []): string
 {
     $row = $with + ['date' => '2026-03-10', 'kind' => 'income', 'project' => 'F2F', 'budget_line' => '', 'cash' => '1111', 'account' => '4101', 'to_cash' => '', 'amount' => '250', 'rate' => '', 'contact' => '', 'fund_source' => '', 'document' => '', 'description' => 'Grant'];
 
-    return implode("\t", array_map(fn (string $column) => $row[$column], OperationSheet::COLUMNS));
+    return implode("\t", array_map(fn (string $column) => $row[$column] ?? '', OperationSheet::COLUMNS));
 }
 
 it('saves a single entry as a pending voucher with its file, and goes to the voucher', function () {

@@ -178,3 +178,22 @@ it('opens on the type in the address, and after Ctrl+Enter comes back to a fresh
         ->call('save')
         ->assertRedirect(route(Navigation::routeName('single'), ['type' => 'CRV']));
 });
+
+it('asks for the center when the account needs it, and saves the voucher once it is filled', function () {
+    $test = Livewire::actingAs(operator())->test(Operations::class)
+        ->call('pick', 'CRV')
+        ->set('date', '2026-03-10')
+        ->set('project', 'F2F')
+        ->set('account', '4501')
+        ->set('cash', '1111')
+        ->set('amount', '50')
+        ->assertSeeHtml('data-test="center"')
+        ->assertSee('Account 4501 needs: Center.')
+        ->assertDontSeeHtml('data-test="ready"');
+
+    $test->set('center', 'Study Zone')->assertSeeHtml('data-test="ready"');
+
+    $test->call('save')->assertSet('failures', []);
+
+    expect(Voucher::query()->where('status', 'pending_approval')->count())->toBe(1);
+});

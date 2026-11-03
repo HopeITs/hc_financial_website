@@ -93,6 +93,7 @@ return [
             'contact' => 'Person or payee',
             'fund_source' => 'Fund source',
             'document' => 'Document number',
+            'center' => 'Center',
             'description' => 'Description',
         ],
     ],
