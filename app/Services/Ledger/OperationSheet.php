@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
  * Multi entry: operations pasted from Excel, one per row, checked row by row and saved all together or not at all.
  *
  * The columns are those of OperationEntry, in this order (a header row, if present, may use them in any order):
- * date, kind, project, budget_line, cash, account, to_cash, amount, rate, contact, fund_source, document, description.
+ * date, kind, project, budget_line, cash, account, to_cash, amount, rate, contact, fund_source, document, description, center.
  * The kind is a word (income, expense, exchange, advance, repayment) or the old program's letter (I, E, X, A, R).
  * A date is YYYY-MM-DD, YYYY/MM/DD or DD/MM/YYYY.
  */
@@ -17,7 +17,7 @@ class OperationSheet
 {
     public const MAX_ROWS = 500;
 
-    public const COLUMNS = ['date', 'kind', 'project', 'budget_line', 'cash', 'account', 'to_cash', 'amount', 'rate', 'contact', 'fund_source', 'document', 'description'];
+    public const COLUMNS = ['date', 'kind', 'project', 'budget_line', 'cash', 'account', 'to_cash', 'amount', 'rate', 'contact', 'fund_source', 'document', 'description', 'center'];
 
     private const LETTERS = ['i' => 'income', 'e' => 'expense', 'x' => 'exchange', 'ex' => 'exchange', 'a' => 'advance', 'r' => 'repayment'];
 
@@ -154,6 +154,7 @@ class OperationSheet
             'fund_source', 'fund' => 'fund_source',
             'document', 'receipt' => 'document',
             'description', 'note', 'notes' => 'description',
+            'center' => 'center',
             default => '',
         };
     }

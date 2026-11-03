@@ -163,6 +163,7 @@
                         :required="in_array($mode, ['advance', 'repayment'], true)" data-test="contact" />
                 @endif
                 @if ($type === 'CRV' || $type === 'CPV')
+                    <x-ui.form-input wire:model.live.debounce.400ms="center" :label="__('ledger.builder.center')" data-test="center" />
                     <x-ui.form-select wire:model.live="fundSource" :label="__('ledger.builder.fund_source')">
                         @foreach ($fundSources as $source)
                             <option value="{{ $source->value }}">{{ $source->label() }}</option>

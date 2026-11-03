@@ -93,6 +93,7 @@ return [
             'contact' => 'الشخص أو المستفيد',
             'fund_source' => 'مصدر التمويل',
             'document' => 'رقم المستند',
+            'center' => 'المركز',
             'description' => 'البيان',
         ],
     ],

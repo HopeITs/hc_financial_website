@@ -28,7 +28,7 @@ class OperationEntry
 
     private const BLANK = [
         'kind' => '', 'date' => '', 'description' => '', 'project' => '', 'budget_line' => '', 'cash' => '', 'account' => '',
-        'amount' => '', 'rate' => '', 'contact' => '', 'fund_source' => '', 'to_cash' => '', 'document' => '',
+        'amount' => '', 'rate' => '', 'contact' => '', 'fund_source' => '', 'to_cash' => '', 'document' => '', 'center' => '',
     ];
 
     public function __construct(private readonly VoucherDraftBuilder $builder, private readonly Currencies $currencies) {}
@@ -55,7 +55,7 @@ class OperationEntry
 
         $row = fn (string $account, string $side, string $amount, string $rate = '', string $line = '', ?string $curr = null) => [
             'account' => $account, 'currency' => $curr ?? $currency, 'side' => $side, 'amount' => $amount, 'rate' => $rate,
-            'project' => $project, 'budget_line' => $line, 'fund_source' => $fund, 'contact' => $op['contact'],
+            'project' => $project, 'budget_line' => $line, 'fund_source' => $fund, 'contact' => $op['contact'], 'center' => $op['center'],
         ];
 
         $description = $op['document'] !== '' ? trim($op['document'].' · '.$op['description'], ' ·') : $op['description'];
