@@ -9,6 +9,7 @@ use App\Enums\TransferKind;
 use App\Livewire\Concerns\HasFormDraft;
 use App\Models\GlAccount;
 use App\Models\GlBudgetLine;
+use App\Models\GlCity;
 use App\Models\GlProject;
 use App\Models\User;
 use App\Services\Ledger\LedgerRuleException;
@@ -259,7 +260,7 @@ class Operations extends Component
         return view('livewire.operations', [
             'types' => $this->allowedTypes(),
             'modes' => self::MODES[$this->type] ?? [],
-            'cities' => $rates->cities(),
+            'cities' => $this->isTransfer() ? $rates->cities() : array_values(array_unique([...GlCity::activeNames(), ...$rates->cities()])),
             'projects' => GlProject::query()->where('is_general_account', false)->orderBy('code')->get(['code', 'name']),
             'budgetLines' => GlBudgetLine::query()->when($this->project !== '', fn ($query) => $query->where('project_code', $this->project))->orderBy('key')->get(['key', 'project_code', 'account_code']),
             'incomeAccounts' => $this->postingAccounts('income'),
@@ -300,6 +301,8 @@ class Operations extends Component
 
     private function resetForType(): void
     {
+        // A transfer always works inside one city; a receipt or payment may leave the city empty to list every till.
+        $this->city = $this->isTransfer() ? ($this->city !== '' ? $this->city : (app(TransferRates::class)->cities()[0] ?? '')) : '';
         $this->mode = self::MODES[$this->type][0] ?? '';
         $this->project = '';
         $this->otherProject = '';
@@ -337,7 +340,9 @@ class Operations extends Component
             return $this->cashOf($this->transferCurrency());
         }
 
-        return GlAccount::query()->where('is_cash', true)->where('level', 'posting')->where('is_active', true)->orderBy('code')->get();
+        return GlAccount::query()->where('is_cash', true)->where('level', 'posting')->where('is_active', true)
+            ->when($this->city !== '', fn ($query) => $query->where('city', $this->city))
+            ->orderBy('code')->get();
     }
 
     /** @return Collection<int, GlAccount> the city's cash accounts of the currency, in transit left out */

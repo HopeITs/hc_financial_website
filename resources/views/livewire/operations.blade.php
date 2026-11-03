@@ -67,6 +67,14 @@
                 @endif
                 <x-ui.form-input type="date" wire:model.live="date" :label="__('ledger.builder.date')" required />
 
+                @if (in_array($type, ['CRV', 'CPV'], true))
+                    <x-ui.form-select wire:model.live="city" :label="__('ledger.transfers.city')" data-test="city">
+                        <option value="">—</option>
+                        @foreach ($cities as $name)
+                            <option value="{{ $name }}">{{ \Illuminate\Support\Facades\Lang::has('ledger.treasury.cities.'.$name) ? __('ledger.treasury.cities.'.$name) : $name }}</option>
+                        @endforeach
+                    </x-ui.form-select>
+                @endif
                 @if (in_array($type, ['TRF', 'ALC', 'EXG'], true))
                     <x-ui.form-select wire:model.live="city" :label="__('ledger.transfers.city')" required>
                         @foreach ($cities as $name)
