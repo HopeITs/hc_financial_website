@@ -1,0 +1,143 @@
+name: HC Workflow checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  # Re-check when IT approves (or dismisses), so the gate below can open.
+  pull_request_review:
+    types: [submitted, dismissed]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: hc-workflow-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  path-guard:
+    name: path-guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Never trust the guard files from the pull request itself: use the base branch's copy.
+      # (On the very first PR that installs the kit there is no copy yet, so the check is skipped.)
+      - name: Restore trusted guard from base branch
+        id: trust
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          if git cat-file -e "origin/$BASE_REF:.hc-workflow/check.mjs" 2>/dev/null; then
+            git checkout "origin/$BASE_REF" -- .hc-workflow
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Guard not on base branch yet, skipping."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Who approved the CURRENT commit of this pull request (a new push voids earlier approvals).
+      - name: Approvals on the latest commit
+        id: approvals
+        if: steps.trust.outputs.present == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          list=$(gh api "repos/$REPO/pulls/$PR_NUMBER/reviews" --paginate \
+            --jq "[.[] | select(.state==\"APPROVED\" and .commit_id==\"$HEAD_SHA\") | .user.login] | unique | join(\",\")")
+          echo "list=$list" >> "$GITHUB_OUTPUT"
+
+      - name: Role rules, site standards, lane and IT-approval gate
+        id: guard
+        if: steps.trust.outputs.present == 'true'
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          APPROVERS: ${{ steps.approvals.outputs.list }}
+        run: |
+          node .hc-workflow/check.mjs --ci \
+            --range "origin/$BASE_REF...HEAD" \
+            --author "$PR_AUTHOR" --branch "$HEAD_REF" \
+            --approvers "$APPROVERS" \
+            --summary "$RUNNER_TEMP/guard-summary.md"
+
+      - name: Tell IT what to look at (PR comment + labels)
+        if: always() && steps.trust.outputs.present == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          [ -f "$RUNNER_TEMP/guard-summary.md" ] || exit 0
+          cat "$RUNNER_TEMP/guard-summary.md" >> "$GITHUB_STEP_SUMMARY"
+          gh pr comment "$PR_NUMBER" --body-file "$RUNNER_TEMP/guard-summary.md" --edit-last --create-if-none || true
+          if grep -q "Lane: \*\*FAST\*\*" "$RUNNER_TEMP/guard-summary.md"; then
+            gh label create fast-lane --color 0e8a16 --description "Style-only: the author may merge" 2>/dev/null || true
+            gh pr edit "$PR_NUMBER" --add-label fast-lane --remove-label needs-it-review || true
+          else
+            gh pr edit "$PR_NUMBER" --remove-label fast-lane || true
+          fi
+          if grep -q "Needs IT approval" "$RUNNER_TEMP/guard-summary.md"; then
+            gh label create needs-it-review --color d93f0b --description "Contains sensitive changes" 2>/dev/null || true
+            gh pr edit "$PR_NUMBER" --add-label needs-it-review || true
+          fi
+
+  build:
+    name: build
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Build front end
+        run: |
+          if [ -f package.json ]; then
+            npm ci
+            npm run build
+          else
+            echo "No package.json, skipping build"
+          fi
+
+  php-quality:
+    name: php-quality
+    if: ${{ github.event_name == 'pull_request' && hashFiles('composer.json') != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer
+
+      - name: Install
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      # Each tool runs only if the site already uses it. Make this job required once it is green.
+      - name: Code style (Pint)
+        run: if [ -x vendor/bin/pint ]; then vendor/bin/pint --test; else echo "Pint not installed, skipping"; fi
+
+      - name: Static analysis (PHPStan / Larastan)
+        run: if [ -x vendor/bin/phpstan ]; then vendor/bin/phpstan analyse --no-progress; else echo "PHPStan not installed, skipping"; fi
+
+      - name: Tests
+        run: |
+          if [ -x vendor/bin/pest ]; then vendor/bin/pest
+          elif [ -f artisan ]; then cp -n .env.example .env && php artisan key:generate && php artisan test
+          fi

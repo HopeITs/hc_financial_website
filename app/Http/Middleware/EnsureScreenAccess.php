@@ -8,7 +8,8 @@ use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * `screen:<slug>[,<action>]` runs the `screen` gate (config/permissions.php) for the signed-in user.
+ * `access:<slug>[,<action>]` runs the `screen` gate (config/permissions.php) for the signed-in user.
+ * `screen:` is the same middleware under its original name; existing routes keep it, new routes use `access:`.
  * Without a slug it uses the route's `{screen}` parameter. It is what `can:screen,<slug>` would be,
  * but `can:` reads its arguments as route parameters, so a fixed slug needs this alias.
  */

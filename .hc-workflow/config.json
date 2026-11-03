@@ -1,0 +1,358 @@
+{
+  "defaultRole": "ct",
+  "departments": {
+    "ct": {
+      "label": "CT",
+      "branchPrefix": "ct/"
+    },
+    "finance": {
+      "label": "Finance",
+      "branchPrefix": "finance/"
+    }
+  },
+  "departmentProfile": {
+    "modifyExisting": "critical",
+    "bladeRisky": "critical",
+    "free": [
+      "resources/views/**",
+      "resources/css/**",
+      "resources/sass/**",
+      "resources/scss/**",
+      "resources/fonts/**",
+      "resources/images/**",
+      "resources/js/components/**",
+      "lang/**",
+      "resources/lang/**",
+      "public/css/**",
+      "public/fonts/**",
+      "public/images/**",
+      "public/img/**",
+      "public/favicon.*",
+      "tailwind.config.js",
+      "tailwind.config.cjs",
+      "tailwind.config.mjs",
+      "tailwind.config.ts",
+      "tests/**",
+      "it-requests/**"
+    ],
+    "addOnly": [
+      "app/Http/Controllers/**",
+      "app/Livewire/**",
+      "app/View/Components/**",
+      "app/Http/Requests/**",
+      "routes/modules/**",
+      "app/Models/**",
+      "app/Services/**",
+      "app/Actions/**",
+      "app/Policies/**",
+      "app/Exports/**",
+      "app/Imports/**",
+      "database/factories/**"
+    ],
+    "critical": [
+      "database/migrations/**",
+      "database/seeders/**",
+      "app/**",
+      "routes/**",
+      "resources/js/**"
+    ],
+    "forbidden": [
+      ".hc-workflow/**",
+      ".claude/**",
+      ".githooks/**",
+      ".github/**",
+      "CLAUDE.md",
+      "docs/**",
+      "config/**",
+      "composer.json",
+      "composer.lock",
+      "package.json",
+      "package-lock.json",
+      "bootstrap/**",
+      "vite.config.*",
+      "storage/**",
+      "scripts/**",
+      "AGENTS.md",
+      "boost.json",
+      ".mcp.json",
+      "phpunit.xml",
+      "pint.json",
+      "phpstan.neon",
+      ".gitleaks.toml",
+      ".npmrc"
+    ]
+  },
+  "fastLane": {
+    "_help": "Style-only changes. If EVERY changed file is one of these style files (new or edited), or a Blade edit that only changes plain class=\"...\" attributes, the author may merge it without IT. Anything else needs IT approval.",
+    "paths": [
+      "resources/css/**",
+      "resources/sass/**",
+      "resources/scss/**",
+      "resources/fonts/**",
+      "resources/images/**",
+      "public/css/**",
+      "public/fonts/**",
+      "public/images/**",
+      "public/img/**",
+      "public/favicon.*"
+    ],
+    "bladeClassOnly": true
+  },
+  "protectedBranches": [
+    "main",
+    "master",
+    "staging",
+    "release/*"
+  ],
+  "itRequestsDir": "it-requests",
+  "forbiddenAnywhere": [
+    "**/*.csv",
+    "**/*.xlsx",
+    "**/*.xls",
+    "**/*.sql",
+    "**/*.sqlite",
+    "**/*.dump",
+    "**/*.bak",
+    "**/*.zip",
+    ".env",
+    ".env.*",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "bladeGlob": "resources/views/**/*.blade.php",
+  "migrationsGlob": "database/migrations/**",
+  "routeModulesGlob": "routes/modules/**/*.php",
+  "phpScanExclude": [
+    "tests/**"
+  ],
+  "riskyBladePatterns": [
+    {
+      "pattern": "@php\\b",
+      "why": "inline PHP code"
+    },
+    {
+      "pattern": "<\\?php|<\\?=",
+      "why": "raw PHP tag"
+    },
+    {
+      "pattern": "(?<![\\w-])(DB|Auth|Hash|Storage|Http|Mail|Cache|Session|Artisan|File|Gate|Schema)::",
+      "why": "calls a backend service"
+    },
+    {
+      "pattern": "->\\s*(save|delete|update|create|forceDelete|destroy|dispatch|attach|detach)\\s*\\(",
+      "why": "writes data"
+    },
+    {
+      "pattern": "\\{!!",
+      "why": "unescaped output (security risk)",
+      "markup": true
+    },
+    {
+      "pattern": "\\benv\\s*\\(",
+      "why": "reads environment secrets"
+    },
+    {
+      "pattern": "<form[^>]*\\baction\\s*=",
+      "why": "changes where a form sends its data",
+      "markup": true
+    },
+    {
+      "pattern": "<script\\b[^>]*\\bsrc\\s*=\\s*[\"']?(https?:)?//",
+      "why": "loads an external script (security risk)",
+      "markup": true
+    }
+  ],
+  "phpCriticalPatterns": [
+    {
+      "pattern": "\\bDB::(statement|unprepared|raw|affectingStatement)",
+      "why": "raw SQL"
+    },
+    {
+      "pattern": "->\\s*(truncate|forceDelete|delete|update|upsert|insert|increment|decrement)\\s*\\(",
+      "why": "writes or deletes data"
+    },
+    {
+      "pattern": "\\bSchema::|->dropColumn|->dropIfExists|->renameColumn|->change\\s*\\(\\)",
+      "why": "changes the database structure"
+    },
+    {
+      "pattern": "\\b(shell_exec|exec|system|passthru|proc_open|eval)\\s*\\(|Artisan::call",
+      "why": "runs commands"
+    },
+    {
+      "pattern": "(?<![\\w-])(Hash::|Auth::loginUsingId|Gate::before)",
+      "why": "touches authentication or authorization"
+    },
+    {
+      "pattern": "(?<![\\w-])Http::|\\bcurl_(init|exec)|file_get_contents\\(\\s*[\"']https?:",
+      "why": "calls an external service"
+    },
+    {
+      "pattern": "(?<![\\w-])Mail::|Notification::send",
+      "why": "sends messages to people"
+    }
+  ],
+  "migrationDestructivePatterns": [
+    {
+      "pattern": "dropColumn|dropIfExists|drop\\(|->dropForeign|->dropPrimary|truncate|renameColumn|rename\\(|->change\\s*\\(\\)|DB::(statement|unprepared)",
+      "why": "DESTRUCTIVE: drops, renames or rewrites existing structure or data"
+    }
+  ],
+  "standards": {
+    "applyTo": "resources/views/**/*.blade.php",
+    "exempt": [
+      "resources/views/components/**"
+    ],
+    "rules": [
+      {
+        "id": "inline-style",
+        "pattern": "\\sstyle\\s*=\\s*[\"']",
+        "skipIf": "style\\s*=\\s*[\"'][^\"']*(\\{\\{|\\{!!)",
+        "why": "inline style - use Tailwind classes",
+        "level": "error"
+      },
+      {
+        "id": "hex-color",
+        "pattern": "#[0-9a-fA-F]{6}\\b|#[0-9a-fA-F]{8}\\b|\\[#",
+        "skipIf": "(fill|stroke|stop-color)=|<path|<svg",
+        "why": "hard-coded color - use the theme colors from the Tailwind config",
+        "level": "error"
+      },
+      {
+        "id": "arbitrary-value",
+        "pattern": "\\b[a-z][a-z-]*-\\[[^\\]]+\\]",
+        "why": "arbitrary Tailwind value - prefer the theme scale",
+        "level": "warn"
+      },
+      {
+        "id": "bootstrap",
+        "pattern": "\\b(btn-(primary|secondary|danger|success|warning|info)|col-(xs|sm|md|lg|xl)-\\d+|container-fluid|navbar-expand)\\b",
+        "why": "Bootstrap class - this site uses Tailwind",
+        "level": "error"
+      },
+      {
+        "id": "jquery",
+        "pattern": "jquery|\\$\\(\\s*[\"'#.]",
+        "why": "jQuery - use Alpine.js / Livewire",
+        "level": "error"
+      },
+      {
+        "id": "physical-direction",
+        "pattern": "\\b(ml|mr|pl|pr)-(\\d|\\[|px|auto)|\\b(left|right)-(\\d|\\[|auto)|\\btext-(left|right)\\b|\\bborder-[lr](-|\\b)|\\brounded-[lr](-|\\b)",
+        "why": "physical direction class - the site has Arabic (RTL): use ms/me/ps/pe/start/end/text-start/text-end",
+        "level": "warn"
+      },
+      {
+        "id": "number-format",
+        "pattern": "number_format\\s*\\(",
+        "why": "format amounts with <x-money :amount=\"...\" /> (DESIGN.md rule 2: never number_format in a view)",
+        "level": "warn"
+      },
+      {
+        "id": "raw-flux-field",
+        "pattern": "<flux:(input|select|textarea)\\b",
+        "why": "use <x-ui.form-input>, <x-ui.form-select> or <x-ui.form-textarea> (DESIGN.md rule 6)",
+        "level": "warn"
+      },
+      {
+        "id": "literal-text",
+        "pattern": ">\\s*[A-Za-z\\u0600-\\u06FF][^<>{}@]{2,}<",
+        "skipIf": "<(style|script|code|pre)\\b",
+        "why": "literal UI text - the site is translated: use __('group.key') and add the key to every lang folder",
+        "level": "warn"
+      }
+    ],
+    "components": [
+      {
+        "raw": "<button\\b",
+        "tag": "ui.button",
+        "level": "warn"
+      },
+      {
+        "raw": "<input\\b(?![^>]*type\\s*=\\s*[\"'](hidden|checkbox|radio|file)[\"'])",
+        "tag": "ui.form-input",
+        "level": "warn"
+      },
+      {
+        "raw": "<select\\b",
+        "tag": "ui.form-select",
+        "level": "warn"
+      },
+      {
+        "raw": "<textarea\\b",
+        "tag": "ui.form-textarea",
+        "level": "warn"
+      }
+    ]
+  },
+  "blockedCommands": [
+    {
+      "pattern": "\\bphp\\s+artisan\\s+(migrate|db:|tinker|key:|down\\b|queue:|schedule:)",
+      "why": "database / server command (IT runs these)"
+    },
+    {
+      "pattern": "\\bcomposer\\s+(require|update|install|remove|global|dump)",
+      "why": "changes PHP dependencies"
+    },
+    {
+      "pattern": "\\bnpm\\s+(install|i|add|uninstall|remove|rm|update)\\s+[^-\\s]",
+      "why": "changes JavaScript dependencies"
+    },
+    {
+      "pattern": "\\bgit\\s+push\\b.*\\b(main|master|staging)\\b",
+      "why": "pushing to a protected branch"
+    },
+    {
+      "pattern": "\\bgit\\s+merge\\b|\\bgit\\s+rebase\\b",
+      "why": "merging is done through a pull request (gh pr merge works only for style-only changes)"
+    },
+    {
+      "pattern": "\\bgit\\s+(checkout|switch)\\s+(main|master|staging)\\b",
+      "why": "work only on your own branch"
+    },
+    {
+      "pattern": "\\bgit\\s+branch\\s+-[dD]\\b|\\bgit\\s+push\\b.*--delete",
+      "why": "deleting branches"
+    },
+    {
+      "pattern": "\\bgit\\s+config\\b.*(core\\.hooksPath|hcworkflow)",
+      "why": "changing the safety settings"
+    },
+    {
+      "pattern": "(>>?|\\btee\\b|\\bsed\\s+-i|\\bmv\\b|\\bcp\\b|\\brm\\b)[^|;&\\n]*\\b(app|routes|database|config|bootstrap|storage)/",
+      "why": "changing backend files from the shell (use the editor tools so the guard can check them)"
+    },
+    {
+      "pattern": "(>>?|\\btee\\b|\\bsed\\s+-i|\\bmv\\b|\\bcp\\b|\\brm\\b)[^|;&\\n]*\\.env\\b",
+      "why": "changing environment secrets"
+    }
+  ],
+  "bladeLogicGlobs": [],
+  "logicFilePatterns": [
+    {
+      "pattern": "\\$this->",
+      "why": "component logic"
+    },
+    {
+      "pattern": "\\bnew\\s+class\\s+extends\\b",
+      "why": "declares a component class"
+    },
+    {
+      "pattern": "#\\[(Computed|Url|On|Validate|Locked|Layout|Title|Lazy)",
+      "why": "Livewire attribute"
+    },
+    {
+      "pattern": "\\b(public|protected|private)\\s+(function|string|int|float|bool|array|\\?)",
+      "why": "PHP member"
+    },
+    {
+      "pattern": "^\\s*use\\s+[A-Z][A-Za-z0-9_\\\\]+(\\s+as\\s+\\w+)?;",
+      "why": "PHP import"
+    },
+    {
+      "pattern": "<\\?php|\\?>",
+      "why": "PHP tag"
+    }
+  ],
+  "strictUsers": true
+}
