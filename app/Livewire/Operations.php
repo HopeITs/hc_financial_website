@@ -260,7 +260,7 @@ class Operations extends Component
         return view('livewire.operations', [
             'types' => $this->allowedTypes(),
             'modes' => self::MODES[$this->type] ?? [],
-            'cities' => $this->isTransfer() ? $rates->cities() : array_values(array_unique([...GlCity::activeNames(), ...$rates->cities()])),
+            'cities' => $this->cityOptions($rates),
             'projects' => GlProject::query()->where('is_general_account', false)->orderBy('code')->get(['code', 'name']),
             'budgetLines' => GlBudgetLine::query()->when($this->project !== '', fn ($query) => $query->where('project_code', $this->project))->orderBy('key')->get(['key', 'project_code', 'account_code']),
             'incomeAccounts' => $this->postingAccounts('income'),
@@ -302,7 +302,7 @@ class Operations extends Component
     private function resetForType(): void
     {
         // A transfer always works inside one city; a receipt or payment may leave the city empty to list every till.
-        $this->city = $this->isTransfer() ? ($this->city !== '' ? $this->city : (app(TransferRates::class)->cities()[0] ?? '')) : '';
+        $this->city = $this->isTransfer() ? ($this->city !== '' ? $this->city : (($this->cityOptions(app(TransferRates::class))[0] ?? ''))) : '';
         $this->mode = self::MODES[$this->type][0] ?? '';
         $this->project = '';
         $this->otherProject = '';
@@ -316,6 +316,16 @@ class Operations extends Component
         $this->contact = '';
         $this->cash = $this->defaultCash();
         $this->sypCash = $this->cashOf('SYP')->first()->code ?? '';
+    }
+
+    /** @return list<string> the cities of the list, those of the chart's cash accounts and those with general accounts */
+    private function cityOptions(TransferRates $rates): array
+    {
+        $ofCash = GlAccount::query()->where('is_cash', true)->where('is_active', true)->whereNotNull('city')->where('city', '!=', '')->distinct()->pluck('city')->all();
+        $all = array_values(array_unique([...GlCity::activeNames(), ...$ofCash, ...$rates->cities()]));
+        sort($all);
+
+        return $all;
     }
 
     private function isTransfer(): bool
