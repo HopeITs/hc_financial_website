@@ -60,6 +60,18 @@ export function isRegistered(root, cfg, login) {
   return users.includes((login ?? '').toLowerCase());
 }
 
+// Who may approve a pull request that waits for IT. roles.json "approvers" narrows it to named accounts;
+// without that list, anyone marked "it" can approve.
+export function approverList(root) {
+  const a = loadRoles(root)?.approvers;
+  return Array.isArray(a) && a.length ? a.map((x) => String(x).toLowerCase()) : null;
+}
+
+export function isApprover(root, cfg, login) {
+  const list = approverList(root);
+  return list ? list.includes((login ?? '').toLowerCase()) : roleForAuthor(root, cfg, login) === 'it';
+}
+
 // ---- paths -----------------------------------------------------------------
 
 export function globToRegex(glob) {

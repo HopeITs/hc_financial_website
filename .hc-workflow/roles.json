@@ -11,5 +11,9 @@
     "Grinsh-1378": "it",
     "hekmat-hcsyria": "ct",
     "HCCTADMIN": "ct"
-  }
+  },
+  "approvers": [
+    "maiyoussef",
+    "JudyDad"
+  ]
 }

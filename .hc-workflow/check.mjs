@@ -6,7 +6,8 @@
 //   node .hc-workflow/check.mjs --working|--range ... --lane   prints "fast" (style-only) or "review" and exits
 // Options: --ci (GitHub annotations)  --author <github-login>  --role <role>  --branch <name>
 //          --summary <file> (markdown for the PR comment)
-//          --approvers a,b,c  (CI: logins that approved the latest commit; a non-style change then needs one "it")
+//          --approvers a,b,c  (CI: logins that approved the latest commit; a non-style change then needs one of the
+//                              "approvers" in roles.json, or, when that list is absent, anyone marked "it")
 // Exit code 1 = blocked. "Critical" items do not fail the check; they are listed for IT.
 // Lane: "fast" = only style files (cfg.fastLane.paths) or class-only edits in Blade; the author may merge it.
 //       "review" = everything else; IT must approve and merge.
@@ -14,7 +15,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import {
   git, tryGit, repoRoot, loadConfig, localRole, roleForAuthor, classify, contentFindings,
-  isBlade, isProtectedBranch, isFastPath, classOnly, unsafeStyleContent, isRegistered,
+  isBlade, isProtectedBranch, isFastPath, classOnly, unsafeStyleContent, isRegistered, isApprover, approverList,
 } from './lib.mjs';
 
 const args = process.argv.slice(2);
@@ -46,6 +47,18 @@ if (flag('--whoami')) {
 }
 if (roleName === 'it') {
   if (flag('--lane')) { console.log('it'); process.exit(0); }
+  // With an approvers list in roles.json, an IT account that is not on it gets no free pass: someone on the list
+  // must approve its pull request too.
+  const list = approverList(root);
+  if (list && value('--author') !== undefined && !list.includes(value('--author').toLowerCase()) && flag('--approvers')) {
+    const names = (value('--approvers') ?? '').split(',').filter(Boolean);
+    if (!names.some((n) => isApprover(root, cfg, n))) {
+      const msg = `This pull request needs an approval on its latest commit from one of: ${list.join(', ')}.`;
+      console.log(ci ? `::error::${msg}` : `\n${msg}\n`);
+      if (value('--summary')) writeFileSync(value('--summary'), `### HC Workflow - BLOCKED\n\nLane: **REVIEW** - ${msg}\n`);
+      process.exit(1);
+    }
+  }
   if (value('--summary')) writeFileSync(value('--summary'), '### HC Workflow\nAuthor is an IT member: role checks skipped.\n');
   process.exit(0);
 }
@@ -126,8 +139,9 @@ function evaluate({ changes, added, removed }, branch) {
   // CI gate: anything that is not style-only needs a recorded approval from someone listed as "it".
   if (flag('--approvers') && res.lane !== 'fast') {
     const names = (value('--approvers') ?? '').split(',').filter(Boolean);
-    if (!names.some((n) => roleForAuthor(root, cfg, n) === 'it')) {
-      res.approval = 'This is not a style-only change, so IT must approve it first (a person marked "it" in .hc-workflow/roles.json, approving the latest commit).';
+    if (!names.some((n) => isApprover(root, cfg, n))) {
+      const who = approverList(root)?.join(', ') ?? 'a person marked "it" in .hc-workflow/roles.json';
+      res.approval = `This is not a style-only change, so IT must approve it first: one of ${who}, approving the latest commit.`;
     }
   }
   return res;
