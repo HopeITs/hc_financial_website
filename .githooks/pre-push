@@ -1,0 +1,12 @@
+#!/bin/sh
+# HC Workflow: runs before every push. Bypassing it (--no-verify) is caught again by CI.
+if ! command -v node >/dev/null 2>&1; then
+  # Without Node we cannot check anything. IT (role "it") may still push; everyone else is stopped.
+  if [ "$(git config --get hcworkflow.role)" = "it" ]; then
+    echo "HC Workflow: Node.js is not installed, check skipped (role: it)."
+    exit 0
+  fi
+  echo "HC Workflow: Node.js is not installed, so changes cannot be checked. Ask IT to install it."
+  exit 1
+fi
+exec node "$(git rev-parse --show-toplevel)/.hc-workflow/check.mjs" --pre-push

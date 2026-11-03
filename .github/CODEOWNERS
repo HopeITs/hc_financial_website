@@ -1,0 +1,20 @@
+# Replace ORG with your GitHub organization (the installer does it with --org).
+# Teams must have write access to the repo. The LAST matching rule wins.
+# Default: IT owns everything. For style-only pull requests to merge without IT (the "fast lane"), do NOT turn on
+# "Require review from Code Owners" in the ruleset: the path-guard check itself demands an IT approval for everything that is not style-only.
+
+*                       @HopeITs/it-team
+
+# Optional: let department leads approve front-end-only pull requests (either team can approve).
+# /resources/views/     @HopeITs/design-leads @HopeITs/it-team
+# /resources/css/       @HopeITs/design-leads @HopeITs/it-team
+
+# Safety nets, database and requests: always IT
+/.hc-workflow/         @HopeITs/it-team
+/.claude/               @HopeITs/it-team
+/.githooks/             @HopeITs/it-team
+/.github/               @HopeITs/it-team
+/docs/                  @HopeITs/it-team
+/database/              @HopeITs/it-team
+/config/                @HopeITs/it-team
+/it-requests/           @HopeITs/it-team

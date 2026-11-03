@@ -1,0 +1,47 @@
+{
+  "files": {
+    ".claude/commands/ask-it.md": "32f28ab897a35dfc6d8e5317d36b36e1f1ecb48e5c78acbecbeee24e6a8420d6",
+    ".claude/commands/init-standards.md": "500d0df4f414e3eacf35b27badba73638c7d4fa2fc476c12dc597cbef94b7d8f",
+    ".claude/commands/new-page.md": "310e3bfc1aa0f1d9902625021d06de28e08d27c47d94c724de7b12d884a02a53",
+    ".claude/commands/submit.md": "d11e4176a57e15d27031eb591676ce197fdf4e4b6b24c9f2861c4a8e01059d7c",
+    ".claude/settings.json": "cfb2d0524b3e35610b5e8362aef2e940fd0b61f845245a3a5fd3a324b0e25a83",
+    ".githooks/pre-push": "f002f0b1da24e0b31d32e538cf97a6478c80759d626947bfbb015c3441be3c9a",
+    ".github/CODEOWNERS": "dc421f0f0ea278925a58dba0c7535d8651dfb05b306f7fe4978b2b629d4eaa57",
+    ".github/pull_request_template.md": "1b5b7bc734c79bd02b310f92ac270b556262939dec27d845eb040b67e956c9a6",
+    ".github/workflows/hc-workflow-checks.yml": "3e6b915c7febf3153c00ae9761aa0b45c79e3a5ebf6fc45cfda869d7167f3a89",
+    ".hc-workflow/check.mjs": "120a5a96d8353b842238369b0fb959893f8d1e2d88fa55cda97cc3d184e38aed",
+    ".hc-workflow/config.json": "ca8806827e71d43a4ae23b2cdba89ee8fdd552816f96c9638275cc558c79207c",
+    ".hc-workflow/hook.mjs": "fab9020f2bee7ca6241c5548ecd5773332caea0129b0b9830afe73037f5c63ff",
+    ".hc-workflow/lib.mjs": "ae5a5f67649d26c6171c8915db9ff5f3de99942616c09bc1405d0472cdc78971",
+    ".hc-workflow/roles.json": "bfb9fc7aeab5ec46db626c81945700954433b65dfbd49a57e49279f8025280c5",
+    ".hc-workflow/SETUP-ROUTES.md": "170100bef827fd10396c497077b013e21c53e98e9aa74f06ce4433260c4e4085",
+    "docs/STANDARDS.md": "d364169d2626638f87c723241c5724f0c19e101b5914b49b2d2ae1486ee2e591",
+    "it-requests/_TEMPLATE.md": "dcb802f19e5c3e15e8364cc2ae904fecec796be3fbac182edcbda07e756adbf8",
+    "routes/modules/.gitkeep": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".github/CODEOWNERS.kit-new": "a7f37034f76358ee7fbebe392e130147933ff444fc9cb72f070313983d848fdd",
+    ".hc-workflow/config.json.kit-new": "b11eca7f2bec7adeb5cccb35b453e63ef0e2690100e4f156ae0cf0b8e419faba",
+    "docs/STANDARDS.md.kit-new": "35f5691c58977dbdd41abc6264c26e1405eba0e1fa4ddf17a42fe7bce233a5f4",
+    ".hc-workflow/roles.json.kit-new": "c6d341cf1f22e65a15d20c189841d9b6178028f9b07557d14f4ddb7f7ca517b4"
+  },
+  "merged": {
+    "settings": {
+      "allow": [],
+      "deny": [],
+      "hooks": []
+    },
+    "settingsCreated": true,
+    "claudeMdAppended": true,
+    "claudeMdCreated": false,
+    "gitignoreAdded": true,
+    "gitignoreCreated": false,
+    "gitattributes": [
+      ".githooks/* text eol=lf",
+      "*.mjs text eol=lf"
+    ],
+    "gitattributesCreated": false,
+    "previousHooksPath": null,
+    "hooksPathRecorded": true
+  },
+  "version": "3.3.0",
+  "site": "auto"
+}
