@@ -22,7 +22,7 @@ function receiptOn(string $date, int $amount, string $project = 'F2F', bool $app
 {
     $voucher = app(PostVoucher::class)->post(ledgerReceipt(['date' => CarbonImmutable::parse($date)], [
         new LineDraft('1111', 'USD', debit: $amount, projectCode: $project, fundSource: FundSource::DonorGrant),
-        new LineDraft('4101', 'USD', credit: $amount, projectCode: $project),
+        new LineDraft('4001', 'USD', credit: $amount, projectCode: $project),
     ]));
 
     if ($approve) {

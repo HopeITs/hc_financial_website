@@ -456,6 +456,7 @@ return [
         'Donations from churches and individuals' => 'تبرعات من الكنائس والأفراد',
         'Income from project activities' => 'إيرادات من أنشطة المشاريع',
         'Other income' => 'إيرادات أخرى',
+        'Accounts receivable' => 'الذمم المدينة',
         'Program activity costs' => 'تكاليف أنشطة البرامج',
         'Personnel costs' => 'تكاليف الموظفين',
         'Operational and running costs' => 'التكاليف التشغيلية والجارية',

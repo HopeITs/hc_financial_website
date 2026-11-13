@@ -107,7 +107,7 @@ it('refuses to run in production, and without anyone to prepare the vouchers', f
 it('removes only the demo vouchers, with their lines and history, and refuses in production', function () {
     $real = app(PostVoucher::class)->post(ledgerReceipt(['preparedBy' => $this->accountant, 'description' => 'A real voucher'], [
         new LineDraft('1111', 'USD', debit: 25, projectCode: 'F2F', fundSource: FundSource::DonorGrant),
-        new LineDraft('4101', 'USD', credit: 25, projectCode: 'F2F'),
+        new LineDraft('4001', 'USD', credit: 25, projectCode: 'F2F'),
     ]));
     seedDemo();
 

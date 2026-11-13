@@ -101,8 +101,8 @@ it('ignores pending vouchers when it averages the rate', function () {
 });
 
 it('gives a project line the project donor, restriction and its amount in the donor currency', function () {
-    $euro = building('CRV', [row(['account' => '4101', 'side' => 'credit', 'amount' => '115', 'project' => 'F2F'])])->draft->lines[0];
-    $dollar = building('CRV', [row(['account' => '4301', 'side' => 'credit', 'amount' => '80', 'project' => 'SZ'])])->draft->lines[0];
+    $euro = building('CRV', [row(['account' => '4001', 'side' => 'credit', 'amount' => '115', 'project' => 'F2F'])])->draft->lines[0];
+    $dollar = building('CRV', [row(['account' => '4001', 'side' => 'credit', 'amount' => '80', 'project' => 'SZ'])])->draft->lines[0];
     $none = building('CRV', [row(['account' => '1111', 'amount' => '10'])])->draft->lines[0];
 
     expect($euro->donor)->toBe('Caritas Poland')
@@ -147,7 +147,7 @@ it('reports a bad type, date, request number and amount instead of failing', fun
 it('prepares a receipt, a payment and a transfer that appear as pending', function () {
     $receipt = building('CRV', [
         row(['account' => '1111', 'amount' => '250', 'project' => 'F2F', 'fund_source' => 'donor_grant']),
-        row(['account' => '4101', 'side' => 'credit', 'amount' => '250', 'project' => 'F2F']),
+        row(['account' => '4001', 'side' => 'credit', 'amount' => '250', 'project' => 'F2F']),
     ]);
     $payment = building('CPV', [
         row(['budget_line' => 'F2F|Maintenance', 'amount' => '120', 'center' => 'Aleppo']),
@@ -169,7 +169,7 @@ it('prepares a receipt, a payment and a transfer that appear as pending', functi
 it('shows exactly what posting would refuse: the live check and the server agree', function () {
     $built = building('CRV', [
         row(['account' => '1111', 'amount' => '100', 'project' => 'F2F']),
-        row(['account' => '4101', 'side' => 'credit', 'amount' => '90', 'project' => 'F2F']),
+        row(['account' => '4001', 'side' => 'credit', 'amount' => '90', 'project' => 'F2F']),
         row(['account' => '1100', 'amount' => '5']),
     ]);
 

@@ -37,7 +37,7 @@ function screenVoucher(User $by, array $header = [], int $amount = 100, ?array $
 {
     return app(PostVoucher::class)->post(ledgerReceipt(['preparedBy' => (int) $by->getAuthIdentifier()] + $header, $lines ?? [
         new LineDraft('1111', 'USD', debit: $amount, projectCode: 'F2F', fundSource: FundSource::DonorGrant),
-        new LineDraft('4101', 'USD', credit: $amount, projectCode: 'F2F'),
+        new LineDraft('4001', 'USD', credit: $amount, projectCode: 'F2F'),
     ]));
 }
 
@@ -99,7 +99,7 @@ it('opens a voucher from its link: lines, totals, attachments and history', func
     vouchersPage(screenUser(RoleId::FinancialManager, 'Fatima'), ['voucher' => $voucher->id])
         ->assertSeeHtml('data-test="voucher-lines"')
         ->assertSeeInOrder(['1111', 'Aleppo main safe', 'F2F', '250.00'])
-        ->assertSee('4101')
+        ->assertSee('4001')
         ->assertSee('bank-slip.pdf')->assertSee('2.0 KB')
         ->assertSeeInOrder(['History', 'Ann', 'Prepared'])
         ->assertSee('Pending approval');

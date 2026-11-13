@@ -159,7 +159,7 @@ it('refuses a pound salary without a rate and a cash account in the wrong curren
 
     expect(fn () => allocate('1000', $lines, 'SYP', '', '1112'))->toThrow(PayrollException::class)
         ->and(fn () => allocate('1000', $lines, 'SYP', '15000', '1111'))->toThrow(PayrollException::class)
-        ->and(fn () => allocate('1000', $lines, 'USD', '', '4101'))->toThrow(PayrollException::class);
+        ->and(fn () => allocate('1000', $lines, 'USD', '', '4001'))->toThrow(PayrollException::class);
 });
 
 it('refuses lines that do not add up to the salary', function () {

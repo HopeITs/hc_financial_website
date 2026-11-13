@@ -26,7 +26,7 @@ beforeEach(function () {
     GlProject::query()->create(['code' => 'F2F', 'name' => 'F2F', 'restriction' => 'restricted']);
     ledgerApprovedVoucher([], [
         new LineDraft('1111', 'USD', debit: 100, projectCode: 'F2F', fundSource: FundSource::DonorGrant),
-        new LineDraft('4101', 'USD', credit: 100, projectCode: 'F2F'),
+        new LineDraft('4001', 'USD', credit: 100, projectCode: 'F2F'),
     ]);
 });
 
