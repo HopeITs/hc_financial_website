@@ -17,7 +17,7 @@ Finance wants the chart of accounts reorganised:
 2. **Transfer company in its own group** directly under Assets (1160, with 1161), no longer inside "Cash and cash equivalents".
 3. **The "in transit from the transfer company" accounts (11x3, 11x4) are removed.**
 4. **Income is a single account, 4001 "Accounts receivable".** All grant, donation and other income accounts (4100–4602) are removed.
-5. **A separate donor list.** Because the donors were the income accounts, finance wants a donor list of its own. When a transaction posts to Accounts receivable (4001), the user picks **the donor and the project** on that line.
+5. **A separate donor list, in its own menu.** Because the donors were the income accounts, finance wants a donor list of its own. It must **not** be part of the chart of accounts: it gets its own item in the main menu (for example "Donors"), where donors are added, renamed and deactivated. The user links a donor to a transaction **when needed**. The donor is an optional choice on a transaction line, usually next to the project on lines that post to Accounts receivable (4001), and it is never required.
 
 ## 2. What was found (read-only) and what is already on the branch
 
@@ -29,7 +29,7 @@ Already done on the branch (needs IT review):
 - **The tests could not be run in this session.** Installing the PHP packages is blocked here, so please run the full suite.
 
 Still needed from IT (backend, so not done by CT):
-- **Donor list:** a new table, model and screen for donors (it could start from the current income account names: ACN, GIZ, Caritas Poland …). It also needs a `donor` field on voucher lines, required when the account is 4001. `GlAccount::donorNames()` (used by `ProjectEditor` and `OperationalReport`) must read the new list. **Until this exists, the donor drop-downs only show "Accounts receivable" and projects with a donor such as "ACN" fail validation. Do not merge the income part before the donor list.**
+- **Donor list:** a new table, model and its own page with a main-menu entry, separate from the chart of accounts screen. It could start from the current income account names: ACN, GIZ, Caritas Poland … It also needs an optional `donor` field on voucher lines that the user fills in when needed (not required). `GlAccount::donorNames()` (used by `ProjectEditor` and `OperationalReport`) must read the new list. **Until this exists, the donor drop-downs only show "Accounts receivable" and projects with a donor such as "ACN" fail validation. Do not merge the income part before the donor list.**
 - **Donor report** (`DonorReport`) and the financial statements currently split income by account and statement line. They need to split by the donor on the line.
 - **In-transit removal:** `config/ledger.php` `in_transit_pattern` (`/^11[1-5][34]$/`), the month-end rule 12 (`MonthClosesOnlyWhenClearingIsZero`), `TreasuryPosition` (in-transit column), `Operations` and `Transfers` still expect these accounts. Decide whether to remove that logic.
 - Tests that still use in-transit accounts or the removed income account 4501 need IT's decision: `TreasuryPositionTest` (1113/1114), `TransfersTest` (1113), `ApprovalAmendAccountAndCloseRulesTest` (rule 12 uses 1113), `OperationsTest` ("asks for the center", uses 4501), `BridgePagesTest` / `lang/*/bridge.php` ("Income account 4101 to 4602").
