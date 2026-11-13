@@ -27,7 +27,7 @@ function tillReceipt(string $project, int $amount): void
 {
     ledgerApprovedVoucher([], [
         new LineDraft('1111', 'USD', debit: $amount, projectCode: $project, fundSource: FundSource::DonorGrant),
-        new LineDraft('4101', 'USD', credit: $amount, projectCode: $project),
+        new LineDraft('4001', 'USD', credit: $amount, projectCode: $project),
     ]);
 }
 

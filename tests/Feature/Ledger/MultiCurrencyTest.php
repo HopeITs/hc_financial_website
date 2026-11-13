@@ -40,7 +40,7 @@ function euroReceipt(): Voucher
 {
     return app(PostVoucher::class)->post(ledgerReceipt(lines: [
         new LineDraft('1173', 'EUR', debit: 1000, rate: '1.14', debitUsd: 1140, projectCode: 'F2F', fundSource: FundSource::DonorGrant),
-        new LineDraft('4107', 'USD', credit: 1140, projectCode: 'F2F'),
+        new LineDraft('4001', 'USD', credit: 1140, projectCode: 'F2F'),
     ]));
 }
 
@@ -74,7 +74,7 @@ describe('ledger', function () {
         $draft = ledgerReceipt(lines: [
             new LineDraft('1173', 'EUR', debit: 100, rate: '1.14', debitUsd: 114),
             new LineDraft('1173', 'USD', debit: 10),
-            new LineDraft('4101', 'GBP', credit: 124, creditUsd: 124),
+            new LineDraft('4001', 'GBP', credit: 124, creditUsd: 124),
         ]);
         expect(ruleLines(new CashAccountInOwnCurrency, $draft))->toBe([2, 3]);
 
@@ -88,7 +88,7 @@ describe('ledger', function () {
         Currency::query()->whereKey('EUR')->update(['is_active' => false]);
         app()->forgetInstance(Currencies::class);
 
-        $draft = ledgerReceipt(lines: [new LineDraft('4101', 'EUR', credit: 100, rate: '1.14', creditUsd: 114)]);
+        $draft = ledgerReceipt(lines: [new LineDraft('4001', 'EUR', credit: 100, rate: '1.14', creditUsd: 114)]);
 
         expect(ruleLines(new CashAccountInOwnCurrency, $draft))->toBe([1]);
     });
@@ -97,7 +97,7 @@ describe('ledger', function () {
         euroCashAccount();
         $row = ['account' => '1173', 'side' => 'debit', 'amount' => '1000', 'rate' => '1.14', 'project' => 'F2F', 'fund_source' => 'donor_grant'];
 
-        $built = app(VoucherDraftBuilder::class)->build('CRV', '2026-03-10', '', '', [$row, ['account' => '4107', 'side' => 'credit', 'amount' => '1140', 'project' => 'F2F']], 5);
+        $built = app(VoucherDraftBuilder::class)->build('CRV', '2026-03-10', '', '', [$row, ['account' => '4001', 'side' => 'credit', 'amount' => '1140', 'project' => 'F2F']], 5);
 
         expect($built->problems)->toBe([])
             ->and($built->draft->lines[0]->currency)->toBe('EUR')
@@ -128,7 +128,7 @@ describe('ledger', function () {
         $rows = collect(app(TrialBalance::class)->asAt(null, 'EUR', '1.14')['classes'])->flatMap(fn ($class) => $class['rows'])->keyBy('code');
 
         expect($rows['1173']['debit'])->toBe('1000.00')
-            ->and($rows['4107']['credit'])->toBe('1000.00');
+            ->and($rows['4001']['credit'])->toBe('1000.00');
 
         $usd = collect(app(TrialBalance::class)->asAt()['classes'])->flatMap(fn ($class) => $class['rows'])->keyBy('code');
 

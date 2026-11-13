@@ -36,7 +36,7 @@ function approvedReceipt(int $amount = 100): Voucher
 {
     return ledgerApprovedVoucher([], [
         new LineDraft('1111', 'USD', debit: $amount, projectCode: 'F2F', fundSource: FundSource::DonorGrant),
-        new LineDraft('4101', 'USD', credit: $amount, projectCode: 'F2F'),
+        new LineDraft('4001', 'USD', credit: $amount, projectCode: 'F2F'),
     ]);
 }
 
@@ -53,7 +53,7 @@ it('reverses an approved voucher with the same lines on the opposite sides and l
     $lines = $reversal->lines->keyBy('account_code');
     expect($lines['1111']->credit_usd)->toBe('100.00')
         ->and($lines['1111']->debit_usd)->toBe('0.00')
-        ->and($lines['4101']->debit_usd)->toBe('100.00');
+        ->and($lines['4001']->debit_usd)->toBe('100.00');
 
     $original->refresh();
     expect($original->status)->toBe(VoucherStatus::Approved)

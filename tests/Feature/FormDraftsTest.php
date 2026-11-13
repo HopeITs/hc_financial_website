@@ -40,7 +40,7 @@ function draftRow(int $userId, string $screen): ?object
 
 function draftSheetRow(): string
 {
-    $row = ['date' => '2026-03-10', 'kind' => 'income', 'project' => 'F2F', 'budget_line' => '', 'cash' => '1111', 'account' => '4101', 'to_cash' => '', 'amount' => '250', 'rate' => '', 'contact' => '', 'fund_source' => '', 'document' => '', 'description' => 'Grant'];
+    $row = ['date' => '2026-03-10', 'kind' => 'income', 'project' => 'F2F', 'budget_line' => '', 'cash' => '1111', 'account' => '4001', 'to_cash' => '', 'amount' => '250', 'rate' => '', 'contact' => '', 'fund_source' => '', 'document' => '', 'description' => 'Grant'];
 
     return implode("\t", array_map(fn (string $column) => $row[$column] ?? '', OperationSheet::COLUMNS));
 }
@@ -49,7 +49,7 @@ it('saves a single entry as a draft, offers it back, restores it, and forgets it
     $ann = draftUser();
 
     Livewire::actingAs($ann)->test(SingleEntry::class)
-        ->set('kind', 'income')->set('date', '2026-03-10')->set('project', 'F2F')->set('cash', '1111')->set('account', '4101')->set('amount', '250')
+        ->set('kind', 'income')->set('date', '2026-03-10')->set('project', 'F2F')->set('cash', '1111')->set('account', '4001')->set('amount', '250')
         ->set('description', 'مسودة منحة')
         ->call('saveDraft')
         ->assertDispatched('form-clean')

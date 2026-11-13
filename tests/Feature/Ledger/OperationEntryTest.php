@@ -14,7 +14,7 @@ beforeEach(function () {
 
 function operation(array $with = []): array
 {
-    return $with + ['kind' => 'income', 'date' => '2026-03-10', 'project' => 'F2F', 'cash' => '1111', 'account' => '4101', 'amount' => '250'];
+    return $with + ['kind' => 'income', 'date' => '2026-03-10', 'project' => 'F2F', 'cash' => '1111', 'account' => '4001', 'amount' => '250'];
 }
 
 function entryPost(array $operation)
@@ -32,7 +32,7 @@ it('turns an income into a receipt: debit the cash account, credit the income ac
     expect($voucher->type->value)->toBe('CRV')
         ->and($voucher->description)->toBe('Grant')
         ->and($voucher->lines->map(fn ($line) => [$line->account_code, $line->project_code, $line->debit_usd, $line->credit_usd])->all())
-        ->toBe([['1111', 'F2F', '250.00', '0.00'], ['4101', 'F2F', '0.00', '250.00']]);
+        ->toBe([['1111', 'F2F', '250.00', '0.00'], ['4001', 'F2F', '0.00', '250.00']]);
 });
 
 it('books a pound income at the typed rate', function () {
@@ -89,7 +89,7 @@ it('reports a bad kind, a cash account that is not cash, and a bad exchange inst
     $entry = app(OperationEntry::class);
 
     expect($entry->build(operation(['kind' => 'gift']), 7)->problems)->toBe([__('ledger.entry.bad_kind')])
-        ->and($entry->build(operation(['cash' => '4101']), 7)->problems)->toBe([__('ledger.entry.bad_cash')])
+        ->and($entry->build(operation(['cash' => '4001']), 7)->problems)->toBe([__('ledger.entry.bad_cash')])
         ->and($entry->build(operation(['cash' => '']), 7)->draft)->toBeNull()
         ->and($entry->build(operation(['kind' => 'exchange', 'to_cash' => '1121', 'rate' => '15000']), 7)->problems)->toBe([__('ledger.entry.bad_exchange')])
         ->and($entry->build(operation(['kind' => 'exchange', 'to_cash' => '1112', 'rate' => '']), 7)->problems)->toBe([__('ledger.entry.bad_exchange_amount')]);

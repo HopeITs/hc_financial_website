@@ -21,7 +21,7 @@ function invalidDraft(): VoucherDraft
 {
     return ledgerReceipt(lines: [
         new LineDraft('1111', 'USD', debit: 100),
-        new LineDraft('4101', 'USD', credit: 90, projectCode: 'F2F'),
+        new LineDraft('4001', 'USD', credit: 90, projectCode: 'F2F'),
     ]);
 }
 
@@ -45,7 +45,7 @@ it('posts a valid voucher as pending approval with its lines, a number and an au
 it('keeps the cents on the exchange differences line when it posts', function () {
     $voucher = app(PostVoucher::class)->post(ledgerReceipt(lines: [
         new LineDraft('1112', 'SYP', debit: 1500000, rate: 15000, debitUsd: '100.01', projectCode: 'F2F', fundSource: FundSource::DonorGrant),
-        new LineDraft('4101', 'USD', credit: 100, projectCode: 'F2F'),
+        new LineDraft('4001', 'USD', credit: 100, projectCode: 'F2F'),
     ]));
 
     expect($voucher->lines)->toHaveCount(3)

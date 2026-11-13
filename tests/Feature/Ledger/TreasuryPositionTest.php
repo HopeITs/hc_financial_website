@@ -25,7 +25,7 @@ beforeEach(function () {
     );
 
     // Aleppo's general USD account is funded with 5,000 USD.
-    $post('2026-03-01', [$usd('1111', 5000, null, 'GEN-ALP-USD'), new LineDraft('4101', 'USD', credit: 5000, projectCode: 'GEN-ALP-USD')], VoucherType::Receipt);
+    $post('2026-03-01', [$usd('1111', 5000, null, 'GEN-ALP-USD'), new LineDraft('4001', 'USD', credit: 5000, projectCode: 'GEN-ALP-USD')], VoucherType::Receipt);
 
     // Two bulk purchases of pounds (transfers into the pound safe): 7.5M for 500 USD, then 3.2M for 200 USD.
     $post('2026-03-10', [
@@ -52,12 +52,12 @@ beforeEach(function () {
     // Latakia: pounds received for 10.01 USD against 10 USD of income leaves one cent on the exchange differences account.
     $post('2026-03-15', [
         new LineDraft('1122', 'SYP', debit: 150000, rate: 15000, debitUsd: '10.01', projectCode: 'GEN-LTK-SYP', fundSource: FundSource::DonorGrant),
-        new LineDraft('4101', 'USD', credit: 10, projectCode: 'GEN-LTK-SYP'),
+        new LineDraft('4001', 'USD', credit: 10, projectCode: 'GEN-LTK-SYP'),
     ], VoucherType::Receipt);
 
     // Pending, so not counted.
     app(PostVoucher::class)->post(ledgerReceipt(['date' => CarbonImmutable::parse('2026-03-16')], [
-        $usd('1111', 999, null, 'GEN-ALP-USD'), new LineDraft('4101', 'USD', credit: 999, projectCode: 'GEN-ALP-USD'),
+        $usd('1111', 999, null, 'GEN-ALP-USD'), new LineDraft('4001', 'USD', credit: 999, projectCode: 'GEN-ALP-USD'),
     ]));
 });
 

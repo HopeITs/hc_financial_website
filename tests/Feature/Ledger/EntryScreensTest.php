@@ -37,14 +37,14 @@ function entryUser(RoleId $role = RoleId::Accountant, string $name = 'Ann'): Use
 /** A tab-separated row in the sheet's column order. */
 function sheetRow(array $with = []): string
 {
-    $row = $with + ['date' => '2026-03-10', 'kind' => 'income', 'project' => 'F2F', 'budget_line' => '', 'cash' => '1111', 'account' => '4101', 'to_cash' => '', 'amount' => '250', 'rate' => '', 'contact' => '', 'fund_source' => '', 'document' => '', 'description' => 'Grant'];
+    $row = $with + ['date' => '2026-03-10', 'kind' => 'income', 'project' => 'F2F', 'budget_line' => '', 'cash' => '1111', 'account' => '4001', 'to_cash' => '', 'amount' => '250', 'rate' => '', 'contact' => '', 'fund_source' => '', 'document' => '', 'description' => 'Grant'];
 
     return implode("\t", array_map(fn (string $column) => $row[$column] ?? '', OperationSheet::COLUMNS));
 }
 
 it('saves a single entry as a pending voucher with its file, and goes to the voucher', function () {
     Livewire::actingAs(entryUser())->test(SingleEntry::class)
-        ->set('kind', 'income')->set('date', '2026-03-10')->set('project', 'F2F')->set('cash', '1111')->set('account', '4101')->set('amount', '250')
+        ->set('kind', 'income')->set('date', '2026-03-10')->set('project', 'F2F')->set('cash', '1111')->set('account', '4001')->set('amount', '250')
         ->set('description', 'Grant')
         ->set('attachments', [UploadedFile::fake()->create('proof.pdf', 100, 'application/pdf')])
         ->assertSee('1111')
@@ -61,7 +61,7 @@ it('saves a single entry as a pending voucher with its file, and goes to the vou
 
 it('shows what is wrong instead of saving a single entry', function () {
     Livewire::actingAs(entryUser())->test(SingleEntry::class)
-        ->set('kind', 'income')->set('date', '2026-03-10')->set('cash', '1111')->set('account', '4101')->set('amount', '250')
+        ->set('kind', 'income')->set('date', '2026-03-10')->set('cash', '1111')->set('account', '4001')->set('amount', '250')
         ->assertSeeHtml('data-test="entry-messages"')
         ->call('save');
 
@@ -81,7 +81,7 @@ it('reads rows pasted from Excel, with or without a header, old letters and date
     $sheet = app(OperationSheet::class);
 
     $plain = $sheet->parse(sheetRow(['kind' => 'I', 'date' => '10/03/2026', 'amount' => '1,250']));
-    $headed = $sheet->parse("amount\tdate\tkind\tcash\tproject\taccount\n40\t2026/03/11\tE\t1111\tF2F\t4101");
+    $headed = $sheet->parse("amount\tdate\tkind\tcash\tproject\taccount\n40\t2026/03/11\tE\t1111\tF2F\t4001");
 
     expect($plain)->toHaveCount(1)
         ->and($plain[0]['operation']['kind'])->toBe('income')
@@ -216,7 +216,7 @@ it('writes a template with the entry sheet and the lists, and reads a filled one
     $writer->getCurrentSheet()->setName(OperationTemplate::SHEET);
     $writer->addRow(Row::fromValues(['date | التاريخ', 'kind', 'project', 'cash', 'account', 'amount']));
     $writer->addRow(Row::fromValues([]));
-    $writer->addRow(Row::fromValues(['2026-03-10', 'income', 'F2F', '1111', '4101', 250.5]));
+    $writer->addRow(Row::fromValues(['2026-03-10', 'income', 'F2F', '1111', '4001', 250.5]));
     $writer->close();
 
     $text = $template->read($filled);
@@ -235,7 +235,7 @@ it('shows the rows of an uploaded workbook in the preview and downloads the temp
     $writer = new XlsxWriter;
     $writer->openToFile($path);
     $writer->addRow(Row::fromValues(['date', 'kind', 'project', 'cash', 'account', 'amount']));
-    $writer->addRow(Row::fromValues(['2026-03-10', 'income', 'F2F', '1111', '4101', 250]));
+    $writer->addRow(Row::fromValues(['2026-03-10', 'income', 'F2F', '1111', '4001', 250]));
     $writer->close();
 
     Livewire::actingAs(entryUser())->test(MultiEntry::class)
