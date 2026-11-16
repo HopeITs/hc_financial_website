@@ -10,6 +10,11 @@
     "JudyDad": "it",
     "Grinsh-1378": "it",
     "hekmat-hcsyria": "ct",
-    "HCCTADMIN": "ct"
-  }
+    "HCCTADMIN": "ct",
+    "shadi93mk-coder": "finance"
+  },
+  "approvers": [
+    "maiyoussef",
+    "JudyDad"
+  ]
 }

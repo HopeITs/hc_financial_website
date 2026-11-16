@@ -88,10 +88,36 @@ jobs:
           else
             gh pr edit "$PR_NUMBER" --remove-label fast-lane || true
           fi
-          if grep -q "Needs IT approval" "$RUNNER_TEMP/guard-summary.md"; then
-            gh label create needs-it-review --color d93f0b --description "Contains sensitive changes" 2>/dev/null || true
+          # Every pull request that waits for IT gets the label (not only those with sensitive items),
+          # so IT can list them all with:  is:pr is:open label:needs-it-review
+          if grep -q "Lane: \*\*REVIEW\*\*" "$RUNNER_TEMP/guard-summary.md" || grep -q "Needs IT approval" "$RUNNER_TEMP/guard-summary.md"; then
+            gh label create needs-it-review --color d93f0b --description "Waiting for IT" 2>/dev/null || true
             gh pr edit "$PR_NUMBER" --add-label needs-it-review || true
           fi
+
+      # Optional: a Telegram message when a pull request starts waiting for IT. Needs two repository secrets:
+      # TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_IDS (comma-separated chat ids). Without them this step does nothing.
+      - name: Notify IT on Telegram (optional)
+        if: always() && steps.trust.outputs.present == 'true' && github.event_name == 'pull_request' && (github.event.action == 'opened' || github.event.action == 'reopened')
+        env:
+          TG_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TG_CHATS: ${{ secrets.TELEGRAM_CHAT_IDS }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          if [ -z "$TG_TOKEN" ] || [ -z "$TG_CHATS" ]; then echo "Telegram is not configured, skipping."; exit 0; fi
+          [ -f "$RUNNER_TEMP/guard-summary.md" ] || exit 0
+          if ! grep -q "Lane: \*\*REVIEW\*\*" "$RUNNER_TEMP/guard-summary.md"; then echo "Not waiting for IT, no message."; exit 0; fi
+          msg=$(printf 'Pull request waiting for IT\n%s #%s\n%s\nBy: %s\n%s' "$REPO" "$PR_NUMBER" "$PR_TITLE" "$PR_AUTHOR" "$PR_URL")
+          for chat in $(echo "$TG_CHATS" | tr ',' ' '); do
+            curl -sS --max-time 20 -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${chat}" --data-urlencode "text=${msg}" \
+              --data-urlencode "disable_web_page_preview=true" > /dev/null \
+              || echo "Telegram message failed for one recipient"
+          done
 
   build:
     name: build
