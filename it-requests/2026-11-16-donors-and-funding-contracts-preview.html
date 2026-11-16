@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Donors and Contracts</title>
+<style>
+:root{
+  --ground:#f3f3f4;--board:#fff;--head:#f8f8f9;--line:#dcddde;--line-strong:#939598;
+  --ink:#3f4042;--muted:#6d6e71;--faint:#939598;--brand:#be1f24;--brand-hover:#a81b20;
+  --good:#1d7a4c;--good-soft:#e6f2ec;--warn:#9a6412;--warn-soft:#f7eedd;--crit:#be1f24;--crit-soft:#f8e4e4;
+  --active:#2563a8;--active-soft:#e5eef7;--fund:#2b5f6b;--fund-soft:#e3eef0;--shadow:0 1px 2px rgba(0,0,0,.05)
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#1a1b1e;--board:#232428;--head:#2a2b30;--line:#34353a;--line-strong:#4a4b51;
+  --ink:#ececee;--muted:#a8aaae;--faint:#8a8c93;--brand:#d4343a;--brand-hover:#e04a50;
+  --good:#5fc08f;--good-soft:#1f3a2c;--warn:#e0b060;--warn-soft:#3a3020;--crit:#ef6b70;--crit-soft:#3d2224;
+  --active:#7fb0e6;--active-soft:#1f2f42;--fund:#7fc0cc;--fund-soft:#1f3438}}
+:root[data-theme="dark"]{
+  --ground:#1a1b1e;--board:#232428;--head:#2a2b30;--line:#34353a;--line-strong:#4a4b51;
+  --ink:#ececee;--muted:#a8aaae;--faint:#8a8c93;--brand:#d4343a;--brand-hover:#e04a50;
+  --good:#5fc08f;--good-soft:#1f3a2c;--warn:#e0b060;--warn-soft:#3a3020;--crit:#ef6b70;--crit-soft:#3d2224;
+  --active:#7fb0e6;--active-soft:#1f2f42;--fund:#7fc0cc;--fund-soft:#1f3438}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font:14px/1.5 "Somar Sans","Segoe UI",Tahoma,system-ui,sans-serif}
+.num,.ltr{direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums}
+.top{background:var(--board);border-bottom:1px solid var(--line);padding:10px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{font-weight:700;color:var(--brand)}
+.switch{display:flex;gap:4px;background:var(--ground);border:1px solid var(--line);border-radius:8px;padding:3px}
+.switch button{border:0;background:transparent;color:var(--muted);padding:6px 14px;border-radius:6px;font:inherit;cursor:pointer}
+.switch button.on{background:var(--board);color:var(--ink);box-shadow:var(--shadow);font-weight:600}
+.note{color:var(--faint);font-size:12px;margin-inline-start:auto}
+main{max-width:1180px;margin:0 auto;padding:20px 16px 60px}
+.crumbs{color:var(--faint);font-size:12px;margin-bottom:4px}
+h1{font-size:22px;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 16px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.btn{border:1px solid var(--line-strong);background:var(--board);color:var(--ink);border-radius:6px;padding:7px 14px;font:inherit;cursor:pointer}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.primary:hover{background:var(--brand-hover)}
+.btn.sm{padding:3px 10px;font-size:12px}
+.field{border:1px solid var(--line-strong);background:var(--board);color:var(--ink);border-radius:6px;padding:7px 10px;font:inherit;min-width:0}
+.card{background:var(--board);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow)}
+.card+.card{margin-top:14px}
+.card h2{font-size:15px;margin:0;padding:12px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.card .body{padding:14px 16px}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th,td{padding:9px 12px;text-align:start;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:var(--head);color:var(--muted);font-weight:600;font-size:12px}
+tr:last-child td{border-bottom:0}
+tfoot td{font-weight:700;background:var(--head)}
+td.r,th.r{text-align:end}
+.badge{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:600}
+.good{background:var(--good-soft);color:var(--good)}.warn{background:var(--warn-soft);color:var(--warn)}
+.crit{background:var(--crit-soft);color:var(--crit)}.act{background:var(--active-soft);color:var(--active)}
+.fund{background:var(--fund-soft);color:var(--fund)}.mut{background:var(--ground);color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.lbl{display:block;color:var(--muted);font-size:12px;margin-bottom:4px}
+.lbl b{color:var(--brand)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px}
+.kpi{background:var(--board);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.kpi .k{color:var(--muted);font-size:12px}.kpi .v{font-size:20px;font-weight:700;margin-top:2px}
+.kpi .s{color:var(--faint);font-size:12px}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:14px;overflow-x:auto}
+.tabs button{border:0;background:none;color:var(--muted);padding:9px 14px;font:inherit;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.tabs button.on{color:var(--brand);border-bottom-color:var(--brand);font-weight:600}
+.meter{height:6px;background:var(--ground);border-radius:4px;overflow:hidden;min-width:90px}
+.meter i{display:block;height:100%;background:var(--good)}
+.meter i.w{background:var(--warn)}.meter i.c{background:var(--crit)}
+.alert{border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px}
+.layout{display:grid;grid-template-columns:1fr 380px;gap:14px;align-items:start}
+.layout>*{min-width:0}
+@media (max-width:900px){.layout{grid-template-columns:1fr}}
+@media (max-width:520px){.drawer .grid{grid-template-columns:1fr!important}.kpis{grid-template-columns:1fr 1fr}}
+.drawer{position:sticky;top:12px}
+.hidden{display:none}
+.why{font-size:12px;color:var(--faint);margin-top:6px}
+.legend{font-size:12px;color:var(--muted);margin-top:8px}
+</style>
+</head>
+<body>
+<div class="top">
+  <span class="logo">Hope Center Finance</span>
+  <div class="switch" role="tablist">
+    <button class="on" data-screen="donors">شاشة المانحين</button>
+    <button data-screen="contract">شاشة عقد التمويل</button>
+  </div>
+  <span class="note">معاينة للشكل فقط — الأرقام والأسماء أمثلة</span>
+</div>
+
+<main>
+<!-- ============ DONORS ============ -->
+<section id="donors">
+  <div class="crumbs">الأشخاص والجهات › المانحون</div>
+  <h1>المانحون</h1>
+  <p class="sub">قائمة المانحين، منفصلة عن شجرة الحسابات. يُختار المانح على العقد وعلى سطر الحركة عند الحاجة.</p>
+
+  <div class="layout">
+    <div>
+      <div class="bar">
+        <input class="field" placeholder="بحث بالاسم أو الرمز" style="flex:1 1 200px">
+        <select class="field"><option>كل الأنواع</option><option>وكالة كنسية</option><option>جهة حكومية</option><option>مؤسسة</option><option>كنيسة أو رعية</option><option>فرد</option></select>
+        <select class="field"><option>الفعّالون</option><option>غير الفعّالين</option><option>الكل</option></select>
+        <button class="btn primary">+ مانح جديد</button>
+      </div>
+      <div class="card"><div class="scroll"><table>
+        <thead><tr><th>الرمز</th><th>الاسم</th><th>النوع</th><th>البلد</th><th>العملة</th><th class="r">عقود جارية</th><th class="r">المتبقي على المانح (USD)</th><th>الحالة</th></tr></thead>
+        <tbody>
+          <tr><td class="ltr">CARPL</td><td>كاريتاس بولندا<br><span class="ltr" style="color:var(--faint);font-size:12px">Caritas Poland</span></td><td>وكالة كنسية</td><td>بولندا</td><td class="ltr">EUR</td><td class="r num">2</td><td class="r num">69,000.00</td><td><span class="badge good">فعّال</span></td></tr>
+          <tr><td class="ltr">ACN</td><td>ACN<br><span class="ltr" style="color:var(--faint);font-size:12px">Aid to the Church in Need</span></td><td>وكالة كنسية</td><td>ألمانيا</td><td class="ltr">EUR</td><td class="r num">1</td><td class="r num">23,000.00</td><td><span class="badge good">فعّال</span></td></tr>
+          <tr><td class="ltr">MCC</td><td>MCC<br><span class="ltr" style="color:var(--faint);font-size:12px">Mennonite Central Committee</span></td><td>مؤسسة</td><td>كندا</td><td class="ltr">USD</td><td class="r num">1</td><td class="r num">15,500.00</td><td><span class="badge good">فعّال</span></td></tr>
+          <tr><td class="ltr">GIZ</td><td>GIZ</td><td>جهة حكومية</td><td>ألمانيا</td><td class="ltr">EUR</td><td class="r num">0</td><td class="r num">0.00</td><td><span class="badge good">فعّال</span></td></tr>
+          <tr><td class="ltr">CH-STG</td><td>كنيسة القديس جاورجيوس<br><span class="ltr" style="color:var(--faint);font-size:12px">St George Church</span></td><td>كنيسة أو رعية</td><td>سوريا</td><td class="ltr">USD</td><td class="r num">1 <span class="badge mut">سنوي</span></td><td class="r num">0.00</td><td><span class="badge good">فعّال</span></td></tr>
+          <tr><td class="ltr">OO</td><td>OO</td><td>مؤسسة</td><td>النمسا</td><td class="ltr">EUR</td><td class="r num">0</td><td class="r num">0.00</td><td><span class="badge mut">غير فعّال</span></td></tr>
+        </tbody>
+      </table></div></div>
+      <p class="legend">"المتبقي على المانح" = ما بقي من قيمة العقود الجارية ولم يصل بعد، بالسعر الثابت، ويشمل الدفعات المشروطة التي لم يتحقق شرطها.</p>
+    </div>
+
+    <div class="card drawer">
+      <h2>إضافة مانح <span class="badge act">مسودة</span></h2>
+      <div class="body">
+        <div class="grid" style="grid-template-columns:1fr 1fr">
+          <label><span class="lbl">الاسم بالإنجليزية <b>*</b></span><input class="field ltr" style="width:100%" value="Caritas Poland"></label>
+          <label><span class="lbl">الاسم بالعربية <b>*</b></span><input class="field" style="width:100%" value="كاريتاس بولندا"></label>
+          <label><span class="lbl">الرمز المختصر <b>*</b></span><input class="field ltr" style="width:100%" value="CARPL"></label>
+          <label><span class="lbl">النوع <b>*</b></span><select class="field" style="width:100%"><option>وكالة كنسية</option></select></label>
+          <label><span class="lbl">البلد</span><input class="field" style="width:100%" value="بولندا"></label>
+          <label><span class="lbl">العملة المعتادة</span><select class="field" style="width:100%"><option>EUR يورو</option></select></label>
+        </div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
+          <span class="lbl" style="font-weight:600;color:var(--ink)">جهة التواصل</span>
+          <div class="grid" style="grid-template-columns:1fr">
+            <input class="field" placeholder="اسم الشخص" value="Anna Kowalska">
+            <input class="field ltr" placeholder="البريد الإلكتروني" value="a.kowalska@example.org">
+            <input class="field ltr" placeholder="الهاتف" value="+48 …">
+          </div>
+        </div>
+        <label style="display:block;margin-top:12px"><span class="lbl">ملاحظات</span><textarea class="field" rows="2" style="width:100%"></textarea></label>
+        <label style="display:flex;gap:8px;align-items:center;margin-top:10px"><input type="checkbox" checked> فعّال</label>
+        <div class="bar" style="margin:14px 0 0"><button class="btn primary">حفظ</button><button class="btn">إلغاء</button></div>
+        <p class="why">يضيف ويعدّل: المدير المالي والإدارة العامة. يشاهد فقط: المدير العام، المحاسب، مدير البرنامج، مدير المشروع.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CONTRACT ============ -->
+<section id="contract" class="hidden">
+  <div class="crumbs">المشاريع › عقود التمويل › <span class="ltr">CON-2026-001</span></div>
+  <div class="bar" style="justify-content:space-between;margin-bottom:6px">
+    <div>
+      <h1 style="display:inline">Education support 2026</h1>
+      <span class="badge good" style="margin-inline-start:8px">جارٍ</span>
+      <span class="badge fund">مقيّد بمشاريع</span>
+    </div>
+    <div class="bar" style="margin:0"><button class="btn">طباعة</button><button class="btn">تعديل</button><button class="btn">إغلاق العقد</button></div>
+  </div>
+  <p class="sub">كاريتاس بولندا · رقم المانح <span class="ltr">CARPL-SY-4471</span> · من <span class="num">01/03/2026</span> إلى <span class="num">28/02/2027</span> · السعر الثابت <span class="num">1.15</span> USD لكل EUR · اعتمده المدير المالي <span class="num">05/02/2026</span></p>
+
+  <div class="kpis">
+    <div class="kpi"><div class="k">قيمة العقد</div><div class="v num">€120,000</div><div class="s num">$138,000 بالسعر الثابت</div></div>
+    <div class="kpi"><div class="k">وصل حتى الآن</div><div class="v num">€60,000</div><div class="s">50% · دفعة واحدة من ثلاث</div></div>
+    <div class="kpi"><div class="k">المتبقي على المانح</div><div class="v num">€60,000</div><div class="s">الدفعة 2 متأخرة 6 أيام</div></div>
+    <div class="kpi"><div class="k">المصروف</div><div class="v num">$41,280</div><div class="s">30% من الميزانية المعدّلة</div></div>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="on" data-tab="t-info">البيانات</button>
+    <button data-tab="t-proj">المشاريع</button>
+    <button data-tab="t-inst">الدفعات</button>
+    <button data-tab="t-budget">الميزانية</button>
+    <button data-tab="t-rep">التقارير للمانح</button>
+    <button data-tab="t-close">الإغلاق</button>
+  </div>
+
+  <div id="t-info" class="card"><h2>بيانات العقد</h2><div class="body"><div class="grid">
+    <label><span class="lbl">رقم العقد (داخلي)</span><input class="field ltr" style="width:100%" value="CON-2026-001" disabled></label>
+    <label><span class="lbl">رقم العقد عند المانح</span><input class="field ltr" style="width:100%" value="CARPL-SY-4471"></label>
+    <label><span class="lbl">المانح <b>*</b></span><select class="field" style="width:100%"><option>كاريتاس بولندا (CARPL)</option></select></label>
+    <label><span class="lbl">عنوان العقد <b>*</b></span><input class="field ltr" style="width:100%" value="Education support 2026"></label>
+    <label><span class="lbl">تاريخ التوقيع <b>*</b></span><input class="field num" style="width:100%" value="01/02/2026"></label>
+    <label><span class="lbl">من تاريخ — إلى تاريخ <b>*</b></span><input class="field num" style="width:100%" value="01/03/2026 – 28/02/2027"></label>
+    <label><span class="lbl">عملة العقد <b>*</b></span><select class="field" style="width:100%"><option>EUR يورو</option></select></label>
+    <label><span class="lbl">القيمة الإجمالية <b>*</b></span><input class="field num" style="width:100%" value="120,000.00"></label>
+    <label><span class="lbl">السعر الثابت للعقد (USD لكل 1 EUR)</span><input class="field num" style="width:100%" value="1.15"></label>
+    <label><span class="lbl">نوع التقييد</span><select class="field" style="width:100%"><option>مقيّد بمشاريع</option><option>غير مقيّد</option></select></label>
+    <label><span class="lbl">الحالة</span><select class="field" style="width:100%"><option>جارٍ</option></select></label>
+    <label><span class="lbl">العقد الموقّع</span><span class="field" style="display:block">📎 contract-signed.pdf</span></label>
+  </div>
+  <label style="display:block;margin-top:12px"><span class="lbl">ملاحظات</span><textarea class="field" rows="2" style="width:100%"></textarea></label>
+  <p class="why">يسجّل ويعدّل المسودة: المحاسب، المدير المالي، الإدارة العامة. يعتمد العقد: المدير المالي. لا يُستخدم العقد في الإدخال والتقارير قبل اعتماده.</p>
+  </div></div>
+
+  <div id="t-proj" class="card hidden"><h2>توزيع العقد على المشاريع <button class="btn sm">+ مشروع</button></h2>
+    <div class="scroll"><table>
+      <thead><tr><th>المشروع</th><th>المدينة</th><th class="r">الحصة (EUR)</th><th class="r">النسبة</th><th class="r">بالسعر الثابت (USD)</th><th class="r">وصل (EUR)</th><th class="r">صُرف (USD)</th></tr></thead>
+      <tbody>
+        <tr><td>F2F — Face to Face</td><td>حلب</td><td class="r num">80,000.00</td><td class="r num">66.67%</td><td class="r num">92,000.00</td><td class="r num">40,000.00</td><td class="r num">29,850.00</td></tr>
+        <tr><td>SZ — Study Zone</td><td>اللاذقية</td><td class="r num">40,000.00</td><td class="r num">33.33%</td><td class="r num">46,000.00</td><td class="r num">20,000.00</td><td class="r num">11,430.00</td></tr>
+      </tbody>
+      <tfoot><tr><td colspan="2">المجموع</td><td class="r num">120,000.00</td><td class="r num">100%</td><td class="r num">138,000.00</td><td class="r num">60,000.00</td><td class="r num">41,280.00</td></tr></tfoot>
+    </table></div>
+    <div class="body"><span class="badge good">✓ المجموع يساوي قيمة العقد</span><p class="why">الحصص تُكتب بالمبلغ. الدفعة الواصلة تُوزَّع تلقائياً بهذه النسب، ويمكن تعديل التوزيع قبل الحفظ.</p></div>
+  </div>
+
+  <div id="t-inst" class="hidden">
+    <div class="alert warn">⚠ الدفعة 2 متأخرة 6 أيام عن موعدها (10/11/2026). شرطها "قبول التقرير المرحلي" — التقرير سُلِّم ولم يُقبل بعد.</div>
+    <div class="card"><h2>الدفعات المتوقعة <button class="btn sm">+ دفعة</button></h2><div class="scroll"><table>
+      <thead><tr><th>#</th><th>التاريخ المتوقع</th><th class="r">المبلغ (EUR)</th><th>الشرط</th><th>مشروطة؟</th><th>الإيراد</th><th>الوصول</th><th class="r">وصل (EUR)</th><th class="r">سعر يوم الوصول</th><th class="r">فرق الصرف (USD)</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1</td><td class="num">01/03/2026</td><td class="r num">60,000.00</td><td>عند التوقيع</td><td>لا</td><td><span class="badge good">سُجِّل عند التوقيع</span></td><td><span class="badge good">وصلت 04/03/2026</span><br><span style="font-size:12px;color:var(--faint)">Bank of Beirut – EUR</span></td><td class="r num">60,000.00</td><td class="r num">1.12</td><td class="r num" style="color:var(--crit)">−1,800.00</td></tr>
+        <tr><td class="num">2</td><td class="num">10/11/2026</td><td class="r num">36,000.00</td><td>بعد قبول التقرير المرحلي</td><td>نعم</td><td><span class="badge mut">ينتظر الشرط</span> <button class="btn sm">تحقق الشرط</button></td><td><span class="badge crit">متأخرة 6 أيام</span></td><td class="r num">—</td><td class="r num">—</td><td class="r num">—</td></tr>
+        <tr><td class="num">3</td><td class="num">31/03/2027</td><td class="r num">24,000.00</td><td>بعد قبول التقرير النهائي</td><td>نعم</td><td><span class="badge mut">ينتظر الشرط</span></td><td><span class="badge mut">لم يحن موعدها</span></td><td class="r num">—</td><td class="r num">—</td><td class="r num">—</td></tr>
+      </tbody>
+      <tfoot><tr><td colspan="2">المجموع</td><td class="r num">120,000.00</td><td colspan="4"></td><td class="r num">60,000.00</td><td></td><td class="r num">−1,800.00</td></tr></tfoot>
+    </table></div>
+    <div class="body"><p class="why" style="margin:0">الدفعة غير المشروطة: إيراد عند التوقيع (مدين 1210 / دائن 4001). المشروطة: إيراد عند الضغط على "تحقق الشرط". عند الوصول: مدين البنك أو شركة الحوالات / دائن 1210. الفرق بين السعر الثابت (1.15) وسعر يوم الوصول يذهب إلى فروقات الصرف 5503.</p></div>
+    </div>
+  </div>
+
+  <div id="t-budget" class="hidden">
+    <div class="bar">
+      <select class="field"><option>المشروع: F2F — Face to Face</option><option>المشروع: SZ — Study Zone</option></select>
+      <select class="field"><option>النسخة: التعديل 1 (15/07/2026) — المعتمدة</option><option>النسخة: الأصلية (01/02/2026)</option></select>
+      <button class="btn">+ تعديل جديد للميزانية</button>
+    </div>
+    <div class="alert warn">⚠ بند "Training materials" وصل إلى 84% من المبلغ المعدّل.</div>
+    <div class="card"><h2>ميزانية العقد للمشروع F2F <span style="font-weight:400;color:var(--muted);font-size:12px">بالدولار بالسعر الثابت</span></h2><div class="scroll"><table>
+      <thead><tr><th>بند المانح</th><th>البند الفرعي</th><th>حساب المصروف</th><th class="r">الأصلية</th><th class="r">المعدّلة</th><th class="r">المصروف</th><th class="r">المتبقي</th><th>النسبة</th></tr></thead>
+      <tbody>
+        <tr><td>Staff costs</td><td>Program staff salaries</td><td><span class="ltr">5101</span> رواتب موظفي البرامج</td><td class="r num">40,000.00</td><td class="r num">40,000.00</td><td class="r num">18,600.00</td><td class="r num">21,400.00</td><td><div class="meter"><i style="width:47%"></i></div></td></tr>
+        <tr><td>Staff costs</td><td>Staff health assistance</td><td><span class="ltr">5103</span> المساعدات الصحية للموظفين</td><td class="r num">6,000.00</td><td class="r num">6,000.00</td><td class="r num">2,790.00</td><td class="r num">3,210.00</td><td><div class="meter"><i style="width:47%"></i></div></td></tr>
+        <tr><td>Training materials</td><td>—</td><td><span class="ltr">5403</span> مستلزمات ومواد البرامج</td><td class="r num">10,000.00</td><td class="r num">8,000.00</td><td class="r num">6,720.00</td><td class="r num">1,280.00</td><td><div class="meter"><i class="w" style="width:84%"></i></div></td></tr>
+        <tr><td>Maintenance</td><td>—</td><td><span class="ltr">5307</span> الإصلاحات والصيانة</td><td class="r num">8,000.00</td><td class="r num">10,000.00</td><td class="r num">1,740.00</td><td class="r num">8,260.00</td><td><div class="meter"><i style="width:17%"></i></div></td></tr>
+        <tr><td>Rent</td><td>—</td><td><span class="ltr">5301</span> إيجار المكاتب والمراكز</td><td class="r num">28,000.00</td><td class="r num">28,000.00</td><td class="r num">0.00</td><td class="r num">28,000.00</td><td><div class="meter"><i style="width:0"></i></div></td></tr>
+      </tbody>
+      <tfoot><tr><td colspan="3">المجموع</td><td class="r num">92,000.00</td><td class="r num">92,000.00</td><td class="r num">29,850.00</td><td class="r num">62,150.00</td><td></td></tr></tfoot>
+    </table></div>
+    <div class="body"><p class="why" style="margin:0">اسم البند كما في ميزانية المانح، وكل بند فرعي مربوط بحساب مصروف واحد. تقرير المانح يجمع البنود الفرعية تحت اسم البند. عند 80% تنبيه، وفوق 100% يحتاج السند موافقة المدير المالي مع سبب مكتوب. كل تعديل ينشئ نسخة جديدة مع سببها ومرفق موافقة المانح.</p></div>
+    </div>
+  </div>
+
+  <div id="t-rep" class="card hidden"><h2>التقارير المطلوبة للمانح <button class="btn sm">+ تقرير</button></h2><div class="scroll"><table>
+    <thead><tr><th>النوع</th><th>الفترة</th><th>موعد التسليم</th><th>الحالة</th><th>المرفق</th><th>يرتبط بالدفعة</th></tr></thead>
+    <tbody>
+      <tr><td>مالي وسردي — مرحلي</td><td class="num">03/2026 – 08/2026</td><td class="num">30/09/2026</td><td><span class="badge act">سُلِّم 28/09/2026</span> <span class="badge warn">مطلوب تعديله</span></td><td>📎 interim-report.pdf</td><td>الدفعة 2</td></tr>
+      <tr><td>مالي — ربعي</td><td class="num">09/2026 – 11/2026</td><td class="num">15/12/2026</td><td><span class="badge mut">لم يُسلَّم</span> <span style="font-size:12px;color:var(--faint)">تنبيه في 01/12/2026</span></td><td>—</td><td>—</td></tr>
+      <tr><td>مالي وسردي — نهائي</td><td class="num">03/2026 – 02/2027</td><td class="num">31/03/2027</td><td><span class="badge mut">لم يُسلَّم</span></td><td>—</td><td>الدفعة 3</td></tr>
+    </tbody>
+  </table></div><div class="body"><p class="why" style="margin:0">يصل تنبيه لصاحب العلاقة قبل موعد التسليم بـ 14 يوماً.</p></div></div>
+
+  <div id="t-close" class="card hidden"><h2>إغلاق العقد</h2><div class="body">
+    <p style="margin-top:0">الرصيد غير المصروف عند الإغلاق: <b class="num">€0.00</b> (يُحسب تلقائياً). ماذا يحدث له؟</p>
+    <div class="grid" style="grid-template-columns:1fr 1fr">
+      <label style="display:flex;gap:8px"><input type="radio" name="c"> إعادته للمانح (يُسجَّل في 2104 إلى أن يُحوَّل)</label>
+      <label style="display:flex;gap:8px"><input type="radio" name="c"> تمديد العقد دون تكلفة (تاريخ نهاية جديد)</label>
+      <label style="display:flex;gap:8px"><input type="radio" name="c"> نقل الرصيد إلى مشروع أو عقد آخر</label>
+      <label style="display:flex;gap:8px"><input type="radio" name="c"> يبقى لـ CHC كأموال غير مقيّدة</label>
+    </div>
+    <label style="display:block;margin-top:12px"><span class="lbl">موافقة المانح المكتوبة <b>*</b></span><span class="field" style="display:block;color:var(--faint)">📎 إرفاق ملف</span></label>
+    <div class="bar" style="margin:14px 0 0"><button class="btn primary">طلب الإغلاق</button></div>
+    <p class="why">الإغلاق يحتاج موافقة المدير المالي ثم المدير العام. بعد الإغلاق لا يُقبل أي صرف جديد على العقد.</p>
+  </div></div>
+</section>
+</main>
+
+<script>
+document.querySelectorAll('.switch button').forEach(function(b){b.addEventListener('click',function(){
+  document.querySelectorAll('.switch button').forEach(function(x){x.classList.toggle('on',x===b)});
+  ['donors','contract'].forEach(function(id){document.getElementById(id).classList.toggle('hidden',id!==b.dataset.screen)});
+  window.scrollTo(0,0);
+})});
+document.querySelectorAll('.tabs button').forEach(function(b){b.addEventListener('click',function(){
+  document.querySelectorAll('.tabs button').forEach(function(x){x.classList.toggle('on',x===b);document.getElementById(x.dataset.tab).classList.toggle('hidden',x!==b)});
+})});
+</script>
+</body>
+</html>
