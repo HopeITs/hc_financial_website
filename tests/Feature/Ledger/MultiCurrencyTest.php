@@ -26,7 +26,7 @@ use Livewire\Livewire;
 function euroCashAccount(): GlAccount
 {
     $account = GlAccount::query()->findOrFail('1171')->replicate();
-    $account->code = '1173';
+    $account->code = '1199';
     $account->name_en = 'Fransabank – EUR';
     $account->name_ar = 'فرنسبنك – يورو';
     $account->currency = 'EUR';
@@ -39,7 +39,7 @@ function euroCashAccount(): GlAccount
 function euroReceipt(): Voucher
 {
     return app(PostVoucher::class)->post(ledgerReceipt(lines: [
-        new LineDraft('1173', 'EUR', debit: 1000, rate: '1.14', debitUsd: 1140, projectCode: 'F2F', fundSource: FundSource::DonorGrant),
+        new LineDraft('1199', 'EUR', debit: 1000, rate: '1.14', debitUsd: 1140, projectCode: 'F2F', fundSource: FundSource::DonorGrant),
         new LineDraft('4001', 'USD', credit: 1140, projectCode: 'F2F'),
     ]));
 }
@@ -72,8 +72,8 @@ describe('ledger', function () {
         euroCashAccount();
 
         $draft = ledgerReceipt(lines: [
-            new LineDraft('1173', 'EUR', debit: 100, rate: '1.14', debitUsd: 114),
-            new LineDraft('1173', 'USD', debit: 10),
+            new LineDraft('1199', 'EUR', debit: 100, rate: '1.14', debitUsd: 114),
+            new LineDraft('1199', 'USD', debit: 10),
             new LineDraft('4001', 'GBP', credit: 124, creditUsd: 124),
         ]);
         expect(ruleLines(new CashAccountInOwnCurrency, $draft))->toBe([2, 3]);
@@ -95,7 +95,7 @@ describe('ledger', function () {
 
     it('builds an EUR line at its typed rate and asks for a rate when none is typed', function () {
         euroCashAccount();
-        $row = ['account' => '1173', 'side' => 'debit', 'amount' => '1000', 'rate' => '1.14', 'project' => 'F2F', 'fund_source' => 'donor_grant'];
+        $row = ['account' => '1199', 'side' => 'debit', 'amount' => '1000', 'rate' => '1.14', 'project' => 'F2F', 'fund_source' => 'donor_grant'];
 
         $built = app(VoucherDraftBuilder::class)->build('CRV', '2026-03-10', '', '', [$row, ['account' => '4001', 'side' => 'credit', 'amount' => '1140', 'project' => 'F2F']], 5);
 
@@ -127,12 +127,12 @@ describe('ledger', function () {
 
         $rows = collect(app(TrialBalance::class)->asAt(null, 'EUR', '1.14')['classes'])->flatMap(fn ($class) => $class['rows'])->keyBy('code');
 
-        expect($rows['1173']['debit'])->toBe('1000.00')
+        expect($rows['1199']['debit'])->toBe('1000.00')
             ->and($rows['4001']['credit'])->toBe('1000.00');
 
         $usd = collect(app(TrialBalance::class)->asAt()['classes'])->flatMap(fn ($class) => $class['rows'])->keyBy('code');
 
-        expect($usd['1173']['debit'])->toBe('1140.00');
+        expect($usd['1199']['debit'])->toBe('1140.00');
     });
 });
 
@@ -173,7 +173,7 @@ describe('currencies screen', function () {
     it('keeps the way a used currency is quoted', function () {
         euroCashAccount();
         DB::table('gl_vouchers')->insert(['id' => 'CRV-2026-0001', 'type' => 'CRV', 'date' => '2026-03-10', 'status' => 'approved', 'prepared_by' => 1, 'source' => 'web', 'created_at' => now(), 'updated_at' => now()]);
-        DB::table('gl_voucher_lines')->insert(['voucher_id' => 'CRV-2026-0001', 'line_no' => 1, 'account_code' => '1173', 'currency' => 'EUR', 'debit_orig' => 10, 'rate' => 1.14, 'debit_usd' => 11.4]);
+        DB::table('gl_voucher_lines')->insert(['voucher_id' => 'CRV-2026-0001', 'line_no' => 1, 'account_code' => '1199', 'currency' => 'EUR', 'debit_orig' => 10, 'rate' => 1.14, 'debit_usd' => 11.4]);
 
         Livewire::actingAs(currencyUser(RoleId::HeadOffice))->test(CurrencySettings::class)
             ->call('edit', 'EUR')

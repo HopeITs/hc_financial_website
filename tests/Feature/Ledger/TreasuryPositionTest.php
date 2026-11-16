@@ -129,7 +129,7 @@ it('lists the cash that belongs to no city, with the transfer company on its own
     $report = app(TreasuryPosition::class)->at();
     $other = collect($report->other)->keyBy('code');
 
-    expect(collect($report->other)->pluck('code')->all())->toBe(['1161', '1171', '1172'])
+    expect(collect($report->other)->pluck('code')->all())->toBe(['1161', '1171', '1172', '1173', '1174', '1175', '1176', '1177', '1178'])
         ->and($other['1161']->usd)->toBe('1000.00')
         ->and($report->transferCompanyUsd())->toBe('1000.00');
 });

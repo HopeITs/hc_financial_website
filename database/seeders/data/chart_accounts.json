@@ -470,12 +470,60 @@
     "is_active": true
   },
   {
-    "code": "1170",
-    "parent_code": "1100",
+    "code": "1165",
+    "parent_code": "1000",
     "level": "header",
     "class": "assets",
-    "name_en": "Bank accounts in Syria",
-    "name_ar": "الحسابات المصرفية في سوريا",
+    "name_en": "Bank accounts",
+    "name_ar": "الحسابات المصرفية",
+    "statement_line": "Cash and cash equivalents",
+    "normal_side": "debit",
+    "currency": null,
+    "city": null,
+    "is_cash": false,
+    "required_tags": [],
+    "usage_note": null,
+    "is_active": true
+  },
+  {
+    "code": "1166",
+    "parent_code": "1165",
+    "level": "header",
+    "class": "assets",
+    "name_en": "Bank accounts – USD",
+    "name_ar": "الحسابات المصرفية – دولار أمريكي",
+    "statement_line": "Cash and cash equivalents",
+    "normal_side": "debit",
+    "currency": null,
+    "city": null,
+    "is_cash": false,
+    "required_tags": [],
+    "usage_note": null,
+    "is_active": true
+  },
+  {
+    "code": "1167",
+    "parent_code": "1165",
+    "level": "header",
+    "class": "assets",
+    "name_en": "Bank accounts – EUR",
+    "name_ar": "الحسابات المصرفية – يورو",
+    "statement_line": "Cash and cash equivalents",
+    "normal_side": "debit",
+    "currency": null,
+    "city": null,
+    "is_cash": false,
+    "required_tags": [],
+    "usage_note": null,
+    "is_active": true
+  },
+  {
+    "code": "1168",
+    "parent_code": "1165",
+    "level": "header",
+    "class": "assets",
+    "name_en": "Bank accounts – SYP",
+    "name_ar": "الحسابات المصرفية – ليرة سورية",
     "statement_line": "Cash and cash equivalents",
     "normal_side": "debit",
     "currency": null,
@@ -487,7 +535,7 @@
   },
   {
     "code": "1171",
-    "parent_code": "1170",
+    "parent_code": "1166",
     "level": "posting",
     "class": "assets",
     "name_en": "Fransabank – USD",
@@ -501,12 +549,12 @@
       "Project",
       "Fund source"
     ],
-    "usage_note": "Reconcile to the bank statement every month. Open one account per bank if you use several banks.",
+    "usage_note": "Reconcile to the bank statement every month.",
     "is_active": true
   },
   {
     "code": "1172",
-    "parent_code": "1170",
+    "parent_code": "1168",
     "level": "posting",
     "class": "assets",
     "name_en": "Fransabank – SYP",
@@ -521,6 +569,120 @@
       "Fund source"
     ],
     "usage_note": "As 1171, Syrian pounds only.",
+    "is_active": true
+  },
+  {
+    "code": "1173",
+    "parent_code": "1166",
+    "level": "posting",
+    "class": "assets",
+    "name_en": "Bank of Ruifeng (China) – USD",
+    "name_ar": "Bank of Ruifeng (China) – دولار أمريكي",
+    "statement_line": "Cash and cash equivalents",
+    "normal_side": "debit",
+    "currency": "USD",
+    "city": null,
+    "is_cash": true,
+    "required_tags": [
+      "Project",
+      "Fund source"
+    ],
+    "usage_note": "Receives the money donors send from abroad. Money is withdrawn from here and deposited with the transfer company (1161). Reconcile to the bank statement every month.",
+    "is_active": true
+  },
+  {
+    "code": "1174",
+    "parent_code": "1166",
+    "level": "posting",
+    "class": "assets",
+    "name_en": "Bloom Bank (Lebanon) – USD",
+    "name_ar": "Bloom Bank (Lebanon) – دولار أمريكي",
+    "statement_line": "Cash and cash equivalents",
+    "normal_side": "debit",
+    "currency": "USD",
+    "city": null,
+    "is_cash": true,
+    "required_tags": [
+      "Project",
+      "Fund source"
+    ],
+    "usage_note": "Receives the money donors send from abroad. Money is withdrawn from here and deposited with the transfer company (1161). Reconcile to the bank statement every month.",
+    "is_active": true
+  },
+  {
+    "code": "1175",
+    "parent_code": "1166",
+    "level": "posting",
+    "class": "assets",
+    "name_en": "Bank of Beirut (Lebanon) – USD",
+    "name_ar": "Bank of Beirut (Lebanon) – دولار أمريكي",
+    "statement_line": "Cash and cash equivalents",
+    "normal_side": "debit",
+    "currency": "USD",
+    "city": null,
+    "is_cash": true,
+    "required_tags": [
+      "Project",
+      "Fund source"
+    ],
+    "usage_note": "Receives the money donors send from abroad. Money is withdrawn from here and deposited with the transfer company (1161). Reconcile to the bank statement every month.",
+    "is_active": true
+  },
+  {
+    "code": "1176",
+    "parent_code": "1167",
+    "level": "posting",
+    "class": "assets",
+    "name_en": "Bank of Ruifeng (China) – EUR",
+    "name_ar": "Bank of Ruifeng (China) – يورو",
+    "statement_line": "Cash and cash equivalents",
+    "normal_side": "debit",
+    "currency": "EUR",
+    "city": null,
+    "is_cash": true,
+    "required_tags": [
+      "Project",
+      "Fund source"
+    ],
+    "usage_note": "Receives the money donors send from abroad. Money is withdrawn from here and deposited with the transfer company (1161). Reconcile to the bank statement every month.",
+    "is_active": true
+  },
+  {
+    "code": "1177",
+    "parent_code": "1167",
+    "level": "posting",
+    "class": "assets",
+    "name_en": "Bloom Bank (Lebanon) – EUR",
+    "name_ar": "Bloom Bank (Lebanon) – يورو",
+    "statement_line": "Cash and cash equivalents",
+    "normal_side": "debit",
+    "currency": "EUR",
+    "city": null,
+    "is_cash": true,
+    "required_tags": [
+      "Project",
+      "Fund source"
+    ],
+    "usage_note": "Receives the money donors send from abroad. Money is withdrawn from here and deposited with the transfer company (1161). Reconcile to the bank statement every month.",
+    "is_active": true
+  },
+  {
+    "code": "1178",
+    "parent_code": "1167",
+    "level": "posting",
+    "class": "assets",
+    "name_en": "Bank of Beirut (Lebanon) – EUR",
+    "name_ar": "Bank of Beirut (Lebanon) – يورو",
+    "statement_line": "Cash and cash equivalents",
+    "normal_side": "debit",
+    "currency": "EUR",
+    "city": null,
+    "is_cash": true,
+    "required_tags": [
+      "Project",
+      "Fund source"
+    ],
+    "usage_note": "Receives the money donors send from abroad. Money is withdrawn from here and deposited with the transfer company (1161). Reconcile to the bank statement every month.",
     "is_active": true
   },
   {
@@ -670,6 +832,24 @@
       "Contact"
     ],
     "usage_note": "Any other amount owed to CHC.",
+    "is_active": true
+  },
+  {
+    "code": "1210",
+    "parent_code": "1200",
+    "level": "posting",
+    "class": "assets",
+    "name_en": "Accounts receivable – donors",
+    "name_ar": "ذمم المانحين",
+    "statement_line": "Advances, loans and receivables",
+    "normal_side": "debit",
+    "currency": "Any",
+    "city": null,
+    "is_cash": false,
+    "required_tags": [
+      "Project"
+    ],
+    "usage_note": "What a donor still owes under a signed funding contract. Debit it when the contract is signed (credit 4001); credit it when the money reaches a bank account or the transfer company.",
     "is_active": true
   },
   {
@@ -1155,9 +1335,9 @@
     "parent_code": "4000",
     "level": "posting",
     "class": "income",
-    "name_en": "Accounts receivable",
-    "name_ar": "الذمم المدينة",
-    "statement_line": "Accounts receivable",
+    "name_en": "Grant and donation income",
+    "name_ar": "إيرادات المنح والتبرعات",
+    "statement_line": "Grants and donations",
     "normal_side": "credit",
     "currency": "Any",
     "city": null,
@@ -1165,7 +1345,7 @@
     "required_tags": [
       "Project"
     ],
-    "usage_note": null,
+    "usage_note": "The only income account. Credit it when a funding contract is signed (debit 1210), or when money arrives that was not recorded as owed. The project, the donor and the funding contract are linked on the line.",
     "is_active": true
   },
   {
