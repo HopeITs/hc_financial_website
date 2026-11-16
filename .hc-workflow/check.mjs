@@ -134,7 +134,7 @@ function evaluate({ changes, added, removed }, branch) {
     f.critical.forEach((i) => add('critical', i));
     f.standards.forEach((i) => add('standards', i));
   }
-  if (allFast && !res.forbidden.length && !res.critical.length && !res.standards.some((s) => s.level === 'error') && !res.branch) res.lane = 'fast';
+  if ((allFast || role.selfMerge) && !res.forbidden.length && !res.critical.length && !res.standards.some((s) => s.level === 'error') && !res.branch) res.lane = 'fast';
 
   // CI gate: anything that is not style-only needs a recorded approval from someone listed as "it".
   if (flag('--approvers') && res.lane !== 'fast') {
@@ -154,7 +154,7 @@ function report(r) {
   const out = (msg, file) => console.log(ci ? `::error${file ? ` file=${file}` : ''}::${msg}` : `  - ${msg}`);
   const warn = (msg, file) => console.log(ci ? `::warning${file ? ` file=${file}` : ''}::${msg}` : `  - ${msg}`);
 
-  console.log(`\nLane: ${r.lane === 'fast' ? 'FAST - style-only, you can merge it yourself' : 'REVIEW - IT must approve and merge it'}`);
+  console.log(`\nLane: ${r.lane === 'fast' ? (role.selfMerge ? 'FAST - your department merges its own pull requests' : 'FAST - style-only, you can merge it yourself') : 'REVIEW - IT must approve and merge it'}`);
   if (r.branch) { console.log('\nBranch problem:'); out(r.branch); }
   if (r.approval) { console.log('\nWaiting for IT:'); out(r.approval); }
   if (r.forbidden.length) {
@@ -187,7 +187,7 @@ function markdown(r, blocked) {
   L.push(`### HC Workflow - ${role.label} department ${blocked ? '- BLOCKED' : '- passed'}`);
   const n = (s) => r.files.filter((f) => f.status === s).length;
   L.push(r.lane === 'fast'
-    ? 'Lane: **FAST** - style-only (style files or class-only edits). The author may merge it; no IT approval needed.'
+    ? (role.selfMerge ? 'Lane: **FAST** - this department merges its own pull requests; no IT approval needed.' : 'Lane: **FAST** - style-only (style files or class-only edits). The author may merge it; no IT approval needed.')
     : 'Lane: **REVIEW** - not style-only. IT must approve and merge it.');
   L.push(`Files: **${n('A')} new**, **${n('M')} modified**, **${n('D')} deleted**, **${n('R')} renamed**\n`);
   section0(L, 'Waiting for IT', r.approval ? [r.approval] : []);

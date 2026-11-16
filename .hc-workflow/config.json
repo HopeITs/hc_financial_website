@@ -20,7 +20,8 @@
         ".githooks/**",
         ".github/**",
         "CLAUDE.md"
-      ]
+      ],
+      "selfMerge": true
     }
   },
   "departmentProfile": {
