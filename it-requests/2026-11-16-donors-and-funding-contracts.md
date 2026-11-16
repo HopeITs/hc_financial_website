@@ -159,6 +159,15 @@ So the donor (and, when there is one, the contract) are fields on the voucher li
 
 A contract is only usable in entries and reports **after it is approved**.
 
+### 1.16 Agreed screen layout
+
+Finance approved the layout on 2026-11-16: `it-requests/2026-11-16-donors-and-funding-contracts-preview.html` (open it in a browser). It is a static mockup in the site's colours. The names and figures are examples.
+
+- **Donors:** the list (code, names, type, country, currency, running contracts, still owed) with search and filters, and the add/edit form beside it.
+- **Funding contract:** four figures at the top (contract value, received, still owed by the donor, spent), then six tabs: details, projects, instalments, budget, reports to the donor, closing.
+
+When the tables and models exist, CT can build these screens with the site's components.
+
 ## 2. What was found (read-only)
 
 Nothing was coded for this request. CT cannot add tables or change existing backend files. What exists today and what would change:
