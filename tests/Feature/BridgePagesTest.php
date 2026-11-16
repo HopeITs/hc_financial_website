@@ -101,7 +101,7 @@ it('shows the real decisions log and searches it', function () {
 it('shows the mapping tables', function () {
     Livewire::actingAs(bridgeUser(RoleId::HeadOffice))->test(Bridge::class, ['screen' => 'mapping'])
         ->assertSee(__('bridge.mapping.concepts_title'))
-        ->assertSee('Income account 4101 to 4602')
+        ->assertSee('4001 Grant and donation income')
         ->assertSee('CPV');
 });
 

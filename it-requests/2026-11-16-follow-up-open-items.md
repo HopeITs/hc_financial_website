@@ -28,6 +28,8 @@ The live site holds **test data**. Finance wants to start from zero.
 3. **Remove the old accounts that the #7 migration only deactivated.**
    - The migration ran while the old accounts still had transactions, so it deactivated them instead of removing them. Running `migrate` again will not touch them.
    - After step 2, soft-delete every account that is **inactive and has no lines**: the old income accounts and groups (4100–4602: Caritas, OO, MCC …), the in-transit accounts (11x3, 11x4), the old city groups (1110–1150) and the old bank group 1170.
+   - **Done by CT on this branch, for IT to approve and run:** `database/migrations/2026_11_16_090000_remove_old_deactivated_accounts.php`, with `tests/Feature/RemoveOldDeactivatedAccountsTest.php`. It only soft-deletes an old account that is inactive, has no lines and no remaining child. Anything still in use is left alone.
+   - **Finance confirmed on 2026-11-16 that the transactions were deleted**, so this migration can run now.
 4. Check that the new accounts exist: 1101, 1102, 1165–1168, 1173–1178, 1210, 4001.
 5. Decide whether the legacy import tables (`gl_legacy_map`, `gl_import_batches`, `gl_import_issues`) are cleared too.
 
@@ -50,7 +52,8 @@ The live site holds **test data**. Finance wants to start from zero.
    - The new banks have no city, and `Operations` / `Transfers` pick cash accounts by city, so they are not offered today.
 4. **Month end:** the new bank accounts (1173–1178) join the bank reconciliation list.
 5. **Hide inactive accounts** on the chart of accounts screen by default, with a "Show inactive accounts" switch (`app/Livewire/Chart.php`, `resources/views/livewire/chart.blade.php`).
-6. **Tests:** run the full suite (it could not be run in the CT session) and fix the tests that still use removed accounts:
+6. **Bridge pages:** CT updated the mapping text (`lang/*/bridge.php`: donor → donor list and 4001; tills → 1101 / 1102 groups) and its test. The text of rule 12 (in-transit accounts) is left for IT, as it follows the code.
+7. **Tests:** run the full suite (it could not be run in the CT session) and fix the tests that still use removed accounts:
    - `TreasuryPositionTest` (1113/1114)
    - `TransfersTest` (1113)
    - `ApprovalAmendAccountAndCloseRulesTest` (rule 12)
@@ -80,7 +83,7 @@ The live site holds **test data**. Finance wants to start from zero.
 
 ## 3. Questions for IT (answer BEFORE any work starts)
 
-1. Was the deletion of #8 done? If yes, when, and was a backup taken?
+1. Finance says the deletion of #8 was done. Was a backup taken first?
 2. Which of the steps above will IT do, and in what order?
 3. For step 1.3: a one-off command (repeatable on staging first) or by hand on the database?
 4. For step 2.2: what temporary fix for the donor drop-down until the donor list exists?

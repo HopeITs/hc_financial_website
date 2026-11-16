@@ -19,9 +19,9 @@ return [
         'col_legacy' => 'Windows program',
         'col_ledger' => 'Ledger',
         'concepts' => [
-            ['Till (account and currency)', 'Cash account of that currency (111x USD, 112x SYP, one per currency added); the project becomes a Project tag on the line'],
+            ['Till (account and currency)', 'Cash account of that currency (under 1101 Cash – USD or 1102 Cash – SYP, one per currency added); the project becomes a Project tag on the line'],
             ['Project account (account)', 'Project (owner) with donor, restriction, city, currency and rate'],
-            ['Donor', 'Income account 4101 to 4602'],
+            ['Donor', 'Donor list (its own menu); all income goes to 4001 Grant and donation income, with the donor on the line'],
             ['Line and budget line', 'Budget line tag, linked to one expense account 51xx to 58xx'],
             ['Operation I, E, X, A, R, T', 'Voucher CRV, CPV, EXG, CPV (1201), CRV, and TRF, ALC or JV'],
             ['Approval and role limit', 'Voucher approval by the Financial Manager; the preparer never approves'],
