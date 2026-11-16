@@ -1,0 +1,48 @@
+<?php
+
+return [
+    'intro' => 'The donor list, kept apart from the chart of accounts. A donor is chosen on its funding contracts and, when needed, on a transaction line.',
+    'add' => 'Add donor',
+    'edit' => 'Edit',
+    'save' => 'Save donor',
+    'cancel' => 'Cancel',
+    'added' => 'Donor :name added.',
+    'saved' => 'Donor :name saved.',
+    'choose' => 'Choose…',
+
+    'code' => 'Code',
+    'code_help' => 'Short code in capitals, for example CARPL.',
+    'name' => 'Name',
+    'name_en' => 'Name in English',
+    'name_ar' => 'Name in Arabic',
+    'type' => 'Type',
+    'country' => 'Country',
+    'currency' => 'Usual currency',
+    'contact' => 'Contact',
+    'contact_name' => 'Contact person',
+    'contact_email' => 'Email',
+    'contact_phone' => 'Phone',
+    'notes' => 'Notes',
+    'status' => 'Status',
+    'active' => 'Active',
+    'inactive' => 'Inactive',
+
+    'search' => 'Search by name or code',
+    'all_types' => 'All types',
+    'filter_active' => 'Active',
+    'filter_inactive' => 'Inactive',
+    'filter_all' => 'All',
+
+    'running_contracts' => 'Open contracts',
+    'running_value' => 'Open contracts (USD)',
+    'running_value_note' => '"Open contracts (USD)" is the total value of the donor\'s contracts that are not ended or cancelled, at each contract\'s fixed rate. What has arrived will show once receipts are linked to contracts.',
+    'empty' => 'No donor matches.',
+
+    'types' => [
+        'church_agency' => 'Church agency',
+        'government' => 'Government or public body',
+        'foundation' => 'Foundation',
+        'church' => 'Church or parish',
+        'individual' => 'Individual',
+    ],
+];
