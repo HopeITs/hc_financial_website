@@ -69,31 +69,35 @@ Still needed from IT (backend, so not done by CT):
 - Tests that still use in-transit accounts or the removed income account 4501 need IT's decision: `TreasuryPositionTest` (1113/1114), `TransfersTest` (1113), `ApprovalAmendAccountAndCloseRulesTest` (rule 12 uses 1113), `OperationsTest` ("asks for the center", uses 4501), `BridgePagesTest` / `lang/*/bridge.php` ("Income account 4101 to 4602"), `ProjectEditorTest` (donorNames).
 - `config/ledger.php` comments and `app/` doc comments that mention 11x3/11x4, 1170 or the city groups.
 
-### Old donor accounts still showing on the live site (reported 2026-11-16)
+### Start from zero: delete all financial transactions (finance decision, 2026-11-16)
 
-Finance still sees **Caritas, OO and MCC** under Income on the live chart of accounts. Two reasons:
+Finance still sees **Caritas, OO and MCC** under Income on the live chart, because those accounts have transactions and the migration only deactivates a used account. **The data on the live site is test data**, so finance decided to **delete all financial transactions and start from zero**, instead of moving the balances with a reclassification journal. That earlier decision is cancelled.
 
-1. **This branch is not merged and the migration has not run yet**, so the live chart is still the old one.
-2. **After the migration they would still show.** An income account that already has transactions is only deactivated (to keep its history), and the chart screen lists inactive accounts with an "Inactive" badge. Caritas, OO and MCC most likely have transactions.
+**Delete:**
+- All vouchers of every type (CRV, CPV, TRF, ALC, EXG, JV) **including the opening balances (OPN)**, with their lines, approval history, attachments (database rows and stored files) and amendment/reversal links: `gl_vouchers`, `gl_voucher_lines`, `gl_voucher_audit`, `gl_voucher_attachments`, `gl_cash_till_merges`.
+- Voucher numbering restarts at 0001: `gl_voucher_sequences`.
+- **Payment requests** with their lines, quotes (and stored quote files), approvals and history: `gl_requests`, `gl_request_lines`, `gl_request_quotes`, `gl_request_approvals`, `gl_request_audit`.
+- **Micro loans** and their instalments: `gl_micro_loans`, `gl_micro_instalments`.
+- **Month-end records**: `gl_month_counts`, `gl_month_closes`, `gl_month_close_log`.
+- Anything that only points at the deleted items: notifications about vouchers or requests (`web_notifications`), saved drafts of vouchers and requests (`web_form_drafts`), and assistant proposals that would create vouchers (`web_assistant_proposals`).
 
-Finance wants **no donor accounts under Income at all**. Suggested way, for IT to decide:
+**Keep:** the chart of accounts, projects, programs, budget lines, cities, currencies, allocation rates, payroll splits, users, roles and permissions.
 
-- **Move the balances:** before deactivating, post one approved reclassification journal (JV) per old income account: debit the old account, credit 4001, same project, with the donor filled in once the donor field exists. The old accounts then have a zero balance, and all income sits on 4001. Past vouchers are not rewritten.
-**Finance decision (2026-11-16): move the balances, dated 2026-11-16.**
+**For IT to decide:** whether the legacy import tables (`gl_legacy_map`, `gl_import_batches`, `gl_import_issues`) are cleared too, so the old Windows program's data is not loaded again by mistake.
 
-- One reclassification journal (JV) for each old income account that has a balance, **dated 2026-11-16**.
-- Each line keeps the project (and fund source) of the original balance, so every project's income stays the same.
-- Until the donor field exists, write the donor's name in the line description (for example "Reclassification – Caritas Poland").
-- The journal goes through the normal approval, like any other voucher.
-- If November 2026 is already closed at month end when the journal is posted, please tell finance before changing the date.
+**Order:**
+1. Take a full database backup (even though it is test data).
+2. Delete the transactions above.
+3. Run the chart migration on this branch. With no transactions left, every removed account (Caritas, OO, MCC and all other old income accounts, the in-transit accounts and the city groups) is **soft-deleted**, so it no longer shows on the chart at all. No reclassification journal is needed.
+4. Finance enters the new opening balances afterwards.
 
-- **Hide inactive accounts:** the chart screen hides inactive accounts by default, with a "Show inactive accounts" switch to see them for history and audit. This changes `app/Livewire/Chart.php` and `resources/views/livewire/chart.blade.php`.
+Also suggested, still useful later: the chart screen could hide inactive accounts by default, with a "Show inactive accounts" switch. This changes `app/Livewire/Chart.php` and `resources/views/livewire/chart.blade.php`.
 
 ## 3. Questions for IT (answer BEFORE any work starts)
 
 1. Is this change possible and safe to do? **(Yes / No / Only with changes)**
 2. Which backend files must change (controller, model, route, config, migration)? See the list above.
-3. Does it affect the database or existing data? Yes. The migration re-parents accounts, adds new ones and deactivates or deletes the removed ones, so take a backup first.
+3. Does it affect the database or existing data? Yes. All financial transactions on the live (test) site are deleted, then the migration re-parents accounts, adds new ones and removes the old ones. Take a backup first.
 4. Does it affect other pages or other websites that share this code?
 5. Does the view need new data from the backend? Yes: the donor list, the funding contracts, and a donor and contract choice on transaction lines.
 6. Is there a front-end-only alternative? No.
@@ -104,8 +108,7 @@ Finance wants **no donor accounts under Income at all**. Suggested way, for IT t
 
 Extra questions:
 
-- Live vouchers already post to old income accounts (at least Caritas, OO and MCC). Do you agree with the reclassification journal to 4001 above, rather than rewriting past vouchers?
-- If an in-transit account has a balance today, should it be cleared before the migration runs?
+- Do you prefer a one-off cleanup command (so it can be repeated on staging first) or doing it by hand on the database?
 - The transfer company (1161) and the banks still count as "Cash and cash equivalents" on the financial statements. Is that right for IT's reports too?
 - Income is recognised when the contract is signed (debit 1210). Should a contract in EUR keep its receivable in EUR and book the exchange difference when the money arrives?
 - Bank charges on the accounts abroad go to 5501 "Bank charges and wire transfer fees". With or without a project?
