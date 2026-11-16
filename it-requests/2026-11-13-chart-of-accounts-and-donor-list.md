@@ -69,6 +69,18 @@ Still needed from IT (backend, so not done by CT):
 - Tests that still use in-transit accounts or the removed income account 4501 need IT's decision: `TreasuryPositionTest` (1113/1114), `TransfersTest` (1113), `ApprovalAmendAccountAndCloseRulesTest` (rule 12 uses 1113), `OperationsTest` ("asks for the center", uses 4501), `BridgePagesTest` / `lang/*/bridge.php` ("Income account 4101 to 4602"), `ProjectEditorTest` (donorNames).
 - `config/ledger.php` comments and `app/` doc comments that mention 11x3/11x4, 1170 or the city groups.
 
+### Old donor accounts still showing on the live site (reported 2026-11-16)
+
+Finance still sees **Caritas, OO and MCC** under Income on the live chart of accounts. Two reasons:
+
+1. **This branch is not merged and the migration has not run yet**, so the live chart is still the old one.
+2. **After the migration they would still show.** An income account that already has transactions is only deactivated (to keep its history), and the chart screen lists inactive accounts with an "Inactive" badge. Caritas, OO and MCC most likely have transactions.
+
+Finance wants **no donor accounts under Income at all**. Suggested way, for IT to decide:
+
+- **Move the balances:** before deactivating, post one approved reclassification journal (JV) per old income account: debit the old account, credit 4001, same project, with the donor filled in once the donor field exists. The old accounts then have a zero balance, and all income sits on 4001. Past vouchers are not rewritten.
+- **Hide inactive accounts:** the chart screen hides inactive accounts by default, with a "Show inactive accounts" switch to see them for history and audit. This changes `app/Livewire/Chart.php` and `resources/views/livewire/chart.blade.php`.
+
 ## 3. Questions for IT (answer BEFORE any work starts)
 
 1. Is this change possible and safe to do? **(Yes / No / Only with changes)**
@@ -84,7 +96,7 @@ Still needed from IT (backend, so not done by CT):
 
 Extra questions:
 
-- If live vouchers already post to grant accounts (4101 …), should their history be moved to 4001 with the donor filled in, or stay on the old (deactivated) accounts?
+- Live vouchers already post to old income accounts (at least Caritas, OO and MCC). Do you agree with the reclassification journal to 4001 above, rather than rewriting past vouchers? Which date should it carry?
 - If an in-transit account has a balance today, should it be cleared before the migration runs?
 - The transfer company (1161) and the banks still count as "Cash and cash equivalents" on the financial statements. Is that right for IT's reports too?
 - Income is recognised when the contract is signed (debit 1210). Should a contract in EUR keep its receivable in EUR and book the exchange difference when the money arrives?
