@@ -79,6 +79,14 @@ Finance still sees **Caritas, OO and MCC** under Income on the live chart of acc
 Finance wants **no donor accounts under Income at all**. Suggested way, for IT to decide:
 
 - **Move the balances:** before deactivating, post one approved reclassification journal (JV) per old income account: debit the old account, credit 4001, same project, with the donor filled in once the donor field exists. The old accounts then have a zero balance, and all income sits on 4001. Past vouchers are not rewritten.
+**Finance decision (2026-11-16): move the balances, dated 2026-11-16.**
+
+- One reclassification journal (JV) for each old income account that has a balance, **dated 2026-11-16**.
+- Each line keeps the project (and fund source) of the original balance, so every project's income stays the same.
+- Until the donor field exists, write the donor's name in the line description (for example "Reclassification – Caritas Poland").
+- The journal goes through the normal approval, like any other voucher.
+- If March–October or November 2026 is already closed at month end, or the migration runs much later, please tell finance before changing the date.
+
 - **Hide inactive accounts:** the chart screen hides inactive accounts by default, with a "Show inactive accounts" switch to see them for history and audit. This changes `app/Livewire/Chart.php` and `resources/views/livewire/chart.blade.php`.
 
 ## 3. Questions for IT (answer BEFORE any work starts)
@@ -96,7 +104,7 @@ Finance wants **no donor accounts under Income at all**. Suggested way, for IT t
 
 Extra questions:
 
-- Live vouchers already post to old income accounts (at least Caritas, OO and MCC). Do you agree with the reclassification journal to 4001 above, rather than rewriting past vouchers? Which date should it carry?
+- Live vouchers already post to old income accounts (at least Caritas, OO and MCC). Do you agree with the reclassification journal to 4001 above, rather than rewriting past vouchers?
 - If an in-transit account has a balance today, should it be cleared before the migration runs?
 - The transfer company (1161) and the banks still count as "Cash and cash equivalents" on the financial statements. Is that right for IT's reports too?
 - Income is recognised when the contract is signed (debit 1210). Should a contract in EUR keep its receivable in EUR and book the exchange difference when the money arrives?
