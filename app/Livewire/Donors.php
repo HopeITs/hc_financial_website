@@ -1,0 +1,190 @@
+<?php
+
+namespace App\Livewire;
+
+use App\Enums\ContractStatus;
+use App\Enums\DonorType;
+use App\Models\Contract;
+use App\Models\Donor;
+use App\Services\Ledger\Currencies;
+use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
+use Livewire\Attributes\Layout;
+use Livewire\Component;
+
+/**
+ * The donor list (finance design of 2026-11-16): kept apart from the chart of accounts, chosen on a funding contract
+ * and, when needed, on a voucher line. The Financial Manager and Head Office add and edit donors; the other finance
+ * roles only read the list (config/permissions.php, screen `donors`).
+ */
+#[Layout('components.layouts.app')]
+class Donors extends Component
+{
+    public string $search = '';
+
+    public string $typeFilter = '';
+
+    public string $statusFilter = 'active';
+
+    public bool $showForm = false;
+
+    public ?int $editing = null;
+
+    public string $code = '';
+
+    public string $nameEn = '';
+
+    public string $nameAr = '';
+
+    public string $type = '';
+
+    public string $country = '';
+
+    public string $currency = '';
+
+    public string $contactName = '';
+
+    public string $contactEmail = '';
+
+    public string $contactPhone = '';
+
+    public string $notes = '';
+
+    public bool $isActive = true;
+
+    public ?string $notice = null;
+
+    public function add(): void
+    {
+        Gate::authorize('screen', ['donors', 'create']);
+
+        $this->resetForm();
+        $this->showForm = true;
+    }
+
+    public function edit(int $id): void
+    {
+        Gate::authorize('screen', ['donors', 'edit']);
+
+        $donor = Donor::query()->findOrFail($id);
+
+        $this->resetForm();
+        $this->editing = $donor->id;
+        $this->code = $donor->code;
+        $this->nameEn = $donor->name_en;
+        $this->nameAr = $donor->name_ar;
+        $this->type = $donor->type->value;
+        $this->country = (string) $donor->country;
+        $this->currency = (string) $donor->currency;
+        $this->contactName = (string) $donor->contact_name;
+        $this->contactEmail = (string) $donor->contact_email;
+        $this->contactPhone = (string) $donor->contact_phone;
+        $this->notes = (string) $donor->notes;
+        $this->isActive = $donor->is_active;
+        $this->showForm = true;
+    }
+
+    public function cancel(): void
+    {
+        $this->resetForm();
+        $this->showForm = false;
+    }
+
+    public function save(Currencies $currencies): void
+    {
+        Gate::authorize('screen', ['donors', $this->editing === null ? 'create' : 'edit']);
+
+        $this->code = strtoupper(trim($this->code));
+
+        $data = $this->validate([
+            'code' => ['required', 'regex:/^[A-Z0-9-]{2,16}$/', Rule::unique('gl_donors', 'code')->ignore($this->editing)],
+            'nameEn' => ['required', 'string', 'max:255'],
+            'nameAr' => ['required', 'string', 'max:255'],
+            'type' => ['required', Rule::enum(DonorType::class)],
+            'country' => ['nullable', 'string', 'max:255'],
+            'currency' => ['nullable', Rule::in($currencies->codes())],
+            'contactName' => ['nullable', 'string', 'max:255'],
+            'contactEmail' => ['nullable', 'email', 'max:255'],
+            'contactPhone' => ['nullable', 'string', 'max:64'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+            'isActive' => ['boolean'],
+        ]);
+
+        $attributes = [
+            'code' => $data['code'],
+            'name_en' => trim($data['nameEn']),
+            'name_ar' => trim($data['nameAr']),
+            'type' => $data['type'],
+            'country' => $this->nullIfBlank($data['country']),
+            'currency' => $this->nullIfBlank($data['currency']),
+            'contact_name' => $this->nullIfBlank($data['contactName']),
+            'contact_email' => $this->nullIfBlank($data['contactEmail']),
+            'contact_phone' => $this->nullIfBlank($data['contactPhone']),
+            'notes' => $this->nullIfBlank($data['notes']),
+            'is_active' => $data['isActive'],
+        ];
+
+        $isNew = $this->editing === null;
+
+        if ($isNew) {
+            Donor::query()->create($attributes);
+        } else {
+            Donor::query()->findOrFail($this->editing)->update($attributes);
+        }
+
+        $this->resetForm();
+        $this->showForm = false;
+        $this->notice = __($isNew ? 'donors.added' : 'donors.saved', ['name' => $attributes['name_en']]);
+    }
+
+    public function render(Currencies $currencies): View
+    {
+        $donors = Donor::query()
+            ->when($this->search !== '', fn (Builder $query) => $query->where(fn (Builder $match) => $match
+                ->where('code', 'like', '%'.$this->search.'%')
+                ->orWhere('name_en', 'like', '%'.$this->search.'%')
+                ->orWhere('name_ar', 'like', '%'.$this->search.'%')))
+            ->when($this->typeFilter !== '', fn (Builder $query) => $query->where('type', $this->typeFilter))
+            ->when($this->statusFilter !== 'all', fn (Builder $query) => $query->where('is_active', $this->statusFilter === 'active'))
+            ->orderBy('code')
+            ->get();
+
+        $running = Contract::query()
+            ->whereIn('donor_id', $donors->pluck('id'))
+            ->whereNotIn('status', [ContractStatus::Ended->value, ContractStatus::Cancelled->value])
+            ->get(['donor_id', 'currency', 'amount', 'fixed_rate'])
+            ->groupBy('donor_id');
+
+        $runningUsd = $running->map(fn ($contracts) => $contracts->reduce(
+            fn (string $sum, Contract $contract): string => bcadd($sum, $currencies->toUsd($contract->currency, (string) $contract->amount, (string) $contract->fixed_rate), 2),
+            '0.00',
+        ));
+
+        return view('livewire.donors', [
+            'donors' => $donors,
+            'runningCount' => $running->map->count(),
+            'runningUsd' => $runningUsd,
+            'types' => DonorType::cases(),
+            'currencyCodes' => $currencies->codes(),
+            'canCreate' => Gate::allows('screen', ['donors', 'create']),
+            'canEdit' => Gate::allows('screen', ['donors', 'edit']),
+            'canSeeContracts' => Gate::allows('screen', ['contracts', 'view']),
+        ]);
+    }
+
+    private function resetForm(): void
+    {
+        $this->resetValidation();
+        $this->reset('editing', 'code', 'nameEn', 'nameAr', 'type', 'country', 'currency', 'contactName', 'contactEmail', 'contactPhone', 'notes', 'notice');
+        $this->isActive = true;
+    }
+
+    private function nullIfBlank(?string $value): ?string
+    {
+        $value = trim((string) $value);
+
+        return $value === '' ? null : $value;
+    }
+}
