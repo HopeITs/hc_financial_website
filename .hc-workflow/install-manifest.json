@@ -9,11 +9,11 @@
     ".github/CODEOWNERS": "56b2d159093e625aef255ac6a760d629e253d1ed78489154d2e5b47ed648f97e",
     ".github/pull_request_template.md": "1b5b7bc734c79bd02b310f92ac270b556262939dec27d845eb040b67e956c9a6",
     ".github/workflows/hc-workflow-checks.yml": "929242eecb37751abbec53cd661b11b4409c1f951ce9e715a57ec60a35f43316",
-    ".hc-workflow/check.mjs": "0b9bcc6963c773667e3618cfbb07b30e5fe8233e910152dd707e156ef3be9676",
-    ".hc-workflow/config.json": "999883bcefccfcddf4bf24e31fa0787332a2a3fd9279d580f5402bd562d69f93",
-    ".hc-workflow/hook.mjs": "fab9020f2bee7ca6241c5548ecd5773332caea0129b0b9830afe73037f5c63ff",
-    ".hc-workflow/lib.mjs": "bfa4b8f3cad710f552e2a7650f88a3771c5229f2b6d3d41ba986609c12013f5e",
-    ".hc-workflow/roles.json": "0c8bd76445b0b7c6f940db49d0d3d60a0e65d655a01860dcefb134ff3beff280",
+    ".hc-workflow/check.mjs": "c6f2cfb585d5914482035397d7f054d56a728aef783ef9642ee578fdb19dd061",
+    ".hc-workflow/config.json": "0f8c158d20812f303ab127cb4c1b7a3992046c436ae308cc5667a0748aea9cff",
+    ".hc-workflow/hook.mjs": "6c520a573d12fbbfccf2fc76c7a5a05e3918556eee6f448a30d76d716d46241f",
+    ".hc-workflow/lib.mjs": "24782d841017fd0a28d5c51dc7b2d22dcffc2aae43ce3fe2409752a3dc18927d",
+    ".hc-workflow/roles.json": "794b60ab152bf8b315fc56dd4b884f4fb8e1f3d54d93059f2733ad138edaafca",
     ".hc-workflow/SETUP-ROUTES.md": "170100bef827fd10396c497077b013e21c53e98e9aa74f06ce4433260c4e4085",
     "docs/STANDARDS.md": "e30cc6aae55507fe545e98b9898006d08739e719291c7cd684fa1729f3842455",
     "it-requests/_TEMPLATE.md": "dcb802f19e5c3e15e8364cc2ae904fecec796be3fbac182edcbda07e756adbf8",
@@ -38,6 +38,6 @@
     "previousHooksPath": null,
     "hooksPathRecorded": true
   },
-  "version": "3.5.0",
+  "version": "3.7.0",
   "site": "auto"
 }

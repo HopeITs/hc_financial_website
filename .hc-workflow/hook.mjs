@@ -26,7 +26,12 @@ function block(message) {
   process.exit(2);
 }
 
-const askIT = (what) => `
+const askIT = (what) => role.fullAccess ? `
+${what}
+Do NOT try to work around this (no shell redirects, no other tool, no renamed path).
+Tell the user, in plain language, what is not allowed and why. Do not create an IT request file.
+If the task needs it, say so and suggest the user does that step themselves.
+` : `
 ${what}
 Do NOT try to work around this (no shell redirects, no other tool, no renamed path).
 Instead:
@@ -39,6 +44,16 @@ Instead:
 if (mode === 'session') {
   tryGit(['config', 'core.hooksPath', '.githooks'], root);
   const list = (a) => (a.length ? a.join(', ') : '(none)');
+  if (role.fullAccess) {
+    process.stdout.write(
+      `HC Workflow is active. Your role: ${role.label} (full access). Work only on a branch starting with "${role.branchPrefix}", ` +
+      `never on main. You may create and edit any project file except: ${list(role.forbidden)}, and secret or data files (.env, csv, xlsx, sql, keys). ` +
+      `Never run migrations or database commands yourself. Do not create IT request files. ` +
+      `A pull request that is not style-only is approved and merged by the approvers. Follow docs/STANDARDS.md.
+`,
+    );
+    process.exit(0);
+  }
   process.stdout.write(
     `HC Workflow is active. Your role: ${role.label}. Work only on a branch starting with "${role.branchPrefix}", ` +
     `never on main, and never merge (IT merges).\n` +
@@ -89,7 +104,7 @@ if (mode === 'files') {
     block(
       `BLOCKED by the HC Workflow: this change breaks the site standards (see docs/STANDARDS.md):\n${list}\n` +
       'Rewrite it using the existing components and Tailwind theme classes, then try again. ' +
-      'If no suitable component exists, tell the user and create an IT request with /ask-it.',
+      role.fullAccess ? 'If no suitable component exists, tell the user.' : 'If no suitable component exists, tell the user and create an IT request with /ask-it.',
     );
   }
 

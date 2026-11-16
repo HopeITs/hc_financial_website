@@ -123,7 +123,7 @@ function evaluate({ changes, added, removed }, branch) {
       if (k.outcome === 'forbidden' || k.outcome === 'critical') add(k.outcome, { path: p, why: k.why });
     }
     const gone = c.status === 'D' ? c.path : c.status === 'R' ? c.oldPath : null;
-    if (gone && isBlade(gone, cfg)) {
+    if (gone && isBlade(gone, cfg) && !role.fullAccess) {
       add(role.modifyExisting, { path: gone, why: 'view deleted or renamed (a controller may still use it)' });
     }
     if (c.status === 'D') continue;

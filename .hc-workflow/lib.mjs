@@ -102,6 +102,8 @@ export function classify(rel, status, roleName, cfg) {
   const role = cfg.roles[roleName];
   if (matchAny(rel, cfg.forbiddenAnywhere)) return { outcome: 'forbidden', why: 'data or secret file (never committed)' };
   if (matchAny(rel, role.forbidden)) return { outcome: 'forbidden', why: 'protected area (IT only)' };
+  // fullAccess department: everything outside the two lists above is allowed, existing backend files included.
+  if (role.fullAccess) return { outcome: 'ok' };
   if (matchAny(rel, role.addOnly)) {
     if (status === 'A') return { outcome: 'ok' };
     return { outcome: role.modifyExisting, why: 'existing backend file changed (only new files are free)' };
@@ -186,6 +188,7 @@ export function contentFindings(rel, lines, roleName, cfg, root, { isNew = false
   if (isNew && matchAny(rel, [cfg.routeModulesGlob]) && !lines.some((l) => /auth/i.test(l))) {
     push('critical', 'new route file without any "auth" middleware - the pages may be public');
   }
+  if (role.fullAccess) { out.forbidden = []; out.critical = []; } // site standards still apply
   return out;
 }
 

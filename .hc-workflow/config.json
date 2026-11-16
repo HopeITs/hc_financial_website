@@ -7,7 +7,20 @@
     },
     "finance": {
       "label": "Finance",
-      "branchPrefix": "finance/"
+      "branchPrefix": "finance/",
+      "fullAccess": true,
+      "free": [
+        "**"
+      ],
+      "addOnly": [],
+      "critical": [],
+      "forbidden": [
+        ".hc-workflow/**",
+        ".claude/**",
+        ".githooks/**",
+        ".github/**",
+        "CLAUDE.md"
+      ]
     }
   },
   "departmentProfile": {
