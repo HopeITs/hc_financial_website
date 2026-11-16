@@ -25,7 +25,7 @@ function hawalaRows(string $received, array $hawala = [], string $project = 'F2F
 {
     return [
         ['account' => '1161', 'currency' => 'USD', 'side' => 'debit', 'amount' => $received, 'project' => $project, 'fund_source' => 'donor_grant', 'contact' => 'Hawala Co'] + $hawala,
-        ['account' => '4101', 'currency' => 'USD', 'side' => 'credit', 'amount' => $received, 'project' => $project],
+        ['account' => '4001', 'currency' => 'USD', 'side' => 'credit', 'amount' => $received, 'project' => $project],
     ];
 }
 
@@ -72,7 +72,7 @@ it('posts a euro receipt with the commission typed by hand as a 5504 line, and a
         ->and($lines['1161D']->eur_amount)->toBe('1000.00')
         ->and($lines['1161D']->eur_rate)->toBe('1.100000')
         ->and($lines['1161D']->commission_usd)->toBe('15.00')
-        ->and($lines['4101C']->credit_usd)->toBe('1085.00')
+        ->and($lines['4001C']->credit_usd)->toBe('1085.00')
         ->and($lines['5504D']->debit_usd)->toBe('15.00')
         ->and($lines['5504D']->project_code)->toBeNull()
         ->and($lines['1161C']->credit_usd)->toBe('15.00')
@@ -134,7 +134,7 @@ it('keeps the euro fields to a receipt into the transfer company', function () {
     $payment = buildHawala(hawalaRows('1085', ['eur_amount' => '1000', 'eur_rate' => '1.1', 'commission' => '15']), 'CPV');
     $wrongAccount = buildHawala([
         ['account' => '1111', 'currency' => 'USD', 'side' => 'debit', 'amount' => '100', 'project' => 'F2F', 'fund_source' => 'donor_grant', 'eur_amount' => '90', 'eur_rate' => '1.1'],
-        ['account' => '4101', 'currency' => 'USD', 'side' => 'credit', 'amount' => '100', 'project' => 'F2F'],
+        ['account' => '4001', 'currency' => 'USD', 'side' => 'credit', 'amount' => '100', 'project' => 'F2F'],
     ]);
 
     expect($payment->problems)->not->toBe([])
@@ -144,7 +144,7 @@ it('keeps the euro fields to a receipt into the transfer company', function () {
 it('refuses a commission that is not posted to 5504', function () {
     $draft = ledgerReceipt(['type' => VoucherType::Receipt], [
         new LineDraft('1161', 'USD', debit: 1085, projectCode: 'F2F', fundSource: FundSource::DonorGrant, contact: 'Hawala Co', eurAmount: 1000, eurRate: '1.1', commissionUsd: 15),
-        new LineDraft('4101', 'USD', credit: 1085, projectCode: 'F2F'),
+        new LineDraft('4001', 'USD', credit: 1085, projectCode: 'F2F'),
     ]);
 
     expect(collect(app(PostVoucher::class)->check($draft))->pluck('rule')->all())->toContain(15);

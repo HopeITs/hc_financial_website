@@ -31,7 +31,7 @@ function stmtReceipt(string $date, int $amount, bool $approve = true): void
 {
     stmtVoucher($date, [
         new LineDraft('1111', 'USD', debit: $amount, projectCode: 'F2F', fundSource: FundSource::DonorGrant),
-        new LineDraft('4101', 'USD', credit: $amount, projectCode: 'F2F'),
+        new LineDraft('4001', 'USD', credit: $amount, projectCode: 'F2F'),
     ], $approve);
 }
 

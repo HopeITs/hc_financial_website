@@ -192,7 +192,7 @@ it('opens a fresh form after Ctrl+Enter saved an entry, and says what was saved'
     $accountant = wtUser(RoleId::Accountant, 'Acc');
 
     Livewire::actingAs($accountant)->test(SingleEntry::class)
-        ->set('kind', 'income')->set('date', '2026-03-10')->set('project', 'F2F')->set('cash', '1111')->set('account', '4101')->set('amount', '250')
+        ->set('kind', 'income')->set('date', '2026-03-10')->set('project', 'F2F')->set('cash', '1111')->set('account', '4001')->set('amount', '250')
         ->set('thenNew', true)
         ->call('save')
         ->assertRedirect(route(Navigation::routeName('single')));

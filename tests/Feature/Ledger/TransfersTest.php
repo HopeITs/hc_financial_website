@@ -26,7 +26,7 @@ beforeEach(function () {
     // Aleppo's general USD account has 5,000 USD and its general SYP account 7.5M pounds bought for 500 USD (average 15,000).
     ledgerApprovedVoucher(['date' => CarbonImmutable::parse('2026-03-01'), 'type' => VoucherType::Receipt], [
         new LineDraft('1111', 'USD', debit: 5000, projectCode: 'GEN-ALP-USD', fundSource: FundSource::Treasury),
-        new LineDraft('4101', 'USD', credit: 5000, projectCode: 'GEN-ALP-USD'),
+        new LineDraft('4001', 'USD', credit: 5000, projectCode: 'GEN-ALP-USD'),
     ]);
     ledgerApprovedVoucher(['date' => CarbonImmutable::parse('2026-03-10'), 'type' => VoucherType::Transfer], [
         new LineDraft('1112', 'SYP', debit: 7500000, rate: 15000, debitUsd: 500, projectCode: 'GEN-ALP-SYP', fundSource: FundSource::Treasury),
@@ -225,7 +225,7 @@ it('returns pounds from a project to the general account at the project\'s avera
 it('moves dollars and pounds between two projects', function () {
     ledgerApprovedVoucher(['date' => CarbonImmutable::parse('2026-03-20'), 'type' => VoucherType::Receipt], [
         new LineDraft('1111', 'USD', debit: 400, projectCode: 'F2F', fundSource: FundSource::DonorGrant),
-        new LineDraft('4101', 'USD', credit: 400, projectCode: 'F2F'),
+        new LineDraft('4001', 'USD', credit: 400, projectCode: 'F2F'),
     ]);
 
     $usd = buildTransfer('between_projects', ['currency' => 'USD', 'amount' => '150', 'cash' => '1111', 'other' => 'SZ']);

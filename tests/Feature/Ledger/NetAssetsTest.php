@@ -34,11 +34,11 @@ beforeEach(function () {
     // and 400 USD of the general money is allocated to it (cash moves owner, no income or expense).
     ledgerApprovedVoucher(['date' => CarbonImmutable::parse('2026-03-01'), 'type' => VoucherType::Receipt], [
         new LineDraft('1111', 'USD', debit: 5000, projectCode: 'GEN-ALP-USD', fundSource: FundSource::Treasury, restriction: 'Without donor restrictions'),
-        new LineDraft('4101', 'USD', credit: 5000, projectCode: 'GEN-ALP-USD', restriction: 'Without donor restrictions'),
+        new LineDraft('4001', 'USD', credit: 5000, projectCode: 'GEN-ALP-USD', restriction: 'Without donor restrictions'),
     ]);
     ledgerApprovedVoucher(['date' => CarbonImmutable::parse('2026-03-02'), 'type' => VoucherType::Receipt], [
         new LineDraft('1111', 'USD', debit: 1000, projectCode: 'F2F', fundSource: FundSource::DonorGrant, restriction: NetAssets::RESTRICTED),
-        new LineDraft('4101', 'USD', credit: 1000, projectCode: 'F2F', restriction: NetAssets::RESTRICTED),
+        new LineDraft('4001', 'USD', credit: 1000, projectCode: 'F2F', restriction: NetAssets::RESTRICTED),
     ]);
     ledgerApprovedVoucher(['date' => CarbonImmutable::parse('2026-03-05'), 'type' => VoucherType::Payment], [
         new LineDraft('5501', 'USD', debit: 120, projectCode: 'F2F', budgetLineKey: 'F2F|Bank charges', restriction: NetAssets::RESTRICTED),

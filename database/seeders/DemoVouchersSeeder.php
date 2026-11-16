@@ -63,13 +63,13 @@ class DemoVouchersSeeder extends Seeder
             );
 
             // Approved, so the account statement has something to show.
-            $this->approve($voucher($preparer, VoucherType::Receipt, '2026-08-15', 'ACN grant, August', [$usd('1111', 4000, null, 'F2F'), $income('4101', 4000, 'F2F')]), $manager);
+            $this->approve($voucher($preparer, VoucherType::Receipt, '2026-08-15', 'ACN grant, August', [$usd('1111', 4000, null, 'F2F'), $income('4001', 4000, 'F2F')]), $manager);
             $this->approve($voucher($preparer, VoucherType::Payment, '2026-08-20', 'Cash to the Latakia safe, August', [$usd('1121', 250, null, 'F2F'), $usd('1111', null, 250, 'F2F')]), $manager);
 
             // Pending approval.
-            $voucher($preparer, VoucherType::Receipt, '2026-09-02', 'ACN grant, first instalment', [$usd('1111', 5000, null, 'F2F'), $income('4101', 5000, 'F2F')]);
-            $voucher($preparer, VoucherType::Receipt, '2026-09-05', 'Study Zone tuition, September', [$usd('1111', 800, null, 'SZ'), $income('4301', 800, 'SZ')]);
-            $voucher($preparer, VoucherType::Receipt, '2026-09-08', 'منحة كبيرة فوق حدّ المدير المالي', [$usd('1111', 9000, null, 'F2F'), $income('4101', 9000, 'F2F')]);
+            $voucher($preparer, VoucherType::Receipt, '2026-09-02', 'ACN grant, first instalment', [$usd('1111', 5000, null, 'F2F'), $income('4001', 5000, 'F2F')]);
+            $voucher($preparer, VoucherType::Receipt, '2026-09-05', 'Study Zone tuition, September', [$usd('1111', 800, null, 'SZ'), $income('4001', 800, 'SZ')]);
+            $voucher($preparer, VoucherType::Receipt, '2026-09-08', 'منحة كبيرة فوق حدّ المدير المالي', [$usd('1111', 9000, null, 'F2F'), $income('4001', 9000, 'F2F')]);
             $voucher($preparer, VoucherType::Transfer, '2026-09-10', 'تحويل إلى صندوق اللاذقية', [$usd('1121', 1200, null, 'F2F'), $usd('1111', null, 1200, 'F2F')]);
             $voucher($preparer, VoucherType::Payment, '2026-09-12', 'Maintenance, September', [
                 new LineDraft('5405', 'USD', debit: 350, projectCode: 'F2F', budgetLineKey: 'F2F|Maintenance', center: 'Aleppo'),
@@ -83,7 +83,7 @@ class DemoVouchersSeeder extends Seeder
             $voucher($head, VoucherType::Transfer, '2026-09-19', 'Prepared by head office', [$usd('1121', 60, null, 'SZ'), $usd('1111', null, 60, 'SZ')]);
 
             // Rejected: soft deleted, keeps its number, the reason is in its history.
-            $rejected = $voucher($preparer, VoucherType::Receipt, '2026-09-01', 'Duplicate entry', [$usd('1111', 100, null, 'F2F'), $income('4101', 100, 'F2F')]);
+            $rejected = $voucher($preparer, VoucherType::Receipt, '2026-09-01', 'Duplicate entry', [$usd('1111', 100, null, 'F2F'), $income('4001', 100, 'F2F')]);
             VoucherAudit::query()->create(['voucher_id' => $rejected->id, 'action' => 'reject', 'changed_by' => $manager, 'reason' => self::MARK.'Entered twice']);
             $rejected->delete();
         });

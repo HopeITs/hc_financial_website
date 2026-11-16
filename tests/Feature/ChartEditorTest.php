@@ -32,8 +32,8 @@ function useAccount(string $code = '1111', string $status = 'approved'): void
 
 it('creates a child account under a header', function () {
     Livewire::actingAs(editorUser(RoleId::Accountant))->test(Chart::class)
-        ->call('openAdd', '1110')
-        ->assertSet('formParent', '1110')
+        ->call('openAdd', '1101')
+        ->assertSet('formParent', '1101')
         ->assertSet('formClass', 'assets')
         ->set('formCode', '1199')
         ->set('formNameEn', 'Test safe')
@@ -45,7 +45,7 @@ it('creates a child account under a header', function () {
         ->assertSet('showEditor', false);
 
     $account = GlAccount::query()->findOrFail('1199');
-    expect($account->parent_code)->toBe('1110')
+    expect($account->parent_code)->toBe('1101')
         ->and($account->currency)->toBe('SYP')
         ->and($account->required_tags)->toBe(['Project'])
         ->and($account->is_active)->toBeTrue();
@@ -53,17 +53,17 @@ it('creates a child account under a header', function () {
 
 it('refuses a duplicate code, a bad code and a class that differs from the parent', function () {
     Livewire::actingAs(editorUser())->test(Chart::class)
-        ->call('openAdd', '1110')
+        ->call('openAdd', '1101')
         ->set('formCode', '1111')->set('formNameEn', 'X')->set('formNameAr', 'س')
         ->call('save')->assertHasErrors(['formCode']);
 
     Livewire::actingAs(editorUser())->test(Chart::class)
-        ->call('openAdd', '1110')
+        ->call('openAdd', '1101')
         ->set('formCode', '12')->set('formNameEn', 'X')->set('formNameAr', 'س')
         ->call('save')->assertHasErrors(['formCode']);
 
     Livewire::actingAs(editorUser())->test(Chart::class)
-        ->call('openAdd', '1110')
+        ->call('openAdd', '1101')
         ->set('formCode', '1198')->set('formNameEn', 'X')->set('formNameAr', 'س')->set('formClass', 'expenses')
         ->call('save')->assertHasErrors(['formClass']);
 
@@ -129,16 +129,16 @@ it('keeps a used account: no delete, no change of class or currency, still renam
 });
 
 it('refuses to delete a header that still has accounts below it', function () {
-    Livewire::actingAs(editorUser())->test(Chart::class)->call('askDelete', '1110')->call('delete');
+    Livewire::actingAs(editorUser())->test(Chart::class)->call('askDelete', '1101')->call('delete');
 
-    expect(GlAccount::query()->where('code', '1110')->exists())->toBeTrue();
+    expect(GlAccount::query()->where('code', '1101')->exists())->toBeTrue();
 });
 
 it('shows balances from approved vouchers only, rolled up to the headers', function () {
     useAccount('1111', 'approved');
 
     $balances = app(AccountBalances::class)->all();
-    expect($balances['1111'])->toBe('100.00')->and($balances['1110'])->toBe('100.00')->and($balances['1000'])->toBe('100.00');
+    expect($balances['1111'])->toBe('100.00')->and($balances['1101'])->toBe('100.00')->and($balances['1000'])->toBe('100.00');
 
     Voucher::query()->update(['status' => 'pending_approval']);
     expect(app(AccountBalances::class)->all())->toBe([]);
@@ -155,5 +155,5 @@ it('filters the list by class, posting only and name in English or Arabic', func
         ->set('search', 'مكتب حلب')
         ->assertSee('No account matches.')
         ->set('postingOnly', false)
-        ->assertSee('1110');
+        ->assertSee('1101');
 });

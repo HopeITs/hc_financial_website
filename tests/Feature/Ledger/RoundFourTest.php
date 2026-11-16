@@ -27,7 +27,7 @@ beforeEach(function () {
     // Aleppo's general USD account has 5,000 USD in the cash box.
     ledgerApprovedVoucher(['date' => CarbonImmutable::parse('2026-03-01'), 'type' => VoucherType::Receipt], [
         new LineDraft('1111', 'USD', debit: 5000, projectCode: 'GEN-ALP-USD', fundSource: FundSource::Treasury),
-        new LineDraft('4101', 'USD', credit: 5000, projectCode: 'GEN-ALP-USD'),
+        new LineDraft('4001', 'USD', credit: 5000, projectCode: 'GEN-ALP-USD'),
     ]);
 });
 
@@ -118,7 +118,7 @@ it('warns when a voucher drives the general USD balance with the transfer compan
     // With money in the pool the same credit is fine.
     ledgerApprovedVoucher(['type' => VoucherType::Receipt], [
         new LineDraft('1161', 'USD', debit: 1000, projectCode: 'GEN-ALP-USD', fundSource: FundSource::Treasury, contact: 'Hawala Co'),
-        new LineDraft('4101', 'USD', credit: 1000, projectCode: 'GEN-ALP-USD'),
+        new LineDraft('4001', 'USD', credit: 1000, projectCode: 'GEN-ALP-USD'),
     ]);
 
     expect(app(VoucherWarnings::class)->for($draft))->toBe([]);

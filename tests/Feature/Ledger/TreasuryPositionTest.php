@@ -25,7 +25,7 @@ beforeEach(function () {
     );
 
     // Aleppo's general USD account is funded with 5,000 USD.
-    $post('2026-03-01', [$usd('1111', 5000, null, 'GEN-ALP-USD'), new LineDraft('4101', 'USD', credit: 5000, projectCode: 'GEN-ALP-USD')], VoucherType::Receipt);
+    $post('2026-03-01', [$usd('1111', 5000, null, 'GEN-ALP-USD'), new LineDraft('4001', 'USD', credit: 5000, projectCode: 'GEN-ALP-USD')], VoucherType::Receipt);
 
     // Two bulk purchases of pounds (transfers into the pound safe): 7.5M for 500 USD, then 3.2M for 200 USD.
     $post('2026-03-10', [
@@ -52,12 +52,12 @@ beforeEach(function () {
     // Latakia: pounds received for 10.01 USD against 10 USD of income leaves one cent on the exchange differences account.
     $post('2026-03-15', [
         new LineDraft('1122', 'SYP', debit: 150000, rate: 15000, debitUsd: '10.01', projectCode: 'GEN-LTK-SYP', fundSource: FundSource::DonorGrant),
-        new LineDraft('4101', 'USD', credit: 10, projectCode: 'GEN-LTK-SYP'),
+        new LineDraft('4001', 'USD', credit: 10, projectCode: 'GEN-LTK-SYP'),
     ], VoucherType::Receipt);
 
     // Pending, so not counted.
     app(PostVoucher::class)->post(ledgerReceipt(['date' => CarbonImmutable::parse('2026-03-16')], [
-        $usd('1111', 999, null, 'GEN-ALP-USD'), new LineDraft('4101', 'USD', credit: 999, projectCode: 'GEN-ALP-USD'),
+        $usd('1111', 999, null, 'GEN-ALP-USD'), new LineDraft('4001', 'USD', credit: 999, projectCode: 'GEN-ALP-USD'),
     ]));
 });
 
@@ -129,7 +129,7 @@ it('lists the cash that belongs to no city, with the transfer company on its own
     $report = app(TreasuryPosition::class)->at();
     $other = collect($report->other)->keyBy('code');
 
-    expect(collect($report->other)->pluck('code')->all())->toBe(['1161', '1171', '1172'])
+    expect(collect($report->other)->pluck('code')->all())->toBe(['1161', '1171', '1172', '1173', '1174', '1175', '1176', '1177', '1178'])
         ->and($other['1161']->usd)->toBe('1000.00')
         ->and($report->transferCompanyUsd())->toBe('1000.00');
 });

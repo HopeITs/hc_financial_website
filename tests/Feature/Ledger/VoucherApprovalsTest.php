@@ -38,7 +38,7 @@ function pendingReceipt(int $by, int $amount = 100, string $date = '2026-03-10')
 {
     return app(PostVoucher::class)->post(ledgerReceipt(['preparedBy' => $by, 'date' => CarbonImmutable::parse($date)], [
         new LineDraft('1111', 'USD', debit: $amount, projectCode: 'F2F', fundSource: FundSource::DonorGrant),
-        new LineDraft('4101', 'USD', credit: $amount, projectCode: 'F2F'),
+        new LineDraft('4001', 'USD', credit: $amount, projectCode: 'F2F'),
     ]));
 }
 
@@ -112,7 +112,7 @@ it('checks the posting rules again, so an account turned off after posting stops
     $accountant = approverUser(RoleId::Accountant, 'ann');
     $manager = approverUser(RoleId::FinancialManager, 'fatima');
     $voucher = pendingReceipt(uid($accountant));
-    GlAccount::query()->find('4101')->update(['is_active' => false]);
+    GlAccount::query()->find('4001')->update(['is_active' => false]);
 
     try {
         approvals()->approve($voucher, $manager);

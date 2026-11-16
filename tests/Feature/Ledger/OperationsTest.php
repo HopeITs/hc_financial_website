@@ -35,11 +35,11 @@ beforeEach(function () {
     // Aleppo's general USD account holds 5,000 USD, and F2F 1,000 USD, both in the main safe.
     ledgerApprovedVoucher(['date' => CarbonImmutable::parse('2026-03-01'), 'type' => VoucherType::Receipt], [
         new LineDraft('1111', 'USD', debit: 5000, projectCode: 'GEN-ALP-USD', fundSource: FundSource::Treasury),
-        new LineDraft('4101', 'USD', credit: 5000, projectCode: 'GEN-ALP-USD'),
+        new LineDraft('4001', 'USD', credit: 5000, projectCode: 'GEN-ALP-USD'),
     ]);
     ledgerApprovedVoucher(['date' => CarbonImmutable::parse('2026-03-02'), 'type' => VoucherType::Receipt], [
         new LineDraft('1111', 'USD', debit: 1000, projectCode: 'F2F', fundSource: FundSource::DonorGrant),
-        new LineDraft('4101', 'USD', credit: 1000, projectCode: 'F2F'),
+        new LineDraft('4001', 'USD', credit: 1000, projectCode: 'F2F'),
     ]);
 });
 
@@ -115,14 +115,14 @@ it('pays an expense from a budget line: the line fills the project and the accou
 it('receives a grant into a till', function () {
     Livewire::actingAs(operator())->test(Operations::class)
         ->call('pick', 'CRV')
-        ->set('date', '2026-03-10')->set('project', 'SZ')->set('account', '4101')->set('cash', '1111')->set('amount', '300')
+        ->set('date', '2026-03-10')->set('project', 'SZ')->set('account', '4001')->set('cash', '1111')->set('amount', '300')
         ->call('save')
         ->assertSet('failures', []);
 
     $voucher = pendingVoucher();
 
     expect($voucher->type)->toBe(VoucherType::Receipt)
-        ->and(array_column(savedLines($voucher), 'account_code'))->toBe(['1111', '4101']);
+        ->and(array_column(savedLines($voucher), 'account_code'))->toBe(['1111', '4001']);
 });
 
 it('allocates dollars from the city general account to a project, and exchanges dollars for pounds', function () {
@@ -173,7 +173,7 @@ it('opens on the type in the address, and after Ctrl+Enter comes back to a fresh
     Livewire::withQueryParams(['type' => 'CRV'])->actingAs(operator())->test(Operations::class)
         ->assertSet('type', 'CRV')
         ->assertSet('mode', 'income')
-        ->set('date', '2026-03-10')->set('project', 'SZ')->set('account', '4101')->set('cash', '1111')->set('amount', '10')
+        ->set('date', '2026-03-10')->set('project', 'SZ')->set('account', '4001')->set('cash', '1111')->set('amount', '10')
         ->set('thenNew', true)
         ->call('save')
         ->assertRedirect(route(Navigation::routeName('single'), ['type' => 'CRV']));

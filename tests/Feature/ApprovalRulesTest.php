@@ -72,7 +72,7 @@ function arTransfer(string $cash, string $company, int $preparedBy): Voucher
 /** A donor receipt through the transfer company (account 1161). */
 function arDonorReceipt(string $amount, int $preparedBy): Voucher
 {
-    return arVoucher(VoucherType::Receipt, [['1161', 'debit', $amount], ['4101', 'credit', $amount]], $preparedBy);
+    return arVoucher(VoucherType::Receipt, [['1161', 'debit', $amount], ['4001', 'credit', $amount]], $preparedBy);
 }
 
 // R4-1
@@ -100,7 +100,7 @@ it('keeps the sum of debits for the other voucher types', function () {
 
 it('recognises a donor receipt by the transfer company debit on a receipt', function () {
     $receipt = arDonorReceipt('3000.00', 999);
-    $plain = arVoucher(VoucherType::Receipt, [['1111', 'debit', '3000.00'], ['4101', 'credit', '3000.00']], 999);
+    $plain = arVoucher(VoucherType::Receipt, [['1111', 'debit', '3000.00'], ['4001', 'credit', '3000.00']], 999);
     $payment = arVoucher(VoucherType::Payment, [['1161', 'debit', '300.00'], ['1111', 'credit', '300.00']], 999);
 
     expect($receipt->isDonorReceipt())->toBeTrue()
@@ -147,7 +147,7 @@ it('needs the General Manager after the Financial Manager above USD 2,000', func
 
 it('does not let the General Manager approve or reject an ordinary voucher', function () {
     $general = arUser(RoleId::GeneralManager, 'Gina');
-    $voucher = arVoucher(VoucherType::Receipt, [['1111', 'debit', '3000.00'], ['4101', 'credit', '3000.00']], 999);
+    $voucher = arVoucher(VoucherType::Receipt, [['1111', 'debit', '3000.00'], ['4001', 'credit', '3000.00']], 999);
 
     expect(Gate::forUser($general)->allows('approve', $voucher))->toBeFalse()
         ->and(fn () => app(VoucherApprovals::class)->reject($voucher, $general, 'No'))->toThrow(LedgerRuleException::class);

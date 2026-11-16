@@ -456,6 +456,7 @@ return [
         'Donations from churches and individuals' => 'Donations from churches and individuals',
         'Income from project activities' => 'Income from project activities',
         'Other income' => 'Other income',
+        'Grants and donations' => 'Grants and donations',
         'Program activity costs' => 'Program activity costs',
         'Personnel costs' => 'Personnel costs',
         'Operational and running costs' => 'Operational and running costs',

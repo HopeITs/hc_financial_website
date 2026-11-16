@@ -43,7 +43,7 @@ it('does not hold receipts or migrated payments to the limit', function () {
     expect(requestRuleBreaks(ledgerReceipt()))->toBe(0)
         ->and(requestRuleBreaks(ledgerReceipt(['type' => VoucherType::Receipt], [
             new LineDraft('1111', 'USD', debit: 900, projectCode: 'F2F'),
-            new LineDraft('4101', 'USD', credit: 900, projectCode: 'F2F'),
+            new LineDraft('4001', 'USD', credit: 900, projectCode: 'F2F'),
         ])))->toBe(0)
         ->and(requestRuleBreaks(payment('900.00', header: ['source' => VoucherSource::Migration, 'legacyActionId' => 4])))->toBe(0);
 });

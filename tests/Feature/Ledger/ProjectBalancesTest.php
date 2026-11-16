@@ -27,7 +27,7 @@ function receiveFor(string $project, int $amount, bool $approve = true): void
 {
     approvedVoucher([
         new LineDraft('1111', 'USD', debit: $amount, projectCode: $project, fundSource: FundSource::DonorGrant),
-        new LineDraft('4101', 'USD', credit: $amount, projectCode: $project),
+        new LineDraft('4001', 'USD', credit: $amount, projectCode: $project),
     ], $approve);
 }
 
@@ -69,7 +69,7 @@ it('lists the cash of a project per cash account and currency without mixing the
     receiveFor('F2F', 100);
     approvedVoucher([
         new LineDraft('1112', 'SYP', debit: 1000000, rate: '10000', debitUsd: 100, projectCode: 'F2F', fundSource: FundSource::DonorGrant),
-        new LineDraft('4101', 'USD', credit: 100, projectCode: 'F2F'),
+        new LineDraft('4001', 'USD', credit: 100, projectCode: 'F2F'),
     ]);
 
     $locations = collect(app(ProjectBalancesReport::class)->fundLocations('F2F'))->keyBy('account_code');
@@ -102,7 +102,7 @@ it('shows SYP lines as entered and converts USD lines at the typed rate', functi
     receiveFor('F2F', 100);
     approvedVoucher([
         new LineDraft('1112', 'SYP', debit: 500000, rate: '10000', debitUsd: 50, projectCode: 'F2F', fundSource: FundSource::DonorGrant),
-        new LineDraft('4101', 'USD', credit: 50, projectCode: 'F2F'),
+        new LineDraft('4001', 'USD', credit: 50, projectCode: 'F2F'),
     ]);
 
     $row = collect(app(ProjectBalancesReport::class)->report('SYP', '12000')['rows'])->keyBy('code')['F2F'];

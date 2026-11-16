@@ -27,7 +27,7 @@ beforeEach(function () {
     // Aleppo's general USD account holds 5,000 USD.
     ledgerApprovedVoucher(['date' => CarbonImmutable::parse('2026-03-01'), 'type' => VoucherType::Receipt], [
         new LineDraft('1111', 'USD', debit: 5000, projectCode: 'GEN-ALP-USD', fundSource: FundSource::Treasury),
-        new LineDraft('4101', 'USD', credit: 5000, projectCode: 'GEN-ALP-USD'),
+        new LineDraft('4001', 'USD', credit: 5000, projectCode: 'GEN-ALP-USD'),
     ]);
 });
 

@@ -116,8 +116,8 @@ it('rule 8 on amending: refuses a change to a voucher in a closed month, or into
 // Rule 11
 
 it('rule 11: lets an unused account change freely, and a used account change its name', function () {
-    $unused = GlAccount::query()->find('4107');
-    $used = GlAccount::query()->find('4101');
+    $unused = GlAccount::query()->find('1209');
+    $used = GlAccount::query()->find('4001');
     postedReceipt();
 
     expect((new UsedAccountKeepsIdentity)->check($unused, ['code' => '4199', 'class' => AccountClass::Expenses->value, 'currency' => 'USD']))->toBe([])
@@ -126,7 +126,7 @@ it('rule 11: lets an unused account change freely, and a used account change its
 });
 
 it('rule 11: refuses changing the code, class or currency of an account that vouchers use', function () {
-    $used = GlAccount::query()->find('4101');
+    $used = GlAccount::query()->find('4001');
     postedReceipt();
 
     $violations = (new UsedAccountKeepsIdentity)->check($used, [
@@ -157,7 +157,7 @@ it('rule 12: refuses a close while an in-transit account holds money', function 
 });
 
 it('rule 12: refuses a close while the suspense account holds money, and counts approved vouchers up to month end only', function () {
-    transfer('4101', '2901', '2026-03-05');
+    transfer('4001', '2901', '2026-03-05');
 
     expect((new MonthClosesOnlyWhenClearingIsZero)->check('2026-03'))->toHaveCount(1)
         ->and((new MonthClosesOnlyWhenClearingIsZero)->check('2026-02'))->toBe([]);

@@ -34,11 +34,11 @@ it('rule 1: accepts active posting accounts', function () {
 });
 
 it('rule 1: refuses a header, an inactive account and an unknown account', function () {
-    GlAccount::query()->find('4101')->update(['is_active' => false]);
+    GlAccount::query()->find('4001')->update(['is_active' => false]);
 
     $draft = ledgerReceipt(lines: [
-        new LineDraft('1110', 'USD', debit: 10),
-        new LineDraft('4101', 'USD', credit: 10),
+        new LineDraft('1101', 'USD', debit: 10),
+        new LineDraft('4001', 'USD', credit: 10),
         new LineDraft('9999', 'USD', credit: 10),
     ]);
 
@@ -50,7 +50,7 @@ it('rule 1: refuses a header, an inactive account and an unknown account', funct
 it('rule 2: accepts a cash account in its own currency and an any-currency account in USD or SYP', function () {
     $draft = ledgerReceipt(lines: [
         new LineDraft('1112', 'SYP', debit: 1000000, debitUsd: 100),
-        new LineDraft('4101', 'SYP', credit: 1000000, creditUsd: 100),
+        new LineDraft('4001', 'SYP', credit: 1000000, creditUsd: 100),
     ]);
 
     expect(ruleLines(new CashAccountInOwnCurrency, $draft))->toBe([]);
@@ -60,7 +60,7 @@ it('rule 2: refuses a cash account in the other currency and a currency the book
     $draft = ledgerReceipt(lines: [
         new LineDraft('1111', 'SYP', debit: 100, debitUsd: 100),
         new LineDraft('1112', 'USD', debit: 100),
-        new LineDraft('4101', 'GBP', credit: 100, creditUsd: 100),
+        new LineDraft('4001', 'GBP', credit: 100, creditUsd: 100),
     ]);
 
     expect(ruleLines(new CashAccountInOwnCurrency, $draft))->toBe([1, 2, 3]);
@@ -93,7 +93,7 @@ it('rule 4: accepts a voucher that balances exactly in USD', function () {
 it('rule 4: refuses a voucher that is out by a cent, and one with a single line', function () {
     $outByACent = ledgerReceipt(lines: [
         new LineDraft('1111', 'USD', debit: '100.01'),
-        new LineDraft('4101', 'USD', credit: 100),
+        new LineDraft('4001', 'USD', credit: 100),
     ]);
     $oneLine = ledgerReceipt(lines: [new LineDraft('1111', 'USD', debit: 100)]);
 
@@ -104,7 +104,7 @@ it('rule 4: refuses a voucher that is out by a cent, and one with a single line'
 it('rule 4: moves a few cents to the exchange differences account and leaves a big gap alone', function () {
     $syp = ledgerReceipt(lines: [
         new LineDraft('1112', 'SYP', debit: 1500000, debitUsd: '100.01', projectCode: 'F2F', fundSource: FundSource::DonorGrant),
-        new LineDraft('4101', 'USD', credit: 100, projectCode: 'F2F'),
+        new LineDraft('4001', 'USD', credit: 100, projectCode: 'F2F'),
     ]);
     $balanced = (new RoundingLine)->balance($syp);
     $added = $balanced->lines[2];
@@ -118,14 +118,14 @@ it('rule 4: moves a few cents to the exchange differences account and leaves a b
 
     $credits = (new RoundingLine)->balance(ledgerReceipt(lines: [
         new LineDraft('1111', 'USD', debit: 100, projectCode: 'F2F', fundSource: FundSource::DonorGrant),
-        new LineDraft('4101', 'USD', credit: '100.02', projectCode: 'F2F'),
+        new LineDraft('4001', 'USD', credit: '100.02', projectCode: 'F2F'),
     ]));
 
     expect($credits->lines[2]->debitUsd)->toBe('0.02');
 
     $bigGap = ledgerReceipt(lines: [
         new LineDraft('1111', 'USD', debit: 100),
-        new LineDraft('4101', 'USD', credit: 90),
+        new LineDraft('4001', 'USD', credit: 90),
     ]);
 
     expect((new RoundingLine)->balance($bigGap)->lines)->toHaveCount(2);
@@ -140,7 +140,7 @@ it('rule 5: accepts a line with all the tags its account requires', function () 
 it('rule 5: refuses a line with a required tag missing or blank', function () {
     $draft = ledgerReceipt(lines: [
         new LineDraft('1111', 'USD', debit: 100, projectCode: 'F2F'),
-        new LineDraft('4101', 'USD', credit: 100, projectCode: '  '),
+        new LineDraft('4001', 'USD', credit: 100, projectCode: '  '),
     ]);
 
     expect(ruleLines(new RequiredTagsFilled, $draft))->toBe([1, 2]);

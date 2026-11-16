@@ -38,7 +38,7 @@ function builderPage(?User $user = null)
 function fillReceipt($page, string $amount = '250', string $second = '250')
 {
     return $page->set('lines.0.account', '1111')->set('lines.0.amount', $amount)->set('lines.0.project', 'F2F')->set('lines.0.fund_source', 'donor_grant')
-        ->set('lines.1.account', '4101')->set('lines.1.side', 'credit')->set('lines.1.amount', $second)->set('lines.1.project', 'F2F');
+        ->set('lines.1.account', '4001')->set('lines.1.side', 'credit')->set('lines.1.amount', $second)->set('lines.1.project', 'F2F');
 }
 
 function checkStates($page): array

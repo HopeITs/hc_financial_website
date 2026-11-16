@@ -85,7 +85,7 @@ function lastToolResult(ScriptedGateway $gateway): array
     return end($messages)['content'][0];
 }
 
-const INCOME = ['kind' => 'income', 'date' => '2026-03-10', 'project' => 'F2F', 'cash' => '1111', 'account' => '4101', 'amount' => '250', 'description' => 'Grant'];
+const INCOME = ['kind' => 'income', 'date' => '2026-03-10', 'project' => 'F2F', 'cash' => '1111', 'account' => '4001', 'amount' => '250', 'description' => 'Grant'];
 
 it('offers each role only the tools its screens allow', function () {
     $names = fn (RoleId $role, string $who) => array_map(fn ($tool) => $tool->name(), app(Toolbox::class)->for(assistantUser($role, $who)));

@@ -29,7 +29,7 @@ beforeEach(function () {
     $this->migration = require database_path('migrations/2026_10_24_100000_create_gl_voucher_tables.php');
     $this->migration->up();
 
-    foreach (['1111' => AccountClass::Assets, '4101' => AccountClass::Income] as $code => $class) {
+    foreach (['1111' => AccountClass::Assets, '4001' => AccountClass::Income] as $code => $class) {
         GlAccount::query()->create([
             'code' => $code, 'level' => AccountLevel::Posting, 'class' => $class, 'name_en' => 'Account '.$code,
             'name_ar' => 'حساب '.$code, 'normal_side' => NormalSide::Debit,
@@ -68,7 +68,7 @@ it('creates the eleven voucher tables and drops them again', function () {
 
 it('keeps a voucher with its ordered lines, audit trail and attachments', function () {
     glVoucher();
-    glLine('CRV-2026-0001', 2, ['account_code' => '4101', 'debit_orig' => 0, 'debit_usd' => 0, 'credit_orig' => '100', 'credit_usd' => '100', 'project_code' => 'F2F', 'fund_source' => FundSource::DonorGrant]);
+    glLine('CRV-2026-0001', 2, ['account_code' => '4001', 'debit_orig' => 0, 'debit_usd' => 0, 'credit_orig' => '100', 'credit_usd' => '100', 'project_code' => 'F2F', 'fund_source' => FundSource::DonorGrant]);
     glLine('CRV-2026-0001', 1);
     VoucherAudit::query()->create(['voucher_id' => 'CRV-2026-0001', 'action' => 'create', 'changed_by' => 5]);
     VoucherAttachment::query()->create(['voucher_id' => 'CRV-2026-0001', 'original_name' => 'a.pdf', 'stored_path' => 'attachments/a.pdf', 'size' => 10]);
@@ -175,7 +175,7 @@ it('numbers each voucher type once per year', function () {
 
 it('keeps one confirmed mapping per kind and legacy name', function () {
     LegacyMap::query()->create(['kind' => 'cash', 'legacy_key' => 'Aleppo safe|USD', 'target' => '1111']);
-    LegacyMap::query()->create(['kind' => 'donor', 'legacy_key' => 'Aleppo safe|USD', 'target' => '4101']);
+    LegacyMap::query()->create(['kind' => 'donor', 'legacy_key' => 'Aleppo safe|USD', 'target' => '4001']);
 
     expect(fn () => LegacyMap::query()->create(['kind' => 'cash', 'legacy_key' => 'Aleppo safe|USD', 'target' => '1112']))->toThrow(QueryException::class);
 });

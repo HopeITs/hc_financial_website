@@ -34,7 +34,7 @@ beforeEach(function () {
     // The donor sent 1,000 EUR through the transfer company, which became 1,150 USD; 200 EUR (230 USD) went on bank charges and 100 USD on training.
     ledgerApprovedVoucher(['date' => CarbonImmutable::parse('2026-02-01'), 'type' => VoucherType::Receipt, 'description' => 'First tranche'], [
         new LineDraft('1161', 'USD', debit: 1150, projectCode: 'F2F', fundSource: FundSource::DonorGrant, contact: 'Hawala office', donorCurrency: 'EUR', debitDonor: 1000, eurAmount: 1000, eurRate: 1.15),
-        new LineDraft('4101', 'USD', credit: 1150, projectCode: 'F2F', donorCurrency: 'EUR', creditDonor: 1000),
+        new LineDraft('4001', 'USD', credit: 1150, projectCode: 'F2F', donorCurrency: 'EUR', creditDonor: 1000),
     ]);
     ledgerApprovedVoucher(['date' => CarbonImmutable::parse('2026-03-01'), 'type' => VoucherType::Payment], [
         new LineDraft('5501', 'USD', debit: 230, projectCode: 'F2F', budgetLineKey: 'F2F|Bank charges', donorCurrency: 'EUR', debitDonor: 200),
