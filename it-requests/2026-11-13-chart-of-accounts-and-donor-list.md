@@ -85,7 +85,7 @@ Finance wants **no donor accounts under Income at all**. Suggested way, for IT t
 - Each line keeps the project (and fund source) of the original balance, so every project's income stays the same.
 - Until the donor field exists, write the donor's name in the line description (for example "Reclassification – Caritas Poland").
 - The journal goes through the normal approval, like any other voucher.
-- If March–October or November 2026 is already closed at month end, or the migration runs much later, please tell finance before changing the date.
+- If November 2026 is already closed at month end when the journal is posted, please tell finance before changing the date.
 
 - **Hide inactive accounts:** the chart screen hides inactive accounts by default, with a "Show inactive accounts" switch to see them for history and audit. This changes `app/Livewire/Chart.php` and `resources/views/livewire/chart.blade.php`.
 
