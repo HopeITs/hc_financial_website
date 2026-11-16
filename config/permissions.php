@@ -41,8 +41,10 @@ return [
         RoleId::HeadOffice->value => $screens(['home', 'requests', 'project-money', ...$everyScreen], $all),
 
         RoleId::FinancialManager->value => array_merge(
-            $screens(['home', 'chart', 'project-money', ...$projectScreens, ...$treasury, ...$reports, 'donors', 'employees', 'salaries', 'users', 'log', 'auditlog', 'single', 'multi', 'multiatt', 'payments', 'bonds'], $view),
+            $screens(['home', 'chart', 'project-money', ...$projectScreens, ...$treasury, ...$reports, 'employees', 'salaries', 'users', 'log', 'auditlog', 'single', 'multi', 'multiatt', 'payments', 'bonds'], $view),
             $screens(['vouchers', 'approval', 'requests', 'alloc'], ['view', 'approve']),
+            $screens(['donors'], $prepare),
+            $screens(['contracts'], ['view', 'create', 'edit', 'approve']),
             $screens(['programs'], ['view', 'create']),
             $screens(['currency'], $prepare),
             $screens($monthEnd, ['view', 'edit', 'approve']),
@@ -52,11 +54,11 @@ return [
 
         RoleId::Accountant->value => array_merge(
             $screens(['home', 'project-money', ...$projectScreens, ...$reports, 'tills', 'treasury', 'cities', 'currency', 'denoms', 'donors', 'employees', 'requests'], $view),
-            $screens(['chart', 'projects', ...$entries, 'alloc', 'salaries'], $prepare),
+            $screens(['chart', 'projects', ...$entries, 'alloc', 'salaries', 'contracts'], $prepare),
         ),
 
         RoleId::ProjectManager->value => array_merge(
-            $screens(['home', 'projwin', 'budgetlines', 'programs', 'projects', 'rexp', 'rbl', 'advances', 'loans'], $view),
+            $screens(['home', 'projwin', 'budgetlines', 'programs', 'projects', 'rexp', 'rbl', 'advances', 'loans', 'donors', 'contracts'], $view),
             $screens(['requests'], $prepare),
         ),
 
@@ -70,12 +72,12 @@ return [
         RoleId::Donor->value => $screens(['home'], $view),
 
         RoleId::GeneralManager->value => array_merge(
-            $screens(['home', 'chart', 'project-money', ...$projectScreens, ...$treasury, ...$reports], $view),
-            $screens(['requests', 'vouchers', 'approval'], ['view', 'approve']),
+            $screens(['home', 'chart', 'project-money', ...$projectScreens, ...$treasury, ...$reports, 'donors'], $view),
+            $screens(['requests', 'vouchers', 'approval', 'contracts'], ['view', 'approve']),
         ),
 
         RoleId::ProgramManager->value => array_merge(
-            $screens(['home', 'project-money', ...$projectScreens], $view),
+            $screens(['home', 'project-money', ...$projectScreens, 'donors', 'contracts'], $view),
             $screens(['requests'], ['view', 'approve']),
         ),
 

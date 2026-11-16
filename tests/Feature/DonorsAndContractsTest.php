@@ -13,6 +13,7 @@ use App\Models\Donor;
 use App\Models\GlProject;
 use App\Models\User;
 use App\Models\WebUserRole;
+use App\Support\Navigation;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
@@ -20,33 +21,7 @@ use Livewire\Livewire;
 
 beforeEach(function () {
     createFinanceSchema();
-    (require database_path('migrations/2026_11_17_090000_create_donors_and_funding_contracts_tables.php'))->up();
     Carbon::setTestNow('2026-11-16 10:00:00');
-
-    // The permissions IT is asked to add to config/permissions.php (see the pull request).
-    $donors = [
-        RoleId::HeadOffice->value => ['view', 'create', 'edit', 'delete', 'approve'],
-        RoleId::FinancialManager->value => ['view', 'create', 'edit'],
-        RoleId::Accountant->value => ['view'],
-        RoleId::GeneralManager->value => ['view'],
-        RoleId::ProgramManager->value => ['view'],
-        RoleId::ProjectManager->value => ['view'],
-    ];
-    $contracts = [
-        RoleId::HeadOffice->value => ['view', 'create', 'edit', 'delete', 'approve'],
-        RoleId::FinancialManager->value => ['view', 'create', 'edit', 'approve'],
-        RoleId::Accountant->value => ['view', 'create', 'edit'],
-        RoleId::GeneralManager->value => ['view', 'approve'],
-        RoleId::ProgramManager->value => ['view'],
-        RoleId::ProjectManager->value => ['view'],
-    ];
-
-    foreach ($donors as $role => $actions) {
-        config()->set("permissions.roles.{$role}.donors", $actions);
-    }
-    foreach ($contracts as $role => $actions) {
-        config()->set("permissions.roles.{$role}.contracts", $actions);
-    }
 
     GlProject::query()->create(['code' => 'F2F', 'name' => 'Face to Face', 'restriction' => 'With donor restrictions', 'donor_currency' => 'USD', 'donor_rate' => 1, 'is_general_account' => false, 'legacy_account_id' => 10]);
     GlProject::query()->create(['code' => 'SZ', 'name' => 'Study Zone', 'restriction' => 'With donor restrictions', 'donor_currency' => 'USD', 'donor_rate' => 1, 'is_general_account' => false, 'legacy_account_id' => 20]);
@@ -154,6 +129,12 @@ it('lets the accountant read the donors but not add or edit one', function () {
 
 it('keeps the cashier out of the donors screen', function () {
     $this->actingAs(dcUser(RoleId::Cashier, 'Cara'))->get('/people/donors')->assertForbidden();
+});
+
+it('shows funding contracts in the projects menu of the financial manager but not of the cashier', function () {
+    expect(__('navigation.screens.contracts'))->toBe('Funding contracts')
+        ->and(Navigation::visibleGroups(dcUser(RoleId::FinancialManager, 'Fadi'))['projects'])->toContain('contracts')
+        ->and(collect(Navigation::visibleGroups(dcUser(RoleId::Cashier, 'Cara')))->flatten())->not->toContain('contracts');
 });
 
 // Contracts

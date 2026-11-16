@@ -21,7 +21,7 @@ return [
 
     'groups' => [
         'chart' => ['chart'],
-        'projects' => ['projwin', 'budgetlines', 'blcats', 'lifetime', 'programs', 'projects'],
+        'projects' => ['projwin', 'budgetlines', 'blcats', 'lifetime', 'programs', 'projects', 'contracts'],
         'entries' => ['single', 'multi', 'multiatt', 'payments', 'vouchers', 'bonds', 'approval', 'requests'],
         'treasury' => ['tills', 'treasury', 'alloc', 'monthend', 'cities', 'currency', 'denoms'],
         'reports' => ['rexp', 'rcash', 'rbl', 'rdonor', 'rrev', 'rfixed', 'rattach', 'tb', 'statement', 'statements', 'recon', 'mapprovals', 'uncomp', 'xreserve', 'advances', 'loans'],
@@ -39,6 +39,7 @@ return [
         'lifetime' => 'projects/lines-lifetime',
         'programs' => 'projects/programs',
         'projects' => 'projects/balances',
+        'contracts' => 'projects/contracts',
 
         'single' => 'entries/operations',
         'multi' => 'entries/multi',
