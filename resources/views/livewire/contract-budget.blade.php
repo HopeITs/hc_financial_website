@@ -44,7 +44,7 @@
                         <tbody>
                             @forelse ($section['lines'] as $line)
                                 @php($lineSpent = $spent[$line->key] ?? '0.00')
-                                <tr wire:key="line-{{ $line->key }}">
+                                <tr wire:key="line-{{ md5($line->key) }}">
                                     <td>{{ $line->name }}</td>
                                     <td><span dir="ltr">{{ $line->account_code }}</span> {{ app()->getLocale() === 'ar' ? $line->account?->name_ar : $line->account?->name_en }}</td>
                                     <td class="fin-num"><x-money :amount="$line->budget" /></td>

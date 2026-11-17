@@ -217,7 +217,7 @@
             @endif
         </x-ui.panel>
 
-        <livewire:contract-budget :contract-id="$contract->id" :key="'budget-'.$contract->id.'-'.$contract->projects->pluck('amount', 'project_code')->toJson()" />
+        <livewire:contract-budget :contract-id="$contract->id" :key="'budget-'.$contract->id.'-'.md5($contract->projects->pluck('amount', 'project_code')->toJson())" />
     @endif
 
     @if ($tab === 'instalments')
