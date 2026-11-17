@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Enums\AccountClass;
 use App\Enums\AccountLevel;
 use App\Models\Contract;
+use App\Models\ContractAudit;
 use App\Models\ContractProject;
 use App\Models\GlAccount;
 use App\Models\GlBudgetLine;
@@ -265,7 +266,7 @@ class ContractBudget extends Component
         $chosen = array_filter($this->importRows, fn (array $row): bool => (bool) ($row['include'] ?? false));
         $importTotal = $sum(array_map(fn (array $row): string => is_numeric($row['amount'] ?? null) ? (string) $row['amount'] : '0', $chosen));
         $importShare = (string) ($contract->projects->firstWhere('project_code', $this->importProject)?->amount ?? '0');
-        $history = $trail->latest($contract);
+        $history = $trail->latest($contract, actions: ContractAudit::BUDGET_ACTIONS);
 
         return view('livewire.contract-budget', [
             'contract' => $contract,

@@ -96,6 +96,12 @@ class Contract extends Model
         return $this->hasMany(ContractInstalment::class)->orderBy('number');
     }
 
+    /** @return HasMany<ContractReceipt, $this> the receipt vouchers linked to its instalments */
+    public function receipts(): HasMany
+    {
+        return $this->hasMany(ContractReceipt::class);
+    }
+
     /** @return HasMany<ContractReport, $this> */
     public function reports(): HasMany
     {

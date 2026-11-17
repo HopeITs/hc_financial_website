@@ -48,10 +48,11 @@
         </div>
     @endif
 
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <x-ui.stat-tile :label="__('contracts.kpi_value')" :value="$kpi['value']" :unit="$contract->currency" icon="document-text" />
         <x-ui.stat-tile :label="__('contracts.kpi_value_usd')" :value="$kpi['value_usd']" unit="USD" icon="currency-dollar" />
         <x-ui.stat-tile :label="__('contracts.kpi_income')" :value="$kpi['income']" :unit="$contract->currency" icon="banknotes" />
+        <x-ui.stat-tile :label="__('contracts.kpi_received')" :value="$kpi['received']" :unit="$contract->currency" icon="arrow-down-tray" />
         <x-ui.stat-tile :label="__('contracts.kpi_late')" :value="(string) $lateCount" :tone="$lateCount > 0 ? 'critical' : 'good'" icon="clock" />
     </div>
 
@@ -244,16 +245,18 @@
                             <th class="fin-num">{{ __('contracts.amount') }} ({{ $contract->currency }})</th>
                             <th>{{ __('contracts.condition') }}</th>
                             <th>{{ __('contracts.income') }}</th>
+                            <th>{{ __('contracts.received') }}</th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($contract->instalments as $instalment)
+                            @php($arrived = $received[$instalment->id] ?? null)
                             <tr wire:key="instalment-{{ $instalment->id }}">
                                 <td class="fin-num">{{ $instalment->number }}</td>
                                 <td dir="ltr" class="text-start">
                                     {{ $instalment->due_on->format('d/m/Y') }}
-                                    @if (! $instalment->isRecognised() && $instalment->daysLate($today) > 0)
+                                    @if (! $instalment->isRecognised() && $instalment->daysLate($today) > 0 && ($arrived['state'] ?? 'none') !== 'full')
                                         <flux:badge size="sm" color="red" class="ms-1">{{ trans_choice('contracts.days_late', $instalment->daysLate($today), ['days' => $instalment->daysLate($today)]) }}</flux:badge>
                                     @endif
                                 </td>
@@ -268,6 +271,36 @@
                                         <flux:badge size="sm" color="zinc">{{ __('contracts.income_waiting') }}</flux:badge>
                                     @endif
                                 </td>
+                                <td data-test="received-{{ $instalment->number }}">
+                                    @if (($arrived['state'] ?? 'none') === 'full')
+                                        <flux:badge size="sm" color="green">{{ __('contracts.receipt_state_full') }}</flux:badge>
+                                    @elseif (($arrived['state'] ?? 'none') === 'part')
+                                        <flux:badge size="sm" color="amber">{{ __('contracts.receipt_state_part') }}</flux:badge>
+                                    @else
+                                        <flux:badge size="sm" color="zinc">{{ __('contracts.receipt_state_none') }}</flux:badge>
+                                    @endif
+                                    @if ($arrived !== null && $arrived['links'] !== [])
+                                        <ul class="mt-1 flex flex-col gap-1 text-xs">
+                                            @foreach ($arrived['links'] as $link)
+                                                <li wire:key="receipt-{{ $link['id'] }}" class="flex flex-wrap items-center gap-x-2">
+                                                    <a href="{{ route(\App\Support\Navigation::routeName('vouchers'), ['voucher' => $link['voucher']]) }}" wire:navigate class="underline" dir="ltr">{{ $link['voucher'] }}</a>
+                                                    <span dir="ltr">{{ $link['date'] !== '' ? \Illuminate\Support\Carbon::parse($link['date'])->format('d/m/Y') : '' }}</span>
+                                                    <x-money :amount="$link['amount']" :currency="$contract->currency" />
+                                                    @if ($link['account'])
+                                                        <span class="text-secondary-medium dark:text-ink-muted">{{ $link['account'] }}</span>
+                                                    @endif
+                                                    @if ($canChange)
+                                                        <x-ui.button size="sm" tone="ghost" icon="x-mark" wire:click="unlinkReceipt({{ $link['id'] }})" wire:confirm="{{ __('contracts.receipt_unlink_confirm') }}" :aria-label="__('contracts.receipt_unlink')" data-test="unlink-receipt-{{ $link['id'] }}" />
+                                                    @endif
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                        <p class="mt-1 text-xs text-secondary-medium dark:text-ink-muted">
+                                            {{ __('contracts.receipt_fx') }}:
+                                            <x-money :amount="$arrived['difference_usd']" currency="USD" />
+                                        </p>
+                                    @endif
+                                </td>
                                 <td class="whitespace-nowrap">
                                     @if ($canChange && $contract->isApproved() && $instalment->is_conditional && ! $instalment->condition_met_on)
                                         <x-ui.button size="sm" wire:click="markConditionMet({{ $instalment->id }})" wire:confirm="{{ __('contracts.condition_met_confirm') }}" data-test="condition-met-{{ $instalment->number }}">{{ __('contracts.mark_condition_met') }}</x-ui.button>
@@ -278,7 +311,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="6" class="fin-empty">{{ __('contracts.no_instalments') }}</td></tr>
+                            <tr><td colspan="7" class="fin-empty">{{ __('contracts.no_instalments') }}</td></tr>
                         @endforelse
                     </tbody>
                     <tfoot>
@@ -286,11 +319,41 @@
                             <td></td>
                             <td>{{ __('contracts.total') }}</td>
                             <td class="fin-num"><x-money :amount="$instalmentsTotal" /></td>
-                            <td colspan="3"></td>
+                            <td colspan="4"></td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
+            @if ($canChange && $contract->instalments->isNotEmpty())
+                <form wire:submit="linkReceipt" class="flex flex-col gap-3 border-t border-secondary-soft p-4 dark:border-line" data-test="receipt-form">
+                    <div>
+                        <h3 class="text-sm font-semibold text-secondary-dark dark:text-ink">{{ __('contracts.receipt_title') }}</h3>
+                        <p class="text-sm text-secondary-medium dark:text-ink-muted">{{ __('contracts.receipt_hint') }}</p>
+                    </div>
+                    @if ($receiptCandidates === [])
+                        <p class="text-sm text-secondary-medium dark:text-ink-muted" data-test="no-receipt-candidates">{{ __('contracts.receipt_none_available') }}</p>
+                    @else
+                        <div class="flex flex-wrap items-end gap-3">
+                            <x-ui.form-select wire:model.live="receiptInstalment" :label="__('contracts.receipt_instalment')" :placeholder="__('contracts.choose')" required class="min-w-48" data-test="receipt-instalment">
+                                <option value="">{{ __('contracts.choose') }}</option>
+                                @foreach ($contract->instalments as $instalment)
+                                    @if (($received[$instalment->id]['state'] ?? 'none') !== 'full')
+                                        <option value="{{ $instalment->id }}">{{ __('contracts.instalment_number', ['number' => $instalment->number]) }} — {{ $instalment->due_on->format('d/m/Y') }}</option>
+                                    @endif
+                                @endforeach
+                            </x-ui.form-select>
+                            <x-ui.form-select wire:model.live="receiptVoucher" :label="__('contracts.receipt_voucher')" :placeholder="__('contracts.choose')" required searchable class="min-w-72" data-test="receipt-voucher">
+                                <option value="">{{ __('contracts.choose') }}</option>
+                                @foreach ($receiptCandidates as $voucherId => $candidate)
+                                    <option value="{{ $voucherId }}">{{ $voucherId }} · {{ \Illuminate\Support\Carbon::parse($candidate['date'])->format('d/m/Y') }} · {{ __('contracts.receipt_available', ['amount' => $candidate['available'], 'currency' => $contract->currency]) }}</option>
+                                @endforeach
+                            </x-ui.form-select>
+                            <x-ui.form-input wire:model="receiptAmount" type="number" step="0.01" min="0" :label="__('contracts.amount').' ('.$contract->currency.')'" dir="ltr" required data-test="receipt-amount" />
+                            <x-ui.button type="submit" icon="link" data-test="link-receipt">{{ __('contracts.receipt_link') }}</x-ui.button>
+                        </div>
+                    @endif
+                </form>
+            @endif
             @if ($canChangeMoney)
                 <form wire:submit="addInstalment" class="flex flex-col gap-3 border-t border-secondary-soft p-4 dark:border-line" data-test="instalment-form">
                     <div class="grid gap-3 sm:grid-cols-3">

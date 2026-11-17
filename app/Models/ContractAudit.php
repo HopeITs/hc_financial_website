@@ -29,6 +29,13 @@ class ContractAudit extends Model
 
     public const AGREEMENT_DELETED = 'agreement_deleted';
 
+    public const RECEIPT_LINKED = 'receipt_linked';
+
+    public const RECEIPT_UNLINKED = 'receipt_unlinked';
+
+    /** The actions that change a budget, shown in the agreement's "Budget changes" panel. */
+    public const BUDGET_ACTIONS = [self::BUDGET_LINE_ADDED, self::BUDGET_LINE_REMOVED, self::BUDGET_IMPORTED];
+
     protected $table = 'gl_contract_audit';
 
     public const UPDATED_AT = null;
