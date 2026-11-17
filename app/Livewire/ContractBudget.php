@@ -9,6 +9,8 @@ use App\Models\ContractProject;
 use App\Models\GlAccount;
 use App\Models\GlBudgetLine;
 use App\Models\User;
+use App\Services\Contracts\BudgetAccountSuggester;
+use App\Services\Contracts\BudgetSheetReader;
 use App\Services\Contracts\ContractActuals;
 use App\Services\Contracts\ContractBudgets;
 use App\Services\Projects\ProjectAccess;
@@ -16,17 +18,24 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
+use InvalidArgumentException;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
+use Throwable;
 
 /**
  * The budget of each project of one agreement, shown in the agreement's Projects tab: the budget lines of the project,
  * each on one expense account, in the agreement currency, with their total against the project's share. Lines are
  * added and removed while the agreement is open, also after approval: an agreement approved before its budget matched
- * its shares is matched here later.
+ * its shares is matched here later. A whole budget can come from Excel: the file is read, an account is proposed for
+ * each line (BudgetAccountSuggester), and the person checks the preview before every ticked line is added at once.
  */
 class ContractBudget extends Component
 {
+    use WithFileUploads;
+
     #[Locked]
     public int $contractId;
 
@@ -37,6 +46,16 @@ class ContractBudget extends Component
     public string $lineAccount = '';
 
     public string $lineAmount = '';
+
+    public string $importProject = '';
+
+    public ?TemporaryUploadedFile $budgetFile = null;
+
+    /** @var list<array{include: bool, category: string, name: string, account: string, source: string, amount: string, note: string}> the read file, being checked */
+    public array $importRows = [];
+
+    /** @var list<string> the currencies of the amount column the file was read from */
+    public array $importCurrencies = [];
 
     public ?string $notice = null;
 
@@ -74,6 +93,130 @@ class ContractBudget extends Component
         $this->reset('lineName', 'lineAccount', 'lineAmount');
         $this->say(__('contracts.budget_line_added'));
         $this->dispatch('budget-changed');
+    }
+
+    /**
+     * Reads an Excel budget for one project and proposes an account for each line. Nothing is saved yet: the person
+     * checks the preview, changes what is wrong, and then adds the whole budget with importBudget().
+     */
+    public function readBudgetFile(BudgetSheetReader $reader, BudgetAccountSuggester $suggester): void
+    {
+        $contract = $this->changeableContract();
+
+        $data = $this->validate([
+            'importProject' => ['required', Rule::in($contract->projects()->pluck('project_code')->all())],
+            'budgetFile' => ['required', 'file', 'mimes:xlsx', 'max:10240'],
+        ]);
+
+        try {
+            $read = $reader->read($this->budgetFile->getRealPath(), $contract->currency);
+        } catch (InvalidArgumentException $unreadable) {
+            $this->addError('budgetFile', $unreadable->getMessage());
+
+            return;
+        } catch (Throwable) {
+            $this->addError('budgetFile', __('contracts.import_unreadable'));
+
+            return;
+        }
+
+        if ($read === []) {
+            $this->addError('budgetFile', __('contracts.import_empty'));
+
+            return;
+        }
+
+        $accounts = $this->accounts();
+        $otherNames = $this->accounts(otherLanguage: true);
+        $existing = GlBudgetLine::query()->where('project_code', $data['importProject'])->pluck('name')->map(fn ($name): string => mb_strtolower((string) $name))->all();
+        $seen = [];
+        $rows = [];
+
+        foreach ($read as $line) {
+            $name = mb_substr(trim(str_replace('|', '/', $line['name'])), 0, 200);
+            $suggestion = $suggester->suggest($line['type'] ?: $line['category'], $name, $accounts, $otherNames);
+            $taken = in_array(mb_strtolower($name), $existing, true) || in_array(mb_strtolower($name), $seen, true);
+            $seen[] = mb_strtolower($name);
+
+            $rows[] = [
+                'include' => ! $taken,
+                'category' => $line['category'],
+                'name' => $name,
+                'account' => (string) ($suggestion['account'] ?? ''),
+                'source' => (string) ($suggestion['source'] ?? ''),
+                'amount' => $line['budget'],
+                'note' => $taken ? 'duplicate' : '',
+            ];
+        }
+
+        $this->importRows = $rows;
+        $this->importCurrencies = array_values(array_unique(array_column($read, 'currency')));
+        $this->budgetFile = null;
+        $this->problems = [];
+        $this->notice = null;
+    }
+
+    /** Saves the checked preview: every ticked line, all at once. */
+    public function importBudget(ContractBudgets $budgets): void
+    {
+        $contract = $this->changeableContract();
+        abort_if($this->importRows === [], 422);
+
+        $rules = ['importProject' => ['required', Rule::in($contract->projects()->pluck('project_code')->all())]];
+        $accounts = array_map('strval', array_keys($this->accounts()));
+
+        foreach ($this->importRows as $index => $row) {
+            $this->importRows[$index]['name'] = trim((string) $row['name']);
+
+            if (! ($row['include'] ?? false)) {
+                continue;
+            }
+
+            $rules["importRows.$index.name"] = ['required', 'string', 'max:200', 'not_regex:/\|/'];
+            $rules["importRows.$index.account"] = ['required', Rule::in($accounts)];
+            $rules["importRows.$index.amount"] = ['required', 'numeric', 'gt:0', 'max:9999999999999'];
+        }
+
+        $data = $this->validate($rules, [], [
+            'importRows.*.name' => __('contracts.budget_line'),
+            'importRows.*.account' => __('contracts.budget_account'),
+            'importRows.*.amount' => __('contracts.budget_amount'),
+        ]);
+
+        $chosen = array_values(array_filter($this->importRows, fn (array $row): bool => (bool) ($row['include'] ?? false)));
+        if ($chosen === []) {
+            $this->problems = [__('contracts.import_nothing_chosen')];
+
+            return;
+        }
+
+        $names = array_map(fn (array $row): string => mb_strtolower($row['name']), $chosen);
+        $keys = array_map(fn (array $row): string => ContractBudgets::key($data['importProject'], $row['name']), $chosen);
+        $clashes = array_unique(array_merge(
+            array_keys(array_filter(array_count_values($names), fn (int $count): bool => $count > 1)),
+            GlBudgetLine::query()->whereIn('key', $keys)->pluck('name')->map(fn ($name): string => mb_strtolower((string) $name))->all(),
+        ));
+
+        if ($clashes !== []) {
+            $this->problems = [__('contracts.import_duplicates', ['names' => implode('، ', $clashes)])];
+            $this->notice = null;
+
+            return;
+        }
+
+        $count = $budgets->addMany($contract, $data['importProject'], array_map(fn (array $row): array => [
+            'name' => $row['name'], 'account' => (string) $row['account'], 'amount' => (string) $row['amount'],
+        ], $chosen));
+
+        $this->cancelImport();
+        $this->say(trans_choice('contracts.import_done', $count, ['count' => $count]));
+        $this->dispatch('budget-changed');
+    }
+
+    public function cancelImport(): void
+    {
+        $this->reset('importRows', 'importCurrencies', 'budgetFile');
+        $this->resetValidation();
     }
 
     public function removeLine(string $key, ContractBudgets $budgets): void
@@ -118,9 +261,18 @@ class ContractBudget extends Component
             ];
         });
 
+        $chosen = array_filter($this->importRows, fn (array $row): bool => (bool) ($row['include'] ?? false));
+        $importTotal = $sum(array_map(fn (array $row): string => is_numeric($row['amount'] ?? null) ? (string) $row['amount'] : '0', $chosen));
+        $importShare = (string) ($contract->projects->firstWhere('project_code', $this->importProject)?->amount ?? '0');
+
         return view('livewire.contract-budget', [
             'contract' => $contract,
             'sections' => $sections,
+            'importTotal' => $importTotal,
+            'importShare' => $importShare,
+            'importMatches' => bccomp($importTotal, $importShare, 2) === 0,
+            'importOtherCurrency' => array_values(array_diff($this->importCurrencies, [$contract->currency])),
+            'importUnassigned' => count(array_filter($chosen, fn (array $row): bool => ($row['account'] ?? '') === '')),
             'spent' => $spent,
             'accounts' => $this->accounts(),
             'canChange' => Gate::allows('screen', ['contracts', 'edit']) && $contract->isOpen(),
@@ -128,10 +280,10 @@ class ContractBudget extends Component
         ]);
     }
 
-    /** @return array<string, string> the active expense posting accounts, code => "code · name" */
-    private function accounts(): array
+    /** @return array<string, string> the active expense posting accounts, code => "code · name" (in the other language on request) */
+    private function accounts(bool $otherLanguage = false): array
     {
-        $arabic = app()->getLocale() === 'ar';
+        $arabic = (app()->getLocale() === 'ar') !== $otherLanguage;
 
         return GlAccount::query()
             ->where('class', AccountClass::Expenses->value)->where('level', AccountLevel::Posting->value)->where('is_active', true)
