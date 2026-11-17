@@ -21,7 +21,8 @@
         ".github/**",
         "CLAUDE.md"
       ],
-      "selfMerge": true
+      "selfMerge": true,
+      "dbAccess": true
     }
   },
   "departmentProfile": {
@@ -302,7 +303,8 @@
   "blockedCommands": [
     {
       "pattern": "\\bphp(\\.cmd|\\.exe)?\\s+artisan\\s+(migrate|db:|tinker|key:|down\\b|queue:|schedule:)",
-      "why": "database / server command (IT runs these)"
+      "why": "database / server command (IT runs these)",
+      "unlessTestDb": "\\bphp(\\.cmd|\\.exe)?\\s+artisan\\s+(key:|down\\b|queue:|schedule:)"
     },
     {
       "pattern": "\\bcomposer(\\.cmd|\\.bat|\\.phar)?\\s+(require|update|install|remove|global|dump)",
@@ -368,5 +370,14 @@
       "why": "PHP tag"
     }
   ],
-  "strictUsers": true
+  "strictUsers": true,
+  "testDatabase": {
+    "namePattern": "(test|demo|dummy|sandbox)",
+    "hosts": [
+      "127.0.0.1",
+      "localhost",
+      "::1"
+    ],
+    "note": "dbAccess departments may run migrate, db:* and tinker only while .env points at a local database whose name matches namePattern."
+  }
 }
