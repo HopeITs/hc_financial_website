@@ -14,6 +14,7 @@ use App\Models\ContractReport;
 use App\Models\GlCity;
 use App\Models\GlProject;
 use App\Models\User;
+use App\Services\Contracts\ContractBudgets;
 use App\Services\Contracts\ContractException;
 use App\Services\Contracts\ContractFiles;
 use App\Services\Contracts\ContractProjects;
@@ -27,6 +28,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -266,6 +268,10 @@ class ContractPage extends Component
         $this->say(__('contracts.project_created'));
     }
 
+    /** The Budget section changed a line: re-render, so the budget warning and the "needs matching" mark follow. */
+    #[On('budget-changed')]
+    public function refreshBudget(): void {}
+
     public function removeShare(int $id): void
     {
         $this->authorizeChange();
@@ -433,9 +439,10 @@ class ContractPage extends Component
         }
     }
 
-    public function render(Currencies $currencies, ContractWorkflow $workflow): View
+    public function render(Currencies $currencies, ContractWorkflow $workflow, ContractBudgets $budgets): View
     {
         $contract = $this->contract()->load(['donor', 'projects.project', 'instalments', 'reports.instalment']);
+        $budgetWarnings = array_map(fn (array $row): string => __('contracts.budget_mismatch', $row), $budgets->mismatches($contract));
         $today = CarbonImmutable::today();
         $toUsd = fn (string $amount): string => $currencies->toUsd($contract->currency, $amount, (string) $contract->fixed_rate);
 
@@ -473,6 +480,8 @@ class ContractPage extends Component
             'canChangeMoney' => $canChange && ! $contract->isApproved(),
             'canApprove' => $contract->isOpen() && ! $contract->isApproved() && Gate::allows('screen', ['contracts', 'approve']),
             'approvalProblems' => $contract->isApproved() ? [] : $workflow->problemsBeforeApproval($contract),
+            'budgetWarnings' => $budgetWarnings,
+            'needsMatching' => $contract->isApproved() && $contract->isOpen() && $budgetWarnings !== [],
             'canRequestClosing' => $canChange && $contract->isApproved() && ! $contract->isClosingRequested(),
             'nextClosingStep' => $workflow->nextClosingStep($contract),
             'canApproveClosing' => Gate::allows('screen', ['contracts', 'approve']) && $workflow->canApproveClosing($contract, $user),

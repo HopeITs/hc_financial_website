@@ -6,6 +6,7 @@ use App\Enums\ContractRestriction;
 use App\Enums\ContractStatus;
 use App\Models\Contract;
 use App\Models\Donor;
+use App\Services\Contracts\ContractBudgets;
 use App\Services\Ledger\Currencies;
 use App\Services\Projects\ProjectAccess;
 use Illuminate\Contracts\View\View;
@@ -130,7 +131,7 @@ class Contracts extends Component
         $this->redirectRoute('funding.agreements.show', ['contract' => $contract->id], navigate: true);
     }
 
-    public function render(ProjectAccess $access, Currencies $currencies): View
+    public function render(ProjectAccess $access, Currencies $currencies, ContractBudgets $budgets): View
     {
         $user = Auth::user();
 
@@ -150,6 +151,7 @@ class Contracts extends Component
 
         return view('livewire.contracts', [
             'contracts' => $contracts,
+            'needsMatching' => $budgets->mismatchedIds($contracts->filter(fn (Contract $contract): bool => $contract->isApproved() && $contract->isOpen())),
             'usd' => $contracts->mapWithKeys(fn (Contract $contract) => [$contract->id => $currencies->toUsd($contract->currency, (string) $contract->amount, (string) $contract->fixed_rate)]),
             'donors' => Donor::query()->active()->orderBy('code')->get(),
             'filterDonors' => Donor::query()->orderBy('code')->get(),
