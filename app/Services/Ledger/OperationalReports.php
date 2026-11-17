@@ -2,14 +2,13 @@
 
 namespace App\Services\Ledger;
 
-use App\Models\GlBudgetLine;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use stdClass;
 
 /**
  * The operational reports of the Windows program, rebuilt on approved `gl_voucher_lines`: expenses (rexp), cash
- * balances (rcash), all budget lines (rbl), revenue and exchange (rrev), fixed assets (rfixed) and attachments
+ * balances (rcash), revenue and exchange (rrev), fixed assets (rfixed) and attachments
  * (rattach). They share the Windows filters: project, donor, account, line currency and a date range. The legacy
  * sub-project has no ledger counterpart, so it is not a filter here.
  *
@@ -20,7 +19,7 @@ use stdClass;
  */
 class OperationalReports
 {
-    public const REPORTS = ['rexp', 'rcash', 'rbl', 'rrev', 'rfixed', 'rattach'];
+    public const REPORTS = ['rexp', 'rcash', 'rrev', 'rfixed', 'rattach'];
 
     public function __construct(private readonly Currencies $currencies) {}
 
@@ -35,7 +34,6 @@ class OperationalReports
         return match ($report) {
             'rexp' => $this->expenses($filters, $unit),
             'rcash' => $this->cash($filters),
-            'rbl' => $this->budgetLines($filters),
             'rrev' => $this->revenue($filters, $unit),
             'rfixed' => $this->fixedAssets($filters, $unit),
             'rattach' => $this->attachments($filters),
@@ -133,52 +131,6 @@ class OperationalReports
             'columns' => [['key' => 'account', 'type' => 'text'], ['key' => 'currency', 'type' => 'ltr'], ['key' => 'amount', 'type' => 'money'], ['key' => 'usd', 'type' => 'money']],
             'rows' => $rows,
             'totals' => ['usd' => $usd],
-        ];
-    }
-
-    /**
-     * Every budget line with its actual, in the line's own currency, counted as ProjectBalances::budgetVsActual counts it.
-     *
-     * @return Report
-     */
-    private function budgetLines(ReportFilters $filters): array
-    {
-        $actuals = $this->lines($filters)->whereNotNull('l.budget_line_key')
-            ->groupBy('l.budget_line_key', 'l.currency', 'l.donor_currency')
-            ->selectRaw('l.budget_line_key as line_key, l.currency, l.donor_currency, sum(l.debit_usd) - sum(l.credit_usd) as usd, sum(l.debit_orig) - sum(l.credit_orig) as orig, sum(l.debit_donor) - sum(l.credit_donor) as donor')
-            ->get()->groupBy('line_key');
-
-        $lines = GlBudgetLine::query()
-            ->when($filters->project, fn ($query, $value) => $query->where('project_code', $value))
-            ->when($filters->donor, fn ($query, $value) => $query->where('donor', $value))
-            ->when($filters->account, fn ($query, $value) => $query->where('account_code', $value))
-            ->when($filters->currency, fn ($query, $value) => $query->where('currency', $value))
-            ->orderBy('project_code')->orderBy('key')->get();
-
-        $rows = [];
-        foreach ($lines as $line) {
-            $actual = '0.00';
-            foreach ($actuals->get($line->key, []) as $sum) {
-                if ($line->currency === 'USD') {
-                    $actual = bcadd($actual, $this->money($sum->usd), 2);
-                } elseif ($sum->currency === $line->currency) {
-                    $actual = bcadd($actual, $this->money($sum->orig), 2);
-                } elseif ($sum->donor_currency === $line->currency) {
-                    $actual = bcadd($actual, $this->money($sum->donor), 2);
-                }
-            }
-
-            $budget = $this->money($line->budget);
-            $rows[] = [
-                'project' => $line->project_code, 'name' => $line->name, 'account' => $line->account_code, 'currency' => $line->currency,
-                'budget' => $budget, 'actual' => $actual, 'remaining' => bcsub($budget, $actual, 2),
-            ];
-        }
-
-        return [
-            'columns' => [['key' => 'project', 'type' => 'ltr'], ['key' => 'name', 'type' => 'text'], ['key' => 'account', 'type' => 'ltr'], ['key' => 'currency', 'type' => 'ltr'], ['key' => 'budget', 'type' => 'money'], ['key' => 'actual', 'type' => 'money'], ['key' => 'remaining', 'type' => 'money']],
-            'rows' => $rows,
-            'totals' => [],
         ];
     }
 

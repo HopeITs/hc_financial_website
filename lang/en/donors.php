@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'intro' => 'The donor list, kept apart from the chart of accounts. A donor is chosen on its funding contracts and, when needed, on a transaction line.',
+    'intro' => 'The donor list, kept apart from the chart of accounts. A donor is chosen on its agreements and, when needed, on a transaction line.',
     'add' => 'Add donor',
     'edit' => 'Edit',
     'save' => 'Save donor',
@@ -33,9 +33,9 @@ return [
     'filter_inactive' => 'Inactive',
     'filter_all' => 'All',
 
-    'running_contracts' => 'Open contracts',
-    'running_value' => 'Open contracts (USD)',
-    'running_value_note' => '"Open contracts (USD)" is the total value of the donor\'s contracts that are not ended or cancelled, at each contract\'s fixed rate. What has arrived will show once receipts are linked to contracts.',
+    'running_contracts' => 'Open agreements',
+    'running_value' => 'Open agreements (USD)',
+    'running_value_note' => '"Open agreements (USD)" is the total value of the donor\'s agreements that are not ended or cancelled, at each agreement\'s fixed rate. What has arrived will show once receipts are linked to agreements.',
     'empty' => 'No donor matches.',
 
     'types' => [

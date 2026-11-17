@@ -6,7 +6,6 @@ use App\Livewire\ReferenceList;
 use App\Livewire\Users;
 use App\Models\User;
 use App\Support\FinancePassword;
-use App\Support\Navigation;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
@@ -61,7 +60,6 @@ it('shows each reference list with what the old program keeps', function (string
     'employees' => ['employees', ['Maya Haddad', 'Samir', '2024-01-01']],
     'tills' => ['tills', ['Main Cash Till - Aleppo', 'SYP', 'Aleppo']],
     'bonds' => ['bonds', ['HC - Aleppo', 'Family to Family', 'Yearly']],
-    'blcats' => ['blcats', ['Fuel', 'Running Cost']],
     'log' => ['log', ['LOGIN', 'Mai', '2026-03-01']],
 ]);
 
@@ -93,15 +91,11 @@ it('filters the log by date', function () {
 });
 
 it('opens the reference screens for the roles that may see them and not for the others', function () {
-    $this->actingAs(masterUser(RoleId::Accountant))->get('/people/donors')->assertOk();
+    $this->actingAs(masterUser(RoleId::Accountant))->get('/funding/donors')->assertOk();
     $this->actingAs(masterUser(RoleId::Cashier, 'Cass'))->get('/treasury/tills')->assertOk();
-    $this->actingAs(masterUser(RoleId::Cashier, 'Cass2'))->get('/people/donors')->assertForbidden();
-    $this->actingAs(masterUser(RoleId::Employee, 'Emp'))->get('/people/log')->assertForbidden();
+    $this->actingAs(masterUser(RoleId::Cashier, 'Cass2'))->get('/funding/donors')->assertForbidden();
+    $this->actingAs(masterUser(RoleId::Employee, 'Emp'))->get('/settings/log')->assertForbidden();
 });
-
-it('sends the old project windows to the project list', function (string $slug) {
-    $this->actingAs(masterUser(RoleId::HeadOffice))->get('/'.Navigation::path($slug))->assertOk();
-})->with(['projwin', 'budgetlines', 'lifetime']);
 
 it('lists the users with their roles and states', function () {
     $ann = masterUser(RoleId::Accountant, 'Ann');
@@ -165,7 +159,7 @@ it('lets only those who may edit users change anything', function () {
     $target = masterUser(RoleId::Accountant, 'Ann');
     $before = DB::table('user')->where('ID', $target->getKey())->value('Password');
 
-    $this->actingAs($manager)->get('/people/users')->assertOk()->assertDontSee('data-test="add-user"', false);
+    $this->actingAs($manager)->get('/settings/users')->assertOk()->assertDontSee('data-test="add-user"', false);
     Livewire::actingAs($manager)->test(Users::class)->call('selectUser', $target->getKey())->assertOk()
         ->assertDontSee('data-test="save-access"', false)->assertDontSee('data-test="password-form"', false)
         ->set('password', 'long enough one')->set('confirmation', 'long enough one')->call('save')->assertForbidden();
@@ -174,7 +168,7 @@ it('lets only those who may edit users change anything', function () {
     Livewire::actingAs($manager)->test(Users::class)->call('confirmDelete', $target->getKey())->assertForbidden();
 
     expect(DB::table('user')->where('ID', $target->getKey())->value('Password'))->toBe($before);
-    $this->actingAs(masterUser(RoleId::Accountant, 'Ann2'))->get('/people/users')->assertForbidden();
+    $this->actingAs(masterUser(RoleId::Accountant, 'Ann2'))->get('/settings/users')->assertForbidden();
 });
 
 it('filters the list by role and state and shows the roles tab', function () {
@@ -280,7 +274,7 @@ it('never writes to a legacy table from a reference screen', function () {
     $counts = fn () => collect(['donor', 'city', 'tilltypes', 'cashaccount', 'employee', 'fiscalbond'])->map(fn (string $table) => $legacy->table($table)->count())->all();
     $before = $counts();
 
-    foreach (['donors', 'cities', 'currency', 'denoms', 'employees', 'tills', 'bonds', 'blcats', 'log'] as $slug) {
+    foreach (['donors', 'cities', 'currency', 'denoms', 'employees', 'tills', 'bonds', 'log'] as $slug) {
         Livewire::actingAs(masterUser(RoleId::HeadOffice, 'U'.$slug))->test(ReferenceList::class, ['screen' => $slug])->set('search', 'x');
     }
 

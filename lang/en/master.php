@@ -16,7 +16,6 @@ return [
         'employees' => 'Read only. People of the old program; salaries are on their own screen and only for the finance roles.',
         'tills' => 'Read only. The cash boxes of the old program; in the ledger they are cash accounts, edited in the chart.',
         'bonds' => 'Read only. The fiscal bonds of the old program.',
-        'blcats' => 'Read only. The categories of budget lines of the old program.',
         'log' => 'Read only. What was done in the old program and the web app: sign-ins, and password changes.',
         'users' => 'Who can sign in, their roles and what they may do. The password, primary role and state are kept in the old program.',
     ],

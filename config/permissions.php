@@ -25,8 +25,7 @@ $everyScreen = array_merge(...array_values((require __DIR__.'/navigation.php')['
 
 $screens = static fn (array $slugs, array $actions): array => array_fill_keys($slugs, $actions);
 
-$reports = ['rexp', 'rcash', 'rbl', 'rdonor', 'rrev', 'rfixed', 'rattach', 'tb', 'statement', 'statements', 'projects', 'recon', 'mapprovals', 'uncomp', 'xreserve', 'advances', 'loans'];
-$projectScreens = ['projwin', 'budgetlines', 'blcats', 'lifetime', 'programs'];
+$reports = ['rexp', 'rcash', 'rdonor', 'rrev', 'rfixed', 'rattach', 'tb', 'statement', 'statements', 'recon', 'mapprovals', 'uncomp', 'xreserve', 'advances', 'loans'];
 $treasury = ['tills', 'treasury', 'alloc', 'cities', 'currency', 'denoms'];
 $monthEnd = ['monthend'];
 $entries = ['single', 'multi', 'multiatt', 'payments', 'vouchers', 'bonds'];
@@ -41,24 +40,21 @@ return [
         RoleId::HeadOffice->value => $screens(['home', 'requests', 'project-money', ...$everyScreen], $all),
 
         RoleId::FinancialManager->value => array_merge(
-            $screens(['home', 'chart', 'project-money', ...$projectScreens, ...$treasury, ...$reports, 'employees', 'salaries', 'users', 'log', 'auditlog', 'single', 'multi', 'multiatt', 'payments', 'bonds'], $view),
+            $screens(['home', 'chart', 'project-money', ...$treasury, ...$reports, 'employees', 'salaries', 'users', 'log', 'auditlog', 'single', 'multi', 'multiatt', 'payments', 'bonds'], $view),
             $screens(['vouchers', 'approval', 'requests', 'alloc'], ['view', 'approve']),
             $screens(['donors'], $prepare),
             $screens(['contracts'], ['view', 'create', 'edit', 'approve']),
-            $screens(['programs'], ['view', 'create']),
             $screens(['currency'], $prepare),
             $screens($monthEnd, ['view', 'edit', 'approve']),
-            $screens(['projects'], $prepare),
-            $screens(['decisions', 'mapping', 'rules'], $view),
         ),
 
         RoleId::Accountant->value => array_merge(
-            $screens(['home', 'project-money', ...$projectScreens, ...$reports, 'tills', 'treasury', 'cities', 'currency', 'denoms', 'donors', 'employees', 'requests'], $view),
-            $screens(['chart', 'projects', ...$entries, 'alloc', 'salaries', 'contracts'], $prepare),
+            $screens(['home', 'project-money', ...$reports, 'tills', 'treasury', 'cities', 'currency', 'denoms', 'donors', 'employees', 'requests'], $view),
+            $screens(['chart', ...$entries, 'alloc', 'salaries', 'contracts'], $prepare),
         ),
 
         RoleId::ProjectManager->value => array_merge(
-            $screens(['home', 'projwin', 'budgetlines', 'programs', 'projects', 'rexp', 'rbl', 'advances', 'loans', 'donors', 'contracts'], $view),
+            $screens(['home', 'rexp', 'advances', 'loans', 'donors', 'contracts'], $view),
             $screens(['requests'], $prepare),
         ),
 
@@ -72,12 +68,12 @@ return [
         RoleId::Donor->value => $screens(['home'], $view),
 
         RoleId::GeneralManager->value => array_merge(
-            $screens(['home', 'chart', 'project-money', ...$projectScreens, ...$treasury, ...$reports, 'donors'], $view),
+            $screens(['home', 'chart', 'project-money', ...$treasury, ...$reports, 'donors'], $view),
             $screens(['requests', 'vouchers', 'approval', 'contracts'], ['view', 'approve']),
         ),
 
         RoleId::ProgramManager->value => array_merge(
-            $screens(['home', 'project-money', ...$projectScreens, 'donors', 'contracts'], $view),
+            $screens(['home', 'project-money', 'donors', 'contracts'], $view),
             $screens(['requests'], ['view', 'approve']),
         ),
 

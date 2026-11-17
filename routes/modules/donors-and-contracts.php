@@ -8,38 +8,37 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Donors and funding contracts (finance design of 2026-11-16)
+| Funding: donors and agreements (finance design of 2026-11-16)
 |--------------------------------------------------------------------------
 |
-| Module routes load after routes/web.php, so the Donors route below takes the
-| place of the placeholder page that web.php registers for the `donors` screen
-| (same address and name). The contracts screen `contracts` still has to be
-| added to config/navigation.php and config/permissions.php by IT; until then
-| only the super user passes `access:contracts`.
+| Module routes load after routes/web.php, so the routes below take the place
+| of the placeholder pages that web.php registers for the `donors` and
+| `contracts` screens (same address and name as config/navigation.php).
+| The `contracts` screen is shown as "Agreements".
 |
 */
 
 Route::middleware('auth')->group(function () {
-    Route::get('people/donors', Donors::class)
+    Route::get('funding/donors', Donors::class)
         ->defaults('screen', 'donors')
         ->middleware('access:donors')
-        ->name('people.donors');
+        ->name('funding.donors');
 
-    Route::get('projects/contracts', Contracts::class)
+    Route::get('funding/agreements', Contracts::class)
         ->defaults('screen', 'contracts')
         ->middleware('access:contracts')
-        ->name('projects.contracts');
+        ->name('funding.agreements');
 
-    Route::get('projects/contracts/{contract}', ContractPage::class)
+    Route::get('funding/agreements/{contract}', ContractPage::class)
         ->whereNumber('contract')
         ->defaults('screen', 'contracts')
         ->middleware('access:contracts')
-        ->name('projects.contracts.show');
+        ->name('funding.agreements.show');
 
-    Route::get('projects/contracts/{contract}/files/{kind}/{report?}', ContractFileController::class)
+    Route::get('funding/agreements/{contract}/files/{kind}/{report?}', ContractFileController::class)
         ->whereNumber('contract')
         ->whereIn('kind', ['signed', 'closing', 'report'])
         ->whereNumber('report')
         ->middleware('access:contracts')
-        ->name('projects.contracts.file');
+        ->name('funding.agreements.file');
 });

@@ -84,21 +84,6 @@ it('shows cash balances per account and currency up to a date', function () {
         ->and($report->run('rcash')['rows'][0]['amount'])->toBe('460.00');
 });
 
-it('lists every budget line with its actual and what is left', function () {
-    $line = GlBudgetLine::query()->where('project_code', 'SZ')->where('currency', 'USD')->firstOrFail();
-    opFund('SZ', 500);
-
-    opVoucher([
-        new LineDraft($line->account_code, 'USD', debit: 30, projectCode: $line->project_code, budgetLineKey: $line->key, center: 'Aleppo'),
-        new LineDraft('1111', 'USD', credit: 30, projectCode: $line->project_code, fundSource: FundSource::DonorGrant),
-    ]);
-
-    $row = collect(app(OperationalReports::class)->run('rbl', ReportFilters::from(['project' => $line->project_code]))['rows'])->firstWhere('name', $line->name);
-
-    expect($row['actual'])->toBe('30.00')
-        ->and($row['remaining'])->toBe(bcsub(number_format((float) $line->budget, 2, '.', ''), '30.00', 2));
-});
-
 it('reports income lines as revenue', function () {
     opFund('F2F', 500);
     opFund('SZ', 70);

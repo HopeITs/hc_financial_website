@@ -171,7 +171,7 @@ it('shows a person only their own notifications, opens one and marks them read',
 });
 
 it('puts the bell in the top bar, with a link to every notification', function () {
-    $this->actingAs(ntUser(RoleId::HeadOffice, 'Ho'))->get('/bridge/decisions')->assertOk()
+    $this->actingAs(ntUser(RoleId::HeadOffice, 'Ho'))->get('/notifications')->assertOk()
         ->assertSee('data-test="notification-bell"', false)
         ->assertSee('data-test="bell-view-all"', false)
         ->assertSee(route('notifications'), false);

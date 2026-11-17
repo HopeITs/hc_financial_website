@@ -2,7 +2,7 @@
     <x-ui.page-header :title="$contract->title" :subtitle="__('contracts.page_subtitle', ['number' => $contract->number, 'donor' => $contract->donor->localizedName()])">
         <x-slot:actions>
             <x-contract-status :contract="$contract" />
-            <x-ui.button :href="route('projects.contracts')" wire:navigate icon="arrow-uturn-left">{{ __('contracts.back') }}</x-ui.button>
+            <x-ui.button :href="route('funding.agreements')" wire:navigate icon="arrow-uturn-left">{{ __('contracts.back') }}</x-ui.button>
             @if ($canApprove)
                 <x-ui.button tone="primary" icon="check" wire:click="approve" wire:confirm="{{ __('contracts.approve_confirm') }}" data-test="approve-contract">{{ __('contracts.approve') }}</x-ui.button>
             @endif
@@ -105,7 +105,7 @@
                     <div><dt class="text-secondary-medium dark:text-ink-muted">{{ __('contracts.restriction') }}</dt><dd>{{ $contract->restriction->label() }}@if ($contract->is_yearly_general) · {{ __('contracts.yearly_general_short') }}@endif</dd></div>
                     <div><dt class="text-secondary-medium dark:text-ink-muted">{{ __('contracts.signed_file') }}</dt><dd>
                         @if ($contract->signed_file_path)
-                            <a href="{{ route('projects.contracts.file', ['contract' => $contract->id, 'kind' => 'signed']) }}" class="underline" data-test="signed-file-link">{{ $contract->signed_file_name }}</a>
+                            <a href="{{ route('funding.agreements.file', ['contract' => $contract->id, 'kind' => 'signed']) }}" class="underline" data-test="signed-file-link">{{ $contract->signed_file_name }}</a>
                         @else
                             —
                         @endif
@@ -316,7 +316,7 @@
                                 </td>
                                 <td>
                                     @if ($report->file_path)
-                                        <a href="{{ route('projects.contracts.file', ['contract' => $contract->id, 'kind' => 'report', 'report' => $report->id]) }}" class="underline">{{ $report->file_name }}</a>
+                                        <a href="{{ route('funding.agreements.file', ['contract' => $contract->id, 'kind' => 'report', 'report' => $report->id]) }}" class="underline">{{ $report->file_name }}</a>
                                     @else
                                         —
                                     @endif
@@ -375,7 +375,7 @@
                         <div><dt class="text-secondary-medium dark:text-ink-muted">{{ __('contracts.closing_outcome') }}</dt><dd>{{ $contract->closing_outcome?->label() }}</dd></div>
                         <div><dt class="text-secondary-medium dark:text-ink-muted">{{ __('contracts.closing_file') }}</dt><dd>
                             @if ($contract->closing_file_path)
-                                <a href="{{ route('projects.contracts.file', ['contract' => $contract->id, 'kind' => 'closing']) }}" class="underline">{{ $contract->closing_file_name }}</a>
+                                <a href="{{ route('funding.agreements.file', ['contract' => $contract->id, 'kind' => 'closing']) }}" class="underline">{{ $contract->closing_file_name }}</a>
                             @endif
                         </dd></div>
                         <div class="sm:col-span-2"><dt class="text-secondary-medium dark:text-ink-muted">{{ __('contracts.closing_note') }}</dt><dd class="whitespace-pre-line">{{ $contract->closing_note }}</dd></div>

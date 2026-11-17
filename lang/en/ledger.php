@@ -492,7 +492,6 @@ return [
         'intro' => [
             'rexp' => 'Every expense line of approved vouchers, with its project, budget line and donor.',
             'rcash' => 'The balance of each cash account in its own currency, with the USD value beside it, up to a date.',
-            'rbl' => 'Every budget line against what was spent, in the line\'s own currency.',
             'rrev' => 'Income lines, and the movements of transfer vouchers on cash accounts (exchange).',
             'rfixed' => 'The balance of property and equipment accounts (cost less accumulated depreciation).',
             'rattach' => 'The files attached to approved vouchers.',
@@ -580,7 +579,7 @@ return [
         'title' => 'Donor report – :project',
         'no_project' => 'There is no project yet.',
         'donor' => 'Donor',
-        'contract' => 'Contract',
+        'contract' => 'Agreement',
         'period' => 'Funding period',
         'after_end' => 'The funding period has ended.',
         'received' => 'Received from the donor',

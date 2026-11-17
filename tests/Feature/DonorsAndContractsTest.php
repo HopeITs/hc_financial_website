@@ -75,7 +75,7 @@ function dcContract(bool $complete = true): Contract
 it('opens the donors screen in place of the placeholder and lists the donors', function () {
     dcDonor();
 
-    $this->actingAs(dcUser(RoleId::Accountant, 'Ann'))->get('/people/donors')
+    $this->actingAs(dcUser(RoleId::Accountant, 'Ann'))->get('/funding/donors')
         ->assertOk()
         ->assertSee('Caritas Poland')
         ->assertSee('CARPL');
@@ -128,12 +128,13 @@ it('lets the accountant read the donors but not add or edit one', function () {
 });
 
 it('keeps the cashier out of the donors screen', function () {
-    $this->actingAs(dcUser(RoleId::Cashier, 'Cara'))->get('/people/donors')->assertForbidden();
+    $this->actingAs(dcUser(RoleId::Cashier, 'Cara'))->get('/funding/donors')->assertForbidden();
 });
 
-it('shows funding contracts in the projects menu of the financial manager but not of the cashier', function () {
-    expect(__('navigation.screens.contracts'))->toBe('Funding contracts')
-        ->and(Navigation::visibleGroups(dcUser(RoleId::FinancialManager, 'Fadi'))['projects'])->toContain('contracts')
+it('shows agreements in the funding menu of the financial manager but not of the cashier', function () {
+    expect(__('navigation.screens.contracts'))->toBe('Agreements')
+        ->and(__('navigation.groups.funding'))->toBe('Funding')
+        ->and(Navigation::visibleGroups(dcUser(RoleId::FinancialManager, 'Fadi'))['funding'])->toBe(['donors', 'contracts', 'rdonor'])
         ->and(collect(Navigation::visibleGroups(dcUser(RoleId::Cashier, 'Cara')))->flatten())->not->toContain('contracts');
 });
 
@@ -176,7 +177,7 @@ it('refuses approval until the project shares and the instalments add up to the 
 
     Livewire::actingAs(dcUser(RoleId::FinancialManager, 'Fadi'))->test(ContractPage::class, ['contract' => $contract])
         ->call('approve')
-        ->assertSee('The project shares add up to 80000.00, not to the contract amount 120000.00.')
+        ->assertSee('The project shares add up to 80000.00, not to the agreement amount 120000.00.')
         ->assertSee('Add at least one instalment.');
 
     expect($contract->refresh()->isApproved())->toBeFalse();
@@ -188,10 +189,10 @@ it('lets the financial manager approve a complete contract, and then fixes its s
 
     Livewire::actingAs($manager)->test(ContractPage::class, ['contract' => $contract])
         ->call('approve')
-        ->assertSee('Contract approved.')
+        ->assertSee('Agreement approved.')
         ->set('tab', 'projects')
         ->call('removeShare', $contract->projects()->first()->id)
-        ->assertSee('The contract is approved: its project shares and instalments are fixed.');
+        ->assertSee('The agreement is approved: its project shares and instalments are fixed.');
 
     $contract->refresh();
 
@@ -308,11 +309,11 @@ it('downloads the signed contract and keeps the cashier out', function () {
     $contract->update(['signed_file_path' => 'contract-files/'.$contract->id.'/signed.pdf', 'signed_file_name' => 'contract.pdf']);
 
     $this->actingAs(dcUser(RoleId::Accountant, 'Ann'))
-        ->get(route('projects.contracts.file', ['contract' => $contract->id, 'kind' => 'signed']))
+        ->get(route('funding.agreements.file', ['contract' => $contract->id, 'kind' => 'signed']))
         ->assertOk()
         ->assertDownload('contract.pdf');
 
     $this->actingAs(dcUser(RoleId::Cashier, 'Cara'))
-        ->get(route('projects.contracts.file', ['contract' => $contract->id, 'kind' => 'signed']))
+        ->get(route('funding.agreements.file', ['contract' => $contract->id, 'kind' => 'signed']))
         ->assertForbidden();
 });

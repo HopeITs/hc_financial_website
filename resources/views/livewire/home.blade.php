@@ -40,7 +40,7 @@
                         @forelse ($projects as $project)
                             <tr wire:key="project-{{ $project->accountId }}">
                                 <td class="font-medium text-secondary-dark dark:text-ink">
-                                    <a href="{{ route('projects.show', $project->accountId) }}" wire:navigate class="hover:underline">{{ $project->name }}</a>
+                                    {{ $project->name }}
                                 </td>
                                 <td class="text-secondary-medium dark:text-ink-muted">{{ $project->cityName }}</td>
                                 <td class="fin-num">

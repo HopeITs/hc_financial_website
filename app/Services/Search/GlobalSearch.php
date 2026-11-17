@@ -87,7 +87,7 @@ class GlobalSearch
     /** @return list<array{label: string, detail: string|null, url: string}> */
     private function projects(User $user, string $term): array
     {
-        if (! $user->canOnScreen('projects')) {
+        if (! $user->canOnScreen('contracts')) {
             return [];
         }
 
@@ -103,9 +103,7 @@ class GlobalSearch
             ->map(fn (GlProject $project): array => [
                 'label' => $project->code.' · '.$project->name,
                 'detail' => $project->donor,
-                'url' => $project->legacy_account_id !== null
-                    ? route('projects.show', ['account' => $project->legacy_account_id])
-                    : route(Navigation::routeName('projects')),
+                'url' => route(Navigation::routeName('contracts')),
             ])->all());
     }
 

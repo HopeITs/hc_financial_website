@@ -50,8 +50,8 @@ it('opens for the Financial Manager and Head Office, shows the rows with links, 
     $head = User::query()->findOrFail(createFinanceUser('hana', 'secret pass', RoleId::HeadOffice->name, RoleId::HeadOffice->value));
     $accountant = User::query()->findOrFail(createFinanceUser('ann', 'secret pass', RoleId::Accountant->name, RoleId::Accountant->value));
 
-    $this->actingAs($fm)->get('/people/audit-log')->assertOk();
-    $this->actingAs($accountant)->get('/people/audit-log')->assertForbidden();
+    $this->actingAs($fm)->get('/settings/audit-log')->assertOk();
+    $this->actingAs($accountant)->get('/settings/audit-log')->assertForbidden();
 
     Livewire::actingAs($head)->test(AuditLog::class)
         ->assertSee('CRV-2026-0001')

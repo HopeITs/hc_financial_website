@@ -167,7 +167,7 @@ it('takes LIKE wildcards literally', function () {
 it('puts the search window in the top bar', function () {
     $head = wtUser(RoleId::HeadOffice, 'Ho');
 
-    $this->actingAs($head)->get('/bridge/decisions')->assertOk()->assertSee('data-test="search-button"', false)->assertSee('data-test="search-dialog"', false);
+    $this->actingAs($head)->get('/notifications')->assertOk()->assertSee('data-test="search-button"', false)->assertSee('data-test="search-dialog"', false);
 
     Livewire::actingAs($head)->test(SearchDialog::class)->set('term', 'trial')->assertSee(__('navigation.screens.tb'))
         ->set('term', 'zzzzqq')->assertSeeHtml('data-test="search-empty"');
