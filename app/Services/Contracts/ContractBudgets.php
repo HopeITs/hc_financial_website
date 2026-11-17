@@ -42,6 +42,22 @@ class ContractBudgets
     }
 
     /**
+     * A whole budget at once (an import from Excel, checked by the person): all lines are saved, or none.
+     *
+     * @param  list<array{name: string, account: string, amount: string}>  $lines
+     */
+    public function addMany(Contract $contract, string $projectCode, array $lines): int
+    {
+        return DB::transaction(function () use ($contract, $projectCode, $lines): int {
+            foreach ($lines as $line) {
+                $this->add($contract, $projectCode, $line['name'], $line['account'], $line['amount']);
+            }
+
+            return count($lines);
+        });
+    }
+
+    /**
      * The projects of an agreement whose budget lines do not add up to their share. Approval is not blocked by it
      * (finance decision of 2026-11-17): the agreement is approved with a "needs budget matching" mark instead.
      *

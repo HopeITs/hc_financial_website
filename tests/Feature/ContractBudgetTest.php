@@ -15,8 +15,11 @@ use App\Models\User;
 use App\Models\WebUserRole;
 use App\Services\Contracts\ContractActuals;
 use App\Services\Contracts\ContractBudgets;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
+use OpenSpout\Common\Entity\Row;
+use OpenSpout\Writer\XLSX\Writer;
 
 beforeEach(function () {
     createFinanceSchema();
@@ -78,6 +81,86 @@ function cbVoucher(string $id, string $date, string $status, array $lines): void
         ]);
     }
 }
+
+/** A budget workbook with the given rows under the header row, as an uploaded file. */
+function cbSheet(array $rows, array $headers = ['Budget Category', 'Budget Line Type', 'Budget Line Name', 'Total/EUR']): UploadedFile
+{
+    $path = tempnam(sys_get_temp_dir(), 'cbud').'.xlsx';
+    $writer = new Writer;
+    $writer->openToFile($path);
+    $writer->addRow(Row::fromValues($headers));
+
+    foreach ($rows as $row) {
+        $writer->addRow(Row::fromValues($row));
+    }
+
+    $writer->close();
+
+    return UploadedFile::fake()->createWithContent('budget.xlsx', (string) file_get_contents($path));
+}
+
+it('reads an Excel budget, proposes an account for each line and adds the checked budget at once', function () {
+    $contract = cbAgreement();
+    GlBudgetLine::query()->create(['key' => 'OUT|Books', 'project_code' => 'OUT', 'name' => 'Books', 'account_code' => '5201', 'budget' => 1, 'currency' => 'USD']);
+    app(ContractBudgets::class)->add($contract, 'EDU', 'Old line', '5101', '100');
+
+    $page = Livewire::actingAs(cbUser(RoleId::Accountant, 'Ann'))->test(ContractBudget::class, ['contractId' => $contract->id])
+        ->set('importProject', 'EDU')
+        ->set('budgetFile', cbSheet([
+            ['Personnel', 'Salaries', 'Teachers', 6000],
+            ['Operations', 'Rent', 'Office rent', 2400],
+            ['Activities', '', 'Books', 500],
+            ['Activities', 'Something', 'Mystery item', 1000],
+            ['Operations', '', 'Old line', 100],
+            ['Total', '', 'Total', 10000],
+        ]))
+        ->call('readBudgetFile')
+        ->assertHasNoErrors()
+        ->assertSeeHtml('data-test="budget-import-preview"')
+        ->assertSeeHtml('data-test="import-unassigned"');
+
+    expect(collect($page->get('importRows'))->map(fn (array $row) => [$row['name'], $row['account'], $row['source'], $row['amount'], $row['include']])->all())->toBe([
+        ['Teachers', '5101', 'rule', '6000.00', true],
+        ['Office rent', '5201', 'chart', '2400.00', true],
+        ['Books', '5201', 'learned', '500.00', true],
+        ['Mystery item', '', '', '1000.00', true],
+        ['Old line', '5101', 'learned', '100.00', false],
+    ]);
+
+    $page->call('importBudget')
+        ->assertHasErrors(['importRows.3.account' => 'required']);
+
+    expect(GlBudgetLine::query()->where('project_code', 'EDU')->count())->toBe(1);
+
+    $page->set('importRows.3.account', '5201')
+        ->call('importBudget')
+        ->assertHasNoErrors()
+        ->assertSee('4 budget lines added.')
+        ->assertSet('importRows', [])
+        ->assertDispatched('budget-changed');
+
+    expect(GlBudgetLine::query()->where('project_code', 'EDU')->orderBy('name')->pluck('account_code', 'name')->all())->toBe([
+        'Books' => '5201', 'Mystery item' => '5201', 'Office rent' => '5201', 'Old line' => '5101', 'Teachers' => '5101',
+    ])->and(GlBudgetLine::query()->findOrFail('EDU|Teachers')->currency)->toBe('EUR');
+});
+
+it('refuses a file without a budget table, and adds nothing when a ticked name is already taken', function () {
+    $contract = cbAgreement();
+
+    Livewire::actingAs(cbUser(RoleId::Accountant, 'Ann'))->test(ContractBudget::class, ['contractId' => $contract->id])
+        ->set('importProject', 'EDU')
+        ->set('budgetFile', cbSheet([['a', 'b']], ['Foo', 'Bar']))
+        ->call('readBudgetFile')
+        ->assertHasErrors(['budgetFile'])
+        ->assertSet('importRows', [])
+        ->set('budgetFile', cbSheet([['Personnel', 'Salaries', 'Teachers', 6000], ['Personnel', 'Salaries', 'Nurses', 4000]]))
+        ->call('readBudgetFile')
+        ->set('importRows.1.name', 'Teachers')
+        ->call('importBudget')
+        ->assertSee('These names are already in the project\'s budget or appear twice: teachers.');
+
+    expect(GlBudgetLine::query()->count())->toBe(0);
+});
 
 it('shows what was spent on each budget line and received for each project, from approved vouchers only', function () {
     $contract = cbAgreement();
