@@ -92,7 +92,7 @@
                         <td dir="ltr">{{ $contract->starts_on->format('d/m/Y') }} – {{ $contract->ends_on->format('d/m/Y') }}</td>
                         <td class="fin-num"><x-money :amount="$contract->amount" :currency="$contract->currency" /></td>
                         <td class="fin-num"><x-money :amount="$usd[$contract->id]" /></td>
-                        <td><x-contract-status :contract="$contract" /></td>
+                        <td><x-contract-status :contract="$contract" :needs-matching="in_array($contract->id, $needsMatching, true)" /></td>
                     </tr>
                 @empty
                     <tr><td colspan="7" class="fin-empty">{{ __('contracts.empty') }}</td></tr>

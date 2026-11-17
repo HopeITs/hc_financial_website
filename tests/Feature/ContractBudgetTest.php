@@ -2,7 +2,10 @@
 
 use App\Enums\RoleId;
 use App\Livewire\ContractBudget;
+use App\Livewire\ContractPage;
+use App\Livewire\Contracts;
 use App\Models\Contract;
+use App\Models\ContractInstalment;
 use App\Models\ContractProject;
 use App\Models\Donor;
 use App\Models\GlAccount;
@@ -106,7 +109,7 @@ it('removes an unused budget line but keeps one that is already used', function 
     expect(GlBudgetLine::query()->find('EDU|Teachers'))->not->toBeNull();
 });
 
-it('fixes the budget once the agreement is approved, and lets only the preparing roles change it', function () {
+it('lets only the preparing roles change the budget', function () {
     $contract = cbAgreement();
 
     Livewire::actingAs(cbUser(RoleId::GeneralManager, 'Gina'))->test(ContractBudget::class, ['contractId' => $contract->id])
@@ -115,13 +118,39 @@ it('fixes the budget once the agreement is approved, and lets only the preparing
         ->call('addLine')
         ->assertForbidden();
 
-    $contract->update(['approved_by' => 1, 'approved_at' => now(), 'status' => 'running']);
-
-    Livewire::actingAs(cbUser(RoleId::FinancialManager, 'Fadi'))->test(ContractBudget::class, ['contractId' => $contract->id])
-        ->assertDontSeeHtml('data-test="budget-form"')
-        ->set('lineProject', 'EDU')->set('lineName', 'Late')->set('lineAccount', '5101')->set('lineAmount', '1')
-        ->call('addLine')
-        ->assertSee('The agreement is approved: its budget is fixed.');
-
     expect(GlBudgetLine::query()->count())->toBe(0);
+});
+
+it('warns before approving an unmatched budget, approves anyway, and marks the agreement until the budget is matched', function () {
+    $contract = cbAgreement();
+    ContractInstalment::query()->create(['contract_id' => $contract->id, 'number' => 1, 'due_on' => '2026-03-01', 'amount' => '10000', 'is_conditional' => false]);
+    app(ContractBudgets::class)->add($contract, 'EDU', 'Teachers', '5101', '6000');
+    $manager = cbUser(RoleId::FinancialManager, 'Fadi');
+
+    expect(app(ContractBudgets::class)->mismatches($contract))->toBe([['project' => 'EDU', 'total' => '6000.00', 'share' => '10000.00']]);
+
+    $page = Livewire::actingAs($manager)->test(ContractPage::class, ['contract' => $contract])
+        ->assertSeeHtml('data-test="budget-warning"')
+        ->assertSee('The budget of EDU adds up to 6000.00, not to its share 10000.00.')
+        ->assertSee(__('contracts.approve_confirm_budget'))
+        ->call('approve')
+        ->assertSee('Agreement approved.')
+        ->assertSeeHtml('data-test="needs-matching"');
+
+    expect($contract->refresh()->isApproved())->toBeTrue()
+        ->and(app(ContractBudgets::class)->mismatchedIds(collect([$contract])))->toBe([$contract->id]);
+
+    Livewire::actingAs($manager)->test(Contracts::class)->assertSeeHtml('data-test="needs-matching"');
+
+    Livewire::actingAs($manager)->test(ContractBudget::class, ['contractId' => $contract->id])
+        ->assertSeeHtml('data-test="budget-needs-matching"')
+        ->set('lineProject', 'EDU')->set('lineName', 'Rent')->set('lineAccount', '5201')->set('lineAmount', '4000')
+        ->call('addLine')
+        ->assertHasNoErrors()
+        ->assertDispatched('budget-changed')
+        ->assertDontSeeHtml('data-test="budget-needs-matching"');
+
+    $page->call('refreshBudget')->assertDontSeeHtml('data-test="needs-matching"')->assertDontSeeHtml('data-test="budget-warning"');
+
+    expect(app(ContractBudgets::class)->mismatchedIds(collect([$contract->refresh()])))->toBe([]);
 });

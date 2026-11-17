@@ -21,7 +21,8 @@ use Livewire\Component;
 /**
  * The budget of each project of one agreement, shown in the agreement's Projects tab: the budget lines of the project,
  * each on one expense account, in the agreement currency, with their total against the project's share. Lines are
- * added and removed while the agreement is open and not yet approved, like its shares.
+ * added and removed while the agreement is open, also after approval: an agreement approved before its budget matched
+ * its shares is matched here later.
  */
 class ContractBudget extends Component
 {
@@ -52,10 +53,6 @@ class ContractBudget extends Component
     public function addLine(ContractBudgets $budgets): void
     {
         $contract = $this->changeableContract();
-        if ($contract === null) {
-            return;
-        }
-
         $this->lineName = trim($this->lineName);
 
         $data = $this->validate([
@@ -75,15 +72,12 @@ class ContractBudget extends Component
 
         $this->reset('lineName', 'lineAccount', 'lineAmount');
         $this->say(__('contracts.budget_line_added'));
+        $this->dispatch('budget-changed');
     }
 
     public function removeLine(string $key, ContractBudgets $budgets): void
     {
         $contract = $this->changeableContract();
-        if ($contract === null) {
-            return;
-        }
-
         $line = GlBudgetLine::query()->whereKey($key)->whereIn('project_code', $contract->projects()->pluck('project_code'))->firstOrFail();
 
         if ($budgets->isUsed($line)) {
@@ -95,6 +89,7 @@ class ContractBudget extends Component
 
         $line->delete();
         $this->say(__('contracts.budget_line_removed'));
+        $this->dispatch('budget-changed');
     }
 
     public function render(): View
@@ -119,7 +114,8 @@ class ContractBudget extends Component
             'contract' => $contract,
             'sections' => $sections,
             'accounts' => $this->accounts(),
-            'canChange' => Gate::allows('screen', ['contracts', 'edit']) && $contract->isOpen() && ! $contract->isApproved(),
+            'canChange' => Gate::allows('screen', ['contracts', 'edit']) && $contract->isOpen(),
+            'needsMatching' => $contract->isApproved() && $sections->contains(fn (array $section): bool => ! $section['balanced']),
         ]);
     }
 
@@ -135,19 +131,12 @@ class ContractBudget extends Component
             ->all();
     }
 
-    /** The agreement when its budget may change now; otherwise says why and returns null. */
-    private function changeableContract(): ?Contract
+    /** The agreement, while its budget may change: by the preparing roles, until the agreement is ended or cancelled. */
+    private function changeableContract(): Contract
     {
         Gate::authorize('screen', ['contracts', 'edit']);
         $contract = $this->contract();
         abort_unless($contract->isOpen(), 403);
-
-        if ($contract->isApproved()) {
-            $this->problems = [__('contracts.budget_locked')];
-            $this->notice = null;
-
-            return null;
-        }
 
         return $contract;
     }

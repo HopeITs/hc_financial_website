@@ -1,10 +1,10 @@
 <div class="flex flex-col gap-6 px-4 pb-10 lg:px-8">
     <x-ui.page-header :title="$contract->title" :subtitle="__('contracts.page_subtitle', ['number' => $contract->number, 'donor' => $contract->donor->localizedName()])">
         <x-slot:actions>
-            <x-contract-status :contract="$contract" />
+            <x-contract-status :contract="$contract" :needs-matching="$needsMatching" />
             <x-ui.button :href="route('funding.agreements')" wire:navigate icon="arrow-uturn-left">{{ __('contracts.back') }}</x-ui.button>
             @if ($canApprove)
-                <x-ui.button tone="primary" icon="check" wire:click="approve" wire:confirm="{{ __('contracts.approve_confirm') }}" data-test="approve-contract">{{ __('contracts.approve') }}</x-ui.button>
+                <x-ui.button tone="primary" icon="check" wire:click="approve" wire:confirm="{{ $budgetWarnings === [] ? __('contracts.approve_confirm') : __('contracts.approve_confirm_budget') }}" data-test="approve-contract">{{ __('contracts.approve') }}</x-ui.button>
             @endif
         </x-slot:actions>
     </x-ui.page-header>
@@ -29,6 +29,17 @@
             <ul class="list-disc ps-5">
                 @foreach ($approvalProblems as $problem)
                     <li>{{ $problem }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    @if ($contract->isOpen() && $budgetWarnings !== [] && ($canApprove || $needsMatching))
+        <div class="rounded-lg border border-status-warn bg-status-warn-soft px-4 py-2 text-sm text-status-warn" role="status" data-test="budget-warning">
+            <p class="font-semibold">{{ $contract->isApproved() ? __('contracts.budget_needs_matching') : __('contracts.budget_warning_title') }}</p>
+            <ul class="list-disc ps-5">
+                @foreach ($budgetWarnings as $warning)
+                    <li>{{ $warning }}</li>
                 @endforeach
             </ul>
         </div>

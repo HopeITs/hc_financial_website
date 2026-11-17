@@ -11,6 +11,10 @@
         </div>
     @endif
 
+    @if ($needsMatching)
+        <div class="rounded-lg border border-status-warn bg-status-warn-soft px-4 py-2 text-sm text-status-warn" role="status" data-test="budget-needs-matching">{{ __('contracts.budget_match_after_approval') }}</div>
+    @endif
+
     <x-ui.panel :title="__('contracts.budget_title')" :subtitle="__('contracts.budget_hint', ['currency' => $contract->currency])">
         @forelse ($sections as $section)
             <div class="border-b border-secondary-soft last:border-b-0 dark:border-line" wire:key="budget-{{ $section['share']->project_code }}" data-test="budget-{{ $section['share']->project_code }}">
