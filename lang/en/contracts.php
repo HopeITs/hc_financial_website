@@ -125,6 +125,37 @@ return [
     'import_duplicates' => 'These names are already in the project\'s budget or appear twice: :names. Rename them or untick them.',
     'import_done' => '{1} One budget line added.|[2,*] :count budget lines added.',
 
+    'delete' => 'Delete agreement',
+    'delete_confirm' => 'Delete agreement :number? Its shares, instalments, reports and files are deleted, and so are the projects made only for it, with their budget lines. This cannot be undone. A project that another agreement also uses stays.',
+    'deleted' => 'Agreement :number deleted.',
+    'delete_used' => [
+        'vouchers' => 'Vouchers use the projects :projects: the agreement cannot be deleted.',
+        'requests' => 'Requests use the projects :projects: the agreement cannot be deleted.',
+        'salaries' => 'Salary splits use the projects :projects: the agreement cannot be deleted.',
+        'loans' => 'Micro loans use the projects :projects: the agreement cannot be deleted.',
+    ],
+    'delete_used_lines' => [
+        'vouchers' => 'Vouchers use the budget lines :lines: the agreement cannot be deleted.',
+        'requests' => 'Requests use the budget lines :lines: the agreement cannot be deleted.',
+        'salaries' => 'Salary splits use the budget lines :lines: the agreement cannot be deleted.',
+    ],
+
+    'history_title' => 'Budget changes',
+    'history_hint' => 'Every budget line added, removed or imported from Excel: who, when, and whether the agreement was already approved. The latest 50 are shown; all of them are in Settings → Audit log.',
+    'history_when' => 'When',
+    'history_who' => 'Who',
+    'history_what' => 'Change',
+    'history_from_excel' => 'from Excel',
+    'history_after_approval' => 'After approval',
+    'history_imported_lines' => '{1} One line|[2,*] :count lines',
+    'history_empty' => 'No change to the budget yet.',
+    'audit_actions' => [
+        'budget_line_added' => 'Budget line added',
+        'budget_line_removed' => 'Budget line removed',
+        'budget_imported' => 'Budget imported from Excel',
+        'agreement_deleted' => 'Agreement deleted',
+    ],
+
     'actual_received' => 'Received',
     'actual_spent' => 'Spent',
     'actual_remaining' => 'Remaining',

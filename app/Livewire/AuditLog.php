@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\Contract;
 use App\Models\User;
 use App\Services\Audit\AuditLog as AuditLogQuery;
 use App\Support\Navigation;
@@ -16,7 +17,7 @@ use SplFileObject;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * Audit log (F-14): voucher audits, request audits and web logins in one read-only list for the Financial Manager and Head
+ * Audit log (F-14): voucher audits, request audits, agreement audits and web logins in one read-only list for the Financial Manager and Head
  * Office, with filters by person, action, source and date, and a CSV export of what the filters show.
  */
 #[Layout('components.layouts.app')]
@@ -27,6 +28,9 @@ class AuditLog extends Component
     public const PER_PAGE = 25;
 
     private const EXPORT_LIMIT = 50000;
+
+    /** @var array<string, int> agreement number => id (0 once deleted), looked up once per request */
+    private array $agreementIds = [];
 
     #[Url]
     public string $person = '';
@@ -134,7 +138,11 @@ class AuditLog extends Component
 
     private function actionLabel(string $source, string $action): string
     {
-        $key = $source === 'request' ? 'requests.audit_action.'.$action : 'auditlog.voucher_actions.'.$action;
+        $key = match ($source) {
+            'request' => 'requests.audit_action.'.$action,
+            'agreement' => 'contracts.audit_actions.'.$action,
+            default => 'auditlog.voucher_actions.'.$action,
+        };
 
         return Lang::has($key) ? (string) __($key) : $action;
     }
@@ -144,7 +152,16 @@ class AuditLog extends Component
         return match ($row->source) {
             'voucher' => route(Navigation::routeName('vouchers'), ['voucher' => $row->subject]),
             'request' => route(Navigation::routeName('requests'), ['request' => $row->subject]),
+            'agreement' => $this->agreementUrl((string) $row->subject),
             default => null,
         };
+    }
+
+    /** The page of the agreement with this number, while it still exists (a deleted one keeps only its trail). */
+    private function agreementUrl(string $number): ?string
+    {
+        $this->agreementIds[$number] ??= Contract::query()->where('number', $number)->value('id') ?? 0;
+
+        return $this->agreementIds[$number] > 0 ? route('funding.agreements.show', ['contract' => $this->agreementIds[$number]]) : null;
     }
 }

@@ -8,6 +8,10 @@
         </x-slot:actions>
     </x-ui.page-header>
 
+    @if (session('agreement-notice'))
+        <div class="rounded-lg border border-secondary-soft bg-white px-4 py-2 text-sm dark:border-line dark:bg-surface-1" role="status" data-test="agreement-notice">{{ session('agreement-notice') }}</div>
+    @endif
+
     @if ($showForm)
         <form wire:submit="save" data-test="contract-form">
             <x-ui.panel :title="__('contracts.add')" :subtitle="__('contracts.add_hint')" class="p-0">

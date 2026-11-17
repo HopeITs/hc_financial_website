@@ -5,6 +5,7 @@ namespace App\Services\Contracts;
 use App\Models\Contract;
 use App\Models\ContractProject;
 use App\Models\GlBudgetLine;
+use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -26,34 +27,55 @@ class ContractBudgets
         return $projectCode.'|'.trim($name);
     }
 
-    public function add(Contract $contract, string $projectCode, string $name, string $accountCode, string $amount): GlBudgetLine
+    public function __construct(private readonly ContractAuditTrail $trail) {}
+
+    /** Adds one budget line and writes it to the agreement's audit trail, both or neither. */
+    public function add(Contract $contract, string $projectCode, string $name, string $accountCode, string $amount, User $by, string $source = 'form'): GlBudgetLine
     {
         $contract->loadMissing('donor');
 
-        return GlBudgetLine::query()->create([
-            'key' => self::key($projectCode, $name),
-            'project_code' => $projectCode,
-            'donor' => $contract->donor->name_en,
-            'name' => trim($name),
-            'account_code' => $accountCode,
-            'budget' => $amount,
-            'currency' => $contract->currency,
-        ]);
+        return DB::transaction(function () use ($contract, $projectCode, $name, $accountCode, $amount, $by, $source): GlBudgetLine {
+            $line = GlBudgetLine::query()->create([
+                'key' => self::key($projectCode, $name),
+                'project_code' => $projectCode,
+                'donor' => $contract->donor->name_en,
+                'name' => trim($name),
+                'account_code' => $accountCode,
+                'budget' => $amount,
+                'currency' => $contract->currency,
+            ]);
+
+            $this->trail->lineAdded($contract, $line, $by, $source);
+
+            return $line;
+        });
     }
 
     /**
-     * A whole budget at once (an import from Excel, checked by the person): all lines are saved, or none.
+     * A whole budget at once (an import from Excel, checked by the person): all lines are saved, or none. Each line is in
+     * the audit trail, with one entry for the import itself.
      *
      * @param  list<array{name: string, account: string, amount: string}>  $lines
      */
-    public function addMany(Contract $contract, string $projectCode, array $lines): int
+    public function addMany(Contract $contract, string $projectCode, array $lines, User $by): int
     {
-        return DB::transaction(function () use ($contract, $projectCode, $lines): int {
+        return DB::transaction(function () use ($contract, $projectCode, $lines, $by): int {
             foreach ($lines as $line) {
-                $this->add($contract, $projectCode, $line['name'], $line['account'], $line['amount']);
+                $this->add($contract, $projectCode, $line['name'], $line['account'], $line['amount'], $by, 'excel');
             }
 
+            $this->trail->budgetImported($contract, $projectCode, $lines, $by);
+
             return count($lines);
+        });
+    }
+
+    /** Removes an unused budget line and writes it to the audit trail, both or neither. */
+    public function remove(Contract $contract, GlBudgetLine $line, User $by): void
+    {
+        DB::transaction(function () use ($contract, $line, $by): void {
+            $this->trail->lineRemoved($contract, $line, $by);
+            $line->delete();
         });
     }
 

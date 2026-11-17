@@ -203,4 +203,56 @@
             @endif
         @endif
     </x-ui.panel>
+
+    <x-ui.panel :title="__('contracts.history_title')" :subtitle="__('contracts.history_hint')" :count="$history->count()" data-test="budget-history">
+        <div class="fin-table-wrap">
+            <table class="fin-table">
+                <thead>
+                    <tr>
+                        <th>{{ __('contracts.history_when') }}</th>
+                        <th>{{ __('contracts.history_who') }}</th>
+                        <th>{{ __('contracts.history_what') }}</th>
+                        <th>{{ __('contracts.project') }}</th>
+                        <th>{{ __('contracts.budget_line') }}</th>
+                        <th class="fin-num">{{ __('contracts.budget_amount') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($history as $entry)
+                        <tr wire:key="history-{{ $entry->id }}">
+                            <td dir="ltr">{{ $entry->created_at?->format('d/m/Y H:i') }}</td>
+                            <td>{{ $historyPeople[$entry->changed_by] ?? '#'.$entry->changed_by }}</td>
+                            <td>
+                                {{ __('contracts.audit_actions.'.$entry->action) }}
+                                @if (($entry->details['source'] ?? null) === 'excel')
+                                    <span class="text-xs text-secondary-medium dark:text-ink-muted">({{ __('contracts.history_from_excel') }})</span>
+                                @endif
+                                @if ($entry->after_approval)
+                                    <flux:badge size="sm" color="amber">{{ __('contracts.history_after_approval') }}</flux:badge>
+                                @endif
+                            </td>
+                            <td dir="ltr">{{ $entry->project_code }}</td>
+                            <td>
+                                @if ($entry->action === \App\Models\ContractAudit::BUDGET_IMPORTED)
+                                    {{ trans_choice('contracts.history_imported_lines', (int) ($entry->details['lines'] ?? 0), ['count' => (int) ($entry->details['lines'] ?? 0)]) }}
+                                @else
+                                    {{ $entry->details['name'] ?? '' }}
+                                    @if (($entry->details['account'] ?? '') !== '')
+                                        <span class="text-xs text-secondary-medium dark:text-ink-muted" dir="ltr">({{ $entry->details['account'] }})</span>
+                                    @endif
+                                @endif
+                            </td>
+                            <td class="fin-num">
+                                @if (isset($entry->details['amount']) || isset($entry->details['total']))
+                                    <x-money :amount="$entry->details['amount'] ?? $entry->details['total']" :currency="$entry->details['currency'] ?? null" />
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="6" class="fin-empty">{{ __('contracts.history_empty') }}</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </x-ui.panel>
 </div>

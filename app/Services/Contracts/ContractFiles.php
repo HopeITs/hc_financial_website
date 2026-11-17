@@ -39,4 +39,10 @@ class ContractFiles
             Storage::disk('local')->delete($path);
         }
     }
+
+    /** Every file kept with a contract: its signed copy, reports and closing approval, once the contract is deleted. */
+    public function forgetAll(int $contractId): void
+    {
+        Storage::disk('local')->deleteDirectory('contract-files/'.$contractId);
+    }
 }

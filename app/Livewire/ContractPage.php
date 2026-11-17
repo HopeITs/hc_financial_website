@@ -15,6 +15,7 @@ use App\Models\GlCity;
 use App\Models\GlProject;
 use App\Models\User;
 use App\Services\Contracts\ContractBudgets;
+use App\Services\Contracts\ContractDeletion;
 use App\Services\Contracts\ContractException;
 use App\Services\Contracts\ContractFiles;
 use App\Services\Contracts\ContractProjects;
@@ -205,6 +206,29 @@ class ContractPage extends Component
         $this->signedFile = null;
         $this->editingDetails = false;
         $this->say(__('contracts.saved'));
+    }
+
+    /**
+     * Deletes the agreement with its shares, instalments, reports, files and the projects made only for it, unless the
+     * ledger already uses one of them; then the reasons are shown and nothing is deleted.
+     */
+    public function deleteAgreement(ContractDeletion $deletion): void
+    {
+        Gate::authorize('screen', ['contracts', 'delete']);
+        $contract = $this->contract();
+
+        try {
+            $deletion->delete($contract, $this->user());
+        } catch (ContractException $refused) {
+            $this->problems = $refused->problems;
+            $this->notice = null;
+
+            return;
+        }
+
+        session()->flash('agreement-notice', __('contracts.deleted', ['number' => $contract->number]));
+        $this->skipRender();
+        $this->redirectRoute('funding.agreements', navigate: true);
     }
 
     public function approve(ContractWorkflow $workflow): void
@@ -481,6 +505,7 @@ class ContractPage extends Component
             'canApprove' => $contract->isOpen() && ! $contract->isApproved() && Gate::allows('screen', ['contracts', 'approve']),
             'approvalProblems' => $contract->isApproved() ? [] : $workflow->problemsBeforeApproval($contract),
             'budgetWarnings' => $budgetWarnings,
+            'canDelete' => Gate::allows('screen', ['contracts', 'delete']),
             'needsMatching' => $contract->isApproved() && $contract->isOpen() && $budgetWarnings !== [],
             'canRequestClosing' => $canChange && $contract->isApproved() && ! $contract->isClosingRequested(),
             'nextClosingStep' => $workflow->nextClosingStep($contract),
