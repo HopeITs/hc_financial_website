@@ -13,13 +13,15 @@ use App\Models\GlBudgetLine;
 use App\Models\GlProject;
 use App\Models\User;
 use App\Models\WebUserRole;
+use App\Services\Contracts\ContractActuals;
 use App\Services\Contracts\ContractBudgets;
+use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
 beforeEach(function () {
     createFinanceSchema();
 
-    foreach ([['5101', 'expenses', 'Salaries', 'رواتب'], ['5201', 'expenses', 'Rent', 'إيجار'], ['1111', 'assets', 'Cash', 'نقد']] as [$code, $class, $en, $ar]) {
+    foreach ([['5101', 'expenses', 'Salaries', 'رواتب'], ['5201', 'expenses', 'Rent', 'إيجار'], ['1111', 'assets', 'Cash', 'نقد'], ['4101', 'income', 'Grants', 'منح']] as [$code, $class, $en, $ar]) {
         GlAccount::query()->create([
             'code' => $code, 'parent_code' => null, 'level' => 'posting', 'class' => $class, 'name_en' => $en, 'name_ar' => $ar,
             'normal_side' => 'debit', 'currency' => 'USD', 'is_cash' => $class === 'assets', 'required_tags' => [], 'is_active' => true,
@@ -58,6 +60,60 @@ function cbAgreement(): Contract
 
     return $contract;
 }
+
+/**
+ * A voucher with its lines, written straight to the ledger tables.
+ *
+ * @param  list<array<string, mixed>>  $lines
+ */
+function cbVoucher(string $id, string $date, string $status, array $lines): void
+{
+    DB::table('gl_vouchers')->insert(['id' => $id, 'type' => 'JV', 'date' => $date, 'status' => $status, 'prepared_by' => 1, 'created_at' => now(), 'updated_at' => now()]);
+
+    foreach ($lines as $number => $line) {
+        DB::table('gl_voucher_lines')->insert($line + [
+            'voucher_id' => $id, 'line_no' => $number + 1, 'currency' => 'EUR', 'rate' => 1,
+            'debit_orig' => 0, 'credit_orig' => 0, 'debit_usd' => 0, 'credit_usd' => 0, 'debit_donor' => 0, 'credit_donor' => 0,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+    }
+}
+
+it('shows what was spent on each budget line and received for each project, from approved vouchers only', function () {
+    $contract = cbAgreement();
+    app(ContractBudgets::class)->add($contract, 'EDU', 'Teachers', '5101', '6000');
+    app(ContractBudgets::class)->add($contract, 'EDU', 'Rent', '5201', '4000');
+
+    cbVoucher('JV-2026-0001', '2026-04-01', 'approved', [
+        ['account_code' => '5101', 'project_code' => 'EDU', 'budget_line_key' => 'EDU|Teachers', 'debit_orig' => 1000, 'debit_usd' => 1150],
+        ['account_code' => '5101', 'project_code' => 'EDU', 'budget_line_key' => 'EDU|Teachers', 'currency' => 'USD', 'donor_currency' => 'EUR', 'debit_orig' => 230, 'debit_usd' => 230, 'debit_donor' => 200],
+        ['account_code' => '1111', 'credit_orig' => 1200, 'credit_usd' => 1380],
+    ]);
+    cbVoucher('JV-2026-0002', '2026-04-02', 'pending_approval', [
+        ['account_code' => '5201', 'project_code' => 'EDU', 'budget_line_key' => 'EDU|Rent', 'debit_orig' => 500, 'debit_usd' => 575],
+        ['account_code' => '1111', 'credit_orig' => 500, 'credit_usd' => 575],
+    ]);
+    cbVoucher('CRV-2026-0001', '2026-03-15', 'approved', [
+        ['account_code' => '1111', 'debit_orig' => 3000, 'debit_usd' => 3450],
+        ['account_code' => '4101', 'project_code' => 'EDU', 'credit_orig' => 3000, 'credit_usd' => 3450],
+    ]);
+    cbVoucher('CRV-2026-0002', '2026-01-10', 'approved', [
+        ['account_code' => '1111', 'debit_orig' => 999, 'debit_usd' => 1148.85],
+        ['account_code' => '4101', 'project_code' => 'EDU', 'credit_orig' => 999, 'credit_usd' => 1148.85],
+    ]);
+
+    $actuals = app(ContractActuals::class);
+
+    expect($actuals->spentByLine($contract, ['EDU|Teachers', 'EDU|Rent']))->toBe(['EDU|Teachers' => '1200.00'])
+        ->and($actuals->receivedByProject($contract))->toBe(['EDU' => '3000.00']);
+
+    Livewire::actingAs(cbUser(RoleId::Accountant, 'Ann'))->test(ContractBudget::class, ['contractId' => $contract->id])
+        ->assertSeeHtml('data-test="spent-EDU|Teachers"')
+        ->assertSeeHtml('data-test="received-EDU"')
+        ->assertViewHas('sections', fn ($sections) => $sections->first()['spent'] === '1200.00'
+            && $sections->first()['remaining'] === '8800.00'
+            && $sections->first()['received'] === '3000.00');
+});
 
 it('adds budget lines to a project of the agreement, in its currency, and compares them with the share', function () {
     $contract = cbAgreement();
