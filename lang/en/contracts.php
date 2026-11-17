@@ -100,6 +100,11 @@ return [
     'budget_balanced' => 'Budget equals the share',
     'budget_unbalanced' => 'Budget does not equal the share yet',
     'budget_needs_project' => 'Add a project to the agreement first.',
+
+    'actual_received' => 'Received',
+    'actual_spent' => 'Spent',
+    'actual_remaining' => 'Remaining',
+    'actuals_note' => 'Received and spent come from approved vouchers: spent is every expense line posted to the budget line, received is every income line of the project between the agreement\'s start and end. Linking a receipt to one instalment needs a change in the database (IT).',
     'share_added' => 'Project added.',
     'share_removed' => 'Project removed.',
     'no_projects' => 'No project yet.',

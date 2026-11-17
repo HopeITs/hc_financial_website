@@ -20,11 +20,14 @@
             <div class="border-b border-secondary-soft last:border-b-0 dark:border-line" wire:key="budget-{{ $section['share']->project_code }}" data-test="budget-{{ $section['share']->project_code }}">
                 <div class="flex flex-wrap items-center justify-between gap-2 px-4 pt-4">
                     <h3 class="text-sm font-semibold text-secondary-dark dark:text-ink"><span dir="ltr">{{ $section['share']->project_code }}</span> — {{ $section['share']->project?->name }}</h3>
-                    @if ($section['balanced'])
-                        <flux:badge size="sm" color="green">{{ __('contracts.budget_balanced') }}</flux:badge>
-                    @else
-                        <flux:badge size="sm" color="amber">{{ __('contracts.budget_unbalanced') }}</flux:badge>
-                    @endif
+                    <span class="inline-flex flex-wrap items-center gap-3 text-sm text-secondary-medium dark:text-ink-muted">
+                        <span data-test="received-{{ $section['share']->project_code }}">{{ __('contracts.actual_received') }}: <x-money :amount="$section['received']" :currency="$contract->currency" /></span>
+                        @if ($section['balanced'])
+                            <flux:badge size="sm" color="green">{{ __('contracts.budget_balanced') }}</flux:badge>
+                        @else
+                            <flux:badge size="sm" color="amber">{{ __('contracts.budget_unbalanced') }}</flux:badge>
+                        @endif
+                    </span>
                 </div>
                 <div class="fin-table-wrap">
                     <table class="fin-table">
@@ -33,15 +36,20 @@
                                 <th>{{ __('contracts.budget_line') }}</th>
                                 <th>{{ __('contracts.budget_account') }}</th>
                                 <th class="fin-num">{{ __('contracts.budget_amount') }} ({{ $contract->currency }})</th>
+                                <th class="fin-num">{{ __('contracts.actual_spent') }}</th>
+                                <th class="fin-num">{{ __('contracts.actual_remaining') }}</th>
                                 <th></th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($section['lines'] as $line)
+                                @php($lineSpent = $spent[$line->key] ?? '0.00')
                                 <tr wire:key="line-{{ $line->key }}">
                                     <td>{{ $line->name }}</td>
                                     <td><span dir="ltr">{{ $line->account_code }}</span> {{ app()->getLocale() === 'ar' ? $line->account?->name_ar : $line->account?->name_en }}</td>
                                     <td class="fin-num"><x-money :amount="$line->budget" /></td>
+                                    <td class="fin-num" data-test="spent-{{ $line->key }}"><x-money :amount="$lineSpent" /></td>
+                                    <td class="fin-num"><x-money :amount="bcsub((string) $line->budget, $lineSpent, 2)" /></td>
                                     <td>
                                         @if ($canChange)
                                             <x-ui.button size="sm" tone="ghost" icon="trash" wire:click="removeLine(@js($line->key))" wire:confirm="{{ __('contracts.remove_confirm') }}" :aria-label="__('contracts.remove')" />
@@ -49,13 +57,15 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="4" class="fin-empty">{{ __('contracts.budget_no_lines') }}</td></tr>
+                                <tr><td colspan="6" class="fin-empty">{{ __('contracts.budget_no_lines') }}</td></tr>
                             @endforelse
                         </tbody>
                         <tfoot>
                             <tr class="font-semibold">
                                 <td colspan="2">{{ __('contracts.budget_total_of_share') }}</td>
                                 <td class="fin-num"><x-money :amount="$section['total']" /> / <x-money :amount="$section['share']->amount" /></td>
+                                <td class="fin-num"><x-money :amount="$section['spent']" /></td>
+                                <td class="fin-num"><x-money :amount="$section['remaining']" /></td>
                                 <td></td>
                             </tr>
                         </tfoot>
@@ -65,6 +75,10 @@
         @empty
             <p class="p-4 text-sm text-secondary-medium dark:text-ink-muted">{{ __('contracts.budget_needs_project') }}</p>
         @endforelse
+
+        @if ($sections->isNotEmpty())
+            <p class="px-4 pb-4 text-xs text-secondary-medium dark:text-ink-muted" data-test="actuals-note">{{ __('contracts.actuals_note') }}</p>
+        @endif
 
         @if ($canChange && $sections->isNotEmpty())
             <form wire:submit="addLine" class="flex flex-wrap items-end gap-3 border-t border-secondary-soft p-4 dark:border-line" data-test="budget-form">

@@ -9,6 +9,7 @@ use App\Models\ContractProject;
 use App\Models\GlAccount;
 use App\Models\GlBudgetLine;
 use App\Models\User;
+use App\Services\Contracts\ContractActuals;
 use App\Services\Contracts\ContractBudgets;
 use App\Services\Projects\ProjectAccess;
 use Illuminate\Contracts\View\View;
@@ -92,27 +93,35 @@ class ContractBudget extends Component
         $this->dispatch('budget-changed');
     }
 
-    public function render(): View
+    public function render(ContractActuals $actuals): View
     {
         $contract = $this->contract()->load('projects.project');
         $codes = $contract->projects->pluck('project_code')->all();
         $lines = GlBudgetLine::query()->with('account')->whereIn('project_code', $codes)->orderBy('project_code')->orderBy('name')->get()->groupBy('project_code');
+        $spent = $actuals->spentByLine($contract, $lines->flatten()->pluck('key')->all());
+        $received = $actuals->receivedByProject($contract);
+        $sum = fn (array $amounts): string => array_reduce($amounts, fn (string $total, mixed $amount): string => bcadd($total, (string) $amount, 2), '0.00');
 
-        $sections = $contract->projects->map(function (ContractProject $share) use ($lines): array {
+        $sections = $contract->projects->map(function (ContractProject $share) use ($lines, $spent, $received, $sum): array {
             $projectLines = $lines->get($share->project_code, collect());
-            $total = array_reduce($projectLines->pluck('budget')->all(), fn (string $sum, mixed $amount): string => bcadd($sum, (string) $amount, 2), '0.00');
+            $total = $sum($projectLines->pluck('budget')->all());
+            $projectSpent = $sum($projectLines->map(fn (GlBudgetLine $line): string => $spent[$line->key] ?? '0.00')->all());
 
             return [
                 'share' => $share,
                 'lines' => $projectLines,
                 'total' => $total,
                 'balanced' => bccomp($total, (string) $share->amount, 2) === 0,
+                'spent' => $projectSpent,
+                'remaining' => bcsub($total, $projectSpent, 2),
+                'received' => $received[$share->project_code] ?? '0.00',
             ];
         });
 
         return view('livewire.contract-budget', [
             'contract' => $contract,
             'sections' => $sections,
+            'spent' => $spent,
             'accounts' => $this->accounts(),
             'canChange' => Gate::allows('screen', ['contracts', 'edit']) && $contract->isOpen(),
             'needsMatching' => $contract->isApproved() && $sections->contains(fn (array $section): bool => ! $section['balanced']),
