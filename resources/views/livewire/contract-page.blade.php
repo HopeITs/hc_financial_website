@@ -6,6 +6,9 @@
             @if ($canApprove)
                 <x-ui.button tone="primary" icon="check" wire:click="approve" wire:confirm="{{ $budgetWarnings === [] ? __('contracts.approve_confirm') : __('contracts.approve_confirm_budget') }}" data-test="approve-contract">{{ __('contracts.approve') }}</x-ui.button>
             @endif
+            @if ($canDelete)
+                <x-ui.button tone="ghost" icon="trash" wire:click="deleteAgreement" wire:confirm="{{ __('contracts.delete_confirm', ['number' => $contract->number]) }}" data-test="delete-agreement">{{ __('contracts.delete') }}</x-ui.button>
+            @endif
         </x-slot:actions>
     </x-ui.page-header>
 

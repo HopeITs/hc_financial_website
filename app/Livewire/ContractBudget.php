@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\Contracts\BudgetAccountSuggester;
 use App\Services\Contracts\BudgetSheetReader;
 use App\Services\Contracts\ContractActuals;
+use App\Services\Contracts\ContractAuditTrail;
 use App\Services\Contracts\ContractBudgets;
 use App\Services\Projects\ProjectAccess;
 use Illuminate\Contracts\View\View;
@@ -88,7 +89,7 @@ class ContractBudget extends Component
             return;
         }
 
-        $budgets->add($contract, $data['lineProject'], $data['lineName'], $data['lineAccount'], $data['lineAmount']);
+        $budgets->add($contract, $data['lineProject'], $data['lineName'], $data['lineAccount'], $data['lineAmount'], $this->user());
 
         $this->reset('lineName', 'lineAccount', 'lineAmount');
         $this->say(__('contracts.budget_line_added'));
@@ -206,7 +207,7 @@ class ContractBudget extends Component
 
         $count = $budgets->addMany($contract, $data['importProject'], array_map(fn (array $row): array => [
             'name' => $row['name'], 'account' => (string) $row['account'], 'amount' => (string) $row['amount'],
-        ], $chosen));
+        ], $chosen), $this->user());
 
         $this->cancelImport();
         $this->say(trans_choice('contracts.import_done', $count, ['count' => $count]));
@@ -231,12 +232,12 @@ class ContractBudget extends Component
             return;
         }
 
-        $line->delete();
+        $budgets->remove($contract, $line, $this->user());
         $this->say(__('contracts.budget_line_removed'));
         $this->dispatch('budget-changed');
     }
 
-    public function render(ContractActuals $actuals): View
+    public function render(ContractActuals $actuals, ContractAuditTrail $trail): View
     {
         $contract = $this->contract()->load('projects.project');
         $codes = $contract->projects->pluck('project_code')->all();
@@ -264,6 +265,7 @@ class ContractBudget extends Component
         $chosen = array_filter($this->importRows, fn (array $row): bool => (bool) ($row['include'] ?? false));
         $importTotal = $sum(array_map(fn (array $row): string => is_numeric($row['amount'] ?? null) ? (string) $row['amount'] : '0', $chosen));
         $importShare = (string) ($contract->projects->firstWhere('project_code', $this->importProject)?->amount ?? '0');
+        $history = $trail->latest($contract);
 
         return view('livewire.contract-budget', [
             'contract' => $contract,
@@ -277,6 +279,8 @@ class ContractBudget extends Component
             'accounts' => $this->accounts(),
             'canChange' => Gate::allows('screen', ['contracts', 'edit']) && $contract->isOpen(),
             'needsMatching' => $contract->isApproved() && $sections->contains(fn (array $section): bool => ! $section['balanced']),
+            'history' => $history,
+            'historyPeople' => User::query()->whereIn('ID', $history->pluck('changed_by')->unique()->all())->get()->mapWithKeys(fn (User $person): array => [(int) $person->getKey() => $person->username])->all(),
         ]);
     }
 

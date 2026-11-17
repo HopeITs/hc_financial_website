@@ -5,6 +5,7 @@ use App\Livewire\ContractBudget;
 use App\Livewire\ContractPage;
 use App\Livewire\Contracts;
 use App\Models\Contract;
+use App\Models\ContractAudit;
 use App\Models\ContractInstalment;
 use App\Models\ContractProject;
 use App\Models\Donor;
@@ -13,6 +14,7 @@ use App\Models\GlBudgetLine;
 use App\Models\GlProject;
 use App\Models\User;
 use App\Models\WebUserRole;
+use App\Services\Audit\AuditLog as AuditLogQuery;
 use App\Services\Contracts\ContractActuals;
 use App\Services\Contracts\ContractBudgets;
 use Illuminate\Http\UploadedFile;
@@ -45,6 +47,14 @@ function cbUser(RoleId $role, string $name): User
     }
 
     return User::query()->findOrFail($id);
+}
+
+/** A budget line of project EDU, added by a set-up user so that the test's own users stay apart. */
+function cbLine(Contract $contract, string $name, string $account, string $amount): void
+{
+    $setup = User::query()->where('Username', 'Setup')->first() ?? cbUser(RoleId::Accountant, 'Setup');
+
+    app(ContractBudgets::class)->add($contract, 'EDU', $name, $account, $amount, $setup);
 }
 
 /** An EUR 10,000 draft agreement whose one project EDU has the whole amount as its share. */
@@ -102,7 +112,7 @@ function cbSheet(array $rows, array $headers = ['Budget Category', 'Budget Line 
 it('reads an Excel budget, proposes an account for each line and adds the checked budget at once', function () {
     $contract = cbAgreement();
     GlBudgetLine::query()->create(['key' => 'OUT|Books', 'project_code' => 'OUT', 'name' => 'Books', 'account_code' => '5201', 'budget' => 1, 'currency' => 'USD']);
-    app(ContractBudgets::class)->add($contract, 'EDU', 'Old line', '5101', '100');
+    cbLine($contract, 'Old line', '5101', '100');
 
     $page = Livewire::actingAs(cbUser(RoleId::Accountant, 'Ann'))->test(ContractBudget::class, ['contractId' => $contract->id])
         ->set('importProject', 'EDU')
@@ -142,6 +152,12 @@ it('reads an Excel budget, proposes an account for each line and adds the checke
     expect(GlBudgetLine::query()->where('project_code', 'EDU')->orderBy('name')->pluck('account_code', 'name')->all())->toBe([
         'Books' => '5201', 'Mystery item' => '5201', 'Office rent' => '5201', 'Old line' => '5101', 'Teachers' => '5101',
     ])->and(GlBudgetLine::query()->findOrFail('EDU|Teachers')->currency)->toBe('EUR');
+
+    $import = ContractAudit::query()->where('action', 'budget_imported')->sole();
+
+    expect($import->details)->toBe(['lines' => 4, 'total' => '9900.00', 'currency' => 'EUR'])
+        ->and($import->after_approval)->toBeFalse()
+        ->and(ContractAudit::query()->where('action', 'budget_line_added')->get()->filter(fn (ContractAudit $entry) => ($entry->details['source'] ?? null) === 'excel')->count())->toBe(4);
 });
 
 it('refuses a file without a budget table, and adds nothing when a ticked name is already taken', function () {
@@ -164,8 +180,8 @@ it('refuses a file without a budget table, and adds nothing when a ticked name i
 
 it('shows what was spent on each budget line and received for each project, from approved vouchers only', function () {
     $contract = cbAgreement();
-    app(ContractBudgets::class)->add($contract, 'EDU', 'Teachers', '5101', '6000');
-    app(ContractBudgets::class)->add($contract, 'EDU', 'Rent', '5201', '4000');
+    cbLine($contract, 'Teachers', '5101', '6000');
+    cbLine($contract, 'Rent', '5201', '4000');
 
     cbVoucher('JV-2026-0001', '2026-04-01', 'approved', [
         ['account_code' => '5101', 'project_code' => 'EDU', 'budget_line_key' => 'EDU|Teachers', 'debit_orig' => 1000, 'debit_usd' => 1150],
@@ -230,14 +246,15 @@ it('adds budget lines to a project of the agreement, in its currency, and compar
 it('removes an unused budget line but keeps one that is already used', function () {
     $contract = cbAgreement();
     $accountant = cbUser(RoleId::Accountant, 'Ann');
-    app(ContractBudgets::class)->add($contract, 'EDU', 'Teachers', '5101', '100');
-    app(ContractBudgets::class)->add($contract, 'EDU', 'Rent', '5201', '50');
+    cbLine($contract, 'Teachers', '5101', '100');
+    cbLine($contract, 'Rent', '5201', '50');
 
     Livewire::actingAs($accountant)->test(ContractBudget::class, ['contractId' => $contract->id])
         ->call('removeLine', 'EDU|Rent')
         ->assertSee('Budget line removed.');
 
-    expect(GlBudgetLine::query()->find('EDU|Rent'))->toBeNull();
+    expect(GlBudgetLine::query()->find('EDU|Rent'))->toBeNull()
+        ->and((int) ContractAudit::query()->where('action', 'budget_line_removed')->where('budget_line_key', 'EDU|Rent')->value('changed_by'))->toBe((int) $accountant->getKey());
 
     $this->mock(ContractBudgets::class, fn ($mock) => $mock->shouldReceive('isUsed')->andReturnTrue());
 
@@ -263,7 +280,7 @@ it('lets only the preparing roles change the budget', function () {
 it('warns before approving an unmatched budget, approves anyway, and marks the agreement until the budget is matched', function () {
     $contract = cbAgreement();
     ContractInstalment::query()->create(['contract_id' => $contract->id, 'number' => 1, 'due_on' => '2026-03-01', 'amount' => '10000', 'is_conditional' => false]);
-    app(ContractBudgets::class)->add($contract, 'EDU', 'Teachers', '5101', '6000');
+    cbLine($contract, 'Teachers', '5101', '6000');
     $manager = cbUser(RoleId::FinancialManager, 'Fadi');
 
     expect(app(ContractBudgets::class)->mismatches($contract))->toBe([['project' => 'EDU', 'total' => '6000.00', 'share' => '10000.00']]);
@@ -292,4 +309,14 @@ it('warns before approving an unmatched budget, approves anyway, and marks the a
     $page->call('refreshBudget')->assertDontSeeHtml('data-test="needs-matching"')->assertDontSeeHtml('data-test="budget-warning"');
 
     expect(app(ContractBudgets::class)->mismatchedIds(collect([$contract->refresh()])))->toBe([]);
+
+    // The budget changes are in the agreement's trail, the one after approval marked so, and in the audit log screen.
+    expect(ContractAudit::query()->where('budget_line_key', 'EDU|Teachers')->value('after_approval'))->toBeFalsy()
+        ->and(ContractAudit::query()->where('budget_line_key', 'EDU|Rent')->sole()->after_approval)->toBeTrue()
+        ->and(app(AuditLogQuery::class)->query(['source' => 'agreement'])->pluck('reason')->all())->toEqualCanonicalizing(['EDU|Rent', 'EDU|Teachers']);
+
+    Livewire::actingAs($manager)->test(ContractBudget::class, ['contractId' => $contract->id])
+        ->assertSeeHtml('data-test="budget-history"')
+        ->assertSee('After approval')
+        ->assertSee('Fadi');
 });

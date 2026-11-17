@@ -43,7 +43,7 @@ return [
             $screens(['home', 'chart', 'project-money', ...$treasury, ...$reports, 'employees', 'salaries', 'users', 'log', 'auditlog', 'single', 'multi', 'multiatt', 'payments', 'bonds'], $view),
             $screens(['vouchers', 'approval', 'requests', 'alloc'], ['view', 'approve']),
             $screens(['donors'], $prepare),
-            $screens(['contracts'], ['view', 'create', 'edit', 'approve']),
+            $screens(['contracts'], ['view', 'create', 'edit', 'approve', 'delete']),
             $screens(['currency'], $prepare),
             $screens($monthEnd, ['view', 'edit', 'approve']),
         ),
