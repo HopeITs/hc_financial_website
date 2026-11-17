@@ -10,6 +10,7 @@ use App\Enums\ContractStatus;
 use App\Models\Contract;
 use App\Models\ContractInstalment;
 use App\Models\ContractProject;
+use App\Models\ContractReceipt;
 use App\Models\ContractReport;
 use App\Models\GlCity;
 use App\Models\GlProject;
@@ -17,6 +18,7 @@ use App\Models\User;
 use App\Services\Contracts\ContractBudgets;
 use App\Services\Contracts\ContractDeletion;
 use App\Services\Contracts\ContractException;
+use App\Services\Contracts\ContractReceipts;
 use App\Services\Contracts\ContractFiles;
 use App\Services\Contracts\ContractProjects;
 use App\Services\Contracts\ContractWorkflow;
@@ -101,6 +103,12 @@ class ContractPage extends Component
     public string $instalmentCondition = '';
 
     public bool $instalmentConditional = false;
+
+    public string $receiptInstalment = '';
+
+    public string $receiptVoucher = '';
+
+    public string $receiptAmount = '';
 
     public string $reportKind = 'both';
 
@@ -348,6 +356,57 @@ class ContractPage extends Component
         $this->say(__('contracts.instalment_removed'));
     }
 
+    /** Choosing a voucher proposes what it can still give, up to what the chosen instalment still needs. */
+    public function updatedReceiptVoucher(ContractReceipts $receipts): void
+    {
+        $this->receiptAmount = $this->proposedReceiptAmount($receipts);
+    }
+
+    public function updatedReceiptInstalment(ContractReceipts $receipts): void
+    {
+        $this->receiptAmount = $this->proposedReceiptAmount($receipts);
+    }
+
+    /** Links an approved receipt voucher, whole or in part, to an instalment. */
+    public function linkReceipt(ContractReceipts $receipts): void
+    {
+        $this->authorizeChange();
+        $contract = $this->contract();
+
+        $data = $this->validate([
+            'receiptInstalment' => ['required', Rule::exists('gl_contract_instalments', 'id')->where('contract_id', $contract->id)],
+            'receiptVoucher' => ['required', 'string', 'max:20'],
+            'receiptAmount' => ['required', 'numeric', 'gt:0', 'max:9999999999999'],
+        ]);
+
+        try {
+            $receipts->link(
+                $contract,
+                ContractInstalment::query()->findOrFail((int) $data['receiptInstalment']),
+                $data['receiptVoucher'],
+                bcadd((string) $data['receiptAmount'], '0', 2),
+                $this->user(),
+            );
+        } catch (ContractException $refused) {
+            $this->problems = $refused->problems;
+            $this->notice = null;
+
+            return;
+        }
+
+        $this->reset('receiptInstalment', 'receiptVoucher', 'receiptAmount');
+        $this->say(__('contracts.receipt_linked'));
+    }
+
+    public function unlinkReceipt(int $id, ContractReceipts $receipts): void
+    {
+        $this->authorizeChange();
+        $contract = $this->contract();
+
+        $receipts->unlink($contract, ContractReceipt::query()->where('contract_id', $contract->id)->findOrFail($id), $this->user());
+        $this->say(__('contracts.receipt_unlinked'));
+    }
+
     /** The condition of a conditional instalment is met today: from now on it counts as income. */
     public function markConditionMet(int $id): void
     {
@@ -463,20 +522,23 @@ class ContractPage extends Component
         }
     }
 
-    public function render(Currencies $currencies, ContractWorkflow $workflow, ContractBudgets $budgets): View
+    public function render(Currencies $currencies, ContractWorkflow $workflow, ContractBudgets $budgets, ContractReceipts $receipts): View
     {
         $contract = $this->contract()->load(['donor', 'projects.project', 'instalments', 'reports.instalment']);
         $budgetWarnings = array_map(fn (array $row): string => __('contracts.budget_mismatch', $row), $budgets->mismatches($contract));
         $today = CarbonImmutable::today();
         $toUsd = fn (string $amount): string => $currencies->toUsd($contract->currency, $amount, (string) $contract->fixed_rate);
+        $user = $this->user();
+        $canChange = Gate::allows('screen', ['contracts', 'edit']) && $contract->isOpen();
+        $received = $receipts->status($contract);
 
         $sharesTotal = $this->sum($contract->projects->pluck('amount')->all());
         $instalmentsTotal = $this->sum($contract->instalments->pluck('amount')->all());
         $recognised = $this->sum($contract->instalments->filter->isRecognised()->pluck('amount')->all());
-        $late = $contract->instalments->filter(fn (ContractInstalment $instalment) => $instalment->daysLate($today) > 0 && ! $instalment->isRecognised());
+        // Late: past its due date, its condition not met, and not fully received.
+        $late = $contract->instalments->filter(fn (ContractInstalment $instalment) => $instalment->daysLate($today) > 0 && ! $instalment->isRecognised()
+            && ($received[$instalment->id]['state'] ?? 'none') !== 'full');
         $nextReport = $contract->reports->first(fn (ContractReport $report) => $report->status !== ContractReportStatus::Accepted && $report->due_on->gte($today));
-        $user = $this->user();
-        $canChange = Gate::allows('screen', ['contracts', 'edit']) && $contract->isOpen();
 
         return view('livewire.contract-page', [
             'contract' => $contract,
@@ -493,7 +555,10 @@ class ContractPage extends Component
                 'value' => number_format((float) $contract->amount, 2),
                 'value_usd' => number_format((float) $toUsd((string) $contract->amount), 2),
                 'income' => number_format((float) $recognised, 2),
+                'received' => number_format((float) $this->sum(array_column($received, 'received')), 2),
             ],
+            'received' => $received,
+            'receiptCandidates' => $canChange && $this->tab === 'instalments' ? $receipts->candidates($contract) : [],
             'shareUsd' => $contract->projects->mapWithKeys(fn (ContractProject $share) => [$share->id => $toUsd((string) $share->amount)]),
             'sharePercent' => $contract->projects->mapWithKeys(fn (ContractProject $share) => [$share->id => bccomp((string) $contract->amount, '0', 2) === 1
                 ? bcdiv(bcmul((string) $share->amount, '100', 6), (string) $contract->amount, 2)
@@ -550,6 +615,26 @@ class ContractPage extends Component
         $this->notice = null;
 
         return true;
+    }
+
+    /** The smaller of what the chosen voucher can still give and what the chosen instalment still needs. */
+    private function proposedReceiptAmount(ContractReceipts $receipts): string
+    {
+        $contract = $this->contract();
+        $available = $receipts->candidates($contract)[$this->receiptVoucher]['available'] ?? null;
+        $instalment = $this->receiptInstalment !== '' ? $contract->instalments()->find((int) $this->receiptInstalment) : null;
+
+        if ($available === null) {
+            return $this->receiptAmount;
+        }
+
+        if ($instalment === null) {
+            return $available;
+        }
+
+        $remaining = $receipts->status($contract)[$instalment->id]['remaining'] ?? (string) $instalment->amount;
+
+        return bccomp($available, $remaining, 2) === 1 ? $remaining : $available;
     }
 
     private function say(string $message): void

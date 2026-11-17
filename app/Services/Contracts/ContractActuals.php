@@ -58,6 +58,53 @@ class ContractActuals
         return $this->sumByGroup($contract, $rows->all(), debitSide: false);
     }
 
+    /**
+     * The approved vouchers that brought income to the agreement's projects, one row per voucher: its date and
+     * description, the income in the agreement currency and in dollars (credit minus debit on income accounts of those
+     * projects), and the cash or bank account it came into (the first cash account it debits).
+     *
+     * @param  list<string>|null  $voucherIds  only these vouchers, or all of them
+     * @return array<string, array{date: string, description: string, amount: string, usd: string, account: string|null}>
+     */
+    public function incomeByVoucher(Contract $contract, ?array $voucherIds = null): array
+    {
+        $codes = $contract->projects()->pluck('project_code')->all();
+        if ($codes === [] || $voucherIds === []) {
+            return [];
+        }
+
+        $rows = $this->approvedLines()
+            ->where('a.class', AccountClass::Income->value)
+            ->whereIn('l.project_code', $codes)
+            ->when($voucherIds !== null, fn (Builder $query) => $query->whereIn('l.voucher_id', $voucherIds))
+            ->orderByDesc('v.date')->orderByDesc('v.id')
+            ->get(['l.voucher_id as group_key', 'v.date', 'v.description', 'l.currency', 'l.donor_currency', 'l.debit_orig', 'l.credit_orig', 'l.debit_donor', 'l.credit_donor', 'l.debit_usd', 'l.credit_usd']);
+
+        $vouchers = [];
+        foreach ($rows as $row) {
+            $id = (string) $row->group_key;
+            $vouchers[$id] ??= ['date' => substr((string) $row->date, 0, 10), 'description' => (string) $row->description, 'amount' => '0.00', 'usd' => '0.00', 'account' => null];
+            $vouchers[$id]['amount'] = bcsub($vouchers[$id]['amount'], $this->inAgreementCurrency($contract, $row), 2);
+            $vouchers[$id]['usd'] = bcadd($vouchers[$id]['usd'], bcsub($this->money($row->credit_usd), $this->money($row->debit_usd), 2), 2);
+        }
+
+        if ($vouchers !== []) {
+            $accounts = DB::table('gl_voucher_lines as l')
+                ->join('gl_accounts as a', 'a.code', '=', 'l.account_code')
+                ->whereIn('l.voucher_id', array_keys($vouchers))
+                ->where('a.is_cash', true)
+                ->where('l.debit_orig', '>', 0)
+                ->orderBy('l.line_no')
+                ->get(['l.voucher_id', 'a.code', 'a.name_en', 'a.name_ar']);
+
+            foreach ($accounts as $account) {
+                $vouchers[(string) $account->voucher_id]['account'] ??= $account->code.' · '.(app()->getLocale() === 'ar' ? $account->name_ar : $account->name_en);
+            }
+        }
+
+        return array_filter($vouchers, fn (array $voucher): bool => bccomp($voucher['amount'], '0', 2) === 1);
+    }
+
     private function approvedLines(): Builder
     {
         return DB::table('gl_voucher_lines as l')

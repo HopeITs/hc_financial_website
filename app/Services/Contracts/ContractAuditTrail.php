@@ -4,6 +4,8 @@ namespace App\Services\Contracts;
 
 use App\Models\Contract;
 use App\Models\ContractAudit;
+use App\Models\ContractInstalment;
+use App\Models\ContractReceipt;
 use App\Models\GlBudgetLine;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
@@ -37,6 +39,16 @@ class ContractAuditTrail
         ]);
     }
 
+    public function receiptLinked(Contract $contract, ContractInstalment $instalment, ContractReceipt $receipt, User $by): void
+    {
+        $this->record($contract, ContractAudit::RECEIPT_LINKED, $by, null, null, $this->receiptDetails($contract, $instalment, $receipt));
+    }
+
+    public function receiptUnlinked(Contract $contract, ContractInstalment $instalment, ContractReceipt $receipt, User $by): void
+    {
+        $this->record($contract, ContractAudit::RECEIPT_UNLINKED, $by, null, null, $this->receiptDetails($contract, $instalment, $receipt));
+    }
+
     /**
      * @param  array<string, mixed>  $details
      */
@@ -63,13 +75,25 @@ class ContractAuditTrail
     }
 
     /**
-     * The latest entries of one agreement's trail, newest first.
+     * The latest entries of one agreement's trail, newest first, of the given actions only when some are given.
      *
+     * @param  list<string>  $actions
      * @return Collection<int, ContractAudit>
      */
-    public function latest(Contract $contract, int $limit = 50): Collection
+    public function latest(Contract $contract, int $limit = 50, array $actions = []): Collection
     {
-        return ContractAudit::query()->where('contract_id', $contract->id)->orderByDesc('created_at')->orderByDesc('id')->limit($limit)->get();
+        return ContractAudit::query()->where('contract_id', $contract->id)
+            ->when($actions !== [], fn ($query) => $query->whereIn('action', $actions))
+            ->orderByDesc('created_at')->orderByDesc('id')->limit($limit)->get();
+    }
+
+    /** @return array{instalment: int, voucher: string, amount: string, amount_usd: string, currency: string} */
+    private function receiptDetails(Contract $contract, ContractInstalment $instalment, ContractReceipt $receipt): array
+    {
+        return [
+            'instalment' => $instalment->number, 'voucher' => $receipt->voucher_id,
+            'amount' => (string) $receipt->amount, 'amount_usd' => (string) $receipt->amount_usd, 'currency' => $contract->currency,
+        ];
     }
 
     /** @return array{name: string, account: string, amount: string, currency: string} */

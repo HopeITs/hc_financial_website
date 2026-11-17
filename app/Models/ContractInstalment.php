@@ -5,6 +5,7 @@ namespace App\Models;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -40,6 +41,12 @@ class ContractInstalment extends Model
     public function contract(): BelongsTo
     {
         return $this->belongsTo(Contract::class);
+    }
+
+    /** @return HasMany<ContractReceipt, $this> the receipt vouchers that brought it */
+    public function receipts(): HasMany
+    {
+        return $this->hasMany(ContractReceipt::class, 'instalment_id');
     }
 
     /** A conditional instalment is income once its condition is met; any other is income from the signing. */

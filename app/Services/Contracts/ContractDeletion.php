@@ -101,6 +101,7 @@ class ContractDeletion
             ]);
 
             // The children go first, so nothing depends on the database cascading them.
+            $contract->receipts()->delete();
             $contract->reports()->delete();
             $contract->instalments()->delete();
             $contract->projects()->delete();
