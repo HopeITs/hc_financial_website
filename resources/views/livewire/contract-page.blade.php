@@ -185,6 +185,24 @@
                     <x-ui.form-input wire:model="shareAmount" type="number" step="0.01" min="0" :label="__('contracts.share').' ('.$contract->currency.')'" dir="ltr" required data-test="share-amount" />
                     <x-ui.button type="submit" icon="plus" data-test="add-share">{{ __('contracts.add_share') }}</x-ui.button>
                 </form>
+                <form wire:submit="createProject" class="flex flex-col gap-3 border-t border-secondary-soft p-4 dark:border-line" data-test="new-project-form">
+                    <div>
+                        <h3 class="text-sm font-semibold text-secondary-dark dark:text-ink">{{ __('contracts.new_project') }}</h3>
+                        <p class="text-sm text-secondary-medium dark:text-ink-muted">{{ __('contracts.new_project_hint', ['currency' => $contract->currency]) }}</p>
+                    </div>
+                    <div class="flex flex-wrap items-end gap-3">
+                        <x-ui.form-input wire:model="newProjectCode" :label="__('contracts.project_code')" :help="__('contracts.project_code_help')" dir="ltr" maxlength="16" required class="w-40" data-test="new-project-code" />
+                        <x-ui.form-input wire:model="newProjectName" :label="__('contracts.project_name')" required class="min-w-64 flex-1" data-test="new-project-name" />
+                        <x-ui.form-select wire:model="newProjectCity" :label="__('contracts.project_city')" :placeholder="__('contracts.choose')" class="min-w-48" data-test="new-project-city">
+                            <option value="">{{ __('contracts.choose') }}</option>
+                            @foreach ($cities as $city)
+                                <option value="{{ $city->name }}">{{ $city->localizedName() }}</option>
+                            @endforeach
+                        </x-ui.form-select>
+                        <x-ui.form-input wire:model="newProjectAmount" type="number" step="0.01" min="0" :label="__('contracts.share').' ('.$contract->currency.')'" dir="ltr" required data-test="new-project-amount" />
+                        <x-ui.button type="submit" tone="primary" icon="plus" data-test="create-project">{{ __('contracts.create_project') }}</x-ui.button>
+                    </div>
+                </form>
             @endif
         </x-ui.panel>
     @endif

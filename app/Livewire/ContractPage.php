@@ -11,10 +11,12 @@ use App\Models\Contract;
 use App\Models\ContractInstalment;
 use App\Models\ContractProject;
 use App\Models\ContractReport;
+use App\Models\GlCity;
 use App\Models\GlProject;
 use App\Models\User;
 use App\Services\Contracts\ContractException;
 use App\Services\Contracts\ContractFiles;
+use App\Services\Contracts\ContractProjects;
 use App\Services\Contracts\ContractWorkflow;
 use App\Services\Ledger\Currencies;
 use App\Services\Projects\ProjectAccess;
@@ -31,8 +33,8 @@ use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 
 /**
- * One funding contract (finance design of 2026-11-16), in tabs: its details, its split over projects (by amount, adding
- * up to the contract), its expected instalments (some conditional), the reports owed to the donor, and its closing.
+ * One agreement (finance design of 2026-11-16), in tabs: its details, its split over projects (by amount, adding
+ * up to the agreement; a new project is created here too), its expected instalments (some conditional), the reports owed to the donor, and its closing.
  * The budget per contract and the link to receipts and payments come in the next step.
  */
 #[Layout('components.layouts.app')]
@@ -80,6 +82,14 @@ class ContractPage extends Component
     public string $shareProject = '';
 
     public string $shareAmount = '';
+
+    public string $newProjectCode = '';
+
+    public string $newProjectName = '';
+
+    public string $newProjectCity = '';
+
+    public string $newProjectAmount = '';
 
     public string $instalmentDue = '';
 
@@ -225,6 +235,35 @@ class ContractPage extends Component
 
         $this->reset('shareProject', 'shareAmount');
         $this->say(__('contracts.share_added'));
+    }
+
+    /** A new ledger project created inside this agreement, with its share of the agreement. */
+    public function createProject(ContractProjects $projects): void
+    {
+        $this->authorizeChange();
+        $contract = $this->contract();
+        if ($this->isLocked($contract)) {
+            return;
+        }
+
+        $this->newProjectCode = ContractProjects::normalCode($this->newProjectCode);
+
+        $data = $this->validate([
+            'newProjectCode' => ['required', 'string', 'max:16', 'regex:/^[A-Z0-9_-]+$/', Rule::unique('gl_projects', 'code')],
+            'newProjectName' => ['required', 'string', 'max:255'],
+            'newProjectCity' => ['nullable', Rule::in(GlCity::activeNames())],
+            'newProjectAmount' => ['required', 'numeric', 'gt:0', 'max:9999999999999'],
+        ]);
+
+        $projects->create($contract, [
+            'code' => $data['newProjectCode'],
+            'name' => $data['newProjectName'],
+            'city' => $data['newProjectCity'] ?? null,
+            'amount' => $data['newProjectAmount'],
+        ]);
+
+        $this->reset('newProjectCode', 'newProjectName', 'newProjectCity', 'newProjectAmount');
+        $this->say(__('contracts.project_created'));
     }
 
     public function removeShare(int $id): void
@@ -429,6 +468,7 @@ class ContractPage extends Component
                 ? bcdiv(bcmul((string) $share->amount, '100', 6), (string) $contract->amount, 2)
                 : '0.00']),
             'projects' => GlProject::query()->whereNotIn('code', $contract->projects->pluck('project_code'))->orderBy('code')->get(['code', 'name']),
+            'cities' => GlCity::query()->where('is_active', true)->orderBy('name')->get(),
             'canChange' => $canChange,
             'canChangeMoney' => $canChange && ! $contract->isApproved(),
             'canApprove' => $contract->isOpen() && ! $contract->isApproved() && Gate::allows('screen', ['contracts', 'approve']),
