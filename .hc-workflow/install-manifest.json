@@ -4,14 +4,14 @@
     ".claude/commands/init-standards.md": "500d0df4f414e3eacf35b27badba73638c7d4fa2fc476c12dc597cbef94b7d8f",
     ".claude/commands/new-page.md": "310e3bfc1aa0f1d9902625021d06de28e08d27c47d94c724de7b12d884a02a53",
     ".claude/commands/submit.md": "d11e4176a57e15d27031eb591676ce197fdf4e4b6b24c9f2861c4a8e01059d7c",
-    ".claude/settings.json": "2fa56b87c61bfd2d8617b0b342a43dca2bc282b861a9e244ce98d8e68632aef8",
+    ".claude/settings.json": "cf15673267e804bbad64a9c65b5432c7908d73cac9cb0a241cf653570d41f96c",
     ".githooks/pre-push": "f002f0b1da24e0b31d32e538cf97a6478c80759d626947bfbb015c3441be3c9a",
     ".github/CODEOWNERS": "56b2d159093e625aef255ac6a760d629e253d1ed78489154d2e5b47ed648f97e",
     ".github/pull_request_template.md": "1b5b7bc734c79bd02b310f92ac270b556262939dec27d845eb040b67e956c9a6",
     ".github/workflows/hc-workflow-checks.yml": "929242eecb37751abbec53cd661b11b4409c1f951ce9e715a57ec60a35f43316",
     ".hc-workflow/check.mjs": "8707fa3356eaa641681af6ee50526975a192b14ec2b394b1f025d14946c12162",
-    ".hc-workflow/config.json": "503784d84acaacbf7e3dd678378cea8e38dd031020e1b6f2582ebd09496b8a90",
-    ".hc-workflow/hook.mjs": "6c520a573d12fbbfccf2fc76c7a5a05e3918556eee6f448a30d76d716d46241f",
+    ".hc-workflow/config.json": "339bfe1c06eebe4b03cc2d5d0d8074b8f5d617d63ff050795a1a8e45f5979351",
+    ".hc-workflow/hook.mjs": "1b6a6b099352d4afb772a7e1f709b56e2ba2b97d29f8a58be19e793ada5f8dc0",
     ".hc-workflow/lib.mjs": "24782d841017fd0a28d5c51dc7b2d22dcffc2aae43ce3fe2409752a3dc18927d",
     ".hc-workflow/roles.json": "794b60ab152bf8b315fc56dd4b884f4fb8e1f3d54d93059f2733ad138edaafca",
     ".hc-workflow/SETUP-ROUTES.md": "170100bef827fd10396c497077b013e21c53e98e9aa74f06ce4433260c4e4085",
@@ -30,7 +30,16 @@
         "Bash(./composer.cmd test)",
         "Bash(vendor/bin/pest:*)",
         "Bash(composer lint:check)",
-        "Bash(npm test)"
+        "Bash(npm test)",
+        "Bash(php artisan migrate:*)",
+        "Bash(php.cmd artisan migrate:*)",
+        "Bash(./php.cmd artisan migrate:*)",
+        "Bash(php artisan db:*)",
+        "Bash(php.cmd artisan db:*)",
+        "Bash(./php.cmd artisan db:*)",
+        "Bash(php artisan tinker:*)",
+        "Bash(php.cmd artisan tinker:*)",
+        "Bash(./php.cmd artisan tinker:*)"
       ],
       "deny": [],
       "hooks": []
@@ -48,6 +57,6 @@
     "previousHooksPath": null,
     "hooksPathRecorded": true
   },
-  "version": "3.8.1",
+  "version": "3.9.0",
   "site": "auto"
 }

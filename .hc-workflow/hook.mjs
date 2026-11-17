@@ -26,6 +26,24 @@ function block(message) {
   process.exit(2);
 }
 
+// Reads .env (the hook may; Claude may not) and says whether it points at a local test database.
+function testDatabaseCheck(cmd) {
+  const t = cfg.testDatabase ?? {};
+  if (/\bDB_[A-Z_]+\s*=|--database\b|--env\b/i.test(cmd)) return { ok: false, why: 'the command overrides the database settings' };
+  const env = {};
+  try {
+    for (const line of readFileSync(path.join(root, '.env'), 'utf8').split('\n')) {
+      const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/);
+      if (m) env[m[1]] = m[2].replace(/^["']|["']$/g, '');
+    }
+  } catch { return { ok: false, why: 'no readable .env' }; }
+  if ((env.APP_ENV ?? '') !== 'local') return { ok: false, why: 'APP_ENV is not "local"' };
+  if ((env.DB_CONNECTION ?? '') === 'sqlite') return { ok: true };
+  if (!(t.hosts ?? []).includes(env.DB_HOST ?? '')) return { ok: false, why: 'the database host is not local' };
+  if (!new RegExp(t.namePattern ?? '(test|demo|dummy|sandbox)', 'i').test(env.DB_DATABASE ?? '')) return { ok: false, why: 'the database name does not look like a test database' };
+  return { ok: true };
+}
+
 const askIT = (what) => role.fullAccess ? `
 ${what}
 Do NOT try to work around this (no shell redirects, no other tool, no renamed path).
@@ -149,8 +167,14 @@ if (mode === 'bash') {
     }
   }
 
-  for (const { pattern, why } of cfg.blockedCommands) {
-    if (re(pattern).test(cmd)) {
+  // dbAccess department: migrate / db:* / tinker are allowed, but only against a local test database.
+  const testDb = role.dbAccess ? testDatabaseCheck(cmd) : null;
+  for (const { pattern, why, unlessTestDb } of cfg.blockedCommands) {
+    const effective = unlessTestDb && testDb?.ok ? unlessTestDb : pattern;
+    if (re(effective).test(cmd)) {
+      if (unlessTestDb && role.dbAccess && testDb && !testDb.ok) {
+        block(askIT(`BLOCKED by the HC Workflow: database commands are allowed only on a local test database (${testDb.why}).`));
+      }
       block(askIT(`BLOCKED by the HC Workflow: this command is not allowed (${why}).`));
     }
   }
