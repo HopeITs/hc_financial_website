@@ -2,7 +2,7 @@
     <x-ui.page-header :title="__('navigation.screens.donors')" :subtitle="__('donors.intro')" :count="count($donors)">
         <x-slot:actions>
             @if ($canSeeContracts)
-                <x-ui.button :href="route('projects.contracts')" wire:navigate icon="document-text" data-test="open-contracts">{{ __('contracts.title') }}</x-ui.button>
+                <x-ui.button :href="route('funding.agreements')" wire:navigate icon="document-text" data-test="open-contracts">{{ __('contracts.title') }}</x-ui.button>
             @endif
             @if ($canCreate)
                 <x-ui.button tone="primary" icon="plus" wire:click="add" data-test="add-donor">{{ __('donors.add') }}</x-ui.button>
@@ -103,7 +103,7 @@
                         <td dir="ltr">{{ $donor->currency ?? '—' }}</td>
                         <td class="fin-num">
                             @if ($canSeeContracts && ($runningCount[$donor->id] ?? 0) > 0)
-                                <a href="{{ route('projects.contracts', ['donor' => $donor->id]) }}" wire:navigate class="underline">{{ $runningCount[$donor->id] }}</a>
+                                <a href="{{ route('funding.agreements', ['donor' => $donor->id]) }}" wire:navigate class="underline">{{ $runningCount[$donor->id] }}</a>
                             @else
                                 {{ $runningCount[$donor->id] ?? 0 }}
                             @endif

@@ -44,7 +44,7 @@ it('has a page for each error the app can show, the expired one sending the pers
 it('replaces Livewire\'s English session-expired prompt on every signed-in page', function () {
     $head = User::query()->findOrFail(createFinanceUser('Ho', 'secret pass'));
 
-    $this->actingAs($head)->get('/bridge/decisions')->assertOk()
+    $this->actingAs($head)->get('/notifications')->assertOk()
         ->assertSee('data-test="session-expired"', false)
         ->assertSee(__('errors.expired.title'));
 });

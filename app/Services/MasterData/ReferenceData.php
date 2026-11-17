@@ -8,10 +8,8 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * The master-data screens that only show what the Windows program keeps (decision of T38): donors, cities, currencies,
- * denominations, employees, cash tills, fiscal bonds, budget line categories and the log. They read
- * through the SELECT-only `legacy` connection (the log through the default one, which the web app also writes to at
- * login) and never write. The ledger's own master data (the chart, the programs and the projects) is edited on its
- * own screens; the old project windows are the tabs of the project page.
+ * denominations, employees, cash tills, fiscal bonds and the log. They read through the SELECT-only `legacy`
+ * connection (the log through the default one, which the web app also writes to at login) and never write.
  *
  * Each screen is a query, its columns and the columns a search looks in. A column is [key, label, type], the type being
  * text, code, date, number or yesno.
@@ -21,10 +19,7 @@ class ReferenceData
     public const PER_PAGE = 25;
 
     /** @var list<string> */
-    public const SLUGS = ['donors', 'cities', 'currency', 'denoms', 'employees', 'tills', 'bonds', 'blcats', 'log'];
-
-    /** Screens that the project page replaces. */
-    public const MERGED = ['projwin', 'budgetlines', 'lifetime'];
+    public const SLUGS = ['donors', 'cities', 'currency', 'denoms', 'employees', 'tills', 'bonds', 'log'];
 
     public function has(string $slug): bool
     {
@@ -42,7 +37,6 @@ class ReferenceData
             'employees' => [['name', 'master.col.name', 'text'], ['father', 'master.col.father', 'text'], ['begin', 'master.col.begin', 'date'], ['end', 'master.col.end', 'date']],
             'tills' => [['name', 'master.col.name', 'text'], ['currency', 'master.col.currency', 'text'], ['city', 'master.col.city', 'text']],
             'bonds' => [['name', 'master.col.name', 'text'], ['date', 'master.col.date', 'date'], ['account', 'master.col.account', 'text'], ['notes', 'master.col.notes', 'text']],
-            'blcats' => [['name', 'master.col.name', 'text'], ['type', 'master.col.type', 'text'], ['kind', 'master.col.kind', 'number']],
             'log' => [['date', 'master.col.date', 'date'], ['user', 'master.col.user', 'text'], ['form', 'master.col.form', 'text'], ['title', 'master.col.title', 'text'], ['details', 'master.col.details', 'text']],
             default => [],
         };
@@ -99,8 +93,6 @@ class ReferenceData
                 ->select('c.id as id', 'c.Name as name', 't.Name as currency', 'y.Name as city')->orderBy('y.Name')->orderBy('c.Name'), ['c.Name', 'y.Name', 't.Name']],
             'bonds' => [$legacy('fiscalbond as f')->leftJoin('account as a', 'a.ID', '=', 'f.Account_ID')
                 ->select('f.ID as id', 'f.Name as name', 'f.Date as date', 'f.Notes as notes', 'a.Name as account')->orderByDesc('f.Date')->orderByDesc('f.ID'), ['f.Name', 'f.Notes', 'a.Name']],
-            'blcats' => [$legacy('linecategory as c')->leftJoin('linecategorytype as t', 't.ID', '=', 'c.Type_ID')
-                ->select('c.ID as id', 'c.Name as name', 't.Name as type', 'c.Kind as kind')->orderBy('t.Name')->orderBy('c.Name'), ['c.Name', 't.Name']],
             default => [DB::table('log')->select('id', 'date', 'user', 'form_name as form', 'title', 'details')->orderByDesc('id'), ['user', 'form_name', 'title', 'details']],
         };
     }

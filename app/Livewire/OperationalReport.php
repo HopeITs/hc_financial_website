@@ -17,7 +17,7 @@ use SplFileObject;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * One screen for the six operational reports (rexp, rcash, rbl, rrev, rfixed, rattach), told apart by the route's
+ * One screen for the five operational reports (rexp, rcash, rrev, rfixed, rattach), told apart by the route's
  * screen slug. They share the Windows program's filters and the report currency switch, and export what is shown.
  */
 #[Layout('components.layouts.app')]

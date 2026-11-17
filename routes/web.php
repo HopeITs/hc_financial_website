@@ -5,7 +5,6 @@ use App\Http\Controllers\SwitchLocaleController;
 use App\Http\Controllers\VoucherPrintController;
 use App\Livewire\Approval;
 use App\Livewire\AuditLog;
-use App\Livewire\Bridge;
 use App\Livewire\Chart;
 use App\Livewire\CurrencySettings;
 use App\Livewire\DonorReportScreen;
@@ -20,10 +19,6 @@ use App\Livewire\Notifications;
 use App\Livewire\OpeningBalances;
 use App\Livewire\OperationalReport;
 use App\Livewire\Operations;
-use App\Livewire\Programs;
-use App\Livewire\ProjectEditor;
-use App\Livewire\ProjectPage;
-use App\Livewire\Projects;
 use App\Livewire\ReferenceList;
 use App\Livewire\Requests;
 use App\Livewire\Salaries;
@@ -68,17 +63,6 @@ Route::middleware('auth')->group(function () {
 
     $screen('chart', Chart::class);
 
-    $screen('programs', Programs::class);
-    $screen('projects', Projects::class);
-    Route::get('projects/new', ProjectEditor::class)->defaults('screen', 'projects')->middleware('screen:projects,create')->name('projects.new');
-    Route::get('projects/{code}/edit', ProjectEditor::class)->where('code', '[A-Za-z0-9_-]+')->defaults('screen', 'projects')->middleware('screen:projects,edit')->name('projects.edit');
-    Route::get('projects/{account}', ProjectPage::class)->whereNumber('account')->defaults('screen', 'projects')->middleware('screen')->name('projects.show');
-
-    // Master data (task 38): the old project windows are the project page.
-    foreach (ReferenceData::MERGED as $slug) {
-        $screen($slug, Projects::class);
-    }
-
     // Registered before the vouchers list so `new` is not read as a list filter.
     Route::get('entries/vouchers/new', VoucherBuilder::class)->defaults('screen', 'vouchers')->middleware('screen:vouchers,create')->name('entries.vouchers.create');
     Route::get('entries/vouchers/{voucher}/print', VoucherPrintController::class)->defaults('screen', 'vouchers')->middleware('screen')->name('entries.vouchers.print');
@@ -103,7 +87,7 @@ Route::middleware('auth')->group(function () {
     $screen('opening', OpeningBalances::class);
     $screen('alloc', Transfers::class);
 
-    foreach (['rexp', 'rcash', 'rbl', 'rrev', 'rfixed', 'rattach'] as $report) {
+    foreach (['rexp', 'rcash', 'rrev', 'rfixed', 'rattach'] as $report) {
         $screen($report, OperationalReport::class)->defer($defer);
     }
 
@@ -119,11 +103,6 @@ Route::middleware('auth')->group(function () {
     $screen('salaries', Salaries::class);
     $screen('users', Users::class);
     $screen('auditlog', AuditLog::class);
-
-    // Bridge pages (task 39): read-only, for Head Office and the Financial Manager.
-    foreach (Bridge::PAGES as $page) {
-        $screen($page, Bridge::class);
-    }
 
     // The currencies are the ledger's own table (R4-4), edited here; the other references are read-only.
     $screen('currency', CurrencySettings::class);

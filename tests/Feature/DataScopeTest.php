@@ -2,7 +2,6 @@
 
 use App\Enums\RoleId;
 use App\Livewire\Home;
-use App\Livewire\ProjectPage;
 use App\Models\User;
 use App\Models\WebUserRole;
 use App\Services\Access\LegacyDataScope;
@@ -126,20 +125,6 @@ it('shows a limited person only their own projects on the home page and nothing 
     Livewire::actingAs($user)->test(Home::class)->assertSee('Beta')->assertDontSee('Alpha');
     Livewire::actingAs(scopedUser(RoleId::FinancialManager, 'nobody'))->test(Home::class)->assertDontSee('Beta')->assertDontSee('Alpha');
     Livewire::actingAs(scopedUser(RoleId::HeadOffice, 'boss'))->test(Home::class)->assertSee('Beta')->assertSee('Alpha');
-});
-
-it('opens only the project pages in scope and lists only the cash accounts and siblings in scope', function () {
-    $user = scopedUser(RoleId::Accountant);
-    giveAccount($user, 10);
-    giveCash($user, 1);
-
-    $this->actingAs($user)->get('/projects/20')->assertForbidden();
-    $this->actingAs($user)->get('/projects/11')->assertForbidden();
-
-    $page = Livewire::actingAs($user)->test(ProjectPage::class, ['account' => 10]);
-    expect($page->viewData('cashAccounts')->pluck('cashAccountId')->all())->toBe([1]);
-    $page->call('show', 'accounts');
-    expect($page->viewData('siblings')->pluck('accountId')->all())->toBe([10]);
 });
 
 it('filters the balance source by the given project and cash accounts', function () {

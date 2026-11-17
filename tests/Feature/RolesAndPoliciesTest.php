@@ -84,11 +84,11 @@ it('shows each role only its screens', function (RoleId $role) {
         ->toEqualCanonicalizing($navigation->intersect($permitted)->values()->all());
 })->with(fn () => RoleId::cases());
 
-it('keeps the migration screens for Head Office only', function () {
+it('keeps the opening balances screen for Head Office only', function () {
     foreach (RoleId::cases() as $role) {
         $visible = collect(Navigation::visibleGroups(userWithRole($role, 'P'.$role->value)))->flatten();
 
-        expect($visible->contains('dbload'))->toBe($role === RoleId::HeadOffice);
+        expect($visible->contains('opening'))->toBe($role === RoleId::HeadOffice);
     }
 });
 

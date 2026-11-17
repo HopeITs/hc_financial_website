@@ -5,10 +5,10 @@
 | Main navigation
 |--------------------------------------------------------------------------
 |
-| The groups and screens of the "Hope Center Finance" mockup, in its order.
-| Each screen is a slug; its label is lang `navigation.screens.<slug>` and a
-| group's label is `navigation.groups.<group>`. A screen that is not built yet
-| opens the placeholder page.
+| The groups and screens of the main menu, in their order. Each screen is a
+| slug; its label is lang `navigation.screens.<slug>` and a group's label is
+| `navigation.groups.<group>`. A screen that is not built yet opens the
+| placeholder page.
 |
 | The slug stays the permission key (config/permissions.php). The address a
 | person sees is the screen's path below, and its route name is that path
@@ -20,26 +20,18 @@
 return [
 
     'groups' => [
+        'funding' => ['donors', 'contracts', 'rdonor'],
+        'entries' => ['single', 'multi', 'multiatt', 'payments', 'vouchers', 'bonds', 'approval', 'requests', 'salaries'],
+        'treasury' => ['tills', 'treasury', 'alloc', 'monthend', 'opening', 'currency', 'denoms'],
+        'reports' => ['rexp', 'rcash', 'rrev', 'rfixed', 'rattach', 'tb', 'statement', 'statements', 'recon', 'mapprovals', 'uncomp', 'xreserve', 'advances', 'loans'],
         'chart' => ['chart'],
-        'projects' => ['projwin', 'budgetlines', 'blcats', 'lifetime', 'programs', 'projects', 'contracts'],
-        'entries' => ['single', 'multi', 'multiatt', 'payments', 'vouchers', 'bonds', 'approval', 'requests'],
-        'treasury' => ['tills', 'treasury', 'alloc', 'monthend', 'cities', 'currency', 'denoms'],
-        'reports' => ['rexp', 'rcash', 'rbl', 'rdonor', 'rrev', 'rfixed', 'rattach', 'tb', 'statement', 'statements', 'recon', 'mapprovals', 'uncomp', 'xreserve', 'advances', 'loans'],
-        'people' => ['donors', 'employees', 'salaries', 'users', 'log', 'auditlog'],
-        'migration' => ['dbload', 'opening', 'fixusd', 'legacy', 'merges'],
-        'bridge' => ['decisions', 'mapping', 'rules'],
+        'settings' => ['users', 'employees', 'cities', 'log', 'auditlog'],
     ],
 
     'paths' => [
-        'chart' => 'chart',
-
-        'projwin' => 'projects/list',
-        'budgetlines' => 'projects/budget-lines',
-        'blcats' => 'projects/line-categories',
-        'lifetime' => 'projects/lines-lifetime',
-        'programs' => 'projects/programs',
-        'projects' => 'projects/balances',
-        'contracts' => 'projects/contracts',
+        'donors' => 'funding/donors',
+        'contracts' => 'funding/agreements',
+        'rdonor' => 'funding/donor-report',
 
         'single' => 'entries/operations',
         'multi' => 'entries/multi',
@@ -49,18 +41,18 @@ return [
         'bonds' => 'entries/bonds',
         'approval' => 'entries/approval',
         'requests' => 'entries/requests',
+        'salaries' => 'entries/salaries',
 
         'tills' => 'treasury/tills',
         'monthend' => 'treasury/month-end',
+        'opening' => 'treasury/opening-balances',
         'treasury' => 'treasury/position',
         'alloc' => 'treasury/allocation-rates',
-        'cities' => 'treasury/cities',
         'currency' => 'treasury/currencies',
         'denoms' => 'treasury/denominations',
 
         'rexp' => 'reports/expenses',
         'rcash' => 'reports/cash-balances',
-        'rbl' => 'reports/budget-lines',
         'rrev' => 'reports/revenue',
         'rfixed' => 'reports/fixed-assets',
         'rattach' => 'reports/attachments',
@@ -69,28 +61,18 @@ return [
         'statements' => 'reports/financial-statements',
         'recon' => 'reports/hawala-reconciliation',
         'mapprovals' => 'reports/monthly-approvals',
-        'rdonor' => 'reports/donor',
         'uncomp' => 'reports/uncompensated-cash',
         'xreserve' => 'reports/exchange-difference-reserve',
         'advances' => 'reports/open-advances',
         'loans' => 'reports/loan-collection',
 
-        'donors' => 'people/donors',
-        'employees' => 'people/employees',
-        'salaries' => 'people/salaries',
-        'users' => 'people/users',
-        'log' => 'people/log',
-        'auditlog' => 'people/audit-log',
+        'chart' => 'chart',
 
-        'dbload' => 'migration/load-database',
-        'opening' => 'migration/opening-close',
-        'fixusd' => 'migration/fix-usd',
-        'legacy' => 'migration/legacy-exchange',
-        'merges' => 'migration/till-merges',
-
-        'decisions' => 'bridge/decisions',
-        'mapping' => 'bridge/mapping',
-        'rules' => 'bridge/posting-rules',
+        'users' => 'settings/users',
+        'employees' => 'settings/employees',
+        'cities' => 'settings/cities',
+        'log' => 'settings/log',
+        'auditlog' => 'settings/audit-log',
     ],
 
 ];

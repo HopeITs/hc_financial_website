@@ -3,17 +3,15 @@
 use App\Enums\RoleId;
 use App\Livewire\Chart;
 use App\Livewire\CurrencySettings;
-use App\Livewire\Programs;
 use App\Models\Currency;
 use App\Models\GlAccount;
-use App\Models\GlProgram;
 use App\Models\User;
 use App\Support\FormDrafts;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
 /*
- * Save as draft (U-04) on the chart editor, the currency form and the program form: the draft is offered back on a fresh
+ * Save as draft (U-04) on the chart editor and the currency form: the draft is offered back on a fresh
  * page, restores the form as it was, and is forgotten once the form is saved.
  */
 
@@ -108,30 +106,9 @@ it('brings back the currency being edited, but never the base currency', functio
     Livewire::actingAs($hana)->test(CurrencySettings::class)->call('restoreDraft')->assertSet('editing', null);
 });
 
-it('drafts a new program, restores it on a fresh page, and forgets it once the program is saved', function () {
-    $hana = fdAUser();
-
-    Livewire::actingAs($hana)->test(Programs::class)
-        ->call('openForm')
-        ->set('nameEn', 'Water')->set('nameAr', 'المياه')->set('description', 'Clean water')
-        ->call('saveDraft')
-        ->assertDispatched('form-clean');
-
-    $page = Livewire::actingAs($hana)->test(Programs::class)
-        ->assertSeeHtml('data-test="draft-offer"')
-        ->call('restoreDraft')
-        ->assertSet('showForm', true)->assertSet('nameEn', 'Water')->assertSet('nameAr', 'المياه')->assertSet('description', 'Clean water');
-
-    $page->call('save')->assertHasNoErrors()->assertSet('showForm', false);
-
-    expect(GlProgram::query()->where('name_en', 'Water')->exists())->toBeTrue()
-        ->and(fdARow($hana, 'programs'))->toBeNull();
-});
-
-it('puts the leave warning and the draft button on the chart, currency and program forms', function () {
+it('puts the leave warning and the draft button on the chart and currency forms', function () {
     $hana = fdAUser();
 
     Livewire::actingAs($hana)->test(Chart::class)->assertSeeHtml('x-data="unsavedGuard"')->assertSeeHtml('data-test="save-draft"')->assertSeeHtml('x-on:click="leaving()"');
     Livewire::actingAs($hana)->test(CurrencySettings::class)->call('add')->assertSeeHtml('x-data="unsavedGuard"')->assertSeeHtml('data-test="save-draft"')->assertSeeHtml('x-on:click="leaving()"');
-    Livewire::actingAs($hana)->test(Programs::class)->call('openForm')->assertSeeHtml('x-data="unsavedGuard"')->assertSeeHtml('data-test="save-draft"')->assertSeeHtml('x-on:click="leaving()"');
 });

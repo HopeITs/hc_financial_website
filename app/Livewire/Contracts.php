@@ -127,7 +127,7 @@ class Contracts extends Component
             'created_by' => (int) Auth::id(),
         ]);
 
-        $this->redirectRoute('projects.contracts.show', ['contract' => $contract->id], navigate: true);
+        $this->redirectRoute('funding.agreements.show', ['contract' => $contract->id], navigate: true);
     }
 
     public function render(ProjectAccess $access, Currencies $currencies): View

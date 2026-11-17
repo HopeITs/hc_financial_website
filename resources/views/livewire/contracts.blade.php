@@ -1,7 +1,7 @@
 <div class="flex flex-col gap-6 px-4 pb-10 lg:px-8">
     <x-ui.page-header :title="__('contracts.title')" :subtitle="__('contracts.intro')" :count="count($contracts)">
         <x-slot:actions>
-            <x-ui.button :href="route('people.donors')" wire:navigate icon="users">{{ __('navigation.screens.donors') }}</x-ui.button>
+            <x-ui.button :href="route('funding.donors')" wire:navigate icon="users">{{ __('navigation.screens.donors') }}</x-ui.button>
             @if ($canCreate)
                 <x-ui.button tone="primary" icon="plus" wire:click="add" data-test="add-contract">{{ __('contracts.add') }}</x-ui.button>
             @endif
@@ -86,7 +86,7 @@
             <tbody>
                 @forelse ($contracts as $contract)
                     <tr wire:key="contract-{{ $contract->id }}">
-                        <td dir="ltr"><a href="{{ route('projects.contracts.show', ['contract' => $contract->id]) }}" wire:navigate class="font-medium underline">{{ $contract->number }}</a></td>
+                        <td dir="ltr"><a href="{{ route('funding.agreements.show', ['contract' => $contract->id]) }}" wire:navigate class="font-medium underline">{{ $contract->number }}</a></td>
                         <td>{{ $contract->title }}</td>
                         <td>{{ $contract->donor->localizedName() }}</td>
                         <td dir="ltr">{{ $contract->starts_on->format('d/m/Y') }} – {{ $contract->ends_on->format('d/m/Y') }}</td>
