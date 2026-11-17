@@ -301,11 +301,11 @@
   },
   "blockedCommands": [
     {
-      "pattern": "\\bphp\\s+artisan\\s+(migrate|db:|tinker|key:|down\\b|queue:|schedule:)",
+      "pattern": "\\bphp(\\.cmd|\\.exe)?\\s+artisan\\s+(migrate|db:|tinker|key:|down\\b|queue:|schedule:)",
       "why": "database / server command (IT runs these)"
     },
     {
-      "pattern": "\\bcomposer\\s+(require|update|install|remove|global|dump)",
+      "pattern": "\\bcomposer(\\.cmd|\\.bat|\\.phar)?\\s+(require|update|install|remove|global|dump)",
       "why": "changes PHP dependencies"
     },
     {

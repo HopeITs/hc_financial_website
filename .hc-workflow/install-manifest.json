@@ -4,7 +4,7 @@
     ".claude/commands/init-standards.md": "500d0df4f414e3eacf35b27badba73638c7d4fa2fc476c12dc597cbef94b7d8f",
     ".claude/commands/new-page.md": "310e3bfc1aa0f1d9902625021d06de28e08d27c47d94c724de7b12d884a02a53",
     ".claude/commands/submit.md": "d11e4176a57e15d27031eb591676ce197fdf4e4b6b24c9f2861c4a8e01059d7c",
-    ".claude/settings.json": "cfb2d0524b3e35610b5e8362aef2e940fd0b61f845245a3a5fd3a324b0e25a83",
+    ".claude/settings.json": "2fa56b87c61bfd2d8617b0b342a43dca2bc282b861a9e244ce98d8e68632aef8",
     ".githooks/pre-push": "f002f0b1da24e0b31d32e538cf97a6478c80759d626947bfbb015c3441be3c9a",
     ".github/CODEOWNERS": "56b2d159093e625aef255ac6a760d629e253d1ed78489154d2e5b47ed648f97e",
     ".github/pull_request_template.md": "1b5b7bc734c79bd02b310f92ac270b556262939dec27d845eb040b67e956c9a6",
@@ -21,7 +21,17 @@
   },
   "merged": {
     "settings": {
-      "allow": [],
+      "allow": [
+        "Bash(php artisan test:*)",
+        "Bash(php.cmd artisan test:*)",
+        "Bash(./php.cmd artisan test:*)",
+        "Bash(composer test)",
+        "Bash(composer.cmd test)",
+        "Bash(./composer.cmd test)",
+        "Bash(vendor/bin/pest:*)",
+        "Bash(composer lint:check)",
+        "Bash(npm test)"
+      ],
       "deny": [],
       "hooks": []
     },
@@ -38,6 +48,6 @@
     "previousHooksPath": null,
     "hooksPathRecorded": true
   },
-  "version": "3.7.0",
+  "version": "3.8.1",
   "site": "auto"
 }
