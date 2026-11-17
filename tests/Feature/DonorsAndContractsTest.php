@@ -10,6 +10,7 @@ use App\Models\Contract;
 use App\Models\ContractInstalment;
 use App\Models\ContractProject;
 use App\Models\Donor;
+use App\Models\GlCity;
 use App\Models\GlProject;
 use App\Models\User;
 use App\Models\WebUserRole;
@@ -230,6 +231,58 @@ it('adds a project share and an instalment while the contract is a draft', funct
         ->and($instalment->number)->toBe(1)
         ->and($instalment->is_conditional)->toBeTrue()
         ->and($instalment->isRecognised())->toBeFalse();
+});
+
+it('creates a new project inside the agreement with the agreement donor, currency, rate and restriction', function () {
+    $contract = dcContract(complete: false);
+    GlCity::query()->create(['name' => 'Homs', 'is_active' => true]);
+
+    Livewire::actingAs(dcUser(RoleId::Accountant, 'Ann'))->test(ContractPage::class, ['contract' => $contract])
+        ->set('tab', 'projects')
+        ->assertSeeHtml('data-test="new-project-form"')
+        ->set('newProjectCode', ' edu-26 ')->set('newProjectName', 'Education Homs')->set('newProjectCity', 'Homs')->set('newProjectAmount', '70000')
+        ->call('createProject')
+        ->assertHasNoErrors()
+        ->assertSee('Project created and added to the agreement.')
+        ->set('newProjectCode', 'edu-26')->set('newProjectName', 'Again')->set('newProjectAmount', '1')
+        ->call('createProject')
+        ->assertHasErrors(['newProjectCode' => 'unique'])
+        ->set('newProjectCode', 'bad code!')->set('newProjectCity', 'Nowhere')
+        ->call('createProject')
+        ->assertHasErrors(['newProjectCode' => 'regex', 'newProjectCity' => 'in']);
+
+    $project = GlProject::query()->findOrFail('EDU-26');
+
+    expect($project->name)->toBe('Education Homs')
+        ->and($project->city)->toBe('Homs')
+        ->and($project->donor)->toBe('Caritas Poland')
+        ->and($project->restriction)->toBe('With donor restrictions')
+        ->and($project->donor_currency)->toBe('EUR')
+        ->and((string) $project->donor_rate)->toBe('1.150000')
+        ->and($project->is_general_account)->toBeFalse()
+        ->and($contract->projects()->pluck('amount', 'project_code')->map(fn ($amount) => (string) $amount)->all())->toBe(['EDU-26' => '70000.00']);
+});
+
+it('creates no project once the agreement is approved, and none for the general manager', function () {
+    $contract = dcContract();
+
+    Livewire::actingAs(dcUser(RoleId::GeneralManager, 'Gina'))->test(ContractPage::class, ['contract' => $contract])
+        ->set('tab', 'projects')
+        ->assertDontSeeHtml('data-test="new-project-form"')
+        ->set('newProjectCode', 'GM')->set('newProjectName', 'Not theirs')->set('newProjectAmount', '10')
+        ->call('createProject')
+        ->assertForbidden();
+
+    $contract->update(['approved_by' => 1, 'approved_at' => now(), 'status' => 'running']);
+
+    Livewire::actingAs(dcUser(RoleId::Accountant, 'Ann'))->test(ContractPage::class, ['contract' => $contract])
+        ->set('tab', 'projects')
+        ->assertDontSeeHtml('data-test="new-project-form"')
+        ->set('newProjectCode', 'LATE')->set('newProjectName', 'Late')->set('newProjectAmount', '10')
+        ->call('createProject')
+        ->assertSee('The agreement is approved: its project shares and instalments are fixed.');
+
+    expect(GlProject::query()->whereIn('code', ['GM', 'LATE'])->count())->toBe(0);
 });
 
 it('counts a conditional instalment as income only once its condition is met', function () {
