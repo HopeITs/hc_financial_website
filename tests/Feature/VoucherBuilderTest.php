@@ -120,7 +120,7 @@ it('has a live check list that is the posting rules: nothing ticked until the vo
 });
 
 it('shows which check fails and why, with the row number, when the voucher is out of balance or a tag is missing', function () {
-    $page = fillReceipt(builderPage(), '100', '90')->set('lines.0.fund_source', '');
+    $page = fillReceipt(builderPage(), '100', '90')->set('lines.1.project', '');
 
     $states = checkStates($page);
 
@@ -129,7 +129,7 @@ it('shows which check fails and why, with the row number, when the voucher is ou
         ->and($states[__('ledger.builder.check.accounts')])->toBeTrue()
         ->and($page->viewData('ready'))->toBeFalse();
 
-    $page->assertSee('out by 10.00 USD')->assertSee('Line 1: Account 1111 needs: Fund source.');
+    $page->assertSee('out by 10.00 USD')->assertSee('Line 2: Account 4001 needs: Project.');
 });
 
 it('numbers a message by the row you see even when blank rows come before it', function () {

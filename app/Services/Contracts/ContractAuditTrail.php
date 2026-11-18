@@ -44,11 +44,6 @@ class ContractAuditTrail
         $this->record($contract, ContractAudit::RECEIPT_LINKED, $by, null, null, $this->receiptDetails($contract, $instalment, $receipt));
     }
 
-    public function receiptUnlinked(Contract $contract, ContractInstalment $instalment, ContractReceipt $receipt, User $by): void
-    {
-        $this->record($contract, ContractAudit::RECEIPT_UNLINKED, $by, null, null, $this->receiptDetails($contract, $instalment, $receipt));
-    }
-
     /**
      * @param  array<string, mixed>  $details
      */

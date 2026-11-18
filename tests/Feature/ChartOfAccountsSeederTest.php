@@ -83,10 +83,23 @@ it('groups every cash safe and till under the header of its currency, with no in
         expect($till->parent_code)->toBe('1102')
             ->and($till->currency)->toBe('SYP')
             ->and($till->is_cash)->toBeTrue()
-            ->and($till->required_tags)->toBe(['Project', 'Fund source', 'Center']);
+            ->and($till->required_tags)->toBe(['Center']);
     }
 
     expect(GlAccount::query()->find('1145')->name_ar)->toBe('صندوق Science Zone حمص – ليرة سورية');
+});
+
+it('drops the project and fund source tags from the cash accounts and 5503 of a chart already in use', function () {
+    $old = ['1125' => ['Project', 'Fund source', 'Center'], '1161' => ['Project', 'Fund source', 'Contact'], '1111' => ['Project', 'Fund source'], '5503' => ['Project'], '1210' => ['Project']];
+    foreach ($old as $code => $tags) {
+        GlAccount::query()->find($code)->update(['required_tags' => $tags]);
+    }
+
+    (require database_path('migrations/2026_11_19_090000_drop_project_tags_from_cash_accounts.php'))->up();
+
+    expect(GlAccount::query()->whereIn('code', array_keys($old))->get()->mapWithKeys(fn (GlAccount $account) => [$account->code => $account->required_tags])->sortKeys()->all())->toBe([
+        '1111' => [], '1125' => ['Center'], '1161' => ['Contact'], '1210' => ['Project'], '5503' => [],
+    ]);
 });
 
 it('applies the v7 renames', function () {

@@ -20,12 +20,13 @@ use Illuminate\Support\Carbon;
  * @property string|null $condition
  * @property bool $is_conditional
  * @property Carbon|null $condition_met_on
+ * @property string|null $recognition_voucher_id the journal voucher that books it as income
  */
 class ContractInstalment extends Model
 {
     protected $table = 'gl_contract_instalments';
 
-    protected $fillable = ['contract_id', 'number', 'due_on', 'amount', 'condition', 'is_conditional', 'condition_met_on'];
+    protected $fillable = ['contract_id', 'number', 'due_on', 'amount', 'condition', 'is_conditional', 'condition_met_on', 'recognition_voucher_id'];
 
     protected function casts(): array
     {
@@ -47,6 +48,12 @@ class ContractInstalment extends Model
     public function receipts(): HasMany
     {
         return $this->hasMany(ContractReceipt::class, 'instalment_id');
+    }
+
+    /** @return BelongsTo<Voucher, $this> */
+    public function recognitionVoucher(): BelongsTo
+    {
+        return $this->belongsTo(Voucher::class, 'recognition_voucher_id');
     }
 
     /** A conditional instalment is income once its condition is met; any other is income from the signing. */

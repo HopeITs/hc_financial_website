@@ -8,6 +8,7 @@ use App\Models\Contract;
 use App\Models\ContractAudit;
 use App\Models\ContractInstalment;
 use App\Models\ContractProject;
+use App\Models\ContractReceipt;
 use App\Models\Donor;
 use App\Models\GlAccount;
 use App\Models\GlBudgetLine;
@@ -194,14 +195,21 @@ it('shows what was spent on each budget line and received for each project, from
         ['account_code' => '5201', 'project_code' => 'EDU', 'budget_line_key' => 'EDU|Rent', 'debit_orig' => 500, 'debit_usd' => 575],
         ['account_code' => '1111', 'credit_orig' => 500, 'credit_usd' => 575],
     ]);
+    // Received is what the receipts linked to the agreement's instalments credit to 1210; an unlinked one does not count.
+    GlAccount::query()->create([
+        'code' => '1210', 'parent_code' => null, 'level' => 'posting', 'class' => 'assets', 'name_en' => 'Receivable – donors', 'name_ar' => 'ذمم المانحين',
+        'normal_side' => 'debit', 'currency' => 'Any', 'is_cash' => false, 'required_tags' => [], 'is_active' => true,
+    ]);
     cbVoucher('CRV-2026-0001', '2026-03-15', 'approved', [
         ['account_code' => '1111', 'debit_orig' => 3000, 'debit_usd' => 3450],
-        ['account_code' => '4101', 'project_code' => 'EDU', 'credit_orig' => 3000, 'credit_usd' => 3450],
+        ['account_code' => '1210', 'project_code' => 'EDU', 'credit_orig' => 3000, 'credit_usd' => 3450],
     ]);
-    cbVoucher('CRV-2026-0002', '2026-01-10', 'approved', [
+    cbVoucher('CRV-2026-0002', '2026-04-10', 'approved', [
         ['account_code' => '1111', 'debit_orig' => 999, 'debit_usd' => 1148.85],
-        ['account_code' => '4101', 'project_code' => 'EDU', 'credit_orig' => 999, 'credit_usd' => 1148.85],
+        ['account_code' => '1210', 'project_code' => 'EDU', 'credit_orig' => 999, 'credit_usd' => 1148.85],
     ]);
+    $instalment = ContractInstalment::query()->create(['contract_id' => $contract->id, 'number' => 1, 'due_on' => '2026-03-01', 'amount' => '10000', 'is_conditional' => false]);
+    ContractReceipt::query()->create(['contract_id' => $contract->id, 'instalment_id' => $instalment->id, 'voucher_id' => 'CRV-2026-0001', 'amount' => '3000', 'amount_usd' => '3450', 'linked_by' => 1]);
 
     $actuals = app(ContractActuals::class);
 
