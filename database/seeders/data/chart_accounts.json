@@ -2109,10 +2109,7 @@
     "currency": "Any",
     "city": null,
     "is_cash": false,
-    "required_tags": [
-      "Project",
-      "Budget line"
-    ],
+    "required_tags": [],
     "usage_note": null,
     "is_active": true
   },

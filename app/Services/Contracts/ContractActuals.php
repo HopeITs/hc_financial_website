@@ -40,8 +40,8 @@ class ContractActuals
     }
 
     /**
-     * What arrived for each project: the credits to 1210 receivable from donors, per project, in the approved receipt
-     * vouchers linked to the agreement's instalments.
+     * What arrived for each project: the credits to 4001 grant income, per project, in the approved receipt vouchers
+     * linked to the agreement's instalments.
      *
      * @return array<string, string> project code => received, in the agreement currency
      */
@@ -53,7 +53,7 @@ class ContractActuals
         }
 
         $rows = $this->approvedLines()
-            ->where('l.account_code', ContractEntries::RECEIVABLE)
+            ->where('l.account_code', ContractEntries::INCOME)
             ->whereIn('l.project_code', $codes)
             ->whereIn('l.voucher_id', DB::table('gl_contract_receipts')->where('contract_id', $contract->id)->select('voucher_id'))
             ->get(['l.project_code as group_key', 'l.currency', 'l.donor_currency', 'l.debit_orig', 'l.credit_orig', 'l.debit_donor', 'l.credit_donor', 'l.debit_usd', 'l.credit_usd']);

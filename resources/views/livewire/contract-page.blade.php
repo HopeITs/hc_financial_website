@@ -270,20 +270,6 @@
                                     @else
                                         <flux:badge size="sm" color="zinc">{{ __('contracts.income_waiting') }}</flux:badge>
                                     @endif
-                                    @if ($contract->isApproved() && $instalment->isRecognised())
-                                        @php($recognition = $instalment->recognition_voucher_id !== null ? ($recognitions[$instalment->recognition_voucher_id] ?? null) : null)
-                                        <div class="mt-1 flex flex-wrap items-center gap-x-2 text-xs">
-                                            @if ($recognition !== null)
-                                                <a href="{{ route(\App\Support\Navigation::routeName('vouchers'), ['voucher' => $instalment->recognition_voucher_id]) }}" wire:navigate class="underline" dir="ltr">{{ $instalment->recognition_voucher_id }}</a>
-                                                <flux:badge size="sm" :color="$recognition === \App\Enums\VoucherStatus::Approved ? 'green' : 'amber'">{{ $recognition->label() }}</flux:badge>
-                                            @else
-                                                <span class="text-status-warn">{{ __('contracts.recognition_missing') }}</span>
-                                                @if ($canChange)
-                                                    <x-ui.button size="sm" icon="document-plus" wire:click="prepareRecognition({{ $instalment->id }})" data-test="prepare-recognition-{{ $instalment->number }}">{{ __('contracts.recognition_prepare') }}</x-ui.button>
-                                                @endif
-                                            @endif
-                                        </div>
-                                    @endif
                                 </td>
                                 <td data-test="received-{{ $instalment->number }}">
                                     @if (($arrived['state'] ?? 'none') === 'full')
@@ -341,12 +327,12 @@
                 </table>
             </div>
             @if ($canReceive && $contract->instalments->isNotEmpty())
-                @php($open = $contract->instalments->filter(fn ($instalment) => $instalment->isRecognised() && bccomp($received[$instalment->id]['remaining'] ?? (string) $instalment->amount, '0', 2) === 1))
+                @php($open = $contract->instalments->filter(fn ($instalment) => bccomp($received[$instalment->id]['remaining'] ?? (string) $instalment->amount, '0', 2) === 1))
                 @php($chosen = $destinations[$receiptAccount] ?? null)
                 <form wire:submit="receiveInstalment" class="flex flex-col gap-3 border-t border-secondary-soft p-4 dark:border-line" data-test="receipt-form">
                     <div>
                         <h3 class="text-sm font-semibold text-secondary-dark dark:text-ink">{{ __('contracts.receipt_title') }}</h3>
-                        <p class="text-sm text-secondary-medium dark:text-ink-muted">{{ __('contracts.receipt_hint', ['rate' => $contract->fixed_rate]) }}</p>
+                        <p class="text-sm text-secondary-medium dark:text-ink-muted">{{ __('contracts.receipt_hint', ['currency' => $contract->currency]) }}</p>
                     </div>
                     @if ($open->isEmpty())
                         <p class="text-sm text-secondary-medium dark:text-ink-muted" data-test="nothing-to-receive">{{ __('contracts.receipt_nothing_due') }}</p>
@@ -367,11 +353,16 @@
                             <x-ui.form-input wire:model="receiptDate" type="date" :label="__('contracts.receipt_date')" required data-test="receipt-date" />
                             <x-ui.form-input wire:model.blur="receiptAmount" type="number" step="0.01" min="0" :label="__('contracts.receipt_amount', ['currency' => $contract->currency])" dir="ltr" required data-test="receipt-amount" />
                             @if ($contract->currency !== 'USD')
-                                <x-ui.form-input wire:model="receiptRate" type="number" step="0.000001" min="0" :label="__('contracts.receipt_rate')" :help="__('contracts.receipt_rate_help', ['rate' => $contract->fixed_rate])" dir="ltr" required data-test="receipt-rate" />
+                                <x-ui.form-input wire:model="receiptRate" type="number" step="0.000001" min="0" :label="__('contracts.receipt_rate')"
+                                    :help="$chosen !== null && $chosen['currency'] !== $contract->currency ? __('contracts.receipt_rate_help_converted') : __('contracts.receipt_rate_help_daily')" dir="ltr" required data-test="receipt-rate" />
                             @endif
-                            @if ($chosen !== null && $chosen['currency'] === 'USD')
-                                <x-ui.form-input wire:model="receiptCommission" type="number" step="0.01" min="0" :label="__('contracts.receipt_commission')" :help="__('contracts.receipt_commission_help')" dir="ltr" data-test="receipt-commission" />
-                            @endif
+                            <x-ui.form-input wire:model="receiptFee" type="number" step="0.01" min="0" :label="__('contracts.receipt_fee', ['currency' => $chosen['currency'] ?? $contract->currency])" :help="__('contracts.receipt_fee_help')" dir="ltr" data-test="receipt-fee" />
+                            <x-ui.form-select wire:model="receiptFeeTo" :label="__('contracts.receipt_fee_to')" data-test="receipt-fee-to">
+                                <option value="{{ \App\Services\Contracts\ContractEntries::FEE_TO_ORGANISATION }}">{{ __('contracts.receipt_fee_organisation') }}</option>
+                                @foreach ($feeBudgetLines as $key => $label)
+                                    <option value="{{ $key }}">{{ $label }}</option>
+                                @endforeach
+                            </x-ui.form-select>
                         </div>
                         @if ($receiptSplit !== [])
                             <div class="flex flex-col gap-2" data-test="receipt-split">
