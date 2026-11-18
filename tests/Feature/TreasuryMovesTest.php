@@ -6,11 +6,13 @@ use App\Enums\VoucherType;
 use App\Livewire\ExchangeRates;
 use App\Livewire\TreasuryTransfers;
 use App\Models\DailyRate;
+use App\Models\MonthlyRate;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Models\VoucherLine;
 use App\Models\WebUserRole;
 use App\Services\Treasury\DailyRates;
+use App\Services\Treasury\MonthlyRates;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Carbon;
 use Livewire\Livewire;
@@ -41,6 +43,14 @@ function tmRate(string $currency, string $day, string $rate): DailyRate
     $manager = User::query()->where('Username', 'Rates')->first() ?? tmUser(RoleId::FinancialManager, 'Rates');
 
     return app(DailyRates::class)->propose($currency, $day, $rate, null, $manager, approveNow: true);
+}
+
+/** A monthly rate, set as the Financial Manager would. */
+function tmMonthly(string $currency, string $month, string $rate): MonthlyRate
+{
+    $manager = User::query()->where('Username', 'Rates')->first() ?? tmUser(RoleId::FinancialManager, 'Rates');
+
+    return app(MonthlyRates::class)->set($month, $currency, $rate, null, $manager);
 }
 
 /** @return list<array{0: string, 1: string|null, 2: string, 3: string, 4: string, 5: string, 6: string}> account, project, currency, debit, credit, debit USD, credit USD */
@@ -126,13 +136,44 @@ it('refuses a rate for the dollar, a rate of zero and a bad date, and lets nobod
     expect(DailyRate::query()->where('status', DailyRate::APPROVED)->count())->toBe(0);
 });
 
-it('transfers pounds between a safe and a center\'s till at the day\'s approved rate, with no project', function () {
+it('sets the monthly rate as the financial manager, beside what the month\'s exchanges really got, and uses the month before\'s until then', function () {
+    $fadi = tmUser(RoleId::FinancialManager, 'Fadi');
+    $ann = tmUser(RoleId::Accountant, 'Ann');
+    $monthly = app(MonthlyRates::class);
+
+    tmMove($ann, 'exchange', ['from' => '1111', 'to' => '1112', 'amount' => '1000', 'received' => '13000000']);
+    tmMove($ann, 'exchange', ['from' => '1161', 'to' => '1122', 'amount' => '3000', 'received' => '39600000']);
+
+    // 52,600,000 pounds for 4,000 dollars: 13,150 on average.
+    $page = Livewire::actingAs($fadi)->test(ExchangeRates::class)
+        ->assertSet('month', '2026-11')
+        ->assertSee('Exchanged this month: 13150 on average, over 2 exchanges of 4,000.00 USD.')
+        ->set('monthlyCurrency', 'SYP')->set('monthlyRate', '13150')
+        ->call('setMonthly')
+        ->assertSee('The SYP rate of 11/2026 is saved.');
+
+    expect($monthly->forDay('SYP', CarbonImmutable::parse('2026-11-30')))->toBe(['rate' => '13150.000000', 'month' => '2026-11', 'provisional' => false])
+        ->and($monthly->forDay('SYP', CarbonImmutable::parse('2026-12-02')))->toBe(['rate' => '13150.000000', 'month' => '2026-11', 'provisional' => true])
+        ->and($monthly->forDay('SYP', CarbonImmutable::parse('2026-10-31')))->toBeNull();
+
+    $page->set('monthlyRate', '13100')->call('setMonthly');
+
+    expect(MonthlyRate::query()->sole()->rate)->toBe('13100.000000');
+
+    Livewire::actingAs($ann)->test(ExchangeRates::class)
+        ->assertDontSeeHtml('data-test="monthly-form"')
+        ->set('monthlyRate', '1')->call('setMonthly')
+        ->assertForbidden();
+});
+
+it('transfers pounds between a safe and a center\'s till at the monthly rate, with no project', function () {
     $ann = tmUser(RoleId::Accountant, 'Ann');
     $move = ['from' => '1112', 'to' => '1115', 'amount' => '1300000'];
 
-    tmMove($ann, 'transfer', $move + ['center' => 'Science Zone Aleppo'])->assertSee('There is no approved SYP rate on or before 19/11/2026.');
+    tmMove($ann, 'transfer', $move + ['center' => 'Science Zone Aleppo'])->assertSee('There is no SYP monthly rate for 11/2026 or before.');
 
-    tmRate('SYP', '2026-11-18', '13000');
+    // October's rate, until November's is set.
+    tmMonthly('SYP', '2026-10', '13000');
 
     tmMove($ann, 'transfer', $move)->assertSee('Account 1115 is a center\'s till: type the center.');
 
@@ -172,16 +213,16 @@ it('books what the transfer company keeps as its commission, and only there', fu
     expect(Voucher::query()->count())->toBe(1);
 });
 
-it('exchanges dollars for pounds at the rate really obtained, showing it beside the approved rate', function () {
+it('exchanges dollars for pounds at the rate really obtained, showing it beside the monthly rate', function () {
     $ann = tmUser(RoleId::Accountant, 'Ann');
-    tmRate('SYP', '2026-11-19', '13000');
+    tmMonthly('SYP', '2026-11', '13000');
 
     Livewire::actingAs($ann)->test(TreasuryTransfers::class)
         ->set('kind', 'exchange')
         ->set('from', '1111')->set('to', '1112')->set('amount', '1000')->set('received', '13200000')
         ->assertSeeHtml('data-test="exchange-rate"')
         ->assertSee('Rate obtained: 13200 (SYP).')
-        ->assertSee('Approved rate of the day: 13000')
+        ->assertSee('Monthly rate: 13000')
         ->call('save')
         ->assertHasNoErrors();
 
@@ -194,8 +235,12 @@ it('exchanges dollars for pounds at the rate really obtained, showing it beside 
         ])
         ->and(VoucherLine::query()->where('voucher_id', $voucher->id)->where('account_code', '1112')->value('rate'))->toBe('13200.000000');
 
-    tmMove($ann, 'exchange', ['from' => '1111', 'to' => '1121', 'amount' => '10', 'received' => '10'])
-        ->assertSee('An exchange changes currency');
+    // Only from the transfer company or a city's dollar cash, and only into a city's general pound account.
+    tmMove($ann, 'exchange', ['from' => '1171', 'to' => '1115', 'amount' => '10', 'received' => '130000', 'center' => 'Science Zone Aleppo'])
+        ->assertSee('Dollars are exchanged from the transfer company or a city\'s dollar cash.')
+        ->assertSee('The pounds go to a city\'s general pound account (its main safe).');
+
+    expect(Voucher::query()->count())->toBe(1);
 });
 
 it('lets only the preparing roles prepare a transfer, and others see the screen', function () {
@@ -206,7 +251,7 @@ it('lets only the preparing roles prepare a transfer, and others see the screen'
         ->assertDontSeeHtml('data-test="move-form"');
 
     $this->actingAs(tmUser(RoleId::Accountant, 'Ann'))->get('/treasury/transfers')->assertOk()->assertSeeHtml('data-test="move-form"');
-    $this->get('/treasury/daily-rates')->assertOk()->assertSeeHtml('data-test="rate-form"');
+    $this->get('/treasury/exchange-rates')->assertOk()->assertSeeHtml('data-test="rate-form"');
 
     expect(Voucher::query()->count())->toBe(0);
 });

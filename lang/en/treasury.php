@@ -1,8 +1,29 @@
 <?php
 
 return [
+    'rates_intro' => 'The organisation\'s exchange rates. Pounds are quoted per dollar, euros in dollars. Invoices and expenses take the monthly rate; the beneficiaries\' instalments take the daily rate.',
+
+    // Monthly exchange rates
+    'monthly_title' => 'Monthly rate',
+    'monthly_intro' => 'Typed by the Financial Manager from what the dollars were really exchanged at that month. Every invoice and expense takes it by default and can be given another rate. Until a month has its own, the month before\'s is used. Changing it leaves the vouchers already made as they are.',
+    'monthly_now' => ':currency this month',
+    'monthly_none_yet' => 'No monthly rate yet.',
+    'monthly_from_earlier' => 'Provisional: the rate of :month until this month\'s is set.',
+    'month' => 'Month',
+    'monthly_save' => 'Save the monthly rate',
+    'monthly_saved' => 'The :currency rate of :month is saved.',
+    'exchanged_in_month' => 'Exchanged this month: :rate on average, over :count exchanges of :usd USD.',
+    'exchanged_none' => 'No exchange recorded in this month yet.',
+    'exchanged_rate' => 'Really exchanged at',
+    'set_by' => 'Set by',
+    'no_monthly' => 'No monthly rate yet.',
+    'bad_month' => 'Choose a month.',
+    'no_monthly_rate' => 'There is no :currency monthly rate for :month or before. Ask the Financial Manager to set one.',
+    'provisional' => '(provisional)',
+
     // Daily exchange rates
-    'rates_intro' => 'One rate per currency and day for the whole organisation. Pounds are quoted per dollar, euros in dollars. A day with no rate of its own uses the latest approved rate before it.',
+    'daily_title' => 'Daily rate',
+    'daily_intro' => 'What the beneficiaries\' instalments received that day are valued at. A day with no rate of its own uses the latest approved rate before it.',
     'rate_today' => ':currency today',
     'rate_none_yet' => 'No approved rate yet.',
     'rate_from_earlier' => 'No rate for today: the rate of :date is used.',
@@ -49,8 +70,8 @@ return [
         'exchange' => 'Exchange',
     ],
     'kind_hint' => [
-        'transfer' => 'The same currency from one account to another, valued at the day\'s approved rate. Through the transfer company, type what really arrived: the gap is its commission (5504).',
-        'exchange' => 'One currency out, another in, at the rate you really got. Its difference from the day\'s approved rate is settled by the daily reconciliation on 5503.',
+        'transfer' => 'The same currency from one account to another, valued at the month\'s rate. Through the transfer company, type what really arrived: the gap is its commission (5504).',
+        'exchange' => 'Dollars from the transfer company or a city\'s dollar cash into the city\'s general pound account, at the rate you really got. The month\'s exchanges are what the monthly rate is set from.',
     ],
     'from' => 'From',
     'to' => 'To',
@@ -63,9 +84,9 @@ return [
     'contact' => 'Transfer company agent',
     'contact_help' => 'Who handed over or took the money; empty for the company itself.',
     'center' => 'Center',
-    'valued_at' => 'Valued at the approved :currency rate of :date: :rate.',
+    'valued_at' => 'Valued at the :currency monthly rate of :month: :rate.',
     'actual_rate' => 'Rate obtained: :rate (:currency).',
-    'approved_rate' => 'Approved rate of the day: :rate',
+    'monthly_rate_now' => 'Monthly rate: :rate',
     'save' => 'Prepare voucher',
     'saved' => 'Voucher :voucher prepared and waiting for approval.',
     'recent' => 'Latest transfers and exchanges',
@@ -79,7 +100,8 @@ return [
     'bad_amount' => 'Type an amount above zero.',
     'bad_received' => 'Type what was received: above zero, and for a transfer not more than was sent.',
     'transfer_same_currency' => 'A transfer stays in one currency: both accounts must be in the same currency. Use an exchange to change currency.',
-    'exchange_other_currency' => 'An exchange changes currency: choose accounts in two different currencies.',
+    'exchange_bad_source' => 'Dollars are exchanged from the transfer company or a city\'s dollar cash.',
+    'exchange_bad_target' => 'The pounds go to a city\'s general pound account (its main safe).',
     'commission_only_company' => 'Less can arrive than was sent only through the transfer company.',
     'center_needed' => 'Account :account is a center\'s till: type the center.',
 ];

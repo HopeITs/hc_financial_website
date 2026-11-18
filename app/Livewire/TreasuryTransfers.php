@@ -6,7 +6,7 @@ use App\Enums\VoucherType;
 use App\Models\GlAccount;
 use App\Models\User;
 use App\Models\Voucher;
-use App\Services\Treasury\DailyRates;
+use App\Services\Treasury\MonthlyRates;
 use App\Services\Treasury\TreasuryException;
 use App\Services\Treasury\TreasuryMoves;
 use Carbon\CarbonImmutable;
@@ -89,28 +89,31 @@ class TreasuryTransfers extends Component
         $this->notice = __('treasury.saved', ['voucher' => $voucher->id]);
     }
 
-    public function render(TreasuryMoves $moves, DailyRates $rates): View
+    public function render(TreasuryMoves $moves, MonthlyRates $rates): View
     {
         $accounts = $moves->accounts();
+        $exchange = $this->kind === 'exchange';
         $source = $accounts->get($this->from);
         $target = $accounts->get($this->to);
         $day = preg_match('/^\d{4}-\d{2}-\d{2}$/', $this->day) === 1 ? CarbonImmutable::parse($this->day) : CarbonImmutable::today();
         $arabic = app()->getLocale() === 'ar';
+        $label = fn (GlAccount $account): string => $account->code.' · '.($arabic ? $account->name_ar : $account->name_en).' ('.$account->currency.')';
         $needs = fn (string $tag): bool => collect([$source, $target])->filter()->contains(fn (GlAccount $account): bool => in_array($tag, (array) $account->required_tags, true));
         $company = (string) config('ledger.transfer_company_account');
+        $targets = $exchange
+            ? $moves->exchangeTargets()
+            : $accounts->filter(fn (GlAccount $account): bool => $source === null || ($account->code !== $source->code && $account->currency === $source->currency));
 
         return view('livewire.treasury-transfers', [
             'kinds' => self::KINDS,
-            'accounts' => $accounts->map(fn (GlAccount $account): string => $account->code.' · '.($arabic ? $account->name_ar : $account->name_en).' ('.$account->currency.')')->all(),
-            'targets' => $accounts->filter(fn (GlAccount $account): bool => $source === null || $account->code !== $source->code && (
-                $this->kind === 'exchange' ? $account->currency !== $source->currency : $account->currency === $source->currency
-            ))->map(fn (GlAccount $account): string => $account->code.' · '.($arabic ? $account->name_ar : $account->name_en).' ('.$account->currency.')')->all(),
+            'accounts' => ($exchange ? $moves->exchangeSources() : $accounts)->map($label)->all(),
+            'targets' => $targets->map($label)->all(),
             'source' => $source,
             'target' => $target,
             'withCompany' => in_array($company, [$this->from, $this->to], true),
             'needsCenter' => $needs('Center'),
-            'rate' => $source !== null && $source->currency !== 'USD' ? $rates->rateFor((string) $source->currency, $day) : null,
-            'exchangeRates' => $this->kind === 'exchange' ? $moves->exchangeRates($this->from, $this->to, $this->day, $this->amount, $this->received) : null,
+            'rate' => $source !== null && $source->currency !== 'USD' ? $rates->forDay((string) $source->currency, $day) : null,
+            'exchangeRates' => $exchange ? $moves->exchangeRates($this->to, $this->day, $this->amount, $this->received) : null,
             'recent' => Voucher::query()->whereIn('type', [VoucherType::Transfer->value, VoucherType::Exchange->value])->whereNull('transfer_kind')
                 ->with('lines')->orderByDesc('date')->orderByDesc('id')->limit(20)->get(),
             'canCreate' => Gate::allows('screen', ['transfers', 'create']),

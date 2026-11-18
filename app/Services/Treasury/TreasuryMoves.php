@@ -24,17 +24,17 @@ use InvalidArgumentException;
  * company and the city safes and tills, and from one currency to another. No line names a project or a donor: a project
  * is named only where money comes in and where it is spent. Both wait for approval like any voucher.
  *
- * - Transfer (TRF): the same currency leaves one account and reaches another, valued at the day's approved rate. When
- *   the transfer company is one side and less arrives than was sent, the gap is its commission (5504).
- * - Exchange (EXG): one currency leaves, another arrives, at the rate really obtained. The dollar side fixes the value of
- *   both; between two other currencies, what leaves is valued at the day's approved rate. Whatever that rate differs
- *   from the day's approved rate is settled by the daily reconciliation, on 5503.
+ * - Transfer (TRF): the same currency leaves one account and reaches another, valued at the month's rate. When the
+ *   transfer company is one side and less arrives than was sent, the gap is its commission (5504).
+ * - Exchange (EXG): dollars leave the transfer company or a city's dollar cash and pounds reach the city's general
+ *   pound account (its main safe), at the rate really obtained. The month's exchanges are what the Financial Manager
+ *   sets the month's rate from.
  */
 class TreasuryMoves
 {
     public function __construct(
         private readonly PostVoucher $posting,
-        private readonly DailyRates $rates,
+        private readonly MonthlyRates $rates,
         private readonly Currencies $currencies,
     ) {}
 
@@ -44,6 +44,22 @@ class TreasuryMoves
         return GlAccount::query()
             ->where('is_cash', true)->where('is_active', true)->where('level', AccountLevel::Posting->value)
             ->orderBy('code')->get()->keyBy('code');
+    }
+
+    /** @return Collection<string, GlAccount> where dollars are exchanged from: the transfer company and the cities' dollar cash */
+    public function exchangeSources(): Collection
+    {
+        $company = (string) config('ledger.transfer_company_account');
+
+        return $this->accounts()->filter(fn (GlAccount $account): bool => $account->code === $company
+            || ($account->currency === Currencies::BASE && $account->city !== null && ! $this->isCenterTill($account)));
+    }
+
+    /** @return Collection<string, GlAccount> where the pounds go: each city's general account in another currency (its main safe, not a center's till) */
+    public function exchangeTargets(): Collection
+    {
+        return $this->accounts()->filter(fn (GlAccount $account): bool => $account->currency !== Currencies::BASE
+            && $account->city !== null && ! $this->isCenterTill($account));
     }
 
     /**
@@ -121,8 +137,12 @@ class TreasuryMoves
             $problems[] = __('treasury.bad_received');
         }
 
-        if ($source !== null && $target !== null && $source->currency === $target->currency) {
-            $problems[] = __('treasury.exchange_other_currency');
+        if ($source !== null && ! $this->exchangeSources()->has($source->code)) {
+            $problems[] = __('treasury.exchange_bad_source');
+        }
+
+        if ($target !== null && ! $this->exchangeTargets()->has($target->code)) {
+            $problems[] = __('treasury.exchange_bad_target');
         }
 
         $problems = [...$problems, ...$this->tagProblems([$source, $target], $center)];
@@ -133,18 +153,10 @@ class TreasuryMoves
         /** @var CarbonImmutable $date */
         /** @var numeric-string $out */
         /** @var numeric-string $in */
-        $usd = match (true) {
-            $source->currency === Currencies::BASE => Money::normalize($out),
-            $target->currency === Currencies::BASE => Money::normalize($in),
-            default => $this->currencies->toUsd((string) $source->currency, $out, $this->rateOrStop((string) $source->currency, $date)),
-        };
-
-        if (bccomp($usd, '0.01', 2) === -1) {
-            $this->stopOn([__('treasury.bad_amount')]);
-        }
+        $usd = Money::normalize($out);
 
         $lines = [
-            $this->line($source, credit: true, amount: $out, rate: $this->rateOf((string) $source->currency, $out, $usd), usd: $usd, contact: $contact, center: $center),
+            $this->line($source, credit: true, amount: $out, rate: '1', usd: $usd, contact: $contact, center: $center),
             $this->line($target, credit: false, amount: $in, rate: $this->rateOf((string) $target->currency, $in, $usd), usd: $usd, contact: $contact, center: $center),
         ];
 
@@ -152,39 +164,34 @@ class TreasuryMoves
     }
 
     /**
-     * The rate an exchange really got, in the quoting of the currency that is not the dollar, next to the day's approved
-     * rate, so the form can show both; null when the amounts are not typed yet.
+     * The rate an exchange really got, next to the month's rate, so the form can show both; null when the amounts are
+     * not typed yet.
      *
-     * @return array{currency: string, actual: string, approved: string|null}|null
+     * @return array{currency: string, actual: string, monthly: array{rate: string, month: string, provisional: bool}|null}|null
      */
-    public function exchangeRates(string $from, string $to, string $day, string $given, string $received): ?array
+    public function exchangeRates(string $to, string $day, string $given, string $received): ?array
     {
-        $accounts = $this->accounts();
-        $source = $accounts->get($from);
-        $target = $accounts->get($to);
+        $target = $this->accounts()->get($to);
         $out = $this->amount($given);
         $in = $this->amount($received);
         $date = $this->day($day);
 
-        if ($source === null || $target === null || $out === null || $in === null || $source->currency === $target->currency) {
+        if ($target === null || $out === null || $in === null || $target->currency === Currencies::BASE) {
             return null;
         }
 
-        [$currency, $orig, $usd] = match (true) {
-            $source->currency === Currencies::BASE => [(string) $target->currency, $in, $out],
-            $target->currency === Currencies::BASE => [(string) $source->currency, $out, $in],
-            default => [null, null, null],
-        };
+        $actual = $this->currencies->rateOf((string) $target->currency, $in, $out);
 
-        $actual = $currency !== null ? $this->currencies->rateOf($currency, $orig, $usd) : null;
+        return $actual === null ? null : [
+            'currency' => (string) $target->currency,
+            'actual' => $actual,
+            'monthly' => $date !== null ? $this->rates->forDay((string) $target->currency, $date) : null,
+        ];
+    }
 
-        if ($currency === null || $actual === null) {
-            return null;
-        }
-
-        $approved = $date !== null ? $this->rates->rateFor($currency, $date) : null;
-
-        return ['currency' => $currency, 'actual' => $actual, 'approved' => $approved !== null ? Money::normalize($approved->rate, 6) : null];
+    private function isCenterTill(GlAccount $account): bool
+    {
+        return in_array('Center', (array) $account->required_tags, true);
     }
 
     /** @return array{0: GlAccount|null, 1: GlAccount|null, 2: CarbonImmutable|null, 3: list<string>} */
