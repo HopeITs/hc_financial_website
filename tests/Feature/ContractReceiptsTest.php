@@ -10,7 +10,6 @@ use App\Models\ContractInstalment;
 use App\Models\ContractProject;
 use App\Models\ContractReceipt;
 use App\Models\Donor;
-use App\Models\MonthClose;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Models\VoucherLine;
@@ -19,6 +18,7 @@ use App\Services\Contracts\ContractActuals;
 use App\Services\Contracts\ContractEntries;
 use App\Services\Contracts\ContractException;
 use App\Services\Contracts\ContractReceipts;
+use App\Services\Treasury\DailyRates;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Carbon;
 use Livewire\Livewire;
@@ -44,8 +44,8 @@ function crUser(RoleId $role, string $name): User
 }
 
 /**
- * An EUR 10,000 draft agreement signed on 1 March at 1.15 $/EUR, over F2F (6,000) and SZ (4,000), paid in an
- * unconditional instalment of 6,000 and a conditional one of 4,000.
+ * An EUR 10,000 draft agreement at 1.15 $/EUR, over F2F (6,000) and SZ (4,000), paid in an unconditional instalment of
+ * 6,000 and a conditional one of 4,000.
  */
 function crAgreement(): Contract
 {
@@ -66,21 +66,19 @@ function crAgreement(): Contract
     return $contract;
 }
 
-/** The agreement approved, with the income voucher of its first instalment prepared. */
 function crApprovedAgreement(): Contract
 {
     $contract = crAgreement();
     $contract->update(['approved_by' => 1, 'approved_at' => '2026-03-01 09:00:00', 'status' => 'running']);
-    app(ContractEntries::class)->recogniseDue($contract, crUser(RoleId::Accountant, 'Setup'));
 
     return $contract;
 }
 
-/** @return list<array{0: string, 1: string|null, 2: string, 3: string, 4: string, 5: string, 6: string}> account, project, currency, debit, credit, debit USD, credit USD */
+/** @return list<array{0: string, 1: string|null, 2: string|null, 3: string, 4: string, 5: string, 6: string, 7: string}> account, project, budget line, currency, debit, credit, debit USD, credit USD */
 function crLines(string $voucherId): array
 {
     return VoucherLine::query()->where('voucher_id', $voucherId)->orderBy('line_no')->get()
-        ->map(fn (VoucherLine $line): array => [$line->account_code, $line->project_code, $line->currency, $line->debit_orig, $line->credit_orig, $line->debit_usd, $line->credit_usd])
+        ->map(fn (VoucherLine $line): array => [$line->account_code, $line->project_code, $line->budget_line_key, $line->currency, $line->debit_orig, $line->credit_orig, $line->debit_usd, $line->credit_usd])
         ->all();
 }
 
@@ -96,70 +94,26 @@ function crRefusal(callable $action): array
     return [];
 }
 
-it('prepares a pending income voucher for each unconditional instalment when the agreement is approved, and for a conditional one when its condition is met', function () {
+it('makes no voucher when the agreement is approved or a condition is met', function () {
     $contract = crAgreement();
-    [$first, $second] = $contract->instalments()->get()->all();
+    $second = $contract->instalments()->where('number', 2)->firstOrFail();
 
     Livewire::actingAs(crUser(RoleId::FinancialManager, 'Fadi'))->test(ContractPage::class, ['contract' => $contract])
         ->call('approve')
         ->assertSee('Agreement approved.')
         ->assertSet('problems', []);
 
-    $income = Voucher::query()->findOrFail($first->refresh()->recognition_voucher_id);
-
-    // 6,000 EUR split 60/40 over the projects, at the fixed 1.15.
-    expect($income->type)->toBe(VoucherType::Journal)
-        ->and($income->status)->toBe(VoucherStatus::PendingApproval)
-        ->and($income->date->toDateString())->toBe('2026-03-01')
-        ->and(crLines($income->id))->toBe([
-            ['1210', 'F2F', 'EUR', '3600.00', '0.00', '4140.00', '0.00'],
-            ['4001', 'F2F', 'EUR', '0.00', '3600.00', '0.00', '4140.00'],
-            ['1210', 'SZ', 'EUR', '2400.00', '0.00', '2760.00', '0.00'],
-            ['4001', 'SZ', 'EUR', '0.00', '2400.00', '0.00', '2760.00'],
-        ])
-        ->and($second->refresh()->recognition_voucher_id)->toBeNull();
-
     Livewire::actingAs(crUser(RoleId::Accountant, 'Ann'))->test(ContractPage::class, ['contract' => $contract])
-        ->set('tab', 'instalments')
-        ->assertSeeHtml('data-test="income-1"')
-        ->assertSee($income->id)
         ->call('markConditionMet', $second->id)
         ->assertSee('The condition of instalment 2 is met.');
 
-    $conditional = $second->refresh()->recognition_voucher_id;
-
-    expect(Voucher::query()->findOrFail($conditional)->date->toDateString())->toBe('2026-11-16')
-        ->and(array_column(crLines($conditional), 3))->toBe(['2400.00', '0.00', '1600.00', '0.00']);
+    expect(Voucher::query()->count())->toBe(0);
 });
 
-it('dates the income voucher today when the month it belongs to is closed, and lets it be prepared again when it could not be', function () {
-    $contract = crAgreement();
-    $contract->update(['approved_by' => 1, 'approved_at' => '2026-03-01 09:00:00', 'status' => 'running']);
-    MonthClose::query()->create(['month' => '2026-03', 'closed_at' => now(), 'closed_by' => 1]);
-    $first = $contract->instalments()->where('number', 1)->firstOrFail();
-
-    $page = Livewire::actingAs(crUser(RoleId::Accountant, 'Ann'))->test(ContractPage::class, ['contract' => $contract])
-        ->set('tab', 'instalments')
-        ->assertSee('No income voucher')
-        ->set('receiptInstalment', (string) $first->id)
-        ->set('receiptAccount', '1161')
-        ->set('receiptRate', '1.15')
-        ->call('receiveInstalment')
-        ->assertSee('Instalment 1 has no income voucher yet: prepare it first.')
-        ->call('prepareRecognition', $first->id);
-
-    $voucher = $first->refresh()->recognition_voucher_id;
-
-    $page->assertSee("Income voucher {$voucher} of instalment 1 prepared and waiting for approval.")
-        ->call('prepareRecognition', $first->id)
-        ->assertSee("Instalment 1 already has its income voucher {$voucher}.");
-
-    expect(Voucher::query()->findOrFail($voucher)->date->toDateString())->toBe('2026-11-16');
-});
-
-it('receives an instalment through the transfer company: commission to 5504, the exchange gain to 5503 for the organisation', function () {
+it('receives euros into the euro bank at the day\'s rate, the donor\'s grant credited per project, the bank\'s fee charged to the organisation', function () {
     $contract = crApprovedAgreement();
     $first = $contract->instalments()->where('number', 1)->firstOrFail();
+    app(DailyRates::class)->propose('EUR', '2026-11-16', '1.16', null, crUser(RoleId::FinancialManager, 'Fadi'), approveNow: true);
 
     $page = Livewire::actingAs(crUser(RoleId::Accountant, 'Ann'))->test(ContractPage::class, ['contract' => $contract])
         ->set('tab', 'instalments')
@@ -167,34 +121,31 @@ it('receives an instalment through the transfer company: commission to 5504, the
         ->set('receiptInstalment', (string) $first->id)
         ->assertSet('receiptAmount', '6000.00')
         ->assertSet('receiptSplit', ['F2F' => '3600.00', 'SZ' => '2400.00'])
-        ->assertSet('receiptDate', '2026-11-16')
-        ->set('receiptAccount', '1161')
-        ->set('receiptDate', '2026-03-10')
-        ->set('receiptRate', '1.18')
-        ->set('receiptCommission', '20')
+        ->set('receiptAccount', '1176')
+        ->assertSet('receiptRate', '1.16')
+        ->set('receiptFee', '15')
         ->call('receiveInstalment')
-        ->assertHasNoErrors();
+        ->assertHasNoErrors()
+        ->assertSet('problems', []);
 
     $receipt = ContractReceipt::query()->sole();
     $voucher = Voucher::query()->findOrFail($receipt->voucher_id);
-    $hawala = VoucherLine::query()->where('voucher_id', $voucher->id)->where('line_no', 1)->sole();
+    $grant = VoucherLine::query()->where('voucher_id', $voucher->id)->where('account_code', '4001')->where('project_code', 'F2F')->sole();
 
-    // 6,000 EUR at 1.18 is 7,080 $; the company keeps 20 $; at the fixed 1.15 it is worth 6,900 $: a gain of 180 $.
+    // 6,000 EUR at 1.16 is 6,960 $; the bank keeps 15 EUR (17.40 $); the euros stay euros in the bank.
     expect($voucher->type)->toBe(VoucherType::Receipt)
         ->and($voucher->status)->toBe(VoucherStatus::PendingApproval)
         ->and(crLines($voucher->id))->toBe([
-            ['1161', null, 'USD', '7060.00', '0.00', '7060.00', '0.00'],
-            ['5504', null, 'USD', '20.00', '0.00', '20.00', '0.00'],
-            ['1210', 'F2F', 'EUR', '0.00', '3600.00', '0.00', '4140.00'],
-            ['1210', 'SZ', 'EUR', '0.00', '2400.00', '0.00', '2760.00'],
-            ['5503', null, 'USD', '0.00', '180.00', '0.00', '180.00'],
+            ['1176', null, null, 'EUR', '5985.00', '0.00', '6942.60', '0.00'],
+            ['5501', null, null, 'EUR', '15.00', '0.00', '17.40', '0.00'],
+            ['4001', 'F2F', null, 'EUR', '0.00', '3600.00', '0.00', '4176.00'],
+            ['4001', 'SZ', null, 'EUR', '0.00', '2400.00', '0.00', '2784.00'],
         ])
-        ->and([$hawala->eur_amount, $hawala->eur_rate, $hawala->commission_usd, $hawala->contact])->toBe(['6000.00', '1.180000', '20.00', 'Transfer company'])
-        ->and($receipt->amount_usd)->toBe('7080.00');
+        ->and([$grant->donor, $grant->donor_currency, $grant->credit_donor])->toBe(['Caritas Poland', 'EUR', '3600.00'])
+        ->and($receipt->amount_usd)->toBe('6960.00');
 
     $page->assertSee("Receipt voucher {$voucher->id} prepared and waiting for approval.")
-        ->assertSee('Waiting for approval')
-        ->assertSeeHtml('data-test="nothing-to-receive"');
+        ->assertSee('Waiting for approval');
 
     expect(app(ContractReceipts::class)->status($contract)[$first->id])->toMatchArray(['received' => '0.00', 'pending' => '6000.00', 'remaining' => '0.00', 'state' => 'none'])
         ->and(app(ContractActuals::class)->receivedByProject($contract))->toBe([])
@@ -202,58 +153,52 @@ it('receives an instalment through the transfer company: commission to 5504, the
 
     $voucher->update(['status' => VoucherStatus::Approved]);
 
-    expect(app(ContractReceipts::class)->status($contract)[$first->id])->toMatchArray([
-        'received' => '6000.00', 'received_usd' => '7080.00', 'expected_usd' => '6900.00', 'difference_usd' => '180.00', 'pending' => '0.00', 'state' => 'full',
-    ])
-        ->and(app(ContractReceipts::class)->status($contract)[$first->id]['links'][0])->toMatchArray(['voucher' => $voucher->id, 'date' => '2026-03-10', 'approved' => true])
+    expect(app(ContractReceipts::class)->status($contract)[$first->id])->toMatchArray(['received' => '6000.00', 'received_usd' => '6960.00', 'state' => 'full'])
         ->and(app(ContractActuals::class)->receivedByProject($contract))->toBe(['F2F' => '3600.00', 'SZ' => '2400.00']);
 });
 
-it('receives part of an instalment into a euro bank at the actual rate, with a loss and a split changed by hand', function () {
+it('receives straight into the transfer company at the rate obtained, its fee charged to a project\'s budget line', function () {
     $contract = crApprovedAgreement();
-    $first = $contract->instalments()->where('number', 1)->firstOrFail();
+    $second = $contract->instalments()->where('number', 2)->firstOrFail();
 
     Livewire::actingAs(crUser(RoleId::Accountant, 'Ann'))->test(ContractPage::class, ['contract' => $contract])
         ->set('tab', 'instalments')
-        ->set('receiptInstalment', (string) $first->id)
-        ->set('receiptAmount', '2000')
-        ->assertSet('receiptSplit', ['F2F' => '1200.00', 'SZ' => '800.00'])
-        ->set('receiptSplit.F2F', '2000')
-        ->set('receiptSplit.SZ', '0')
-        ->set('receiptAccount', '1176')
-        ->set('receiptRate', '1.10')
+        ->set('receiptInstalment', (string) $second->id)
+        ->set('receiptAccount', '1161')
+        ->assertSet('receiptRate', '')
+        ->set('receiptRate', '1.18')
+        ->set('receiptFee', '20')
+        ->set('receiptFeeTo', 'F2F|Bank charges')
         ->call('receiveInstalment')
-        ->assertHasNoErrors();
+        ->assertSet('problems', []);
 
-    // 2,000 EUR at 1.10 is 2,200 $, worth 2,300 $ at the fixed rate: a loss of 100 $.
+    // 4,000 EUR converted at 1.18 is 4,720 $; the company keeps 20 $, charged to F2F's bank charges.
     expect(crLines(ContractReceipt::query()->sole()->voucher_id))->toBe([
-        ['1176', null, 'EUR', '2000.00', '0.00', '2200.00', '0.00'],
-        ['1210', 'F2F', 'EUR', '0.00', '2000.00', '0.00', '2300.00'],
-        ['5503', null, 'USD', '100.00', '0.00', '100.00', '0.00'],
-    ])
-        ->and(app(ContractEntries::class)->remaining($first))->toBe('4000.00');
+        ['1161', null, null, 'USD', '4700.00', '0.00', '4700.00', '0.00'],
+        ['5501', 'F2F', 'F2F|Bank charges', 'USD', '20.00', '0.00', '20.00', '0.00'],
+        ['4001', 'F2F', null, 'EUR', '0.00', '2400.00', '0.00', '2832.00'],
+        ['4001', 'SZ', null, 'EUR', '0.00', '1600.00', '0.00', '1888.00'],
+    ]);
 });
 
-it('refuses a receipt that does not fit the instalment, the account, the commission or the split', function () {
+it('refuses a receipt into another currency\'s bank, beyond the instalment, with a bad fee or a split that does not add up', function () {
     $contract = crApprovedAgreement();
-    [$first, $second] = $contract->instalments()->get()->all();
+    $first = $contract->instalments()->where('number', 1)->firstOrFail();
     $user = crUser(RoleId::Accountant, 'Ann');
-    $receive = fn (ContractInstalment $instalment, string $account, string $amount, string $commission, array $split) => crRefusal(
-        fn () => app(ContractEntries::class)->receive($contract, $instalment, $account, CarbonImmutable::parse('2026-03-10'), $amount, '1.15', $commission, $split, $user),
+    $receive = fn (string $account, string $amount, string $fee, string $feeTo, array $split) => crRefusal(
+        fn () => app(ContractEntries::class)->receive($contract, $first, $account, CarbonImmutable::parse('2026-11-16'), $amount, '1.16', $fee, $feeTo, $split, $user),
     );
 
-    expect($receive($second, '1161', '4000.00', '0', ['F2F' => '2400.00', 'SZ' => '1600.00']))->toBe(['Instalment 2 is conditional: mark its condition as met first.'])
-        ->and($receive($first, '1111', '7000.00', '0', ['F2F' => '7000.00']))->toBe([
-            'Choose the transfer company or a bank account in the agreement currency or in dollars.',
-            'Instalment 1 needs only 6000.00 more.',
+    expect($receive('1171', '7000.00', '0', 'organisation', ['F2F' => '7000.00']))->toBe([
+        'Choose a EUR bank account or the transfer company.',
+        'Instalment 1 needs only 6000.00 more.',
+    ])
+        ->and($receive('1176', '1000.00', '1000', 'organisation', ['F2F' => '1000.00']))->toBe(['The fee cannot be negative and must be less than the amount.'])
+        ->and($receive('1176', '1000.00', '5', 'NOPE|Nothing', ['F2F' => '500.00', 'SZ' => '400.00']))->toBe([
+            'Charge the fee to the organisation or to a budget line of this agreement\'s projects.',
+            'The parts add up to 900.00, not to the amount received (1000.00).',
         ])
-        ->and($receive($first, '1176', '1000.00', '5', ['F2F' => '500.00', 'CORE' => '500.00']))->toBe([
-            'The commission is in dollars, only into a dollar account, and must be less than the amount received.',
-            'The split can name only this agreement\'s projects, with no negative part.',
-        ])
-        ->and($receive($first, '1161', '1000.00', '0', ['F2F' => '500.00', 'SZ' => '400.00']))->toBe(['The parts add up to 900.00, not to the amount received (1000.00).'])
-        ->and(ContractReceipt::query()->count())->toBe(0)
-        ->and(Voucher::query()->where('type', VoucherType::Receipt->value)->count())->toBe(0);
+        ->and(Voucher::query()->count())->toBe(0);
 });
 
 it('lets only the preparing roles receive an instalment', function () {
@@ -263,9 +208,9 @@ it('lets only the preparing roles receive an instalment', function () {
         ->set('tab', 'instalments')
         ->assertDontSeeHtml('data-test="receipt-form"')
         ->set('receiptInstalment', (string) $contract->instalments()->value('id'))
-        ->set('receiptAccount', '1161')
+        ->set('receiptAccount', '1176')
         ->set('receiptAmount', '6000')
-        ->set('receiptRate', '1.15')
+        ->set('receiptRate', '1.16')
         ->call('receiveInstalment')
         ->assertForbidden();
 

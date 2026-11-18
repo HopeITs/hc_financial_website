@@ -190,7 +190,7 @@ it('transfers pounds between a safe and a center\'s till at the monthly rate, wi
         ->and(VoucherLine::query()->where('voucher_id', $voucher->id)->where('account_code', '1115')->value('center'))->toBe('Science Zone Aleppo');
 });
 
-it('books what the transfer company keeps as its commission, and only there', function () {
+it('books what did not arrive as the fee, the organisation\'s or a project\'s as chosen', function () {
     $ann = tmUser(RoleId::Accountant, 'Ann');
 
     tmMove($ann, 'transfer', ['from' => '1161', 'to' => '1111', 'amount' => '1000', 'received' => '990', 'contact' => 'Abu Sami'])->assertHasNoErrors();
@@ -205,12 +205,47 @@ it('books what the transfer company keeps as its commission, and only there', fu
     ])
         ->and([$company->contact, $company->commission_usd])->toBe(['Abu Sami', '10.00']);
 
-    tmMove($ann, 'transfer', ['from' => '1171', 'to' => '1111', 'amount' => '1000', 'received' => '990'])
-        ->assertSee('Less can arrive than was sent only through the transfer company.');
+    // A bank's fee: the organisation's bank charges (5501), or a project's budget line when chosen.
+    tmMove($ann, 'transfer', ['from' => '1171', 'to' => '1111', 'amount' => '1000', 'received' => '995'])->assertSet('problems', []);
+    tmMove($ann, 'transfer', ['from' => '1171', 'to' => '1111', 'amount' => '500', 'received' => '498', 'feeTo' => 'F2F|Bank charges'])->assertSet('problems', []);
+
+    [$organisation, $project] = Voucher::query()->where('id', '!=', $voucher->id)->orderBy('id')->pluck('id')->all();
+
+    expect(tmLines($organisation)[2])->toBe(['5501', null, 'USD', '5.00', '0.00', '5.00', '0.00'])
+        ->and(tmLines($project)[2])->toBe(['5501', 'F2F', 'USD', '2.00', '0.00', '2.00', '0.00'])
+        ->and(VoucherLine::query()->where('voucher_id', $project)->where('line_no', 3)->value('budget_line_key'))->toBe('F2F|Bank charges');
+
     tmMove($ann, 'transfer', ['from' => '1171', 'to' => '1112', 'amount' => '1000'])
         ->assertSee('A transfer stays in one currency');
+    tmMove($ann, 'transfer', ['from' => '1171', 'to' => '1111', 'amount' => '10', 'received' => '9', 'feeTo' => 'NOPE|Nothing'])
+        ->assertSee('Charge the fee to the organisation or to an existing budget line.');
 
-    expect(Voucher::query()->count())->toBe(1);
+    expect(Voucher::query()->count())->toBe(3);
+});
+
+it('withdraws a donor\'s euros from the bank to the transfer company, the difference from the day\'s rate going to the organisation', function () {
+    $ann = tmUser(RoleId::Accountant, 'Ann');
+    tmRate('EUR', '2026-11-19', '1.16');
+
+    Livewire::actingAs($ann)->test(TreasuryTransfers::class)
+        ->set('kind', 'exchange')
+        ->set('from', '1176')->set('to', '1161')->set('amount', '5000')->set('received', '5850')
+        ->assertSee('Rate obtained: 1.17 (EUR).')
+        ->assertSee('Approved rate of the day: 1.16')
+        ->set('fee', '25')
+        ->call('save')
+        ->assertSet('problems', []);
+
+    // 5,000 EUR held at 1.16 (5,800 $) came to 5,850 $ plus a 25 $ fee: 75 $ more, a gain for the organisation.
+    expect(tmLines(Voucher::query()->sole()->id))->toBe([
+        ['1176', null, 'EUR', '0.00', '5000.00', '0.00', '5800.00'],
+        ['1161', null, 'USD', '5850.00', '0.00', '5850.00', '0.00'],
+        ['5504', null, 'USD', '25.00', '0.00', '25.00', '0.00'],
+        ['5503', null, 'USD', '0.00', '75.00', '0.00', '75.00'],
+    ]);
+
+    tmMove($ann, 'exchange', ['from' => '1176', 'to' => '1112', 'amount' => '10', 'received' => '10'])
+        ->assertSee('Euros are withdrawn to the transfer company or a dollar bank account.');
 });
 
 it('exchanges dollars for pounds at the rate really obtained, showing it beside the monthly rate', function () {
@@ -235,9 +270,10 @@ it('exchanges dollars for pounds at the rate really obtained, showing it beside 
         ])
         ->and(VoucherLine::query()->where('voucher_id', $voucher->id)->where('account_code', '1112')->value('rate'))->toBe('13200.000000');
 
-    // Only from the transfer company or a city's dollar cash, and only into a city's general pound account.
-    tmMove($ann, 'exchange', ['from' => '1171', 'to' => '1115', 'amount' => '10', 'received' => '130000', 'center' => 'Science Zone Aleppo'])
-        ->assertSee('Dollars are exchanged from the transfer company or a city\'s dollar cash.')
+    // Not from a dollar bank, and pounds only into a city's general pound account.
+    tmMove($ann, 'exchange', ['from' => '1171', 'to' => '1112', 'amount' => '10', 'received' => '130000'])
+        ->assertSee('Money is exchanged from the transfer company, a city\'s dollar cash or a euro bank account.');
+    tmMove($ann, 'exchange', ['from' => '1111', 'to' => '1115', 'amount' => '10', 'received' => '130000', 'center' => 'Science Zone Aleppo'])
         ->assertSee('The pounds go to a city\'s general pound account (its main safe).');
 
     expect(Voucher::query()->count())->toBe(1);

@@ -40,6 +40,12 @@ class TreasuryTransfers extends Component
 
     public string $received = '';
 
+    /** An exchange's fee, in the currency received (a transfer's fee is what did not arrive). */
+    public string $fee = '';
+
+    /** TreasuryMoves::FEE_TO_ORGANISATION or the key of the budget line the fee is charged to. */
+    public string $feeTo = TreasuryMoves::FEE_TO_ORGANISATION;
+
     public string $contact = '';
 
     public string $center = '';
@@ -62,7 +68,7 @@ class TreasuryTransfers extends Component
 
     public function updatedKind(): void
     {
-        $this->reset('from', 'to', 'amount', 'received', 'contact', 'center', 'note', 'notice', 'problems');
+        $this->reset('from', 'to', 'amount', 'received', 'fee', 'feeTo', 'contact', 'center', 'note', 'notice', 'problems');
 
         if (! in_array($this->kind, self::KINDS, true)) {
             $this->kind = 'transfer';
@@ -75,8 +81,8 @@ class TreasuryTransfers extends Component
 
         try {
             $voucher = $this->kind === 'exchange'
-                ? $moves->exchange($this->from, $this->to, $this->day, $this->amount, $this->received, $this->contact, $this->center, $this->note, $this->user())
-                : $moves->transfer($this->from, $this->to, $this->day, $this->amount, $this->received, $this->contact, $this->center, $this->note, $this->user());
+                ? $moves->exchange($this->from, $this->to, $this->day, $this->amount, $this->received, $this->contact, $this->center, $this->note, $this->user(), $this->fee, $this->feeTo)
+                : $moves->transfer($this->from, $this->to, $this->day, $this->amount, $this->received, $this->contact, $this->center, $this->note, $this->user(), $this->feeTo);
         } catch (TreasuryException $refused) {
             $this->problems = $refused->problems;
             $this->notice = null;
@@ -84,7 +90,7 @@ class TreasuryTransfers extends Component
             return;
         }
 
-        $this->reset('from', 'to', 'amount', 'received', 'contact', 'center', 'note');
+        $this->reset('from', 'to', 'amount', 'received', 'fee', 'feeTo', 'contact', 'center', 'note');
         $this->problems = [];
         $this->notice = __('treasury.saved', ['voucher' => $voucher->id]);
     }
@@ -101,7 +107,7 @@ class TreasuryTransfers extends Component
         $needs = fn (string $tag): bool => collect([$source, $target])->filter()->contains(fn (GlAccount $account): bool => in_array($tag, (array) $account->required_tags, true));
         $company = (string) config('ledger.transfer_company_account');
         $targets = $exchange
-            ? $moves->exchangeTargets()
+            ? $moves->exchangeTargets($source)
             : $accounts->filter(fn (GlAccount $account): bool => $source === null || ($account->code !== $source->code && $account->currency === $source->currency));
 
         return view('livewire.treasury-transfers', [
@@ -113,7 +119,8 @@ class TreasuryTransfers extends Component
             'withCompany' => in_array($company, [$this->from, $this->to], true),
             'needsCenter' => $needs('Center'),
             'rate' => $source !== null && $source->currency !== 'USD' ? $rates->forDay((string) $source->currency, $day) : null,
-            'exchangeRates' => $exchange ? $moves->exchangeRates($this->to, $this->day, $this->amount, $this->received) : null,
+            'exchangeRates' => $exchange ? $moves->exchangeRates($this->from, $this->to, $this->day, $this->amount, $this->received) : null,
+            'feeBudgetLines' => $moves->feeBudgetLines(),
             'recent' => Voucher::query()->whereIn('type', [VoucherType::Transfer->value, VoucherType::Exchange->value])->whereNull('transfer_kind')
                 ->with('lines')->orderByDesc('date')->orderByDesc('id')->limit(20)->get(),
             'canCreate' => Gate::allows('screen', ['transfers', 'create']),

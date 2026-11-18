@@ -20,7 +20,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $condition
  * @property bool $is_conditional
  * @property Carbon|null $condition_met_on
- * @property string|null $recognition_voucher_id the journal voucher that books it as income
+ * @property string|null $recognition_voucher_id no longer filled: since 2026-11-20 an instalment makes a voucher only when its money arrives
  */
 class ContractInstalment extends Model
 {

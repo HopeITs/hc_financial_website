@@ -7,7 +7,6 @@ use App\Enums\ContractReportKind;
 use App\Enums\ContractReportStatus;
 use App\Enums\ContractRestriction;
 use App\Enums\ContractStatus;
-use App\Enums\VoucherStatus;
 use App\Models\Contract;
 use App\Models\ContractInstalment;
 use App\Models\ContractProject;
@@ -15,7 +14,6 @@ use App\Models\ContractReport;
 use App\Models\GlCity;
 use App\Models\GlProject;
 use App\Models\User;
-use App\Models\Voucher;
 use App\Services\Contracts\ContractBudgets;
 use App\Services\Contracts\ContractDeletion;
 use App\Services\Contracts\ContractEntries;
@@ -26,6 +24,7 @@ use App\Services\Contracts\ContractReceipts;
 use App\Services\Contracts\ContractWorkflow;
 use App\Services\Ledger\Currencies;
 use App\Services\Projects\ProjectAccess;
+use App\Services\Treasury\DailyRates;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -42,7 +41,7 @@ use Livewire\WithFileUploads;
 /**
  * One agreement (finance design of 2026-11-16), in tabs: its details, its split over projects (by amount, adding
  * up to the agreement; a new project is created here too), its expected instalments (some conditional), the reports owed to the donor, and its closing.
- * Approving it prepares each instalment's income voucher, and an instalment is received from its own tab (ContractEntries).
+ * Approving it makes no voucher: the receipt voucher is made when an instalment's money arrives (ContractEntries).
  */
 #[Layout('components.layouts.app')]
 class ContractPage extends Component
@@ -116,7 +115,10 @@ class ContractPage extends Component
 
     public string $receiptRate = '';
 
-    public string $receiptCommission = '';
+    public string $receiptFee = '';
+
+    /** ContractEntries::FEE_TO_ORGANISATION or the key of a budget line of the agreement's projects. */
+    public string $receiptFeeTo = ContractEntries::FEE_TO_ORGANISATION;
 
     /** @var array<string, string> project code => its part of the amount received */
     public array $receiptSplit = [];
@@ -250,16 +252,14 @@ class ContractPage extends Component
         $this->redirectRoute('funding.agreements', navigate: true);
     }
 
-    /** Approves the agreement and prepares the income voucher of each instalment that is income from the signing. */
-    public function approve(ContractWorkflow $workflow, ContractEntries $entries): void
+    /** Approves the agreement. No voucher is made: the ledger hears of the agreement only when its money arrives. */
+    public function approve(ContractWorkflow $workflow): void
     {
         Gate::authorize('screen', ['contracts', 'approve']);
 
         try {
-            $contract = $this->contract();
-            $workflow->approve($contract, $this->user());
+            $workflow->approve($this->contract(), $this->user());
             $this->say(__('contracts.approved'));
-            $this->problems = $entries->recogniseDue($contract, $this->user());
         } catch (ContractException $refused) {
             $this->problems = $refused->problems;
             $this->notice = null;
@@ -394,9 +394,26 @@ class ContractPage extends Component
     }
 
     /**
-     * Money arrived for an instalment: prepares its receipt voucher (pending approval) into the transfer company or a
-     * bank, with the exchange difference against the fixed rate, and links it to the instalment.
+     * Into a bank in the agreement currency, the rate proposed is the day's approved one (what the money is valued at
+     * while it stays there); into the transfer company it is the rate obtained, so it is left to type.
      */
+    public function updatedReceiptAccount(ContractEntries $entries, DailyRates $rates): void
+    {
+        $contract = $this->contract();
+        $destination = $entries->destinations($contract)[$this->receiptAccount] ?? null;
+
+        if ($contract->currency === Currencies::BASE || $destination === null) {
+            return;
+        }
+
+        $daily = $destination['currency'] === $contract->currency
+            ? $rates->rateFor($contract->currency, preg_match('/^\d{4}-\d{2}-\d{2}$/', $this->receiptDate) === 1 ? CarbonImmutable::parse($this->receiptDate) : CarbonImmutable::today())
+            : null;
+
+        $this->receiptRate = $daily !== null ? rtrim(rtrim((string) $daily->rate, '0'), '.') : '';
+    }
+
+    /** Money arrived for an instalment: prepares its receipt voucher (pending approval) and links it to the instalment. */
     public function receiveInstalment(ContractEntries $entries): void
     {
         $this->authorizeChange();
@@ -409,7 +426,8 @@ class ContractPage extends Component
             'receiptDate' => ['required', 'date'],
             'receiptAmount' => ['required', 'numeric', 'gt:0', 'max:9999999999999'],
             'receiptRate' => $foreign ? ['required', 'numeric', 'gt:0'] : ['nullable'],
-            'receiptCommission' => ['nullable', 'numeric', 'min:0'],
+            'receiptFee' => ['nullable', 'numeric', 'min:0'],
+            'receiptFeeTo' => ['required', 'string', 'max:255'],
             'receiptSplit' => ['required', 'array'],
             'receiptSplit.*' => ['nullable', 'numeric', 'min:0'],
         ]);
@@ -422,7 +440,8 @@ class ContractPage extends Component
                 CarbonImmutable::parse($data['receiptDate']),
                 bcadd((string) $data['receiptAmount'], '0', 2),
                 $foreign ? bcadd((string) $data['receiptRate'], '0', 6) : '1',
-                bcadd((string) ($data['receiptCommission'] ?: '0'), '0', 2),
+                bcadd((string) ($data['receiptFee'] ?: '0'), '0', 2),
+                $data['receiptFeeTo'],
                 array_map(fn (mixed $part): string => bcadd((string) ($part ?: '0'), '0', 2), $data['receiptSplit']),
                 $this->user(),
             );
@@ -433,31 +452,12 @@ class ContractPage extends Component
             return;
         }
 
-        $this->reset('receiptInstalment', 'receiptAccount', 'receiptDate', 'receiptAmount', 'receiptRate', 'receiptCommission', 'receiptSplit');
+        $this->reset('receiptInstalment', 'receiptAccount', 'receiptDate', 'receiptAmount', 'receiptRate', 'receiptFee', 'receiptFeeTo', 'receiptSplit');
         $this->say(__('contracts.receipt_prepared', ['voucher' => $voucher->id]));
     }
 
-    /** Prepares the income voucher of an instalment again, when it could not be prepared or was replaced. */
-    public function prepareRecognition(int $id, ContractEntries $entries): void
-    {
-        $this->authorizeChange();
-        $contract = $this->contract();
-        $instalment = ContractInstalment::query()->where('contract_id', $contract->id)->whereKey($id)->firstOrFail();
-
-        try {
-            $voucher = $entries->recognise($contract, $instalment, $this->user());
-        } catch (ContractException $refused) {
-            $this->problems = $refused->problems;
-            $this->notice = null;
-
-            return;
-        }
-
-        $this->say(__('contracts.recognition_prepared', ['number' => $instalment->number, 'voucher' => $voucher->id]));
-    }
-
-    /** The condition of a conditional instalment is met today: from now on it counts as income, and its income voucher is prepared. */
-    public function markConditionMet(int $id, ContractEntries $entries): void
+    /** The condition of a conditional instalment is met today. No voucher is made: that waits for the money. */
+    public function markConditionMet(int $id): void
     {
         $this->authorizeChange();
         $contract = $this->contract();
@@ -468,7 +468,6 @@ class ContractPage extends Component
         if ($instalment->is_conditional && $instalment->condition_met_on === null) {
             $instalment->update(['condition_met_on' => CarbonImmutable::today()->toDateString()]);
             $this->say(__('contracts.condition_met', ['number' => $instalment->number]));
-            $this->problems = $entries->recogniseDue($contract, $this->user());
         }
     }
 
@@ -610,8 +609,7 @@ class ContractPage extends Component
             'received' => $received,
             'canReceive' => $canChange && $contract->isApproved(),
             'destinations' => $canChange && $contract->isApproved() && $this->tab === 'instalments' ? $entries->destinations($contract) : [],
-            'recognitions' => Voucher::query()->whereIn('id', $contract->instalments->pluck('recognition_voucher_id')->filter()->values())->pluck('status', 'id')
-                ->filter(fn (VoucherStatus $status): bool => $status !== VoucherStatus::Replaced)->all(),
+            'feeBudgetLines' => $canChange && $contract->isApproved() && $this->tab === 'instalments' ? $entries->feeBudgetLines($contract) : [],
             'shareUsd' => $contract->projects->mapWithKeys(fn (ContractProject $share) => [$share->id => $toUsd((string) $share->amount)]),
             'sharePercent' => $contract->projects->mapWithKeys(fn (ContractProject $share) => [$share->id => bccomp((string) $contract->amount, '0', 2) === 1
                 ? bcdiv(bcmul((string) $share->amount, '100', 6), (string) $contract->amount, 2)

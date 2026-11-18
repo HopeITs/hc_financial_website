@@ -3,8 +3,10 @@
 namespace App\Services\Treasury;
 
 use App\Enums\AccountLevel;
+use App\Enums\FundSource;
 use App\Enums\VoucherType;
 use App\Models\GlAccount;
+use App\Models\GlBudgetLine;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Services\Ledger\Currencies;
@@ -24,18 +26,31 @@ use InvalidArgumentException;
  * company and the city safes and tills, and from one currency to another. No line names a project or a donor: a project
  * is named only where money comes in and where it is spent. Both wait for approval like any voucher.
  *
- * - Transfer (TRF): the same currency leaves one account and reaches another, valued at the month's rate. When the
- *   transfer company is one side and less arrives than was sent, the gap is its commission (5504).
+ * - Transfer (TRF): the same currency leaves one account and reaches another, valued at the month's rate. Less may
+ *   arrive than was sent: the gap is the fee of the bank or the transfer company.
  * - Exchange (EXG): dollars leave the transfer company or a city's dollar cash and pounds reach the city's general
- *   pound account (its main safe), at the rate really obtained. The month's exchanges are what the Financial Manager
- *   sets the month's rate from.
+ *   pound account (its main safe), at the rate really obtained; or a donor's euros are withdrawn from the bank to the
+ *   transfer company or a dollar bank. The month's exchanges into pounds are what the monthly rate is set from.
+ *
+ * Every fee is charged, as chosen each time, to the organisation (5504 through the transfer company, else 5501 bank
+ * charges, no project) or to a budget line of a project.
  */
 class TreasuryMoves
 {
+    public const FEE_TO_ORGANISATION = 'organisation';
+
+    public const BANK_CHARGES = '5501';
+
+    public const EXCHANGE_DIFFERENCES = '5503';
+
+    /** The group of the bank accounts, under assets. */
+    public const BANKS_GROUP = '1165';
+
     public function __construct(
         private readonly PostVoucher $posting,
         private readonly MonthlyRates $rates,
         private readonly Currencies $currencies,
+        private readonly DailyRates $dailyRates,
     ) {}
 
     /** @return Collection<string, GlAccount> the active cash accounts, by code */
@@ -46,20 +61,46 @@ class TreasuryMoves
             ->orderBy('code')->get()->keyBy('code');
     }
 
-    /** @return Collection<string, GlAccount> where dollars are exchanged from: the transfer company and the cities' dollar cash */
+    /**
+     * Where money is exchanged from: the transfer company and the cities' dollar cash (into pounds), and the banks
+     * holding another currency than dollars and pounds (withdrawn to dollars).
+     *
+     * @return Collection<string, GlAccount>
+     */
     public function exchangeSources(): Collection
     {
-        $company = (string) config('ledger.transfer_company_account');
+        $banks = $this->bankCodes();
 
-        return $this->accounts()->filter(fn (GlAccount $account): bool => $account->code === $company
-            || ($account->currency === Currencies::BASE && $account->city !== null && ! $this->isCenterTill($account)));
+        return $this->accounts()->filter(fn (GlAccount $account): bool => $this->isCompany($account)
+            || ($account->currency === Currencies::BASE && $account->city !== null && ! $this->isCenterTill($account))
+            || (in_array($account->code, $banks, true) && ! in_array($account->currency, [Currencies::BASE, 'SYP'], true)));
     }
 
-    /** @return Collection<string, GlAccount> where the pounds go: each city's general account in another currency (its main safe, not a center's till) */
-    public function exchangeTargets(): Collection
+    /**
+     * Where the money goes: from dollars, each city's general pound account (its main safe, not a center's till); from
+     * a bank's euros, the transfer company or a dollar bank.
+     *
+     * @return Collection<string, GlAccount>
+     */
+    public function exchangeTargets(?GlAccount $source = null): Collection
     {
+        if ($source !== null && $source->currency !== Currencies::BASE) {
+            $banks = $this->bankCodes();
+
+            return $this->accounts()->filter(fn (GlAccount $account): bool => $this->isCompany($account)
+                || ($account->currency === Currencies::BASE && in_array($account->code, $banks, true)));
+        }
+
         return $this->accounts()->filter(fn (GlAccount $account): bool => $account->currency !== Currencies::BASE
             && $account->city !== null && ! $this->isCenterTill($account));
+    }
+
+    /** @return list<string> */
+    private function bankCodes(): array
+    {
+        $groups = GlAccount::query()->where('parent_code', self::BANKS_GROUP)->pluck('code')->all();
+
+        return array_values(GlAccount::query()->whereIn('parent_code', $groups)->pluck('code')->map(fn ($code): string => (string) $code)->all());
     }
 
     /**
@@ -68,7 +109,15 @@ class TreasuryMoves
      *
      * @throws TreasuryException
      */
-    public function transfer(string $from, string $to, string $day, string $sent, ?string $received, string $contact, string $center, string $note, User $by): Voucher
+    /**
+     * @param  numeric-string  $sent
+     * @param  numeric-string|null  $received  what reached the other account; null when all of it did. What did not
+     *                                         arrive is the fee of the bank or the transfer company.
+     * @param  string  $feeTo  self::FEE_TO_ORGANISATION or the key of the budget line the fee is charged to
+     *
+     * @throws TreasuryException
+     */
+    public function transfer(string $from, string $to, string $day, string $sent, ?string $received, string $contact, string $center, string $note, User $by, string $feeTo = self::FEE_TO_ORGANISATION): Voucher
     {
         [$source, $target, $date, $problems] = $this->check($from, $to, $day);
         $amount = $this->amount($sent);
@@ -82,13 +131,14 @@ class TreasuryMoves
             $problems[] = __('treasury.transfer_same_currency');
         }
 
-        $company = (string) config('ledger.transfer_company_account');
         $gap = $amount !== null && $arrived !== null ? bcsub($amount, $arrived, 2) : null;
 
         if ($arrived === null || bccomp($arrived, '0', 2) !== 1 || ($gap !== null && bccomp($gap, '0', 2) === -1)) {
             $problems[] = __('treasury.bad_received');
-        } elseif ($gap !== null && bccomp($gap, '0', 2) === 1 && $from !== $company && $to !== $company) {
-            $problems[] = __('treasury.commission_only_company');
+        }
+
+        if ($gap !== null && bccomp($gap, '0', 2) === 1) {
+            $problems = [...$problems, ...$this->feeProblems($feeTo)];
         }
 
         $problems = [...$problems, ...$this->tagProblems([$source, $target], $center)];
@@ -104,30 +154,41 @@ class TreasuryMoves
         $sentUsd = $this->currencies->toUsd($currency, $amount, $rate);
         $arrivedUsd = $this->currencies->toUsd($currency, $arrived, $rate);
         $commission = bcsub($sentUsd, $arrivedUsd, 2);
+        $throughCompany = $this->isCompany($source) || $this->isCompany($target);
+        $companyCommission = $feeTo === self::FEE_TO_ORGANISATION && $throughCompany ? $commission : '0';
 
         $lines = [
-            $this->line($source, credit: true, amount: $amount, rate: $rate, usd: $sentUsd, contact: $contact, center: $center, commission: $commission),
+            $this->line($source, credit: true, amount: $amount, rate: $rate, usd: $sentUsd, contact: $contact, center: $center, commission: $companyCommission),
             $this->line($target, credit: false, amount: $arrived, rate: $rate, usd: $arrivedUsd, contact: $contact, center: $center),
         ];
 
         if (bccomp($commission, '0', 2) === 1) {
-            $lines[] = new LineDraft(HawalaReceiptIsConsistent::COMMISSION_ACCOUNT, Currencies::BASE, debit: $commission);
+            $lines[] = $this->feeLine($feeTo, $throughCompany, $currency, (string) $gap, $rate, $commission);
         }
 
         return $this->post(VoucherType::Transfer, $date, $lines, trim($note) ?: __('treasury.transfer_description', ['from' => $source->code, 'to' => $target->code]), $by);
     }
 
     /**
+     * Two kinds of exchange, both at the rate really obtained:
+     *
+     * - dollars from the transfer company or a city's dollar cash into the city's general pound account;
+     * - another currency held in a bank (euros) withdrawn to the transfer company or a dollar bank. The euros leave at
+     *   what the books hold them at, the day's approved rate; what the dollars really came to differs from that, and the
+     *   difference is the organisation's (5503).
+     *
      * @param  numeric-string  $given  what left the first account, in its currency
-     * @param  numeric-string  $received  what reached the second, in its currency
+     * @param  numeric-string  $received  what reached the second, in its currency, after any fee
+     * @param  numeric-string  $fee  what the exchange or the transfer kept, in the second account's currency
      *
      * @throws TreasuryException
      */
-    public function exchange(string $from, string $to, string $day, string $given, string $received, string $contact, string $center, string $note, User $by): Voucher
+    public function exchange(string $from, string $to, string $day, string $given, string $received, string $contact, string $center, string $note, User $by, string $fee = '0', string $feeTo = self::FEE_TO_ORGANISATION): Voucher
     {
         [$source, $target, $date, $problems] = $this->check($from, $to, $day);
         $out = $this->amount($given);
         $in = $this->amount($received);
+        $kept = trim($fee) === '' ? '0.00' : $this->amount($fee);
 
         if ($out === null || bccomp($out, '0', 2) !== 1) {
             $problems[] = __('treasury.bad_amount');
@@ -139,10 +200,14 @@ class TreasuryMoves
 
         if ($source !== null && ! $this->exchangeSources()->has($source->code)) {
             $problems[] = __('treasury.exchange_bad_source');
+        } elseif ($source !== null && $target !== null && ! $this->exchangeTargets($source)->has($target->code)) {
+            $problems[] = __($source->currency === Currencies::BASE ? 'treasury.exchange_bad_target' : 'treasury.withdraw_bad_target');
         }
 
-        if ($target !== null && ! $this->exchangeTargets()->has($target->code)) {
-            $problems[] = __('treasury.exchange_bad_target');
+        if ($kept === null || bccomp($kept, '0', 2) === -1) {
+            $problems[] = __('treasury.bad_fee');
+        } elseif (bccomp($kept, '0', 2) === 1) {
+            $problems = [...$problems, ...$this->feeProblems($feeTo)];
         }
 
         $problems = [...$problems, ...$this->tagProblems([$source, $target], $center)];
@@ -153,39 +218,144 @@ class TreasuryMoves
         /** @var CarbonImmutable $date */
         /** @var numeric-string $out */
         /** @var numeric-string $in */
-        $usd = Money::normalize($out);
+        /** @var numeric-string $kept */
+        $throughCompany = $this->isCompany($source) || $this->isCompany($target);
+        $targetCurrency = (string) $target->currency;
 
-        $lines = [
-            $this->line($source, credit: true, amount: $out, rate: '1', usd: $usd, contact: $contact, center: $center),
-            $this->line($target, credit: false, amount: $in, rate: $this->rateOf((string) $target->currency, $in, $usd), usd: $usd, contact: $contact, center: $center),
-        ];
+        if ($source->currency === Currencies::BASE) {
+            // Dollars into pounds: the dollars fix the value; the pounds kept as a fee share it.
+            $usd = Money::normalize($out);
+            $grossIn = bcadd($in, $kept, 2);
+            $rate = $this->rateOf($targetCurrency, $grossIn, $usd);
+            $inUsd = $this->currencies->toUsd($targetCurrency, $in, $rate);
+            $lines = [
+                $this->line($source, credit: true, amount: $out, rate: '1', usd: $usd, contact: $contact, center: $center),
+                $this->line($target, credit: false, amount: $in, rate: $rate, usd: $inUsd, contact: $contact, center: $center),
+            ];
+
+            if (bccomp($kept, '0', 2) === 1) {
+                $lines[] = $this->feeLine($feeTo, $throughCompany, $targetCurrency, $kept, $rate, bcsub($usd, $inUsd, 2));
+            }
+        } else {
+            // Euros withdrawn to dollars: the euros leave at the day's approved rate, the dollars are what really came.
+            $daily = $this->dailyRates->requireRate((string) $source->currency, $date);
+            $book = $this->currencies->toUsd((string) $source->currency, $out, $daily);
+            $difference = bcsub(bcadd($in, $kept, 2), $book, 2);
+            $lines = [
+                $this->line($source, credit: true, amount: $out, rate: $daily, usd: $book, contact: $contact, center: $center),
+                $this->line($target, credit: false, amount: $in, rate: '1', usd: $in, contact: $contact, center: $center),
+            ];
+
+            if (bccomp($kept, '0', 2) === 1) {
+                $lines[] = $this->feeLine($feeTo, $throughCompany, Currencies::BASE, $kept, '1', $kept);
+            }
+
+            if (bccomp($difference, '0', 2) !== 0) {
+                $gain = bccomp($difference, '0', 2) === 1;
+                $size = $gain ? $difference : bcmul($difference, '-1', 2);
+                $lines[] = new LineDraft(self::EXCHANGE_DIFFERENCES, Currencies::BASE, debit: $gain ? null : $size, credit: $gain ? $size : null);
+            }
+        }
 
         return $this->post(VoucherType::Exchange, $date, $lines, trim($note) ?: __('treasury.exchange_description', ['given' => $out.' '.$source->currency, 'received' => $in.' '.$target->currency]), $by);
+    }
+
+    /** @return array<string, string> every budget line a fee can be charged to: key => "PROJECT · name" */
+    public function feeBudgetLines(): array
+    {
+        return GlBudgetLine::query()->orderBy('project_code')->orderBy('name')->get()
+            ->mapWithKeys(fn (GlBudgetLine $line): array => [$line->key => $line->project_code.' · '.$line->name])
+            ->all();
+    }
+
+    /** @return list<string> */
+    private function feeProblems(string $feeTo): array
+    {
+        return $feeTo === self::FEE_TO_ORGANISATION || GlBudgetLine::query()->whereKey($feeTo)->exists()
+            ? []
+            : [__('treasury.bad_fee_line')];
+    }
+
+    /**
+     * The fee's line: the organisation's (5504 through the transfer company, else 5501 bank charges, no project) or the
+     * budget line it is charged to, with its project.
+     *
+     * @param  numeric-string  $amount
+     * @param  numeric-string  $rate
+     * @param  numeric-string  $usd
+     */
+    private function feeLine(string $feeTo, bool $throughCompany, string $currency, string $amount, string $rate, string $usd): LineDraft
+    {
+        $budgetLine = $feeTo === self::FEE_TO_ORGANISATION ? null : GlBudgetLine::query()->with('project')->find($feeTo);
+
+        if ($budgetLine === null) {
+            return new LineDraft($throughCompany ? HawalaReceiptIsConsistent::COMMISSION_ACCOUNT : self::BANK_CHARGES, $currency, debit: $amount, rate: $rate, debitUsd: $usd);
+        }
+
+        $project = $budgetLine->project;
+        $donorRate = $project !== null ? Money::normalize($project->donor_rate ?? '0', 6) : '0.000000';
+        $donorAmount = $project !== null && $project->donor_currency !== null && $project->donor_currency !== Currencies::BASE && bccomp($donorRate, '0', 6) === 1
+            ? Money::normalize(bcdiv($usd, $donorRate, 6))
+            : $usd;
+
+        return new LineDraft(
+            accountCode: $budgetLine->account_code,
+            currency: $currency,
+            debit: $amount,
+            rate: $rate,
+            debitUsd: $usd,
+            projectCode: $budgetLine->project_code,
+            budgetLineKey: $budgetLine->key,
+            fundSource: FundSource::DonorGrant,
+            donor: $project?->donor,
+            restriction: $project?->restriction,
+            donorCurrency: $project?->donor_currency,
+            debitDonor: $donorAmount,
+        );
+    }
+
+    private function isCompany(GlAccount $account): bool
+    {
+        return $account->code === (string) config('ledger.transfer_company_account');
     }
 
     /**
      * The rate an exchange really got, next to the month's rate, so the form can show both; null when the amounts are
      * not typed yet.
      *
-     * @return array{currency: string, actual: string, monthly: array{rate: string, month: string, provisional: bool}|null}|null
+     * @return array{currency: string, actual: string, reference: array{kind: string, rate: string}|null}|null
      */
-    public function exchangeRates(string $to, string $day, string $given, string $received): ?array
+    public function exchangeRates(string $from, string $to, string $day, string $given, string $received): ?array
     {
+        $source = $this->accounts()->get($from);
         $target = $this->accounts()->get($to);
         $out = $this->amount($given);
         $in = $this->amount($received);
         $date = $this->day($day);
 
-        if ($target === null || $out === null || $in === null || $target->currency === Currencies::BASE) {
+        if ($source === null || $target === null || $out === null || $in === null || $source->currency === $target->currency) {
             return null;
         }
 
+        if ($source->currency !== Currencies::BASE) {
+            // Euros withdrawn to dollars: beside the day's approved rate, which the books hold them at.
+            $actual = $this->currencies->rateOf((string) $source->currency, $out, $in);
+            $daily = $date !== null ? $this->dailyRates->rateFor((string) $source->currency, $date) : null;
+
+            return $actual === null ? null : [
+                'currency' => (string) $source->currency,
+                'actual' => $actual,
+                'reference' => $daily !== null ? ['kind' => 'daily', 'rate' => Money::normalize($daily->rate, 6)] : null,
+            ];
+        }
+
         $actual = $this->currencies->rateOf((string) $target->currency, $in, $out);
+        $monthly = $date !== null ? $this->rates->forDay((string) $target->currency, $date) : null;
 
         return $actual === null ? null : [
             'currency' => (string) $target->currency,
             'actual' => $actual,
-            'monthly' => $date !== null ? $this->rates->forDay((string) $target->currency, $date) : null,
+            'reference' => $monthly !== null ? ['kind' => 'monthly', 'rate' => $monthly['rate']] : null,
         ];
     }
 
