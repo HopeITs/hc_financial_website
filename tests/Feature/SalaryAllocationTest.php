@@ -17,7 +17,6 @@ use App\Services\Payroll\PayrollException;
 use App\Services\Payroll\PayrollSplits;
 use App\Services\Payroll\SalaryAllocation;
 use Carbon\CarbonImmutable;
-use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
@@ -31,7 +30,7 @@ beforeEach(function () {
     (require database_path('migrations/2026_10_24_110000_add_request_and_transfer_columns_to_gl_vouchers.php'))->up();
     (require database_path('migrations/2026_10_25_090000_add_contract_dates_to_gl_projects.php'))->up();
     (require database_path('migrations/2026_10_26_090000_create_gl_payroll_splits_table.php'))->up();
-    (new ChartOfAccountsSeeder)->run();
+    seedChartWithTestProjects();
 
     foreach (['F2F', 'SZ', 'CORE'] as $code) {
         GlBudgetLine::query()->create(['key' => $code.'|Staff', 'project_code' => $code, 'name' => 'Staff', 'account_code' => '5101', 'budget' => 100000, 'currency' => 'USD']);

@@ -17,7 +17,8 @@ use App\Services\Assistant\GatewayReply;
 use App\Services\Assistant\ProposalRefused;
 use App\Services\Assistant\Toolbox;
 use App\Services\Ledger\PostVoucher;
-use Database\Seeders\ChartOfAccountsSeeder;
+use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Psr7\Response;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
@@ -45,7 +46,7 @@ beforeEach(function () {
     createFinanceSchema();
     (require database_path('migrations/2026_10_24_110000_add_request_and_transfer_columns_to_gl_vouchers.php'))->up();
     (require database_path('migrations/2026_10_25_090000_add_contract_dates_to_gl_projects.php'))->up();
-    (new ChartOfAccountsSeeder)->run();
+    seedChartWithTestProjects();
     config(['assistant.provider' => 'anthropic', 'assistant.api_key' => 'test-key']);
     RateLimiter::clear('assistant:1');
 });
@@ -269,8 +270,8 @@ it('answers in the panel and saves the entry from its card', function () {
 
 it('tells the person when the Anthropic account is out of credit, and says unreachable for other failures', function () {
     $failure = fn (int $status, string $message) => APIStatusException::from(
-        new GuzzleHttp\Psr7\Request('POST', 'https://api.anthropic.com/v1/messages'),
-        new GuzzleHttp\Psr7\Response($status, ['Content-Type' => 'application/json'], json_encode([
+        new Request('POST', 'https://api.anthropic.com/v1/messages'),
+        new Response($status, ['Content-Type' => 'application/json'], json_encode([
             'type' => 'error', 'error' => ['type' => 'invalid_request_error', 'message' => $message],
         ])),
     );

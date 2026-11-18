@@ -3,13 +3,12 @@
 use App\Models\GlBudgetLine;
 use App\Services\Ledger\OperationEntry;
 use App\Services\Ledger\PostVoucher;
-use Database\Seeders\ChartOfAccountsSeeder;
 
 beforeEach(function () {
     createFinanceSchema();
     (require database_path('migrations/2026_10_24_110000_add_request_and_transfer_columns_to_gl_vouchers.php'))->up();
     (require database_path('migrations/2026_10_25_090000_add_contract_dates_to_gl_projects.php'))->up();
-    (new ChartOfAccountsSeeder)->run();
+    seedChartWithTestProjects();
 });
 
 function operation(array $with = []): array

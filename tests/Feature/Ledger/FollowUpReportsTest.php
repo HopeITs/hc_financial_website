@@ -7,14 +7,13 @@ use App\Services\Ledger\FollowUpFilters;
 use App\Services\Ledger\FollowUpReports;
 use App\Support\Navigation;
 use Carbon\CarbonImmutable;
-use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
 beforeEach(function () {
     createFinanceSchema();
     (require database_path('migrations/2026_10_24_110000_add_request_and_transfer_columns_to_gl_vouchers.php'))->up();
-    (new ChartOfAccountsSeeder)->run();
+    seedChartWithTestProjects();
 });
 
 /**

@@ -4,13 +4,12 @@ use App\Enums\RoleId;
 use App\Livewire\Chart;
 use App\Models\GlAccount;
 use App\Models\User;
-use Database\Seeders\ChartOfAccountsSeeder;
 use Livewire\Livewire;
 
 beforeEach(function () {
     createFinanceSchema();
     createLegacyHomeSchema();
-    $this->seed(ChartOfAccountsSeeder::class);
+    seedChartWithTestProjects();
 });
 
 function chartUser(RoleId $role = RoleId::HeadOffice): User
@@ -27,7 +26,7 @@ it('seeds the mockup chart: five roots, every parent present', function () {
 });
 
 it('can be seeded twice without duplicates', function () {
-    $this->seed(ChartOfAccountsSeeder::class);
+    seedChartWithTestProjects();
 
     expect(GlAccount::query()->count())->toBe(135);
 });
@@ -40,11 +39,11 @@ it('shows the five classes on the chart screen', function () {
 });
 
 it('shows one account with its rules, tags and the accounts below it', function () {
-    $this->actingAs(chartUser())->get('/chart?account=1110')
+    $this->actingAs(chartUser())->get('/chart?account=1101')
         ->assertOk()
-        ->assertSee('Aleppo office')
+        ->assertSee('Cash – USD')
         ->assertSee('Aleppo main safe – USD')
-        ->assertSee('مكتب حلب');
+        ->assertSee('النقد – دولار أمريكي');
 
     $this->actingAs(chartUser())->get('/chart?account=1111')
         ->assertOk()

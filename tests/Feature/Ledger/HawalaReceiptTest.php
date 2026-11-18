@@ -11,13 +11,12 @@ use App\Services\Ledger\LineDraft;
 use App\Services\Ledger\PostVoucher;
 use App\Services\Ledger\ProjectBalances;
 use App\Services\Ledger\VoucherDraftBuilder;
-use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Support\Facades\DB;
 
 beforeEach(function () {
     createFinanceSchema();
     (require database_path('migrations/2026_10_24_110000_add_request_and_transfer_columns_to_gl_vouchers.php'))->up();
-    (new ChartOfAccountsSeeder)->run();
+    seedChartWithTestProjects();
 });
 
 /** The two rows of a donor receipt through the transfer company: dollars into 1161 and the project's income. */

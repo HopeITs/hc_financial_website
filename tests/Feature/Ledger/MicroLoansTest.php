@@ -16,7 +16,6 @@ use App\Services\Loans\LoanException;
 use App\Services\Loans\MicroLoans;
 use App\Services\Loans\ScheduleGenerator;
 use Carbon\CarbonImmutable;
-use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
@@ -27,7 +26,7 @@ beforeEach(function () {
     createLegacyHomeSchema();
 
     (require database_path('migrations/2026_10_24_110000_add_request_and_transfer_columns_to_gl_vouchers.php'))->up();
-    (new ChartOfAccountsSeeder)->run();
+    seedChartWithTestProjects();
 
     GlBudgetLine::query()->create(['key' => 'F2F|Grants', 'project_code' => 'F2F', 'name' => 'Grants', 'account_code' => '5101', 'budget' => 100000, 'currency' => 'USD']);
     GlBudgetLine::query()->create(['key' => 'SZ|Grants', 'project_code' => 'SZ', 'name' => 'Grants', 'account_code' => '5101', 'budget' => 100000, 'currency' => 'USD']);
