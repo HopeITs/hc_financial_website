@@ -22,7 +22,7 @@ return [
     'groups' => [
         'funding' => ['donors', 'contracts', 'rdonor'],
         'entries' => ['single', 'multi', 'multiatt', 'payments', 'vouchers', 'bonds', 'approval', 'requests', 'salaries'],
-        'treasury' => ['tills', 'treasury', 'alloc', 'monthend', 'opening', 'currency', 'denoms'],
+        'treasury' => ['alloc', 'transfers', 'tills', 'treasury', 'monthend', 'opening', 'currency', 'denoms'],
         'reports' => ['rexp', 'rcash', 'rrev', 'rfixed', 'rattach', 'tb', 'statement', 'statements', 'recon', 'mapprovals', 'uncomp', 'xreserve', 'advances', 'loans'],
         'chart' => ['chart'],
         'settings' => ['users', 'employees', 'cities', 'log', 'auditlog'],
@@ -47,7 +47,8 @@ return [
         'monthend' => 'treasury/month-end',
         'opening' => 'treasury/opening-balances',
         'treasury' => 'treasury/position',
-        'alloc' => 'treasury/allocation-rates',
+        'alloc' => 'treasury/daily-rates',
+        'transfers' => 'treasury/transfers',
         'currency' => 'treasury/currencies',
         'denoms' => 'treasury/denominations',
 

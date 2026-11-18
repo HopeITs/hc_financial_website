@@ -26,7 +26,7 @@ $everyScreen = array_merge(...array_values((require __DIR__.'/navigation.php')['
 $screens = static fn (array $slugs, array $actions): array => array_fill_keys($slugs, $actions);
 
 $reports = ['rexp', 'rcash', 'rdonor', 'rrev', 'rfixed', 'rattach', 'tb', 'statement', 'statements', 'recon', 'mapprovals', 'uncomp', 'xreserve', 'advances', 'loans'];
-$treasury = ['tills', 'treasury', 'alloc', 'cities', 'currency', 'denoms'];
+$treasury = ['tills', 'treasury', 'alloc', 'transfers', 'cities', 'currency', 'denoms'];
 $monthEnd = ['monthend'];
 $entries = ['single', 'multi', 'multiatt', 'payments', 'vouchers', 'bonds'];
 
@@ -41,7 +41,9 @@ return [
 
         RoleId::FinancialManager->value => array_merge(
             $screens(['home', 'chart', 'project-money', ...$treasury, ...$reports, 'employees', 'salaries', 'users', 'log', 'auditlog', 'single', 'multi', 'multiatt', 'payments', 'bonds'], $view),
-            $screens(['vouchers', 'approval', 'requests', 'alloc'], ['view', 'approve']),
+            $screens(['vouchers', 'approval', 'requests'], ['view', 'approve']),
+            // The Financial Manager approves the daily rates, and a rate they type themselves is approved at once.
+            $screens(['alloc'], ['view', 'create', 'approve']),
             $screens(['donors'], $prepare),
             $screens(['contracts'], ['view', 'create', 'edit', 'approve', 'delete']),
             $screens(['currency'], $prepare),
@@ -50,7 +52,7 @@ return [
 
         RoleId::Accountant->value => array_merge(
             $screens(['home', 'project-money', ...$reports, 'tills', 'treasury', 'cities', 'currency', 'denoms', 'donors', 'employees', 'requests'], $view),
-            $screens(['chart', ...$entries, 'alloc', 'salaries', 'contracts'], $prepare),
+            $screens(['chart', ...$entries, 'alloc', 'transfers', 'salaries', 'contracts'], $prepare),
         ),
 
         RoleId::ProjectManager->value => array_merge(

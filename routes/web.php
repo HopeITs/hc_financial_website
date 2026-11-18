@@ -8,6 +8,7 @@ use App\Livewire\AuditLog;
 use App\Livewire\Chart;
 use App\Livewire\CurrencySettings;
 use App\Livewire\DonorReportScreen;
+use App\Livewire\ExchangeRates;
 use App\Livewire\FinancialStatements;
 use App\Livewire\FollowUpReport;
 use App\Livewire\Home;
@@ -24,8 +25,8 @@ use App\Livewire\Requests;
 use App\Livewire\Salaries;
 use App\Livewire\Statement;
 use App\Livewire\Tills;
-use App\Livewire\Transfers;
 use App\Livewire\Treasury;
+use App\Livewire\TreasuryTransfers;
 use App\Livewire\TrialBalance;
 use App\Livewire\Users;
 use App\Livewire\VoucherBuilder;
@@ -85,7 +86,9 @@ Route::middleware('auth')->group(function () {
     $screen('tills', Tills::class);
     $screen('monthend', MonthEndScreen::class);
     $screen('opening', OpeningBalances::class);
-    $screen('alloc', Transfers::class);
+    // One treasury (finance decision of 2026-11-19): the daily rates take the place of the allocation rates per city.
+    $screen('alloc', ExchangeRates::class);
+    $screen('transfers', TreasuryTransfers::class);
 
     foreach (['rexp', 'rcash', 'rrev', 'rfixed', 'rattach'] as $report) {
         $screen($report, OperationalReport::class)->defer($defer);
