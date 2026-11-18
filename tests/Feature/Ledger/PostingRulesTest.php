@@ -139,7 +139,7 @@ it('rule 5: accepts a line with all the tags its account requires', function () 
 
 it('rule 5: refuses a line with a required tag missing or blank', function () {
     $draft = ledgerReceipt(lines: [
-        new LineDraft('1111', 'USD', debit: 100, projectCode: 'F2F'),
+        new LineDraft('1210', 'USD', debit: 100),
         new LineDraft('4001', 'USD', credit: 100, projectCode: '  '),
     ]);
 

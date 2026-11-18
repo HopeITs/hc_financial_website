@@ -75,10 +75,7 @@
     "currency": "USD",
     "city": "Aleppo",
     "is_cash": true,
-    "required_tags": [
-      "Project",
-      "Fund source"
-    ],
+    "required_tags": [],
     "usage_note": "Physical US dollars in the Aleppo safe, for all projects and the general account. Its balance must equal the cash counted at every month-end.",
     "is_active": true
   },
@@ -94,10 +91,7 @@
     "currency": "SYP",
     "city": "Aleppo",
     "is_cash": true,
-    "required_tags": [
-      "Project",
-      "Fund source"
-    ],
+    "required_tags": [],
     "usage_note": "Physical Syrian pounds in the Aleppo safe, for all projects and the general account. Each owner's share is valued at the rate at which its pounds were bought.",
     "is_active": true
   },
@@ -114,8 +108,6 @@
     "city": "Aleppo",
     "is_cash": true,
     "required_tags": [
-      "Project",
-      "Fund source",
       "Center"
     ],
     "usage_note": "Study Zone's own income (courses, printing, drinks) until it is moved to the main safe each month. The move is a transfer, not new income.",
@@ -133,10 +125,7 @@
     "currency": "USD",
     "city": "Latakia",
     "is_cash": true,
-    "required_tags": [
-      "Project",
-      "Fund source"
-    ],
+    "required_tags": [],
     "usage_note": "Same rules as 1111.",
     "is_active": true
   },
@@ -152,10 +141,7 @@
     "currency": "SYP",
     "city": "Latakia",
     "is_cash": true,
-    "required_tags": [
-      "Project",
-      "Fund source"
-    ],
+    "required_tags": [],
     "usage_note": "Same rules as 1112.",
     "is_active": true
   },
@@ -172,8 +158,6 @@
     "city": "Latakia",
     "is_cash": true,
     "required_tags": [
-      "Project",
-      "Fund source",
       "Center"
     ],
     "usage_note": "Cash till of the centre, Syrian pounds only. Added in v7.",
@@ -192,8 +176,6 @@
     "city": "Latakia",
     "is_cash": true,
     "required_tags": [
-      "Project",
-      "Fund source",
       "Center"
     ],
     "usage_note": "Cash till of the centre, Syrian pounds only. Added in v7.",
@@ -212,8 +194,6 @@
     "city": "Latakia",
     "is_cash": true,
     "required_tags": [
-      "Project",
-      "Fund source",
       "Center"
     ],
     "usage_note": "Cash till of the centre, Syrian pounds only. Added in v7.",
@@ -231,10 +211,7 @@
     "currency": "USD",
     "city": "Damascus",
     "is_cash": true,
-    "required_tags": [
-      "Project",
-      "Fund source"
-    ],
+    "required_tags": [],
     "usage_note": "Same rules as 1111.",
     "is_active": true
   },
@@ -250,10 +227,7 @@
     "currency": "SYP",
     "city": "Damascus",
     "is_cash": true,
-    "required_tags": [
-      "Project",
-      "Fund source"
-    ],
+    "required_tags": [],
     "usage_note": "Same rules as 1112.",
     "is_active": true
   },
@@ -270,8 +244,6 @@
     "city": "Damascus",
     "is_cash": true,
     "required_tags": [
-      "Project",
-      "Fund source",
       "Center"
     ],
     "usage_note": "Cash till of the centre, Syrian pounds only. Added in v7.",
@@ -289,10 +261,7 @@
     "currency": "USD",
     "city": "Homs",
     "is_cash": true,
-    "required_tags": [
-      "Project",
-      "Fund source"
-    ],
+    "required_tags": [],
     "usage_note": "Same rules as 1111.",
     "is_active": true
   },
@@ -308,10 +277,7 @@
     "currency": "SYP",
     "city": "Homs",
     "is_cash": true,
-    "required_tags": [
-      "Project",
-      "Fund source"
-    ],
+    "required_tags": [],
     "usage_note": "Same rules as 1112.",
     "is_active": true
   },
@@ -328,8 +294,6 @@
     "city": "Homs",
     "is_cash": true,
     "required_tags": [
-      "Project",
-      "Fund source",
       "Center"
     ],
     "usage_note": "Cash till of the centre, Syrian pounds only. Added in v7.",
@@ -348,8 +312,6 @@
     "city": "Homs",
     "is_cash": true,
     "required_tags": [
-      "Project",
-      "Fund source",
       "Center"
     ],
     "usage_note": "Cash till of the centre, Syrian pounds only. Added in v7.",
@@ -368,8 +330,6 @@
     "city": "Homs",
     "is_cash": true,
     "required_tags": [
-      "Project",
-      "Fund source",
       "Center"
     ],
     "usage_note": "Cash till of the centre, Syrian pounds only. Added in v7.",
@@ -387,10 +347,7 @@
     "currency": "USD",
     "city": "Tartous",
     "is_cash": true,
-    "required_tags": [
-      "Project",
-      "Fund source"
-    ],
+    "required_tags": [],
     "usage_note": "Same rules as 1111.",
     "is_active": true
   },
@@ -406,10 +363,7 @@
     "currency": "SYP",
     "city": "Tartous",
     "is_cash": true,
-    "required_tags": [
-      "Project",
-      "Fund source"
-    ],
+    "required_tags": [],
     "usage_note": "Same rules as 1112.",
     "is_active": true
   },
@@ -426,8 +380,6 @@
     "city": "Tartous",
     "is_cash": true,
     "required_tags": [
-      "Project",
-      "Fund source",
       "Center"
     ],
     "usage_note": "Cash till of the centre, Syrian pounds only. Added in v7.",
@@ -462,8 +414,6 @@
     "city": null,
     "is_cash": true,
     "required_tags": [
-      "Project",
-      "Fund source",
       "Contact"
     ],
     "usage_note": "The pool that receives money from all donors and sends it to the cities. The owner on each line (a project or a general account) shows whose share it is. Euros are converted on arrival. Reconcile to the company's statement every month.",
@@ -545,10 +495,7 @@
     "currency": "USD",
     "city": null,
     "is_cash": true,
-    "required_tags": [
-      "Project",
-      "Fund source"
-    ],
+    "required_tags": [],
     "usage_note": "Reconcile to the bank statement every month.",
     "is_active": true
   },
@@ -564,10 +511,7 @@
     "currency": "SYP",
     "city": null,
     "is_cash": true,
-    "required_tags": [
-      "Project",
-      "Fund source"
-    ],
+    "required_tags": [],
     "usage_note": "As 1171, Syrian pounds only.",
     "is_active": true
   },
@@ -583,10 +527,7 @@
     "currency": "USD",
     "city": null,
     "is_cash": true,
-    "required_tags": [
-      "Project",
-      "Fund source"
-    ],
+    "required_tags": [],
     "usage_note": "Receives the money donors send from abroad. Money is withdrawn from here and deposited with the transfer company (1161). Reconcile to the bank statement every month.",
     "is_active": true
   },
@@ -602,10 +543,7 @@
     "currency": "USD",
     "city": null,
     "is_cash": true,
-    "required_tags": [
-      "Project",
-      "Fund source"
-    ],
+    "required_tags": [],
     "usage_note": "Receives the money donors send from abroad. Money is withdrawn from here and deposited with the transfer company (1161). Reconcile to the bank statement every month.",
     "is_active": true
   },
@@ -621,10 +559,7 @@
     "currency": "USD",
     "city": null,
     "is_cash": true,
-    "required_tags": [
-      "Project",
-      "Fund source"
-    ],
+    "required_tags": [],
     "usage_note": "Receives the money donors send from abroad. Money is withdrawn from here and deposited with the transfer company (1161). Reconcile to the bank statement every month.",
     "is_active": true
   },
@@ -640,10 +575,7 @@
     "currency": "EUR",
     "city": null,
     "is_cash": true,
-    "required_tags": [
-      "Project",
-      "Fund source"
-    ],
+    "required_tags": [],
     "usage_note": "Receives the money donors send from abroad. Money is withdrawn from here and deposited with the transfer company (1161). Reconcile to the bank statement every month.",
     "is_active": true
   },
@@ -659,10 +591,7 @@
     "currency": "EUR",
     "city": null,
     "is_cash": true,
-    "required_tags": [
-      "Project",
-      "Fund source"
-    ],
+    "required_tags": [],
     "usage_note": "Receives the money donors send from abroad. Money is withdrawn from here and deposited with the transfer company (1161). Reconcile to the bank statement every month.",
     "is_active": true
   },
@@ -678,10 +607,7 @@
     "currency": "EUR",
     "city": null,
     "is_cash": true,
-    "required_tags": [
-      "Project",
-      "Fund source"
-    ],
+    "required_tags": [],
     "usage_note": "Receives the money donors send from abroad. Money is withdrawn from here and deposited with the transfer company (1161). Reconcile to the bank statement every month.",
     "is_active": true
   },
@@ -2221,9 +2147,7 @@
     "currency": "Any",
     "city": null,
     "is_cash": false,
-    "required_tags": [
-      "Project"
-    ],
+    "required_tags": [],
     "usage_note": "Rare: rounding cents and month-end revaluation. A credit balance is a gain.",
     "is_active": true
   },

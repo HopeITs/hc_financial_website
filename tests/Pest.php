@@ -86,6 +86,7 @@ function createFinanceSchema(): void
     (require database_path('migrations/2026_11_17_090000_create_donors_and_funding_contracts_tables.php'))->up();
     (require database_path('migrations/2026_11_18_090000_create_gl_contract_audit_table.php'))->up();
     (require database_path('migrations/2026_11_18_100000_create_gl_contract_receipts_table.php'))->up();
+    (require database_path('migrations/2026_11_19_100000_add_recognition_voucher_to_gl_contract_instalments.php'))->up();
 
     Schema::create('log', function ($table) {
         $table->increments('id');
