@@ -13,7 +13,6 @@ use App\Services\Ledger\LineDraft;
 use App\Services\Ledger\PostVoucher;
 use App\Services\Ledger\VoucherApprovals;
 use Carbon\CarbonImmutable;
-use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Support\Facades\DB;
 
 beforeEach(function () {
@@ -25,7 +24,7 @@ beforeEach(function () {
     DB::connection('legacy')->table('tilltypes')->insert(['ID' => 2, 'Name' => 'USD']);
 
     (require database_path('migrations/2026_10_24_110000_add_request_and_transfer_columns_to_gl_vouchers.php'))->up();
-    (new ChartOfAccountsSeeder)->run();
+    seedChartWithTestProjects();
 });
 
 function approverUser(RoleId $role, string $name): User

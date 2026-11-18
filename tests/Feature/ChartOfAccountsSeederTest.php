@@ -6,11 +6,10 @@ use App\Enums\NormalSide;
 use App\Models\GlAccount;
 use App\Models\GlBudgetLine;
 use App\Models\GlProject;
-use Database\Seeders\ChartOfAccountsSeeder;
 
 beforeEach(function () {
     (require database_path('migrations/2026_10_24_090000_create_gl_accounts_projects_budget_lines_tables.php'))->up();
-    $this->seed(ChartOfAccountsSeeder::class);
+    seedChartWithTestProjects();
 });
 
 it('seeds the chart with cash grouped by currency and a single income account', function () {
@@ -192,7 +191,7 @@ it('can run again without duplicating rows or overwriting an edit', function () 
     GlAccount::query()->find('1111')->update(['name_en' => 'Edited in the web app']);
     GlAccount::query()->find('1111')->delete();
 
-    $this->seed(ChartOfAccountsSeeder::class);
+    seedChartWithTestProjects();
 
     expect(GlAccount::query()->count())->toBe(134)
         ->and(GlAccount::withTrashed()->count())->toBe(135)

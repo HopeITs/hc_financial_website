@@ -16,7 +16,10 @@ use App\Services\Ledger\Rules\MonthClosesOnlyWhenClearingIsZero;
 use App\Services\Ledger\Rules\UsedAccountKeepsIdentity;
 use Carbon\CarbonImmutable;
 
-beforeEach(fn () => createLedgerSchema());
+beforeEach(function () {
+    createLedgerSchema();
+    seedInTransitAccounts();
+});
 
 function postedReceipt(array $header = []): Voucher
 {

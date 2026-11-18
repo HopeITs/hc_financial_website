@@ -13,7 +13,6 @@ use App\Services\Ledger\OperationSheet;
 use App\Services\Ledger\OperationTemplate;
 use App\Services\Ledger\PostVoucher;
 use Carbon\CarbonImmutable;
-use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
@@ -25,7 +24,7 @@ beforeEach(function () {
     createFinanceSchema();
     (require database_path('migrations/2026_10_24_110000_add_request_and_transfer_columns_to_gl_vouchers.php'))->up();
     (require database_path('migrations/2026_10_25_090000_add_contract_dates_to_gl_projects.php'))->up();
-    (new ChartOfAccountsSeeder)->run();
+    seedChartWithTestProjects();
     Storage::fake('local');
 });
 

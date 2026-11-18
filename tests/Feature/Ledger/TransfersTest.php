@@ -14,14 +14,13 @@ use App\Services\Ledger\TransferRateException;
 use App\Services\Ledger\TransferRates;
 use App\Services\Ledger\TreasuryPosition;
 use Carbon\CarbonImmutable;
-use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
 beforeEach(function () {
     createFinanceSchema();
     (require database_path('migrations/2026_10_24_110000_add_request_and_transfer_columns_to_gl_vouchers.php'))->up();
-    (new ChartOfAccountsSeeder)->run();
+    seedChartWithTestProjects();
 
     // Aleppo's general USD account has 5,000 USD and its general SYP account 7.5M pounds bought for 500 USD (average 15,000).
     ledgerApprovedVoucher(['date' => CarbonImmutable::parse('2026-03-01'), 'type' => VoucherType::Receipt], [

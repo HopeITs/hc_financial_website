@@ -14,7 +14,6 @@ use App\Services\Ledger\ProjectAverageRate;
 use App\Services\Ledger\Rules\CashAccountInOwnCurrency;
 use App\Services\Ledger\TrialBalance;
 use App\Services\Ledger\VoucherDraftBuilder;
-use Database\Seeders\ChartOfAccountsSeeder;
 use Livewire\Livewire;
 
 /*
@@ -139,7 +138,7 @@ describe('ledger', function () {
 describe('currencies screen', function () {
     beforeEach(function () {
         createFinanceSchema();
-        (new ChartOfAccountsSeeder)->run();
+        seedChartWithTestProjects();
     });
 
     function currencyUser(RoleId $role, string $name = 'Ann'): User

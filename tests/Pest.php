@@ -4,6 +4,9 @@ use App\Enums\FundSource;
 use App\Enums\VoucherSource;
 use App\Enums\VoucherStatus;
 use App\Enums\VoucherType;
+use App\Models\GlAccount;
+use App\Models\GlBudgetLine;
+use App\Models\GlProject;
 use App\Models\Voucher;
 use App\Services\Ledger\LineDraft;
 use App\Services\Ledger\PostVoucher;
@@ -16,6 +19,35 @@ use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 pest()->extend(TestCase::class)->in('Feature');
+
+/**
+ * The real chart of accounts, plus the sample projects and budget lines kept in tests/Fixtures.
+ * The seeder itself only adds the chart; many tests need a few projects and budget lines to post against.
+ */
+function seedChartWithTestProjects(): void
+{
+    (new ChartOfAccountsSeeder)->run();
+
+    foreach (json_decode((string) file_get_contents(__DIR__.'/Fixtures/chart_projects.json'), true, flags: JSON_THROW_ON_ERROR) as $row) {
+        GlProject::query()->firstOrCreate(['code' => $row['code']], $row);
+    }
+
+    foreach (json_decode((string) file_get_contents(__DIR__.'/Fixtures/chart_budget_lines.json'), true, flags: JSON_THROW_ON_ERROR) as $row) {
+        GlBudgetLine::query()->firstOrCreate(['key' => $row['key']], $row);
+    }
+}
+
+/** The two Aleppo "in transit" cash accounts (1113 USD, 1114 SYP) that the chart no longer lists but the rules and the treasury report still handle. */
+function seedInTransitAccounts(): void
+{
+    foreach ([['1113', '1101', 'USD'], ['1114', '1102', 'SYP']] as [$code, $parent, $currency]) {
+        GlAccount::query()->firstOrCreate(['code' => $code], [
+            'parent_code' => $parent, 'level' => 'posting', 'class' => 'assets', 'name_en' => "Aleppo – in transit from the transfer company – {$currency}",
+            'name_ar' => "حلب – قيد الوصول – {$currency}", 'statement_line' => 'Cash and cash equivalents', 'normal_side' => 'debit', 'currency' => $currency,
+            'city' => 'Aleppo', 'is_cash' => true, 'required_tags' => ['Project', 'Fund source'], 'is_active' => true,
+        ]);
+    }
+}
 
 /**
  * The tables of the Windows program's database that the web app touches, in the
@@ -277,7 +309,7 @@ function createLedgerSchema(): void
     (require database_path('migrations/2026_10_24_110000_add_request_and_transfer_columns_to_gl_vouchers.php'))->up();
     (require database_path('migrations/2026_10_25_090000_create_request_module_tables.php'))->up();
     (require database_path('migrations/2026_10_30_090000_create_gl_currencies_table.php'))->up();
-    (new ChartOfAccountsSeeder)->run();
+    seedChartWithTestProjects();
 }
 
 /** A balanced, valid receipt: 100 USD into the Aleppo USD safe from the ACN grant, project F2F. */

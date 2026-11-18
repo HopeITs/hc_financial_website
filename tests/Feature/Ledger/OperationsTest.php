@@ -4,6 +4,7 @@ use App\Enums\FundSource;
 use App\Enums\RoleId;
 use App\Enums\VoucherType;
 use App\Livewire\Operations;
+use App\Models\GlAccount;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Services\Ledger\LineDraft;
@@ -180,6 +181,11 @@ it('opens on the type in the address, and after Ctrl+Enter comes back to a fresh
 });
 
 it('asks for the center when the account needs it, and saves the voucher once it is filled', function () {
+    GlAccount::query()->create([
+        'code' => '4501', 'parent_code' => '4000', 'level' => 'posting', 'class' => 'income', 'name_en' => 'Center income', 'name_ar' => 'إيراد مركز',
+        'normal_side' => 'credit', 'currency' => 'Any', 'is_cash' => false, 'required_tags' => ['Project', 'Center'], 'is_active' => true,
+    ]);
+
     $test = Livewire::actingAs(operator())->test(Operations::class)
         ->call('pick', 'CRV')
         ->set('date', '2026-03-10')

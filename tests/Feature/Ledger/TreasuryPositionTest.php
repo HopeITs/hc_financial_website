@@ -9,13 +9,13 @@ use App\Services\Ledger\LineDraft;
 use App\Services\Ledger\PostVoucher;
 use App\Services\Ledger\TreasuryPosition;
 use Carbon\CarbonImmutable;
-use Database\Seeders\ChartOfAccountsSeeder;
 use Livewire\Livewire;
 
 beforeEach(function () {
     createFinanceSchema();
     (require database_path('migrations/2026_10_24_110000_add_request_and_transfer_columns_to_gl_vouchers.php'))->up();
-    (new ChartOfAccountsSeeder)->run();
+    seedChartWithTestProjects();
+    seedInTransitAccounts();
 
     $usd = fn (string $account, ?int $debit, ?int $credit, string $project, ?string $contact = null) => new LineDraft(
         $account, 'USD', debit: $debit, credit: $credit, projectCode: $project, fundSource: FundSource::DonorGrant, contact: $contact,

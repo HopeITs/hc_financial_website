@@ -16,13 +16,12 @@ use App\Services\Ledger\TransferBuilder;
 use App\Services\Ledger\VoucherWarnings;
 use App\Support\Navigation;
 use Carbon\CarbonImmutable;
-use Database\Seeders\ChartOfAccountsSeeder;
 use Livewire\Livewire;
 
 beforeEach(function () {
     createFinanceSchema();
     (require database_path('migrations/2026_10_24_110000_add_request_and_transfer_columns_to_gl_vouchers.php'))->up();
-    (new ChartOfAccountsSeeder)->run();
+    seedChartWithTestProjects();
 
     // Aleppo's general USD account has 5,000 USD in the cash box.
     ledgerApprovedVoucher(['date' => CarbonImmutable::parse('2026-03-01'), 'type' => VoucherType::Receipt], [

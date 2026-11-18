@@ -10,6 +10,7 @@ use App\Models\LedgerRequest;
 use App\Models\RequestAudit;
 use App\Models\User;
 use App\Models\WebUserRole;
+use App\Services\Approvals\ApprovalChain;
 use App\Services\Ledger\LedgerContext;
 use App\Services\Ledger\LineDraft;
 use App\Services\Ledger\Rules\RequestRequiredAboveLimit;
@@ -17,7 +18,6 @@ use App\Services\Requests\RequestException;
 use App\Services\Requests\RequestWorkflow;
 use App\Services\Requests\SubmissionDeadline;
 use Carbon\CarbonImmutable;
-use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -32,7 +32,7 @@ beforeEach(function () {
 
     (require database_path('migrations/2026_10_24_110000_add_request_and_transfer_columns_to_gl_vouchers.php'))->up();
     (require database_path('migrations/2026_10_25_090000_create_request_module_tables.php'))->up();
-    (new ChartOfAccountsSeeder)->run();
+    seedChartWithTestProjects();
 
     // The seeded budget lines are in the donor's currency; the requests use USD and SYP.
     GlBudgetLine::query()->where('project_code', 'F2F')->update(['currency' => 'USD']);
@@ -495,7 +495,7 @@ it('lets the Program Manager reject a request and Head Office stand in only for 
 });
 
 it('does not add a Program Manager step to vouchers', function () {
-    expect(app(App\Services\Approvals\ApprovalChain::class)->stepsFor('100.00'))->toBe([RoleId::FinancialManager]);
+    expect(app(ApprovalChain::class)->stepsFor('100.00'))->toBe([RoleId::FinancialManager]);
 });
 
 // R4-10

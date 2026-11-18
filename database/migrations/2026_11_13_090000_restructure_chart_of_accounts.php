@@ -28,6 +28,11 @@ return new class extends Migration
 
     public function up(): void
     {
+        // An empty chart (a fresh database) gets the new layout from the seeder; there is nothing to restructure.
+        if (DB::table('gl_accounts')->doesntExist()) {
+            return;
+        }
+
         DB::transaction(function (): void {
             $now = now();
 

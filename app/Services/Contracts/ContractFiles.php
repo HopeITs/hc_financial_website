@@ -13,8 +13,8 @@ use RuntimeException;
  */
 class ContractFiles
 {
-    /** Validation rule for one contract file. */
-    public const RULE = 'file|mimes:pdf,jpg,jpeg,png|max:10240';
+    /** Validation rules for one contract file. */
+    public const RULES = ['file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'];
 
     /**
      * Stores a file under the contract and returns its path and original name.
