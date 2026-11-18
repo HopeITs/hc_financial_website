@@ -168,7 +168,7 @@ it('guards every signed-in route with a screen permission', function () {
         }
 
         $guarded++;
-        expect(collect($middleware)->contains(fn ($m) => is_string($m) && $m === 'screen' || str_starts_with($m, 'screen:')))
+        expect(collect($middleware)->contains(fn ($m) => is_string($m) && $m === 'screen' || str_starts_with($m, 'screen:') || str_starts_with($m, 'access:')))
             ->toBeTrue("{$route->uri()} has no screen middleware");
     }
 

@@ -18,9 +18,9 @@ use App\Models\User;
 use App\Services\Contracts\ContractBudgets;
 use App\Services\Contracts\ContractDeletion;
 use App\Services\Contracts\ContractException;
-use App\Services\Contracts\ContractReceipts;
 use App\Services\Contracts\ContractFiles;
 use App\Services\Contracts\ContractProjects;
+use App\Services\Contracts\ContractReceipts;
 use App\Services\Contracts\ContractWorkflow;
 use App\Services\Ledger\Currencies;
 use App\Services\Projects\ProjectAccess;
@@ -183,7 +183,7 @@ class ContractPage extends Component
             'restriction' => ['required', Rule::enum(ContractRestriction::class)],
             'status' => ['required', Rule::in([ContractStatus::Draft->value, ContractStatus::Signed->value, ContractStatus::Running->value, ContractStatus::Cancelled->value])],
             'notes' => ['nullable', 'string', 'max:2000'],
-            'signedFile' => ['nullable', ContractFiles::RULE],
+            'signedFile' => ['nullable', ...ContractFiles::RULES],
         ]);
 
         $attributes = [
@@ -434,7 +434,7 @@ class ContractPage extends Component
             'reportTo' => ['required', 'date', 'after_or_equal:reportFrom'],
             'reportDue' => ['required', 'date'],
             'reportInstalment' => ['nullable', Rule::exists('gl_contract_instalments', 'id')->where('contract_id', $contract->id)],
-            'reportFile' => ['nullable', ContractFiles::RULE],
+            'reportFile' => ['nullable', ...ContractFiles::RULES],
         ]);
 
         $stored = $this->reportFile !== null ? $files->store($contract->id, $this->reportFile) : null;
@@ -493,7 +493,7 @@ class ContractPage extends Component
         $data = $this->validate([
             'closingOutcome' => ['required', Rule::enum(ContractClosingOutcome::class)],
             'closingNote' => ['required', 'string', 'max:2000'],
-            'closingFile' => ['required', ContractFiles::RULE],
+            'closingFile' => ['required', ...ContractFiles::RULES],
         ]);
 
         try {
