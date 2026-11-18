@@ -61,13 +61,14 @@ function savedLines(Voucher $voucher): array
     return DB::table('gl_voucher_lines')->where('voucher_id', $voucher->id)->orderBy('line_no')->get()->map(fn ($line) => (array) $line)->all();
 }
 
-it('is the Operations screen in the menu, and the old single-entry address leads to it', function () {
+it('gives the menu the payment voucher in place of Operations, and the old addresses lead to it', function () {
     $ann = operator();
 
-    expect(Navigation::path('single'))->toBe('entries/operations');
+    expect(Navigation::path('single'))->toBe('entries/payment');
 
-    $this->actingAs($ann)->get('/entries/single?type=CPV')->assertRedirect('/entries/operations?type=CPV');
-    $this->actingAs($ann)->get('/entries/operations')->assertOk()->assertSee('Operations')->assertSee('Allocation');
+    $this->actingAs($ann)->get('/entries/single')->assertRedirect('/entries/payment');
+    $this->actingAs($ann)->get('/entries/operations')->assertRedirect('/entries/payment');
+    $this->actingAs($ann)->get('/entries/payment')->assertOk()->assertSee('Payment voucher');
 });
 
 it('offers the accountant every type but the manual entry, which is for the Financial Manager and Head Office', function () {

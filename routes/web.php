@@ -14,12 +14,12 @@ use App\Livewire\FollowUpReport;
 use App\Livewire\Home;
 use App\Livewire\MicroLoans;
 use App\Livewire\MonthEndScreen;
-use App\Livewire\MultiAttachments;
 use App\Livewire\MultiEntry;
 use App\Livewire\Notifications;
 use App\Livewire\OpeningBalances;
 use App\Livewire\OperationalReport;
-use App\Livewire\Operations;
+use App\Livewire\PaymentVoucher;
+use App\Livewire\ReceiptVoucher;
 use App\Livewire\ReferenceList;
 use App\Livewire\Requests;
 use App\Livewire\Salaries;
@@ -69,11 +69,13 @@ Route::middleware('auth')->group(function () {
     Route::get('entries/vouchers/{voucher}/print', VoucherPrintController::class)->defaults('screen', 'vouchers')->middleware('screen')->name('entries.vouchers.print');
     $screen('vouchers', Vouchers::class);
 
-    // Operations (F-02) took the place of Single entry: same permission key, new address; the old one redirects.
-    $screen('single', Operations::class);
-    Route::get('entries/single', fn (Request $request) => redirect()->route(Navigation::routeName('single'), $request->query(), 301))->middleware('screen:single');
+    // The payment and receipt vouchers (finance design of 2026-11-19) take the place of Operations: the payment keeps the
+    // `single` permission key, and the old addresses lead to it.
+    $screen('single', PaymentVoucher::class);
+    $screen('receipt', ReceiptVoucher::class);
+    Route::get('entries/single', fn () => redirect()->route(Navigation::routeName('single'), status: 301))->middleware('screen:single');
+    Route::get('entries/operations', fn () => redirect()->route(Navigation::routeName('single'), status: 301))->middleware('screen:single');
     $screen('multi', MultiEntry::class);
-    $screen('multiatt', MultiAttachments::class);
     $screen('payments', MicroLoans::class);
 
     // The old approval screen is the list of vouchers waiting for approval.
@@ -111,7 +113,8 @@ Route::middleware('auth')->group(function () {
     $screen('currency', CurrencySettings::class);
 
     // Master data (task 38): the old program's lists are read-only references.
-    foreach (array_diff(ReferenceData::SLUGS, ['currency', 'tills']) as $slug) {
+    // Fiscal bonds left the menu with the old entry screens (finance decision of 2026-11-19).
+    foreach (array_diff(ReferenceData::SLUGS, ['currency', 'tills', 'bonds']) as $slug) {
         $screen($slug, ReferenceList::class);
     }
 
