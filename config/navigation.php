@@ -47,7 +47,7 @@ return [
         'monthend' => 'treasury/month-end',
         'opening' => 'treasury/opening-balances',
         'treasury' => 'treasury/position',
-        'alloc' => 'treasury/daily-rates',
+        'alloc' => 'treasury/exchange-rates',
         'transfers' => 'treasury/transfers',
         'currency' => 'treasury/currencies',
         'denoms' => 'treasury/denominations',

@@ -54,9 +54,12 @@
                     @if ($kind === 'transfer' && $source !== null && $source->currency !== 'USD')
                         <p class="text-sm text-secondary-medium dark:text-ink-muted" data-test="transfer-rate">
                             @if ($rate !== null)
-                                {{ __('treasury.valued_at', ['rate' => rtrim(rtrim($rate->rate, '0'), '.'), 'currency' => $source->currency, 'date' => $rate->day->format('d/m/Y')]) }}
+                                {{ __('treasury.valued_at', ['rate' => rtrim(rtrim($rate['rate'], '0'), '.'), 'currency' => $source->currency, 'month' => \Carbon\CarbonImmutable::parse($rate['month'].'-01')->format('m/Y')]) }}
+                                @if ($rate['provisional'])
+                                    <span class="text-status-warn">{{ __('treasury.provisional') }}</span>
+                                @endif
                             @else
-                                <span class="text-status-warn">{{ __('treasury.no_rate', ['currency' => $source->currency, 'date' => \Carbon\CarbonImmutable::parse($day)->format('d/m/Y')]) }}</span>
+                                <span class="text-status-warn">{{ __('treasury.no_monthly_rate', ['currency' => $source->currency, 'month' => \Carbon\CarbonImmutable::parse($day)->format('m/Y')]) }}</span>
                             @endif
                         </p>
                     @endif
@@ -64,8 +67,8 @@
                     @if ($exchangeRates !== null)
                         <p class="text-sm text-secondary-medium dark:text-ink-muted" data-test="exchange-rate">
                             {{ __('treasury.actual_rate', ['rate' => rtrim(rtrim($exchangeRates['actual'], '0'), '.'), 'currency' => $exchangeRates['currency']]) }}
-                            @if ($exchangeRates['approved'] !== null)
-                                · {{ __('treasury.approved_rate', ['rate' => rtrim(rtrim($exchangeRates['approved'], '0'), '.')]) }}
+                            @if ($exchangeRates['monthly'] !== null)
+                                · {{ __('treasury.monthly_rate_now', ['rate' => rtrim(rtrim($exchangeRates['monthly']['rate'], '0'), '.')]) }}
                             @endif
                         </p>
                     @endif
