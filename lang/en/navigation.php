@@ -12,7 +12,8 @@ return [
 
     'screens' => [
         'chart' => 'Chart of accounts',
-        'single' => 'Operations',
+        'single' => 'Payment voucher',
+        'receipt' => 'Receipt voucher',
         'multi' => 'Multi entry (Excel)',
         'multiatt' => 'Multi attachments',
         'payments' => 'Payments (micro loans)',
@@ -54,7 +55,8 @@ return [
     ],
 
     'descriptions' => [
-        'single' => 'Receipts, payments, transfers, allocations and exchanges in one place',
+        'single' => 'Invoices and expenses paid from a cash or bank account, by project and budget line',
+        'receipt' => 'Money received into a cash or bank account',
         'multi' => 'Rows are checked, then become pending vouchers',
         'multiatt' => 'Files are linked to vouchers',
         'payments' => 'Micro loan payments and their schedule',

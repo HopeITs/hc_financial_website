@@ -176,7 +176,7 @@ it('keeps the entry screens to those who may create, and the old approval screen
     $this->actingAs($viewer)->get('/entries/multi')->assertForbidden();
     Livewire::actingAs($viewer)->test(MultiEntry::class)->set('sheet', sheetRow())->call('save')->assertForbidden();
 
-    $this->actingAs(entryUser(RoleId::Accountant, 'Ann'))->get('/entries/operations')->assertOk();
+    $this->actingAs(entryUser(RoleId::Accountant, 'Ann'))->get('/entries/payment')->assertOk();
     $this->actingAs(entryUser(RoleId::FinancialManager, 'Fay'))->get('/entries/approval')->assertOk();
 });
 

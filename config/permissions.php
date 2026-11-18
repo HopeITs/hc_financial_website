@@ -28,7 +28,9 @@ $screens = static fn (array $slugs, array $actions): array => array_fill_keys($s
 $reports = ['rexp', 'rcash', 'rdonor', 'rrev', 'rfixed', 'rattach', 'tb', 'statement', 'statements', 'recon', 'mapprovals', 'uncomp', 'xreserve', 'advances', 'loans'];
 $treasury = ['tills', 'treasury', 'alloc', 'transfers', 'cities', 'currency', 'denoms'];
 $monthEnd = ['monthend'];
-$entries = ['single', 'multi', 'multiatt', 'payments', 'vouchers', 'bonds'];
+// `single` is the payment voucher and `receipt` the receipt voucher. `multiatt` and `bonds` are old screens that left
+// the menu; their keys stay until their code is removed.
+$entries = ['single', 'receipt', 'multi', 'multiatt', 'payments', 'vouchers', 'bonds'];
 
 return [
 
@@ -37,10 +39,10 @@ return [
 
     'roles' => [
 
-        RoleId::HeadOffice->value => $screens(['home', 'requests', 'project-money', ...$everyScreen], $all),
+        RoleId::HeadOffice->value => $screens(['home', 'requests', 'project-money', 'multiatt', 'bonds', ...$everyScreen], $all),
 
         RoleId::FinancialManager->value => array_merge(
-            $screens(['home', 'chart', 'project-money', ...$treasury, ...$reports, 'employees', 'salaries', 'users', 'log', 'auditlog', 'single', 'multi', 'multiatt', 'payments', 'bonds'], $view),
+            $screens(['home', 'chart', 'project-money', ...$treasury, ...$reports, 'employees', 'salaries', 'users', 'log', 'auditlog', 'single', 'receipt', 'multi', 'multiatt', 'payments', 'bonds'], $view),
             $screens(['vouchers', 'approval', 'requests'], ['view', 'approve']),
             // The Financial Manager approves the daily rates, and a rate they type themselves is approved at once.
             $screens(['alloc'], ['view', 'create', 'approve']),
@@ -62,7 +64,7 @@ return [
 
         RoleId::Cashier->value => array_merge(
             $screens(['home', 'tills', 'treasury', 'rcash'], $view),
-            $screens(['single'], ['view', 'create']),
+            $screens(['single', 'receipt'], ['view', 'create']),
         ),
 
         RoleId::Employee->value => $screens(['home'], $view),
