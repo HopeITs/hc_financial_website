@@ -247,7 +247,7 @@ class VoucherBuilder extends Component
         }
 
         if ($editing !== null) {
-            session()->flash('notice', __('vouchers.change.saved', ['number' => $voucher->id]));
+            session()->flash('notice', __('vouchers.pending_change.saved', ['number' => $voucher->id]));
             $this->redirectRoute('entries.vouchers', ['voucher' => $voucher->id], navigate: true);
 
             return;
