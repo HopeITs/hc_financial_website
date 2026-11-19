@@ -21,7 +21,7 @@ return [
 
     'groups' => [
         'funding' => ['donors', 'contracts', 'rdonor'],
-        'entries' => ['single', 'receipt', 'vouchers', 'approval', 'requests', 'payments', 'salaries', 'multi'],
+        'entries' => ['single', 'receipt', 'journal', 'advance', 'vouchers', 'approval', 'requests', 'payments', 'salaries', 'multi'],
         'treasury' => ['alloc', 'transfers', 'tills', 'treasury', 'monthend', 'opening', 'currency', 'denoms'],
         'reports' => ['rexp', 'rcash', 'rrev', 'rfixed', 'rattach', 'tb', 'statement', 'statements', 'recon', 'mapprovals', 'uncomp', 'xreserve', 'advances', 'loans'],
         'chart' => ['chart'],
@@ -35,6 +35,8 @@ return [
 
         'single' => 'entries/payment',
         'receipt' => 'entries/receipt',
+        'journal' => 'entries/journal',
+        'advance' => 'entries/advances',
         'multi' => 'entries/multi',
         'payments' => 'entries/micro-loans',
         'vouchers' => 'entries/vouchers',

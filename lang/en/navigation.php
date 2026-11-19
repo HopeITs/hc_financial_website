@@ -14,6 +14,8 @@ return [
         'chart' => 'Chart of accounts',
         'single' => 'Payment voucher',
         'receipt' => 'Receipt voucher',
+        'journal' => 'Journal entry',
+        'advance' => 'Advances',
         'multi' => 'Multi entry (Excel)',
         'multiatt' => 'Multi attachments',
         'payments' => 'Payments (micro loans)',
@@ -57,6 +59,8 @@ return [
     'descriptions' => [
         'single' => 'Invoices and expenses paid from a cash or bank account, by project and budget line',
         'receipt' => 'Money received into a cash or bank account',
+        'journal' => 'A manual entry: debit and credit on any account of the chart',
+        'advance' => 'Advances given to staff, still open, and settled with their bills',
         'multi' => 'Rows are checked, then become pending vouchers',
         'multiatt' => 'Files are linked to vouchers',
         'payments' => 'Micro loan payments and their schedule',

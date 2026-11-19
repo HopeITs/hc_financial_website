@@ -30,7 +30,7 @@ $treasury = ['tills', 'treasury', 'alloc', 'transfers', 'cities', 'currency', 'd
 $monthEnd = ['monthend'];
 // `single` is the payment voucher and `receipt` the receipt voucher. `multiatt` and `bonds` are old screens that left
 // the menu; their keys stay until their code is removed.
-$entries = ['single', 'receipt', 'multi', 'multiatt', 'payments', 'vouchers', 'bonds'];
+$entries = ['single', 'receipt', 'journal', 'advance', 'multi', 'multiatt', 'payments', 'vouchers', 'bonds'];
 
 return [
 
@@ -42,7 +42,7 @@ return [
         RoleId::HeadOffice->value => $screens(['home', 'requests', 'project-money', 'multiatt', 'bonds', ...$everyScreen], $all),
 
         RoleId::FinancialManager->value => array_merge(
-            $screens(['home', 'chart', 'project-money', ...$treasury, ...$reports, 'employees', 'salaries', 'users', 'log', 'auditlog', 'single', 'receipt', 'multi', 'multiatt', 'payments', 'bonds'], $view),
+            $screens(['home', 'chart', 'project-money', ...$treasury, ...$reports, 'employees', 'salaries', 'users', 'log', 'auditlog', 'single', 'receipt', 'advance', 'multi', 'multiatt', 'payments', 'bonds'], $view),
             $screens(['vouchers', 'approval', 'requests'], ['view', 'approve']),
             // The Financial Manager approves the daily rates, and a rate they type themselves is approved at once.
             $screens(['alloc'], ['view', 'create', 'approve']),
@@ -64,7 +64,7 @@ return [
 
         RoleId::Cashier->value => array_merge(
             $screens(['home', 'tills', 'treasury', 'rcash'], $view),
-            $screens(['single', 'receipt'], ['view', 'create']),
+            $screens(['single', 'receipt', 'advance'], ['view', 'create']),
         ),
 
         RoleId::Employee->value => $screens(['home'], $view),

@@ -23,6 +23,7 @@ use App\Livewire\ReceiptVoucher;
 use App\Livewire\ReferenceList;
 use App\Livewire\Requests;
 use App\Livewire\Salaries;
+use App\Livewire\StaffAdvances;
 use App\Livewire\Statement;
 use App\Livewire\Tills;
 use App\Livewire\Treasury;
@@ -73,6 +74,9 @@ Route::middleware('auth')->group(function () {
     // `single` permission key, and the old addresses lead to it.
     $screen('single', PaymentVoucher::class);
     $screen('receipt', ReceiptVoucher::class);
+    // The journal entry is the voucher builder opened on a journal voucher; the advances are given and settled here.
+    $screen('journal', VoucherBuilder::class)->middleware('screen:vouchers,create');
+    $screen('advance', StaffAdvances::class);
     Route::get('entries/single', fn () => redirect()->route(Navigation::routeName('single'), status: 301))->middleware('screen:single');
     Route::get('entries/operations', fn () => redirect()->route(Navigation::routeName('single'), status: 301))->middleware('screen:single');
     $screen('multi', MultiEntry::class);
