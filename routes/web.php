@@ -16,7 +16,6 @@ use App\Livewire\Home;
 use App\Livewire\LiquidityPosition;
 use App\Livewire\MicroLoans;
 use App\Livewire\MonthEndScreen;
-use App\Livewire\MultiEntry;
 use App\Livewire\Notifications;
 use App\Livewire\OpeningBalances;
 use App\Livewire\OperationalReport;
@@ -31,6 +30,7 @@ use App\Livewire\TreasuryTransfers;
 use App\Livewire\TrialBalance;
 use App\Livewire\Users;
 use App\Livewire\VoucherBuilder;
+use App\Livewire\VoucherImportScreen;
 use App\Livewire\Vouchers;
 use App\Services\MasterData\ReferenceData;
 use App\Support\Navigation;
@@ -67,6 +67,7 @@ Route::middleware('auth')->group(function () {
 
     // Registered before the vouchers list so `new` is not read as a list filter.
     Route::get('entries/vouchers/new', VoucherBuilder::class)->defaults('screen', 'vouchers')->middleware('screen:vouchers,create')->name('entries.vouchers.create');
+    Route::get('entries/vouchers/{voucher}/edit', VoucherBuilder::class)->defaults('screen', 'vouchers')->middleware('screen:vouchers,create')->name('entries.vouchers.edit');
     Route::get('entries/vouchers/{voucher}/print', VoucherPrintController::class)->defaults('screen', 'vouchers')->middleware('screen')->name('entries.vouchers.print');
     $screen('vouchers', Vouchers::class);
 
@@ -79,7 +80,8 @@ Route::middleware('auth')->group(function () {
     $screen('advance', StaffAdvances::class);
     Route::get('entries/single', fn () => redirect()->route(Navigation::routeName('single'), status: 301))->middleware('screen:single');
     Route::get('entries/operations', fn () => redirect()->route(Navigation::routeName('single'), status: 301))->middleware('screen:single');
-    $screen('multi', MultiEntry::class);
+    // Vouchers from Excel (finance decision of 2026-11-20) take the place of the old multi entry.
+    $screen('multi', VoucherImportScreen::class);
     $screen('payments', MicroLoans::class);
 
     // The old approval screen is the list of vouchers waiting for approval.

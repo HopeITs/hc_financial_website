@@ -8,10 +8,12 @@
         <a href="{{ route('entries.vouchers') }}" wire:navigate class="text-sm text-secondary-medium hover:underline dark:text-ink-muted">{{ __('ledger.builder.back') }}</a>
     </div>
 
-    <x-ui.page-header :title="__('ledger.builder.title')" :subtitle="__('ledger.builder.intro')" />
+    <x-ui.page-header :title="$editing !== null ? __('vouchers.change.edit_title', ['number' => $editing]) : __('ledger.builder.title')" :subtitle="$editing !== null ? __('vouchers.change.edit_intro') : __('ledger.builder.intro')" />
 
     <x-ui.saved-notice />
-    <x-ui.form-draft :saved-at="$draftSavedAt" :notice="$draftNotice" />
+    @if ($editing === null)
+        <x-ui.form-draft :saved-at="$draftSavedAt" :notice="$draftNotice" />
+    @endif
 
     @if ($failures !== [])
         <div class="rounded-lg border border-status-critical bg-status-critical-soft px-4 py-2 text-sm text-status-critical" role="alert" data-test="failures">
@@ -22,7 +24,7 @@
     @endif
 
     <x-ui.panel class="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-4" data-test="voucher-header">
-        <x-ui.form-select wire:model.live="type" :label="__('ledger.builder.type')" required>
+        <x-ui.form-select wire:model.live="type" :label="__('ledger.builder.type')" :disabled="$editing !== null" required data-test="voucher-type">
             @foreach ($types as $option)
                 <option value="{{ $option->value }}">{{ $option->value }} · {{ $option->label() }}</option>
             @endforeach
@@ -252,7 +254,9 @@
 
     <div class="flex flex-wrap items-center gap-3">
         <x-ui.button tone="primary" wire:click="save" x-on:click="leaving()" :disabled="! $ready" wire:loading.attr="disabled" wire:target="save" data-shortcut="save" aria-keyshortcuts="Control+S" data-test="save-voucher">{{ __('ledger.builder.save') }}</x-ui.button>
-        <x-ui.button wire:click="saveDraft" data-test="save-draft">{{ __('drafts.save') }}</x-ui.button>
+        @if ($editing === null)
+            <x-ui.button wire:click="saveDraft" data-test="save-draft">{{ __('drafts.save') }}</x-ui.button>
+        @endif
         <span class="type-meta text-secondary-medium dark:text-ink-muted">{{ __('ledger.builder.number_note') }}</span>
     </div>
 </div>

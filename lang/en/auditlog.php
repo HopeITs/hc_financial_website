@@ -21,6 +21,8 @@ return [
         'approve_step' => 'Approved (step)',
         'reject' => 'Rejected',
         'amend' => 'Amended',
+        'edit' => 'Edited before approval',
+        'delete' => 'Deleted before approval',
         'login' => 'Signed in',
     ],
 ];
