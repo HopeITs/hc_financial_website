@@ -423,6 +423,12 @@ class Chart extends Component
             // Net assets are computed (F-05), so 3000, 3100 and 3200 show assets minus liabilities, not what was posted.
             'balances' => app(NetAssets::class)->onChart($balances->all()),
             'computed' => NetAssets::CHART_CODES,
+            'ownCurrency' => array_map(fn (array $balance): array => $balance + [
+                'amount_label' => number_format((float) $balance['amount'], 2),
+                'usd_label' => number_format((float) $balance['usd'], 2),
+                'rate_label' => $balance['rate'] !== null ? number_format((float) $balance['rate'], (float) $balance['rate'] >= 10 ? 2 : 4) : '—',
+                'rate_unit' => app(Currencies::class)->isUsdPerUnit($balance['currency']) ? 'USD / '.$balance['currency'] : $balance['currency'].' / USD',
+            ], $balances->inOwnCurrency()),
             'used' => $account !== null && $balances->isUsed($account->code),
             'editingUsed' => $this->editing !== null && $balances->isUsed($this->editing),
             'movements' => $account !== null
