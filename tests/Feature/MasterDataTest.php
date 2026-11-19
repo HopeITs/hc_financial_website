@@ -92,7 +92,7 @@ it('filters the log by date', function () {
 
 it('opens the reference screens for the roles that may see them and not for the others', function () {
     $this->actingAs(masterUser(RoleId::Accountant))->get('/funding/donors')->assertOk();
-    $this->actingAs(masterUser(RoleId::Cashier, 'Cass'))->get('/treasury/tills')->assertOk();
+    $this->actingAs(masterUser(RoleId::Cashier, 'Cass'))->get('/treasury/daily-count')->assertOk();
     $this->actingAs(masterUser(RoleId::Cashier, 'Cass2'))->get('/funding/donors')->assertForbidden();
     $this->actingAs(masterUser(RoleId::Employee, 'Emp'))->get('/settings/log')->assertForbidden();
 });

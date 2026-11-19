@@ -7,11 +7,13 @@ use App\Livewire\Approval;
 use App\Livewire\AuditLog;
 use App\Livewire\Chart;
 use App\Livewire\CurrencySettings;
+use App\Livewire\DailyCashCount;
 use App\Livewire\DonorReportScreen;
 use App\Livewire\ExchangeRates;
 use App\Livewire\FinancialStatements;
 use App\Livewire\FollowUpReport;
 use App\Livewire\Home;
+use App\Livewire\LiquidityPosition;
 use App\Livewire\MicroLoans;
 use App\Livewire\MonthEndScreen;
 use App\Livewire\MultiEntry;
@@ -25,8 +27,6 @@ use App\Livewire\Requests;
 use App\Livewire\Salaries;
 use App\Livewire\StaffAdvances;
 use App\Livewire\Statement;
-use App\Livewire\Tills;
-use App\Livewire\Treasury;
 use App\Livewire\TreasuryTransfers;
 use App\Livewire\TrialBalance;
 use App\Livewire\Users;
@@ -88,8 +88,10 @@ Route::middleware('auth')->group(function () {
     $screen('requests', Requests::class);
     Route::get('entries/requests/quotes/{quote}', RequestQuoteController::class)->whereNumber('quote')->defaults('screen', 'requests')->middleware('screen')->name('entries.requests.quote');
 
-    $screen('treasury', Treasury::class);
-    $screen('tills', Tills::class);
+    // One treasury (finance decision of 2026-11-20): the liquidity position and the daily cash count take the place of
+    // the SYP balances by general account and the tills by project owner.
+    $screen('treasury', LiquidityPosition::class);
+    $screen('tills', DailyCashCount::class);
     $screen('monthend', MonthEndScreen::class);
     $screen('opening', OpeningBalances::class);
     // One treasury (finance decision of 2026-11-19): the daily rates take the place of the allocation rates per city.

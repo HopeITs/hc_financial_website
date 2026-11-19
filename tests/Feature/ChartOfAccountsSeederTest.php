@@ -17,9 +17,9 @@ it('seeds the chart with cash grouped by currency and a single income account', 
     $headers = $all->where('level', AccountLevel::Header);
     $cash = $all->where('is_cash', true);
 
-    expect($all)->toHaveCount(135)
+    expect($all)->toHaveCount(136)
         ->and($headers)->toHaveCount(28)
-        ->and($all->where('level', AccountLevel::Posting))->toHaveCount(107)
+        ->and($all->where('level', AccountLevel::Posting))->toHaveCount(108)
         ->and($cash->where('currency', 'USD'))->toHaveCount(10)
         ->and($cash->where('currency', 'EUR'))->toHaveCount(3)
         ->and($cash->where('currency', 'SYP'))->toHaveCount(15);
@@ -206,8 +206,8 @@ it('can run again without duplicating rows or overwriting an edit', function () 
 
     seedChartWithTestProjects();
 
-    expect(GlAccount::query()->count())->toBe(134)
-        ->and(GlAccount::withTrashed()->count())->toBe(135)
+    expect(GlAccount::query()->count())->toBe(135)
+        ->and(GlAccount::withTrashed()->count())->toBe(136)
         ->and(GlAccount::withTrashed()->find('1111')->name_en)->toBe('Edited in the web app')
         ->and(GlProject::query()->count())->toBe(13)
         ->and(GlBudgetLine::query()->count())->toBe(10);
