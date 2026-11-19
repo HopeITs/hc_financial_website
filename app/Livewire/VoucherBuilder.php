@@ -18,6 +18,7 @@ use App\Services\Ledger\VoucherDraft;
 use App\Services\Ledger\VoucherDraftBuilder;
 use App\Services\Ledger\VoucherWarnings;
 use App\Support\Money;
+use App\Support\Navigation;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -73,6 +74,11 @@ class VoucherBuilder extends Component
     {
         $this->date = now()->toDateString();
         $this->lines = [self::BLANK, self::BLANK];
+
+        // The "Journal entry" item of the menu opens the builder on a journal voucher.
+        if (request()->routeIs(Navigation::routeName('journal'))) {
+            $this->type = VoucherType::Journal->value;
+        }
     }
 
     public function addLine(): void
