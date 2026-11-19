@@ -9,10 +9,13 @@ use App\Livewire\Concerns\HasMonthFilter;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Services\Ledger\LedgerRuleException;
+use App\Services\Ledger\PendingVoucherChanges;
 use App\Services\Ledger\ReverseVoucher;
 use App\Services\Ledger\VoucherApprovals;
+use App\Services\Ledger\VoucherExport;
 use App\Support\Money;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -20,6 +23,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * The vouchers: a list with type, status, date and search filters, and one voucher with its lines, attachments and
@@ -70,6 +74,10 @@ class Vouchers extends Component
     public string $reverseReason = '';
 
     public string $rejectReason = '';
+
+    public bool $showDelete = false;
+
+    public string $deleteReason = '';
 
     public ?string $notice = null;
 
@@ -176,6 +184,56 @@ class Vouchers extends Component
         $this->showReject = false;
     }
 
+    public function openDelete(): void
+    {
+        Gate::authorize('screen', ['vouchers', 'create']);
+        $this->reset('deleteReason', 'failures', 'notice');
+        $this->resetErrorBag();
+        $this->showDelete = true;
+    }
+
+    public function closeDelete(): void
+    {
+        $this->showDelete = false;
+    }
+
+    /** Deletes the open voucher, which must still wait for approval, with the reason in its history. */
+    public function deleteVoucher(PendingVoucherChanges $changes): void
+    {
+        Gate::authorize('screen', ['vouchers', 'create']);
+        $voucher = $this->pending();
+
+        if (trim($this->deleteReason) === '') {
+            $this->addError('deleteReason', __('vouchers.change.needs_reason'));
+
+            return;
+        }
+
+        try {
+            $changes->delete($voucher, $this->user(), $this->deleteReason);
+        } catch (LedgerRuleException $e) {
+            $this->failures = array_map(fn ($violation) => (string) $violation->message, $e->violations);
+            $this->showDelete = false;
+
+            return;
+        }
+
+        $this->showDelete = false;
+        $this->number = null;
+        $this->notice = __('vouchers.change.deleted', ['number' => $voucher->id]);
+    }
+
+    /** The vouchers the filters show, every line of them, as an Excel file. */
+    public function export(VoucherExport $export): StreamedResponse
+    {
+        $path = $export->xlsx($this->filtered()->limit(VoucherExport::MAX_VOUCHERS)->pluck('id')->all(), app()->getLocale() === 'ar');
+
+        return response()->streamDownload(function () use ($path): void {
+            readfile($path);
+            @unlink($path);
+        }, 'vouchers-'.now()->format('Y-m-d').'.xlsx', ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']);
+    }
+
     public function reject(VoucherApprovals $approvals): void
     {
         Gate::authorize('screen', ['vouchers', 'approve']);
@@ -253,6 +311,7 @@ class Vouchers extends Component
             'canApprove' => $mayApprove && Gate::allows('approve', $voucher),
             'isOwn' => $own,
             'canReverse' => $user instanceof User && $user->canOnScreen('vouchers', ScreenAction::Create) && app(ReverseVoucher::class)->problem($voucher) === null,
+            'canChange' => $user instanceof User && app(PendingVoucherChanges::class)->problem($voucher, $user) === null,
             'reversedBy' => Voucher::query()->where('reverses_id', $voucher->id)->value('id'),
             'rejection' => $rejection,
             'totalDebit' => $voucher->lines->reduce(fn (string $sum, $line) => bcadd($sum, Money::normalize($line->debit_usd), 2), Money::zero()),
@@ -260,15 +319,15 @@ class Vouchers extends Component
         ];
     }
 
-    /** @return array<string, mixed> */
-    private function listing(): array
+    /** @return Builder<Voucher> the vouchers the filters show, newest first */
+    private function filtered(): Builder
     {
         $day = fn (string $value): ?string => preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) === 1 ? $value : null;
         $term = trim($this->search);
         $from = $day($this->from);
         $to = $day($this->to);
 
-        $list = Voucher::query()
+        return Voucher::query()
             ->when($this->status === 'rejected', fn ($query) => $query->onlyTrashed())
             ->when($this->withRejected && $this->status === '', fn ($query) => $query->withTrashed())
             ->when(VoucherStatus::tryFrom($this->status) !== null, fn ($query) => $query->where('status', $this->status))
@@ -279,8 +338,13 @@ class Vouchers extends Component
             ->when($term !== '', fn ($query) => $query->where(fn ($inner) => $inner
                 ->where('id', 'like', '%'.$term.'%')
                 ->orWhere('description', 'like', '%'.$term.'%')))
-            ->orderByDesc('date')->orderByDesc('id')
-            ->paginate(self::PER_PAGE);
+            ->orderByDesc('date')->orderByDesc('id');
+    }
+
+    /** @return array<string, mixed> */
+    private function listing(): array
+    {
+        $list = $this->filtered()->paginate(self::PER_PAGE);
 
         $amounts = DB::table('gl_voucher_lines')
             ->whereIn('voucher_id', $list->getCollection()->pluck('id')->all())

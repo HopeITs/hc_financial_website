@@ -9,9 +9,12 @@ use App\Livewire\Concerns\HasFormDraft;
 use App\Models\GlAccount;
 use App\Models\GlBudgetLine;
 use App\Models\GlProject;
+use App\Models\User;
+use App\Models\Voucher;
 use App\Models\VoucherAttachment;
 use App\Services\Ledger\Currencies;
 use App\Services\Ledger\LedgerRuleException;
+use App\Services\Ledger\PendingVoucherChanges;
 use App\Services\Ledger\PostVoucher;
 use App\Services\Ledger\ProjectAverageRate;
 use App\Services\Ledger\VoucherDraft;
@@ -25,6 +28,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
@@ -52,6 +56,10 @@ class VoucherBuilder extends Component
 
     public string $type = 'CRV';
 
+    /** The number of the pending voucher being changed, or null for a new one. */
+    #[Locked]
+    public ?string $editing = null;
+
     public string $date = '';
 
     public string $description = '';
@@ -70,7 +78,7 @@ class VoucherBuilder extends Component
     /** Ctrl+Enter (U-07): after saving, open a fresh form here instead of the saved voucher. */
     public bool $thenNew = false;
 
-    public function mount(): void
+    public function mount(?string $voucher = null): void
     {
         $this->date = now()->toDateString();
         $this->lines = [self::BLANK, self::BLANK];
@@ -79,6 +87,29 @@ class VoucherBuilder extends Component
         if (request()->routeIs(Navigation::routeName('journal'))) {
             $this->type = VoucherType::Journal->value;
         }
+
+        if ($voucher !== null) {
+            $this->openForEdit($voucher);
+        }
+    }
+
+    /** Opens a voucher that waits for approval, to change its date, description, request and lines. */
+    private function openForEdit(string $number): void
+    {
+        $voucher = Voucher::query()->findOrFail($number);
+        $user = auth()->user();
+        abort_unless($user instanceof User, 403);
+
+        $problem = app(PendingVoucherChanges::class)->problem($voucher, $user);
+        abort_if($problem !== null, 403, (string) $problem);
+
+        $this->editing = $voucher->id;
+        $this->type = $voucher->type->value;
+        $this->date = $voucher->date->toDateString();
+        $this->description = (string) $voucher->description;
+        $this->requestId = $voucher->request_id !== null ? (string) $voucher->request_id : '';
+        $this->lines = array_map(fn (array $row): array => array_merge(self::BLANK, $row), app(PendingVoucherChanges::class)->rows($voucher));
+        $this->draftSavedAt = null;
     }
 
     public function addLine(): void
@@ -174,10 +205,15 @@ class VoucherBuilder extends Component
         }
 
         $stored = [];
+        $editing = $this->editing !== null ? Voucher::query()->findOrFail($this->editing) : null;
+        $user = auth()->user();
+        abort_unless($user instanceof User, 403);
 
         try {
-            $voucher = DB::transaction(function () use ($posting, $built, &$stored) {
-                $voucher = $posting->post($built->draft);
+            $voucher = DB::transaction(function () use ($posting, $built, &$stored, $editing, $user) {
+                $voucher = $editing !== null
+                    ? app(PendingVoucherChanges::class)->update($editing, $built->draft, $user)
+                    : $posting->post($built->draft);
 
                 foreach ($this->attachments as $file) {
                     $name = Str::uuid()->toString().'.'.($file->guessExtension() ?: 'bin');
@@ -206,6 +242,13 @@ class VoucherBuilder extends Component
             Storage::disk('local')->delete($stored);
             report($e);
             $this->failures = [__('ledger.builder.save_failed')];
+
+            return;
+        }
+
+        if ($editing !== null) {
+            session()->flash('notice', __('vouchers.change.saved', ['number' => $voucher->id]));
+            $this->redirectRoute('entries.vouchers', ['voucher' => $voucher->id], navigate: true);
 
             return;
         }

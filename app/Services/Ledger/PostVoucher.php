@@ -75,6 +75,40 @@ class PostVoucher
     }
 
     /**
+     * Replaces a pending voucher's date, description, request and lines with a draft's, keeping its number, and writes
+     * an `edit` audit row. Every posting rule must hold, as when it was posted.
+     *
+     * @throws LedgerRuleException
+     */
+    public function replace(Voucher $voucher, VoucherDraft $draft, int $by): Voucher
+    {
+        return DB::transaction(function () use ($voucher, $draft, $by) {
+            $draft = $this->rounding->balance($draft);
+            $violations = $this->violations($draft);
+
+            if ($violations !== []) {
+                throw new LedgerRuleException($violations);
+            }
+
+            $voucher->lines()->delete();
+
+            foreach ($draft->lines as $index => $line) {
+                VoucherLine::query()->create($line->toRow($index + 1, $voucher->id));
+            }
+
+            $voucher->update([
+                'date' => $draft->date->toDateString(),
+                'description' => $draft->description,
+                'request_id' => $draft->requestId,
+            ]);
+
+            VoucherAudit::query()->create(['voucher_id' => $voucher->id, 'action' => 'edit', 'changed_by' => $by]);
+
+            return $voucher->load('lines');
+        });
+    }
+
+    /**
      * Every posting rule a draft breaks, after the cents have been balanced: the voucher builder's live check list.
      *
      * @return list<Violation>

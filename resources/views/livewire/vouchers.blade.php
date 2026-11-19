@@ -12,11 +12,13 @@
 
     @if ($current === null)
         <x-ui.page-header :title="__('navigation.screens.vouchers')" :subtitle="__('vouchers.intro')" :count="$list->total()">
-            @can('screen', ['vouchers', 'create'])
-                <x-slot:actions>
+            <x-slot:actions>
+                <x-ui.button icon="arrow-down-tray" wire:click="export" data-test="export-vouchers">{{ __('vouchers.export') }}</x-ui.button>
+                @can('screen', ['vouchers', 'create'])
+                    <x-ui.button icon="arrow-up-tray" :href="route(\App\Support\Navigation::routeName('multi'))" wire:navigate data-test="import-vouchers">{{ __('vouchers.import') }}</x-ui.button>
                     <x-ui.button tone="primary" icon="plus" :href="route('entries.vouchers.create')" wire:navigate data-test="new-voucher">{{ __('ledger.builder.title') }}</x-ui.button>
-                </x-slot:actions>
-            @endcan
+                @endcan
+            </x-slot:actions>
         </x-ui.page-header>
 
         <div class="flex flex-wrap gap-2" role="group" aria-label="{{ __('vouchers.type') }}" data-test="type-chips">
@@ -158,6 +160,22 @@
             <div class="rounded-lg border border-secondary-light px-4 py-3 text-sm dark:border-ink-muted/30" data-test="reversed-note">
                 {{ __('vouchers.reverse.reversed_by') }} <a href="{{ route('entries.vouchers', ['voucher' => $reversedBy]) }}" wire:navigate class="underline" dir="ltr">{{ $reversedBy }}</a>
             </div>
+        @endif
+
+        @if ($canChange)
+            <x-ui.panel class="flex flex-wrap items-center gap-3 p-4" data-test="change-actions">
+                <x-ui.button icon="pencil-square" :href="route('entries.vouchers.edit', ['voucher' => $voucher->id])" wire:navigate data-test="edit-voucher">{{ __('vouchers.change.edit') }}</x-ui.button>
+                <x-ui.button icon="trash" wire:click="openDelete" data-test="delete-voucher">{{ __('vouchers.change.delete') }}</x-ui.button>
+                <p class="text-sm text-secondary-medium dark:text-ink-muted">{{ __('vouchers.change.hint') }}</p>
+            </x-ui.panel>
+
+            <x-ui.modal wire:model.self="showDelete" size="md" :title="__('vouchers.change.delete_title', ['number' => $voucher->id])" submit="deleteVoucher" close="closeDelete" :required-note="true" data-test="delete-modal">
+                <x-ui.form-textarea wire:model="deleteReason" :label="__('vouchers.change.delete_reason')" required data-test="delete-reason" />
+
+                <x-slot:actions>
+                    <x-ui.button type="submit" tone="primary" data-test="confirm-delete">{{ __('vouchers.change.delete') }}</x-ui.button>
+                </x-slot:actions>
+            </x-ui.modal>
         @endif
 
         @if ($canReverse)
