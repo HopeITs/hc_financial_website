@@ -18,7 +18,7 @@ function chartUser(RoleId $role = RoleId::HeadOffice): User
 }
 
 it('seeds the mockup chart: five roots, every parent present', function () {
-    expect(GlAccount::query()->count())->toBe(135)
+    expect(GlAccount::query()->count())->toBe(136)
         ->and(GlAccount::query()->whereNull('parent_code')->pluck('code')->all())->toBe(['1000', '2000', '3000', '4000', '5000'])
         ->and(GlAccount::query()->whereNotNull('parent_code')->whereNotIn('parent_code', GlAccount::query()->select('code'))->count())->toBe(0)
         ->and(GlAccount::query()->where('code', '1111')->value('name_en'))->toBe('Aleppo main safe – USD')
@@ -28,7 +28,7 @@ it('seeds the mockup chart: five roots, every parent present', function () {
 it('can be seeded twice without duplicates', function () {
     seedChartWithTestProjects();
 
-    expect(GlAccount::query()->count())->toBe(135);
+    expect(GlAccount::query()->count())->toBe(136);
 });
 
 it('shows the five classes on the chart screen', function () {

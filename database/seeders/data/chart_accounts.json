@@ -2165,6 +2165,22 @@
     "is_active": true
   },
   {
+    "code": "5505",
+    "parent_code": "5500",
+    "level": "posting",
+    "class": "expenses",
+    "name_en": "Cash shortages and overages",
+    "name_ar": "عجز وزيادة الصناديق",
+    "statement_line": "Financial and banking costs",
+    "normal_side": "debit",
+    "currency": "Any",
+    "city": null,
+    "is_cash": false,
+    "required_tags": [],
+    "usage_note": "The difference between a till's count and its book balance, from the daily cash count. An organisation expense: post it without a project.",
+    "is_active": true
+  },
+  {
     "code": "5600",
     "parent_code": "5000",
     "level": "header",

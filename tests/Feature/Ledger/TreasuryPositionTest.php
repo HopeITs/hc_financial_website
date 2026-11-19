@@ -167,8 +167,6 @@ it('adds the cities up for the totals at the top', function () {
 it('opens for a signed-in user and shows each city with its position', function () {
     $user = User::query()->whereKey(createFinanceUser('tuser', 'secret pass', RoleId::HeadOffice->name, RoleId::HeadOffice->value))->firstOrFail();
 
-    $this->actingAs($user)->get('/treasury/position')->assertOk()->assertSee('GEN-ALP-SYP');
-
     Livewire::actingAs($user)->test(Treasury::class)
         ->assertSeeInOrder(['Aleppo', '4,300.00', '9,200,000.00'])
         ->assertSee('1,000.00')

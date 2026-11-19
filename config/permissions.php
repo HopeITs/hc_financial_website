@@ -53,8 +53,9 @@ return [
         ),
 
         RoleId::Accountant->value => array_merge(
-            $screens(['home', 'project-money', ...$reports, 'tills', 'treasury', 'cities', 'currency', 'denoms', 'donors', 'employees', 'requests'], $view),
-            $screens(['chart', ...$entries, 'alloc', 'transfers', 'salaries', 'contracts'], $prepare),
+            $screens(['home', 'project-money', ...$reports, 'cities', 'currency', 'denoms', 'donors', 'employees', 'requests'], $view),
+            // `tills` is the daily cash count, `treasury` the liquidity position with the month's revaluation.
+            $screens(['chart', ...$entries, 'alloc', 'transfers', 'tills', 'treasury', 'salaries', 'contracts'], $prepare),
         ),
 
         RoleId::ProjectManager->value => array_merge(
@@ -63,8 +64,8 @@ return [
         ),
 
         RoleId::Cashier->value => array_merge(
-            $screens(['home', 'tills', 'treasury', 'rcash'], $view),
-            $screens(['single', 'receipt', 'advance'], ['view', 'create']),
+            $screens(['home', 'treasury', 'rcash'], $view),
+            $screens(['single', 'receipt', 'advance', 'tills'], ['view', 'create']),
         ),
 
         RoleId::Employee->value => $screens(['home'], $view),
