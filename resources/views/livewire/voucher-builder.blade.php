@@ -8,7 +8,7 @@
         <a href="{{ route('entries.vouchers') }}" wire:navigate class="text-sm text-secondary-medium hover:underline dark:text-ink-muted">{{ __('ledger.builder.back') }}</a>
     </div>
 
-    <x-ui.page-header :title="$editing !== null ? __('vouchers.change.edit_title', ['number' => $editing]) : __('ledger.builder.title')" :subtitle="$editing !== null ? __('vouchers.change.edit_intro') : __('ledger.builder.intro')" />
+    <x-ui.page-header :title="$editing !== null ? __('vouchers.pending_change.edit_title', ['number' => $editing]) : __('ledger.builder.title')" :subtitle="$editing !== null ? __('vouchers.pending_change.edit_intro') : __('ledger.builder.intro')" />
 
     <x-ui.saved-notice />
     @if ($editing === null)

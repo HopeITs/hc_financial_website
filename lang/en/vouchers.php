@@ -71,7 +71,7 @@ return [
     ],
     'export' => 'Export to Excel',
     'import' => 'Import from Excel',
-    'change' => [
+    'pending_change' => [
         'edit' => 'Edit',
         'delete' => 'Delete',
         'hint' => 'It still waits for approval: it can be changed or deleted and keeps its number. Once approved, it can only be reversed.',

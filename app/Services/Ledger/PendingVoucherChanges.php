@@ -29,15 +29,15 @@ class PendingVoucherChanges
     public function problem(Voucher $voucher, User $user): ?string
     {
         if ($voucher->trashed() || $voucher->status !== VoucherStatus::PendingApproval) {
-            return __('vouchers.change.only_pending');
+            return __('vouchers.pending_change.only_pending');
         }
 
         if (! $user->canOnScreen('vouchers', ScreenAction::Create)) {
-            return __('vouchers.change.not_allowed');
+            return __('vouchers.pending_change.not_allowed');
         }
 
         if ($voucher->type === VoucherType::Opening) {
-            return __('vouchers.change.not_opening');
+            return __('vouchers.pending_change.not_opening');
         }
 
         $closed = $this->monthIsOpen->checkMonth($voucher->date->format('Y-m'));
@@ -80,7 +80,7 @@ class PendingVoucherChanges
         $this->guard($voucher, $by);
 
         if ($draft->type !== $voucher->type || $draft->date->year !== $voucher->date->year) {
-            throw new LedgerRuleException([new Violation(0, __('vouchers.change.same_type_and_year'))]);
+            throw new LedgerRuleException([new Violation(0, __('vouchers.pending_change.same_type_and_year'))]);
         }
 
         return $this->posting->replace($voucher, $draft, (int) $by->getAuthIdentifier());
@@ -97,7 +97,7 @@ class PendingVoucherChanges
         $this->guard($voucher, $by);
 
         if (trim($reason) === '') {
-            throw new LedgerRuleException([new Violation(0, __('vouchers.change.needs_reason'))]);
+            throw new LedgerRuleException([new Violation(0, __('vouchers.pending_change.needs_reason'))]);
         }
 
         DB::transaction(function () use ($voucher, $by, $reason): void {

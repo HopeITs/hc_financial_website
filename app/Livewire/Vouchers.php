@@ -204,7 +204,7 @@ class Vouchers extends Component
         $voucher = $this->pending();
 
         if (trim($this->deleteReason) === '') {
-            $this->addError('deleteReason', __('vouchers.change.needs_reason'));
+            $this->addError('deleteReason', __('vouchers.pending_change.needs_reason'));
 
             return;
         }
@@ -220,7 +220,7 @@ class Vouchers extends Component
 
         $this->showDelete = false;
         $this->number = null;
-        $this->notice = __('vouchers.change.deleted', ['number' => $voucher->id]);
+        $this->notice = __('vouchers.pending_change.deleted', ['number' => $voucher->id]);
     }
 
     /** The vouchers the filters show, every line of them, as an Excel file. */

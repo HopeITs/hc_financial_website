@@ -164,16 +164,16 @@
 
         @if ($canChange)
             <x-ui.panel class="flex flex-wrap items-center gap-3 p-4" data-test="change-actions">
-                <x-ui.button icon="pencil-square" :href="route('entries.vouchers.edit', ['voucher' => $voucher->id])" wire:navigate data-test="edit-voucher">{{ __('vouchers.change.edit') }}</x-ui.button>
-                <x-ui.button icon="trash" wire:click="openDelete" data-test="delete-voucher">{{ __('vouchers.change.delete') }}</x-ui.button>
-                <p class="text-sm text-secondary-medium dark:text-ink-muted">{{ __('vouchers.change.hint') }}</p>
+                <x-ui.button icon="pencil-square" :href="route('entries.vouchers.edit', ['voucher' => $voucher->id])" wire:navigate data-test="edit-voucher">{{ __('vouchers.pending_change.edit') }}</x-ui.button>
+                <x-ui.button icon="trash" wire:click="openDelete" data-test="delete-voucher">{{ __('vouchers.pending_change.delete') }}</x-ui.button>
+                <p class="text-sm text-secondary-medium dark:text-ink-muted">{{ __('vouchers.pending_change.hint') }}</p>
             </x-ui.panel>
 
-            <x-ui.modal wire:model.self="showDelete" size="md" :title="__('vouchers.change.delete_title', ['number' => $voucher->id])" submit="deleteVoucher" close="closeDelete" :required-note="true" data-test="delete-modal">
-                <x-ui.form-textarea wire:model="deleteReason" :label="__('vouchers.change.delete_reason')" required data-test="delete-reason" />
+            <x-ui.modal wire:model.self="showDelete" size="md" :title="__('vouchers.pending_change.delete_title', ['number' => $voucher->id])" submit="deleteVoucher" close="closeDelete" :required-note="true" data-test="delete-modal">
+                <x-ui.form-textarea wire:model="deleteReason" :label="__('vouchers.pending_change.delete_reason')" required data-test="delete-reason" />
 
                 <x-slot:actions>
-                    <x-ui.button type="submit" tone="primary" data-test="confirm-delete">{{ __('vouchers.change.delete') }}</x-ui.button>
+                    <x-ui.button type="submit" tone="primary" data-test="confirm-delete">{{ __('vouchers.pending_change.delete') }}</x-ui.button>
                 </x-slot:actions>
             </x-ui.modal>
         @endif

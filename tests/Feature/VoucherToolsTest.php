@@ -104,7 +104,7 @@ it('does not delete an approved voucher', function () {
     Livewire::actingAs($ann)->withQueryParams(['voucher' => $voucher->id])->test(Vouchers::class)
         ->assertDontSeeHtml('data-test="change-actions"')
         ->call('openDelete')->set('deleteReason', 'No')->call('deleteVoucher')
-        ->assertSee(__('vouchers.change.only_pending'));
+        ->assertSee(__('vouchers.pending_change.only_pending'));
 
     expect(Voucher::query()->find($voucher->id))->not->toBeNull();
 });
@@ -165,4 +165,14 @@ it('reads a type, a debit or a credit on every row', function () {
 
     expect($problems)->toContain(__('vouchers.excel.bad_type', ['row' => '2', 'types' => 'CRV, CPV, JV, TRF, EXG']))
         ->toContain(__('vouchers.excel.debit_or_credit', ['row' => '3']));
+});
+
+it('keeps the history column heading a word next to the edit and delete texts', function () {
+    $ann = toolsUser(RoleId::Accountant);
+    $voucher = toolsVoucher($ann);
+
+    expect(__('vouchers.change'))->toBeString();
+
+    Livewire::actingAs($ann)->withQueryParams(['voucher' => $voucher->id])->test(Vouchers::class)
+        ->assertOk()->assertSee(__('vouchers.change'));
 });
