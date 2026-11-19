@@ -3,6 +3,8 @@
 namespace App\Services\Ledger;
 
 use App\Models\GlAccount;
+use App\Services\Treasury\DailyValuation;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -12,6 +14,9 @@ use Illuminate\Support\Facades\DB;
  * expenses not yet closed into them, so the statement balances. Activities: income and expenses over a period
  * (5503 exchange differences sit under financial and banking costs, D11). Both take an optional comparative.
  *
+ * Euros and other money kept in a currency the day's rate values (DailyValuation) show at that rate on the date, not
+ * at their book dollars; the gap sits on 5503 as an unrealised exchange difference, and nothing is posted for it.
+ *
  * The balance check always runs on USD. In a foreign-currency view (SYP, EUR, ...) a USD amount is converted at the typed rate and a line in that
  * currency stays as typed (decision of round 2). Accounts with no statement line (headers) never appear.
  *
@@ -20,6 +25,9 @@ use Illuminate\Support\Facades\DB;
  */
 class FinancialStatements
 {
+    /** The exchange differences account, where the estimate's gap shows as unrealised. */
+    public const EXCHANGE_DIFFERENCES = '5503';
+
     public function __construct(private readonly Currencies $currencies) {}
 
     /**
@@ -118,7 +126,57 @@ class FinancialStatements
             $view[$account->code] = $base + ['net' => $syp ? bcadd($this->money($sum->net_syp), $this->currencies->fromUsd($code, $this->money($sum->net_other), $rate), 2) : $this->money($sum->net_usd)];
         }
 
+        foreach ($this->estimates($from, $to) as $account => $change) {
+            $inViewCurrency = $syp && $this->accountCurrency($account) === $code;
+            $this->addTo($usd, $account, $change);
+            // A line already in the view currency shows its amount, which the estimate does not change.
+            $this->addTo($view, $account, $inViewCurrency ? '0.00' : ($syp ? $this->currencies->fromUsd($code, $change, $rate) : $change));
+            $this->addTo($usd, self::EXCHANGE_DIFFERENCES, bcmul($change, '-1', 2));
+            $this->addTo($view, self::EXCHANGE_DIFFERENCES, bcmul($syp ? $this->currencies->fromUsd($code, $change, $rate) : $change, '-1', 2));
+        }
+
         return ['usd' => $usd, 'view' => $view];
+    }
+
+    /**
+     * The change over the period of the day's estimate of euros and other daily-valued money (DailyValuation): what is
+     * added to each account's book dollars to show it at the day's rate. As at a date, the whole gap; over a period,
+     * its change from the day before the period starts.
+     *
+     * @return array<string, numeric-string> account code => dollars to add
+     */
+    private function estimates(?string $from, ?string $to): array
+    {
+        $valuation = app(DailyValuation::class);
+        $end = $to !== null && $to !== '' ? CarbonImmutable::parse($to) : CarbonImmutable::today();
+        $changes = array_map(fn (array $row): string => $row['difference'], $valuation->asAt($end));
+
+        if ($from !== null && $from !== '') {
+            foreach ($valuation->asAt(CarbonImmutable::parse($from)->subDay()) as $account => $row) {
+                $changes[$account] = bcsub($changes[$account] ?? '0.00', $row['difference'], 2);
+            }
+        }
+
+        return array_filter($changes, fn (string $change): bool => bccomp($change, '0', 2) !== 0);
+    }
+
+    /** @param  array<string, array{class: string, line: string, net: numeric-string}>  $nets */
+    private function addTo(array &$nets, string $code, string $amount): void
+    {
+        if (! isset($nets[$code])) {
+            $account = GlAccount::query()->find($code);
+            if ($account === null || $account->statement_line === null) {
+                return;
+            }
+            $nets[$code] = ['class' => $account->class->value, 'line' => (string) $account->statement_line, 'net' => '0.00'];
+        }
+
+        $nets[$code]['net'] = bcadd($nets[$code]['net'], $amount, 2);
+    }
+
+    private function accountCurrency(string $code): ?string
+    {
+        return GlAccount::query()->whereKey($code)->value('currency');
     }
 
     /**

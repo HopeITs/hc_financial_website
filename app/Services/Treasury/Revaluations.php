@@ -18,9 +18,10 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
 /**
- * The month's revaluation (finance decisions of 2026-11-19 and 2026-11-20): at the end of a month, the money held in a
- * currency other than the dollar is valued again, pounds at the month's rate and any other currency at the day's
- * approved rate, and the difference with its book dollars goes to 5503, the organisation's. Each account's balance is
+ * The month's revaluation (finance decisions of 2026-11-19, 2026-11-20 and 2026-11-21): at the end of a month, the
+ * pounds held are valued again at the month's rate, and the difference with their book dollars goes to 5503, the
+ * organisation's. Euros and other currencies are not: their dollars are an estimate at the day's rate that the reports
+ * show without a voucher (DailyValuation), until they are withdrawn. Each account's balance is
  * taken out at its book dollars and put back at the new value (two lines on the account, same amount), so the account
  * keeps its amount and the voucher keeps every rule. It waits for approval; preparing it again books only what is left.
  */
@@ -33,6 +34,7 @@ class Revaluations
         private readonly MonthlyRates $monthly,
         private readonly PostVoucher $posting,
         private readonly Currencies $currencies,
+        private readonly DailyValuation $valuation,
     ) {}
 
     /**
@@ -55,7 +57,8 @@ class Revaluations
             $currency = (string) $account->currency;
             $balance = $balances[$account->code] ?? null;
 
-            if ($currency === Currencies::BASE || $balance === null || bccomp($balance['orig'], '0', 2) !== 1) {
+            // Euros and the like are not revalued with a voucher: the reports estimate them at the day's rate (DailyValuation).
+            if ($currency === Currencies::BASE || $this->valuation->isDailyValued($currency) || $balance === null || bccomp($balance['orig'], '0', 2) !== 1) {
                 continue;
             }
 

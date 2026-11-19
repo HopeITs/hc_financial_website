@@ -123,6 +123,8 @@ it('receives euros into the euro bank at the day\'s rate, the donor\'s grant cre
         ->assertSet('receiptSplit', ['F2F' => '3600.00', 'SZ' => '2400.00'])
         ->set('receiptAccount', '1176')
         ->assertSet('receiptRate', '1.16')
+        ->assertSeeHtml('data-test="receipt-daily-rate"')
+        ->assertDontSeeHtml('data-test="receipt-rate"')
         ->set('receiptFee', '15')
         ->call('receiveInstalment')
         ->assertHasNoErrors()
@@ -185,6 +187,7 @@ it('refuses a receipt into another currency\'s bank, beyond the instalment, with
     $contract = crApprovedAgreement();
     $first = $contract->instalments()->where('number', 1)->firstOrFail();
     $user = crUser(RoleId::Accountant, 'Ann');
+    app(DailyRates::class)->propose('EUR', '2026-11-16', '1.16', null, crUser(RoleId::FinancialManager, 'Fadi'), approveNow: true);
     $receive = fn (string $account, string $amount, string $fee, string $feeTo, array $split) => crRefusal(
         fn () => app(ContractEntries::class)->receive($contract, $first, $account, CarbonImmutable::parse('2026-11-16'), $amount, '1.16', $fee, $feeTo, $split, $user),
     );
@@ -215,4 +218,19 @@ it('lets only the preparing roles receive an instalment', function () {
         ->assertForbidden();
 
     expect(ContractReceipt::query()->count())->toBe(0);
+});
+
+it('takes the day\'s approved rate by itself for euros kept in the bank, and waits for one when there is none', function () {
+    $contract = crApprovedAgreement();
+    $first = $contract->instalments()->where('number', 1)->firstOrFail();
+    $user = crUser(RoleId::Accountant, 'Ann');
+    $receive = fn () => app(ContractEntries::class)->receive($contract, $first, '1176', CarbonImmutable::parse('2026-11-16'), '1000.00', '9.99', '0', 'organisation', ['F2F' => '1000.00'], $user);
+
+    expect(crRefusal($receive))->toBe([__('treasury.no_rate', ['currency' => 'EUR', 'date' => '16/11/2026'])])
+        ->and(Voucher::query()->count())->toBe(0);
+
+    app(DailyRates::class)->propose('EUR', '2026-11-16', '1.16', null, crUser(RoleId::FinancialManager, 'Fadi'), approveNow: true);
+
+    // The 9.99 typed is ignored: 1,000 EUR at the day's 1.16 is 1,160 $, an estimate until they are withdrawn.
+    expect(crLines($receive()->id)[0])->toBe(['1176', null, null, 'EUR', '1000.00', '0.00', '1160.00', '0.00']);
 });

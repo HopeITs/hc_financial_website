@@ -21,6 +21,8 @@ use App\Services\Ledger\PostVoucher;
 use App\Services\Ledger\Rules\HawalaReceiptIsConsistent;
 use App\Services\Ledger\Violation;
 use App\Services\Ledger\VoucherDraft;
+use App\Services\Treasury\DailyRates;
+use App\Services\Treasury\TreasuryException;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
@@ -30,7 +32,7 @@ use Illuminate\Support\Facades\DB;
  * donor) is credited and the account the money reached is debited, in the money's own currency:
  *
  * - a bank account in the agreement currency: euros stay euros until they are withdrawn to the transfer company, valued
- *   in the books at the rate given (the day's approved rate by default);
+ *   in the books at the day's approved rate, an estimate only: their real dollars are known when they are withdrawn;
  * - the transfer company (1161, dollars): a non-dollar instalment is converted at the rate really obtained.
  *
  * A fee kept on the way (the bank's or the transfer company's) is charged either to the organisation (5501 bank
@@ -126,6 +128,16 @@ class ContractEntries
 
         $destination = $this->destinations($contract)[$account] ?? null;
         $rate = $contract->currency === Currencies::BASE ? '1' : $rate;
+
+        // Into a bank in the agreement's currency the money stays in that currency: its dollars are only an estimate,
+        // at the day's approved rate, until it is withdrawn (finance decision of 2026-11-21). Nobody types it.
+        if ($destination !== null && $contract->currency !== Currencies::BASE && $destination['currency'] === $contract->currency) {
+            try {
+                $rate = app(DailyRates::class)->requireRate($contract->currency, $date);
+            } catch (TreasuryException $missing) {
+                throw new ContractException($missing->problems);
+            }
+        }
         $feeLine = $feeTo === self::FEE_TO_ORGANISATION ? null : GlBudgetLine::query()->find($feeTo);
         $problems = $this->receiveProblems($contract, $instalment, $destination, $amount, $rate, $fee, $feeTo, $feeLine, $split);
 

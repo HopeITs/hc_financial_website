@@ -174,12 +174,12 @@ class TreasuryMoves
      *
      * - dollars from the transfer company or a city's dollar cash into the city's general pound account;
      * - another currency held in a bank (euros) withdrawn to the transfer company or a dollar bank. The euros leave at
-     *   what the books hold them at, the day's approved rate; what the dollars really came to differs from that, and the
-     *   difference is the organisation's (5503).
+     *   what the books hold them at, the account's average rate; what the dollars really came to differs from that, and
+     *   the difference is the organisation's (5503).
      *
      * @param  numeric-string  $given  what left the first account, in its currency
      * @param  numeric-string  $received  what reached the second, in its currency, after any fee
-     * @param  numeric-string  $fee  what the exchange or the transfer kept, in the second account's currency
+     * @param  numeric-string  $fee  what was kept: of the pounds received for dollars; of the euros given for a withdrawal (the bank's fee)
      *
      * @throws TreasuryException
      */
@@ -237,17 +237,27 @@ class TreasuryMoves
                 $lines[] = $this->feeLine($feeTo, $throughCompany, $targetCurrency, $kept, $rate, bcsub($usd, $inUsd, 2));
             }
         } else {
-            // Euros withdrawn to dollars: the euros leave at the day's approved rate, the dollars are what really came.
-            $daily = $this->dailyRates->requireRate((string) $source->currency, $date);
-            $book = $this->currencies->toUsd((string) $source->currency, $out, $daily);
-            $difference = bcsub(bcadd($in, $kept, 2), $book, 2);
+            // Euros withdrawn to dollars (finance decision of 2026-11-21): the euros leave the bank at what the books
+            // hold them at, the account's average rate, so an emptied account is nothing in euros and nothing in
+            // dollars. The bank's fee is in euros, out of the euros given; the dollars are what really came, and the
+            // gap with the book value of the euros converted is the real gain or loss (5503).
+            $sourceCurrency = (string) $source->currency;
+
+            if (bccomp($kept, $out, 2) >= 0) {
+                throw new TreasuryException([__('treasury.withdraw_fee_too_big')]);
+            }
+
+            $bookRate = $this->bookRate($source, $date);
+            $book = $this->currencies->toUsd($sourceCurrency, $out, $bookRate);
+            $feeUsd = bccomp($kept, '0', 2) === 1 ? $this->currencies->toUsd($sourceCurrency, $kept, $bookRate) : '0.00';
+            $difference = bcsub(bcadd($in, $feeUsd, 2), $book, 2);
             $lines = [
-                $this->line($source, credit: true, amount: $out, rate: $daily, usd: $book, contact: $contact, center: $center),
+                $this->line($source, credit: true, amount: $out, rate: $bookRate, usd: $book, contact: $contact, center: $center),
                 $this->line($target, credit: false, amount: $in, rate: '1', usd: $in, contact: $contact, center: $center),
             ];
 
             if (bccomp($kept, '0', 2) === 1) {
-                $lines[] = $this->feeLine($feeTo, $throughCompany, Currencies::BASE, $kept, '1', $kept);
+                $lines[] = $this->feeLine($feeTo, false, $sourceCurrency, $kept, $bookRate, $feeUsd);
             }
 
             if (bccomp($difference, '0', 2) !== 0) {
@@ -325,7 +335,7 @@ class TreasuryMoves
      *
      * @return array{currency: string, actual: string, reference: array{kind: string, rate: string}|null}|null
      */
-    public function exchangeRates(string $from, string $to, string $day, string $given, string $received): ?array
+    public function exchangeRates(string $from, string $to, string $day, string $given, string $received, string $fee = ''): ?array
     {
         $source = $this->accounts()->get($from);
         $target = $this->accounts()->get($to);
@@ -338,14 +348,15 @@ class TreasuryMoves
         }
 
         if ($source->currency !== Currencies::BASE) {
-            // Euros withdrawn to dollars: beside the day's approved rate, which the books hold them at.
-            $actual = $this->currencies->rateOf((string) $source->currency, $out, $in);
-            $daily = $date !== null ? $this->dailyRates->rateFor((string) $source->currency, $date) : null;
+            // Euros withdrawn to dollars: the euros converted (after the bank's fee), beside the average rate the books hold them at.
+            $kept = $this->amount($fee) ?? '0.00';
+            $converted = bcsub($out, bccomp($kept, '0', 2) === 1 ? $kept : '0', 2);
+            $actual = $this->currencies->rateOf((string) $source->currency, $converted, $in);
 
             return $actual === null ? null : [
                 'currency' => (string) $source->currency,
                 'actual' => $actual,
-                'reference' => $daily !== null ? ['kind' => 'daily', 'rate' => Money::normalize($daily->rate, 6)] : null,
+                'reference' => $date !== null ? $this->bookReference($source, $date) : null,
             ];
         }
 
@@ -357,6 +368,32 @@ class TreasuryMoves
             'actual' => $actual,
             'reference' => $monthly !== null ? ['kind' => 'monthly', 'rate' => $monthly['rate']] : null,
         ];
+    }
+
+    /**
+     * The average rate a currency account holds its money at on a day: its amount against its book dollars, from every
+     * voucher that stands. With nothing in it yet, the day's approved rate.
+     *
+     * @return numeric-string
+     *
+     * @throws TreasuryException when it is empty and the day has no approved rate
+     */
+    public function bookRate(GlAccount $account, CarbonImmutable $date): string
+    {
+        $balance = app(CashBook::class)->balances($date)[$account->code] ?? null;
+        $rate = $balance !== null ? $this->currencies->rateOf((string) $account->currency, $balance['orig'], $balance['usd']) : null;
+
+        return $rate ?? $this->dailyRates->requireRate((string) $account->currency, $date);
+    }
+
+    /** @return array{kind: string, rate: string}|null the average rate in the books, for the form; null when there is none */
+    private function bookReference(GlAccount $account, CarbonImmutable $date): ?array
+    {
+        try {
+            return ['kind' => 'book', 'rate' => $this->bookRate($account, $date)];
+        } catch (TreasuryException) {
+            return null;
+        }
     }
 
     private function isCenterTill(GlAccount $account): bool

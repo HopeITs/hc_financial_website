@@ -107,3 +107,23 @@ it('opens for a signed-in user and downloads XLSX and PDF', function () {
             ->call('export', 'pdf')->assertFileDownloaded('financial-statements.pdf');
     }
 });
+
+it('shows euros kept in the bank at the day\'s rate, the gap as an unrealised exchange difference, and still balances', function () {
+    stmtVoucher('2026-10-20', [
+        new LineDraft('1176', 'EUR', debit: 1000, rate: 1.15, debitUsd: 1150),
+        new LineDraft('4001', 'EUR', credit: 1000, rate: 1.15, creditUsd: 1150, projectCode: 'F2F'),
+    ]);
+    $manager = User::query()->findOrFail(createFinanceUser('Fadi', 'secret pass', RoleId::FinancialManager->name, RoleId::FinancialManager->value));
+    app(App\Services\Treasury\DailyRates::class)->propose('EUR', '2026-10-31', '1.17', null, $manager, approveNow: true);
+
+    $line = fn (array $statement, string $key, string $label): ?string => collect(collect($statement['sections'])->firstWhere('key', $key)['lines'])->firstWhere('label', $label)['current'] ?? null;
+    $position = app(Statements::class)->position('2026-10-31');
+    $october = app(Statements::class)->activities('2026-10-01', '2026-10-31');
+
+    // 1,000 EUR booked at 1,150 $ show at the day's 1.17: 1,170 $, and 20 $ of exchange gain not yet realised.
+    expect($line($position, 'assets', 'Cash and cash equivalents'))->toBe('1170.00')
+        ->and($position['balanced'])->toBeTrue()
+        ->and($line($october, 'expenses', 'Financial and banking costs'))->toBe('-20.00')
+        ->and($october['surplus']['current'])->toBe('1170.00')
+        ->and($line(app(Statements::class)->activities('2026-11-01', '2026-11-30'), 'expenses', 'Financial and banking costs'))->toBeNull();
+});

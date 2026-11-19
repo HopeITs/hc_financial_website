@@ -119,7 +119,8 @@ class TreasuryTransfers extends Component
             'withCompany' => in_array($company, [$this->from, $this->to], true),
             'needsCenter' => $needs('Center'),
             'rate' => $source !== null && $source->currency !== 'USD' ? $rates->forDay((string) $source->currency, $day) : null,
-            'exchangeRates' => $exchange ? $moves->exchangeRates($this->from, $this->to, $this->day, $this->amount, $this->received) : null,
+            'exchangeRates' => $exchange ? $moves->exchangeRates($this->from, $this->to, $this->day, $this->amount, $this->received, $this->fee) : null,
+            'withdrawal' => $exchange && $source !== null && $source->currency !== 'USD',
             'feeBudgetLines' => $moves->feeBudgetLines(),
             'recent' => Voucher::query()->whereIn('type', [VoucherType::Transfer->value, VoucherType::Exchange->value])->whereNull('transfer_kind')
                 ->with('lines')->orderByDesc('date')->orderByDesc('id')->limit(20)->get(),
