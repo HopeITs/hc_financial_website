@@ -73,6 +73,8 @@
                             <th>{{ __('chart.currency') }}</th>
                             <th>{{ __('chart.city') }}</th>
                             <th class="fin-num">{{ __('chart.balance') }}</th>
+                            <th class="fin-num">{{ __('chart.balance_own') }}</th>
+                            <th class="fin-num">{{ __('chart.average_rate') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -89,9 +91,16 @@
                                 <td>{{ $row->currency === 'Any' ? __('chart.any_currency') : ($row->currency ?: '—') }}</td>
                                 <td>{{ $row->city ?: '—' }}</td>
                                 <td class="fin-num"><x-money :amount="$balances[$row->code] ?? '0.00'" />@if (in_array($row->code, $computed, true))<span class="ms-1 text-xs text-ink-muted" title="{{ __('chart.computed_hint') }}" data-test="computed-{{ $row->code }}">{{ __('chart.computed') }}</span>@endif</td>
+                                @if (isset($ownCurrency[$row->code]))
+                                    <td class="fin-num" data-test="own-{{ $row->code }}"><x-money :amount="$ownCurrency[$row->code]['amount']" :currency="$ownCurrency[$row->code]['currency']" /></td>
+                                    <td class="fin-num" dir="ltr" data-test="rate-{{ $row->code }}">{{ $ownCurrency[$row->code]['rate_label'] }}</td>
+                                @else
+                                    <td class="fin-num text-ink-muted">—</td>
+                                    <td class="fin-num text-ink-muted">—</td>
+                                @endif
                             </tr>
                         @empty
-                            <tr><td colspan="6" class="fin-empty">{{ __('chart.no_match') }}</td></tr>
+                            <tr><td colspan="8" class="fin-empty">{{ __('chart.no_match') }}</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -159,6 +168,15 @@
             <x-ui.stat-tile :label="__('chart.cash_account')" :value="$account->is_cash ? __('chart.yes') : __('chart.no')" />
         </div>
 
+        @if (isset($ownCurrency[$account->code]))
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-test="own-currency">
+                <x-ui.stat-tile :label="__('chart.balance_in', ['currency' => $ownCurrency[$account->code]['currency']])" :value="$ownCurrency[$account->code]['amount_label']" :unit="$ownCurrency[$account->code]['currency']" />
+                <x-ui.stat-tile :label="__('chart.usd_value')" :value="$ownCurrency[$account->code]['usd_label']" unit="USD" />
+                <x-ui.stat-tile :label="__('chart.average_rate')" :value="$ownCurrency[$account->code]['rate_label']" :unit="$ownCurrency[$account->code]['rate_unit']" />
+            </div>
+            <p class="type-meta text-secondary-medium dark:text-ink-muted">{{ __('chart.average_rate_hint') }}</p>
+        @endif
+
         @if ($account->statement_line)
             <p class="text-sm text-secondary-medium dark:text-ink-muted">{{ __('chart.statement_line') }}: <span class="text-secondary-dark dark:text-ink">{{ $account->statement_line }}</span></p>
         @endif
@@ -174,6 +192,8 @@
                                 <th>{{ __('chart.name') }}</th>
                                 <th>{{ __('chart.level') }}</th>
                                 <th class="fin-num">{{ __('chart.balance') }}</th>
+                                <th class="fin-num">{{ __('chart.balance_own') }}</th>
+                                <th class="fin-num">{{ __('chart.average_rate') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -183,6 +203,13 @@
                                     <td>{{ $child->localizedName() }}</td>
                                     <td>{{ $child->level->label() }}</td>
                                     <td class="fin-num"><x-money :amount="$balances[$child->code] ?? '0.00'" />@if (in_array($child->code, $computed, true))<span class="ms-1 text-xs text-ink-muted" title="{{ __('chart.computed_hint') }}" data-test="computed-{{ $child->code }}">{{ __('chart.computed') }}</span>@endif</td>
+                                    @if (isset($ownCurrency[$child->code]))
+                                        <td class="fin-num" data-test="own-{{ $child->code }}"><x-money :amount="$ownCurrency[$child->code]['amount']" :currency="$ownCurrency[$child->code]['currency']" /></td>
+                                        <td class="fin-num" dir="ltr" data-test="rate-{{ $child->code }}">{{ $ownCurrency[$child->code]['rate_label'] }}</td>
+                                    @else
+                                        <td class="fin-num text-ink-muted">—</td>
+                                        <td class="fin-num text-ink-muted">—</td>
+                                    @endif
                                 </tr>
                             @endforeach
                         </tbody>
