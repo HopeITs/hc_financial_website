@@ -173,7 +173,14 @@
                 <x-ui.stat-tile :label="__('chart.balance_in', ['currency' => $ownCurrency[$account->code]['currency']])" :value="$ownCurrency[$account->code]['amount_label']" :unit="$ownCurrency[$account->code]['currency']" />
                 <x-ui.stat-tile :label="__('chart.usd_value')" :value="$ownCurrency[$account->code]['usd_label']" unit="USD" />
                 <x-ui.stat-tile :label="__('chart.average_rate')" :value="$ownCurrency[$account->code]['rate_label']" :unit="$ownCurrency[$account->code]['rate_unit']" />
+                @if ($estimate !== null)
+                    <x-ui.stat-tile :label="__('chart.estimate_today', ['rate' => $estimate['rate']])" :value="$estimate['value']" unit="USD" data-test="estimate-value" />
+                    <x-ui.stat-tile :label="__('chart.estimate_difference')" :value="$estimate['difference']" unit="USD" data-test="estimate-difference" />
+                @endif
             </div>
+            @if ($estimate !== null)
+                <p class="type-meta text-secondary-medium dark:text-ink-muted">{{ __('chart.estimate_hint') }}</p>
+            @endif
             <p class="type-meta text-secondary-medium dark:text-ink-muted">{{ __('chart.average_rate_hint') }}</p>
         @endif
 

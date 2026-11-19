@@ -71,3 +71,25 @@ it('shows the pounds and the average rate on the chart screen', function () {
         ->assertSeeHtml('data-test="own-1112"')
         ->assertSeeHtml('data-test="rate-1112"');
 });
+
+it('shows a euro account\'s estimated dollars at today\'s rate and what is not yet realised', function () {
+    ledgerApprovedVoucher(['date' => CarbonImmutable::today()], [
+        new LineDraft('1176', 'EUR', debit: 1000, rate: 1.15, debitUsd: 1150),
+        new LineDraft('4001', 'EUR', credit: 1000, rate: 1.15, creditUsd: 1150, projectCode: 'F2F'),
+    ]);
+    $manager = User::query()->findOrFail(createFinanceUser('Fadi', 'secret pass', RoleId::FinancialManager->name, RoleId::FinancialManager->value));
+    app(App\Services\Treasury\DailyRates::class)->propose('EUR', CarbonImmutable::today()->toDateString(), '1.17', null, $manager, approveNow: true);
+
+    $viewer = User::query()->findOrFail(createFinanceUser('Ann', 'secret pass', RoleId::HeadOffice->name, RoleId::HeadOffice->value));
+
+    Livewire::actingAs($viewer)->withQueryParams(['account' => '1176'])->test(Chart::class)
+        ->assertSeeHtml('data-test="estimate-value"')
+        ->assertSee('1,170.00')
+        ->assertSee('20.00')
+        ->assertSee(__('chart.estimate_today', ['rate' => '1.17']));
+
+    // Pounds are revalued each month instead: no daily estimate on them.
+    poundsIn(7500000, 15000, 500);
+    Livewire::actingAs($viewer)->withQueryParams(['account' => '1112'])->test(Chart::class)
+        ->assertDontSeeHtml('data-test="estimate-value"');
+});

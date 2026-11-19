@@ -11,6 +11,8 @@ use App\Models\User;
 use App\Models\Voucher;
 use App\Models\VoucherLine;
 use App\Models\WebUserRole;
+use App\Services\Ledger\LineDraft;
+use App\Services\Treasury\CashBook;
 use App\Services\Treasury\DailyRates;
 use App\Services\Treasury\MonthlyRates;
 use Carbon\CarbonImmutable;
@@ -223,27 +225,42 @@ it('books what did not arrive as the fee, the organisation\'s or a project\'s as
     expect(Voucher::query()->count())->toBe(3);
 });
 
-it('withdraws a donor\'s euros from the bank to the transfer company, the difference from the day\'s rate going to the organisation', function () {
+it('withdraws a donor\'s euros at their average rate in the books, the bank\'s fee in euros, the real gain or loss on 5503', function () {
     $ann = tmUser(RoleId::Accountant, 'Ann');
     tmRate('EUR', '2026-11-19', '1.16');
 
+    // 3,000 EUR came at 1.15 (3,450 $) and 2,000 EUR at 1.20 (2,400 $): 5,000 EUR held at 5,850 $, an average of 1.17.
+    foreach ([[3000, 1.15, 3450], [2000, 1.20, 2400]] as [$euros, $rate, $dollars]) {
+        ledgerApprovedVoucher(['date' => CarbonImmutable::parse('2026-11-10')], [
+            new LineDraft('1176', 'EUR', debit: $euros, rate: $rate, debitUsd: $dollars),
+            new LineDraft('4001', 'EUR', credit: $euros, rate: $rate, creditUsd: $dollars, projectCode: 'F2F'),
+        ]);
+    }
+
     Livewire::actingAs($ann)->test(TreasuryTransfers::class)
         ->set('kind', 'exchange')
-        ->set('from', '1176')->set('to', '1161')->set('amount', '5000')->set('received', '5850')
-        ->assertSee('Rate obtained: 1.17 (EUR).')
-        ->assertSee('Approved rate of the day: 1.16')
-        ->set('fee', '25')
+        ->set('from', '1176')->set('to', '1161')->set('amount', '4000')->set('fee', '10')->set('received', '4700')
+        ->assertSee('EUR')
+        ->assertSee('Average rate in the books: 1.17')
         ->call('save')
         ->assertSet('problems', []);
 
-    // 5,000 EUR held at 1.16 (5,800 $) came to 5,850 $ plus a 25 $ fee: 75 $ more, a gain for the organisation.
-    expect(tmLines(Voucher::query()->sole()->id))->toBe([
-        ['1176', null, 'EUR', '0.00', '5000.00', '0.00', '5800.00'],
-        ['1161', null, 'USD', '5850.00', '0.00', '5850.00', '0.00'],
-        ['5504', null, 'USD', '25.00', '0.00', '25.00', '0.00'],
-        ['5503', null, 'USD', '0.00', '75.00', '0.00', '75.00'],
+    // 4,000 EUR leave at 1.17 (4,680 $); the bank keeps 10 EUR (11.70 $); 3,990 EUR came to 4,700 $: 31.70 $ gained.
+    $first = Voucher::query()->where('type', VoucherType::Exchange->value)->sole();
+    expect(tmLines($first->id))->toBe([
+        ['1176', null, 'EUR', '0.00', '4000.00', '0.00', '4680.00'],
+        ['1161', null, 'USD', '4700.00', '0.00', '4700.00', '0.00'],
+        ['5501', null, 'EUR', '10.00', '0.00', '11.70', '0.00'],
+        ['5503', null, 'USD', '0.00', '31.70', '0.00', '31.70'],
     ]);
 
+    // The last 1,000 EUR leave at 1,170 $: the account is empty in euros and in dollars, whatever the rate obtained.
+    tmMove($ann, 'exchange', ['from' => '1176', 'to' => '1161', 'amount' => '1000', 'received' => '1160'])->assertSet('problems', []);
+
+    expect(app(CashBook::class)->balances(CarbonImmutable::parse('2026-11-19'))['1176'])->toMatchArray(['orig' => '0.00', 'usd' => '0.00']);
+
+    tmMove($ann, 'exchange', ['from' => '1176', 'to' => '1161', 'amount' => '10', 'fee' => '10', 'received' => '1'])
+        ->assertSee('The bank\'s fee must be less than the euros withdrawn.');
     tmMove($ann, 'exchange', ['from' => '1176', 'to' => '1112', 'amount' => '10', 'received' => '10'])
         ->assertSee('Euros are withdrawn to the transfer company or a dollar bank account.');
 });

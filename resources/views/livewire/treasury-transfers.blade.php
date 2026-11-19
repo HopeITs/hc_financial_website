@@ -39,7 +39,7 @@
                         <x-ui.form-input wire:model.live.blur="amount" type="number" step="0.01" min="0" :label="$kind === 'exchange' ? __('treasury.given', ['currency' => $source?->currency ?? '']) : __('treasury.sent', ['currency' => $source?->currency ?? ''])" dir="ltr" required data-test="move-amount" />
                         @if ($kind === 'exchange')
                             <x-ui.form-input wire:model.live.blur="received" type="number" step="0.01" min="0" :label="__('treasury.received_in', ['currency' => $target?->currency ?? ''])" dir="ltr" required data-test="move-received" />
-                            <x-ui.form-input wire:model="fee" type="number" step="0.01" min="0" :label="__('treasury.fee', ['currency' => $target?->currency ?? ''])" :help="__('treasury.fee_help')" dir="ltr" data-test="move-fee" />
+                            <x-ui.form-input wire:model.live.blur="fee" type="number" step="0.01" min="0" :label="__('treasury.fee', ['currency' => ($withdrawal ? $source->currency : $target?->currency) ?? ''])" :help="__($withdrawal ? 'treasury.fee_help_withdraw' : 'treasury.fee_help')" dir="ltr" data-test="move-fee" />
                         @else
                             <x-ui.form-input wire:model="received" type="number" step="0.01" min="0" :label="__('treasury.arrived')" :help="__('treasury.arrived_help')" dir="ltr" data-test="move-received" />
                         @endif
@@ -75,7 +75,7 @@
                         <p class="text-sm text-secondary-medium dark:text-ink-muted" data-test="exchange-rate">
                             {{ __('treasury.actual_rate', ['rate' => rtrim(rtrim($exchangeRates['actual'], '0'), '.'), 'currency' => $exchangeRates['currency']]) }}
                             @if ($exchangeRates['reference'] !== null)
-                                · {{ __($exchangeRates['reference']['kind'] === 'daily' ? 'treasury.daily_rate_now' : 'treasury.monthly_rate_now', ['rate' => rtrim(rtrim($exchangeRates['reference']['rate'], '0'), '.')]) }}
+                                · {{ __($exchangeRates['reference']['kind'] === 'book' ? 'treasury.book_rate_now' : 'treasury.monthly_rate_now', ['rate' => rtrim(rtrim($exchangeRates['reference']['rate'], '0'), '.')]) }}
                             @endif
                         </p>
                     @endif

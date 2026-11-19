@@ -12,6 +12,7 @@ use App\Models\WebUserRole;
 use App\Services\Ledger\LineDraft;
 use App\Services\Treasury\CashBook;
 use App\Services\Treasury\DailyRates;
+use App\Services\Treasury\DailyValuation;
 use App\Services\Treasury\MonthlyRates;
 use App\Services\Treasury\Revaluations;
 use App\Services\Treasury\TreasuryException;
@@ -105,7 +106,7 @@ it('counts a city\'s tills against the books, and books an explained shortage on
     $page->call('saveCount', '1112')->assertSee("This count already has its voucher {$voucher->id}.");
 });
 
-it('revalues the month\'s pounds at the monthly rate and the euros at the day\'s rate, the difference on 5503', function () {
+it('revalues the month\'s pounds at the monthly rate, the difference on 5503, and leaves the euros to the day\'s estimate', function () {
     tcPounds('2026-10-15');
     tcEuros('2026-10-20');
     $revaluations = app(Revaluations::class);
@@ -115,12 +116,13 @@ it('revalues the month\'s pounds at the monthly rate and the euros at the day\'s
     app(MonthlyRates::class)->set('2026-10', 'SYP', '13500', null, tcManager());
     app(DailyRates::class)->propose('EUR', '2026-10-31', '1.17', null, tcManager(), approveNow: true);
 
-    // Pounds: 1,300,000 at 13,500 is 96.30 $ against 100 $ booked (-3.70); euros: 1,000 at 1.17 is 1,170 $ against 1,150 $ (+20).
-    expect($revaluations->preview('2026-10')['difference'])->toBe('16.30');
+    // Pounds: 1,300,000 at 13,500 is 96.30 $ against 100 $ booked (-3.70). The euros are not revalued with a voucher.
+    expect($revaluations->preview('2026-10')['difference'])->toBe('-3.70')
+        ->and(collect($revaluations->preview('2026-10')['rows'])->pluck('code')->all())->toBe(['1112']);
 
     Livewire::actingAs(tcUser(RoleId::Accountant, 'Ann'))->test(LiquidityPosition::class)
         ->set('month', '2026-10')
-        ->assertSee('16.30')
+        ->assertSee('-3.70')
         ->call('revalue')
         ->assertSet('problems', []);
 
@@ -130,14 +132,16 @@ it('revalues the month\'s pounds at the monthly rate and the euros at the day\'s
         ->and(tcLines($voucher->id))->toBe([
             ['1112', 'SYP', '0.00', '1300000.00', '0.00', '100.00'],
             ['1112', 'SYP', '1300000.00', '0.00', '96.30', '0.00'],
-            ['1176', 'EUR', '0.00', '1000.00', '0.00', '1150.00'],
-            ['1176', 'EUR', '1000.00', '0.00', '1170.00', '0.00'],
-            ['5503', 'USD', '0.00', '16.30', '0.00', '16.30'],
+            ['5503', 'USD', '3.70', '0.00', '3.70', '0.00'],
         ])
         ->and($revaluations->preview('2026-10')['difference'])->toBe('0.00')
         ->and($revaluations->preview('2026-10')['vouchers'])->toHaveCount(1);
 
     expect(fn () => $revaluations->prepare('2026-10', tcManager()))->toThrow(TreasuryException::class, 'Nothing to revalue');
+
+    // The euros' estimate: 1,000 EUR at the day's 1.17 is 1,170 $ against 1,150 $ in the books, 20 $ not yet realised.
+    expect(app(DailyValuation::class)->asAt(CarbonImmutable::parse('2026-10-31'))['1176'])
+        ->toMatchArray(['orig' => '1000.00', 'usd' => '1150.00', 'value' => '1170.00', 'difference' => '20.00']);
 });
 
 it('shows where the money is, by bank, transfer company and city, at book dollars and today\'s value', function () {

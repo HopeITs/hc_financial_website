@@ -413,12 +413,20 @@ class ContractPage extends Component
         $this->receiptRate = $daily !== null ? rtrim(rtrim((string) $daily->rate, '0'), '.') : '';
     }
 
+    /** A bank receipt shows the approved rate of the day it is dated. */
+    public function updatedReceiptDate(ContractEntries $entries, DailyRates $rates): void
+    {
+        $this->updatedReceiptAccount($entries, $rates);
+    }
+
     /** Money arrived for an instalment: prepares its receipt voucher (pending approval) and links it to the instalment. */
     public function receiveInstalment(ContractEntries $entries): void
     {
         $this->authorizeChange();
         $contract = $this->contract();
-        $foreign = $contract->currency !== Currencies::BASE;
+        $destination = $entries->destinations($contract)[$this->receiptAccount] ?? null;
+        // Into a bank in the agreement's currency the day's approved rate is taken; only a conversion asks for its rate.
+        $foreign = $contract->currency !== Currencies::BASE && ($destination === null || $destination['currency'] !== $contract->currency);
 
         $data = $this->validate([
             'receiptInstalment' => ['required', Rule::exists('gl_contract_instalments', 'id')->where('contract_id', $contract->id)],

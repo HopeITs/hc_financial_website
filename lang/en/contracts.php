@@ -209,6 +209,8 @@ return [
     'receipt_amount' => 'Amount received (:currency)',
     'receipt_rate' => 'Rate',
     'receipt_rate_help_daily' => 'What the money is valued at in the books while it stays in the bank: the day\'s approved rate, which you can change.',
+    'receipt_rate_estimate' => 'The approved rate of the day, :rate, taken by itself: an estimate only. The :currency stay :currency in the bank, and their real dollars are known when they are withdrawn.',
+    'receipt_rate_missing' => 'The day has no approved :currency rate yet: the Financial Manager approves one in Exchange rates.',
     'receipt_rate_help_converted' => 'The rate the transfer company really converted it at, in dollars per unit.',
     'receipt_fee' => 'Fee kept (:currency)',
     'receipt_fee_help' => 'What the bank or the transfer company kept from the amount, if anything.',

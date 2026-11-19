@@ -350,11 +350,16 @@
                                     <option value="{{ $code }}">{{ $destination['label'] }}</option>
                                 @endforeach
                             </x-ui.form-select>
-                            <x-ui.form-input wire:model="receiptDate" type="date" :label="__('contracts.receipt_date')" required data-test="receipt-date" />
+                            <x-ui.form-input wire:model.live="receiptDate" type="date" :label="__('contracts.receipt_date')" required data-test="receipt-date" />
                             <x-ui.form-input wire:model.blur="receiptAmount" type="number" step="0.01" min="0" :label="__('contracts.receipt_amount', ['currency' => $contract->currency])" dir="ltr" required data-test="receipt-amount" />
-                            @if ($contract->currency !== 'USD')
+                            @if ($contract->currency !== 'USD' && $chosen !== null && $chosen['currency'] === $contract->currency)
+                                <div class="flex flex-col justify-end gap-1 text-sm" data-test="receipt-daily-rate">
+                                    <span class="font-medium text-secondary-dark dark:text-ink">{{ __('contracts.receipt_rate') }}</span>
+                                    <span class="text-secondary-medium dark:text-ink-muted">{{ $receiptRate !== '' ? __('contracts.receipt_rate_estimate', ['rate' => $receiptRate, 'currency' => $contract->currency]) : __('contracts.receipt_rate_missing', ['currency' => $contract->currency]) }}</span>
+                                </div>
+                            @elseif ($contract->currency !== 'USD')
                                 <x-ui.form-input wire:model="receiptRate" type="number" step="0.000001" min="0" :label="__('contracts.receipt_rate')"
-                                    :help="$chosen !== null && $chosen['currency'] !== $contract->currency ? __('contracts.receipt_rate_help_converted') : __('contracts.receipt_rate_help_daily')" dir="ltr" required data-test="receipt-rate" />
+                                    :help="__('contracts.receipt_rate_help_converted')" dir="ltr" required data-test="receipt-rate" />
                             @endif
                             <x-ui.form-input wire:model="receiptFee" type="number" step="0.01" min="0" :label="__('contracts.receipt_fee', ['currency' => $chosen['currency'] ?? $contract->currency])" :help="__('contracts.receipt_fee_help')" dir="ltr" data-test="receipt-fee" />
                             <x-ui.form-select wire:model="receiptFeeTo" :label="__('contracts.receipt_fee_to')" data-test="receipt-fee-to">

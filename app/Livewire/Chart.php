@@ -13,6 +13,8 @@ use App\Services\Chart\AccountBalances;
 use App\Services\Ledger\AccountMovements;
 use App\Services\Ledger\Currencies;
 use App\Services\Ledger\NetAssets;
+use App\Services\Treasury\DailyValuation;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -381,6 +383,27 @@ class Chart extends Component
         ));
     }
 
+    /**
+     * Today's estimate of an account kept in euros or another daily-valued currency: its dollars at the day's rate and
+     * the gap with the books, not yet realised. Null for any other account.
+     *
+     * @return array{rate: string, value: string, difference: string}|null
+     */
+    private function estimate(string $code): ?array
+    {
+        $row = app(DailyValuation::class)->asAt(CarbonImmutable::today())[$code] ?? null;
+
+        if ($row === null || $row['value'] === null) {
+            return null;
+        }
+
+        return [
+            'rate' => rtrim(rtrim((string) $row['rate'], '0'), '.'),
+            'value' => number_format((float) $row['value'], 2),
+            'difference' => number_format((float) $row['difference'], 2),
+        ];
+    }
+
     private function dateOrNull(string $value): ?string
     {
         return preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) === 1 ? $value : null;
@@ -423,6 +446,7 @@ class Chart extends Component
             // Net assets are computed (F-05), so 3000, 3100 and 3200 show assets minus liabilities, not what was posted.
             'balances' => app(NetAssets::class)->onChart($balances->all()),
             'computed' => NetAssets::CHART_CODES,
+            'estimate' => $account !== null ? $this->estimate($account->code) : null,
             'ownCurrency' => array_map(fn (array $balance): array => $balance + [
                 'amount_label' => number_format((float) $balance['amount'], 2),
                 'usd_label' => number_format((float) $balance['usd'], 2),
