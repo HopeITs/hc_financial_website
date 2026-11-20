@@ -8,6 +8,8 @@ use App\Services\Excel\Datasets\ContractsExcel;
 use App\Services\Excel\Datasets\DailyRatesExcel;
 use App\Services\Excel\Datasets\DonorsExcel;
 use App\Services\Excel\Datasets\InstalmentsExcel;
+use App\Services\Excel\Datasets\LoanScheduleExcel;
+use App\Services\Excel\Datasets\MicroLoansExcel;
 use App\Services\Excel\Datasets\MonthlyRatesExcel;
 
 /** The kinds of record the Excel tools handle, by the name a screen gives them. */
@@ -22,6 +24,8 @@ class ExcelKinds
         'instalments' => InstalmentsExcel::class,
         'cash_counts' => CashCountsExcel::class,
         'advances' => AdvancesExcel::class,
+        'micro_loans' => MicroLoansExcel::class,
+        'loan_schedule' => LoanScheduleExcel::class,
     ];
 
     public function for(string $kind): ExcelDataset

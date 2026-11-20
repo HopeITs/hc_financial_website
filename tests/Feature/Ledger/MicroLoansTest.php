@@ -52,9 +52,9 @@ function openLoan(array $with = []): array
     );
 }
 
-function payLoan(MicroLoan $loan, string $amount, string $cash = '1111', string $rate = '')
+function payLoan(MicroLoan $loan, string $amount, string $cash = '1111')
 {
-    return app(MicroLoans::class)->receive($loan, CarbonImmutable::parse('2026-05-10'), $amount, $rate, $cash, 5);
+    return app(MicroLoans::class)->receive($loan, CarbonImmutable::parse('2026-05-10'), $amount, $cash, 5);
 }
 
 it('cuts equal instalments to the cent and gives the rest to the last one', function () {
@@ -193,18 +193,30 @@ it('refuses an overpayment, a zero payment and a payment into the wrong currency
         ->and(DB::table('gl_vouchers')->where('type', 'CRV')->count())->toBe(2);
 });
 
-it('receives a pound loan in pounds at the rate of the day', function () {
+it('receives a pound loan at the day\'s approved rate, the loan leaving 1204 at its own rate and the gap on 5503', function () {
     ['loan' => $loan] = openLoan(['currency' => 'SYP', 'rate' => '15000', 'loan' => '12000000', 'grant' => '0', 'budget_line' => '', 'cash' => '1112', 'count' => 4]);
 
-    expect(fn () => payLoan($loan, '3000000', '1112', ''))->toThrow(LoanException::class);
+    // No approved pound rate for the day yet: the payment waits for one.
+    expect(fn () => payLoan($loan, '3000000', '1112'))->toThrow(LoanException::class);
 
-    $voucher = payLoan($loan, '3000000', '1112', '16000');
+    $manager = User::query()->findOrFail(createFinanceUser('Fadi', 'secret pass', RoleId::FinancialManager->name, RoleId::FinancialManager->value));
+    app(App\Services\Treasury\DailyRates::class)->propose('SYP', '2026-05-10', '16000', null, $manager, approveNow: true);
+
+    // 3,000,000 SYP at the day's 16,000 is 187.50 $; the loan was given at 15,000, so 200 $ leave 1204: 12.50 $ lost on the rate.
+    $voucher = payLoan($loan, '3000000', '1112');
 
     expect($voucher->lines[0]->currency)->toBe('SYP')
         ->and($voucher->lines[0]->debit_orig)->toBe('3000000.00')
         ->and($voucher->lines[0]->debit_usd)->toBe('187.50')
-        ->and($voucher->lines[1]->credit_usd)->toBe('187.50')
+        ->and($voucher->lines[1]->credit_usd)->toBe('200.00')
+        ->and([$voucher->lines[2]->account_code, $voucher->lines[2]->debit_usd])->toBe(['5503', '12.50'])
         ->and($loan->instalments()->first()->outstanding())->toBe('0.00');
+
+    // The rest at the same rate: the loan is then nothing in pounds and nothing in dollars on 1204.
+    payLoan($loan->fresh(), '9000000', '1112');
+    $book = DB::table('gl_voucher_lines')->where('account_code', '1204')->selectRaw('sum(debit_orig) - sum(credit_orig) as orig, sum(debit_usd) - sum(credit_usd) as usd')->first();
+
+    expect((float) $book->orig)->toBe(0.0)->and((float) $book->usd)->toBe(0.0);
 });
 
 it('measures the arrears on a date', function () {

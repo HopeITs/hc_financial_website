@@ -317,7 +317,7 @@ class FollowUpReports
             ->whereIn('i.loan_id', $loans->pluck('id')->all())
             ->when($filters->from, fn (Builder $query, string $value) => $query->whereDate('i.due_date', '>=', $value))
             ->whereDate('i.due_date', '<=', $asAt)
-            ->get(['i.loan_id', 'i.due_date', 'i.amount', 'i.paid_amount', 'v.status', 'v.deleted_at'])
+            ->get(['i.loan_id', 'i.due_date', 'i.amount', 'i.paid_amount', 'i.written_off_amount', 'v.status', 'v.deleted_at'])
             ->groupBy('loan_id');
 
         $rows = [];
@@ -326,11 +326,12 @@ class FollowUpReports
             $late = 0;
             foreach ($instalments->get($loan->id, []) as $instalment) {
                 $paid = $instalment->status === VoucherStatus::Approved->value && $instalment->deleted_at === null ? Money::normalize($instalment->paid_amount) : Money::zero();
-                $due = bcadd($due, Money::normalize($instalment->amount), 2);
+                // A written-off part is no longer due: it became a grant (finance decision of 2026-11-21).
+                $due = bcadd($due, bcsub(Money::normalize($instalment->amount), Money::normalize($instalment->written_off_amount ?? '0'), 2), 2);
                 $collected = bcadd($collected, $paid, 2);
 
                 // Late, as in the Windows program: due before the date and not fully paid.
-                if (substr((string) $instalment->due_date, 0, 10) < $asAt && bccomp(Money::normalize($instalment->amount), $paid, 2) > 0) {
+                if (substr((string) $instalment->due_date, 0, 10) < $asAt && bccomp(bcsub(Money::normalize($instalment->amount), Money::normalize($instalment->written_off_amount ?? '0'), 2), $paid, 2) > 0) {
                     $late++;
                 }
             }

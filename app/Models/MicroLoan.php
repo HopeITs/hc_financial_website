@@ -22,6 +22,7 @@ use Illuminate\Support\Carbon;
  * @property string $grant_amount
  * @property string $currency
  * @property int|null $legacy_micro_project_id
+ * @property string|null $disbursement_voucher_id
  * @property Carbon $created_at
  */
 class MicroLoan extends Model
@@ -30,7 +31,7 @@ class MicroLoan extends Model
 
     protected $fillable = [
         'beneficiary', 'national_number', 'mobile', 'partners', 'project_code', 'loan_amount', 'grant_amount', 'currency',
-        'payment_interval_months', 'first_payment_date', 'legacy_micro_project_id',
+        'payment_interval_months', 'first_payment_date', 'legacy_micro_project_id', 'disbursement_voucher_id',
     ];
 
     protected function casts(): array
@@ -54,5 +55,27 @@ class MicroLoan extends Model
     public function instalments(): HasMany
     {
         return $this->hasMany(MicroInstalment::class, 'loan_id')->orderBy('due_date')->orderBy('id');
+    }
+
+    /** @return HasMany<MicroPayment, $this> the repayments and write-offs, oldest first */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(MicroPayment::class, 'loan_id')->orderBy('id');
+    }
+
+    /** @return BelongsTo<Voucher, $this> the payment voucher that gave the loan (none for loans opened before 2026-11-21) */
+    public function disbursement(): BelongsTo
+    {
+        return $this->belongsTo(Voucher::class, 'disbursement_voucher_id')->withTrashed();
+    }
+
+    /**
+     * What the beneficiary still owes: the instalments' amounts less what was paid and written off.
+     *
+     * @return numeric-string
+     */
+    public function owed(): string
+    {
+        return array_reduce($this->instalments->all(), fn (string $sum, MicroInstalment $instalment): string => bcadd($sum, $instalment->outstanding(), 2), '0.00');
     }
 }

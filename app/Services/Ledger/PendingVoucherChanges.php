@@ -11,6 +11,7 @@ use App\Models\Voucher;
 use App\Models\VoucherAudit;
 use App\Models\VoucherLine;
 use App\Services\Ledger\Rules\MonthIsOpen;
+use App\Services\Loans\MicroLoans;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -88,7 +89,7 @@ class PendingVoucherChanges
 
     /**
      * Deletes the voucher (soft: its number is not given again) with the reason in its audit trail. A cash count it
-     * adjusted can be adjusted again.
+     * adjusted can be adjusted again; a micro-loan repayment or write-off it made goes back to the instalments.
      *
      * @throws LedgerRuleException
      */
@@ -103,6 +104,7 @@ class PendingVoucherChanges
         DB::transaction(function () use ($voucher, $by, $reason): void {
             VoucherAudit::query()->create(['voucher_id' => $voucher->id, 'action' => 'delete', 'changed_by' => (int) $by->getAuthIdentifier(), 'reason' => trim($reason)]);
             CashCount::query()->where('voucher_id', $voucher->id)->update(['voucher_id' => null]);
+            app(MicroLoans::class)->forgetVoucher($voucher);
             $voucher->delete();
         });
     }
