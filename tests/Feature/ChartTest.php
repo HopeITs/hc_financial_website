@@ -60,6 +60,15 @@ it('puts only the chart tree in the sidebar and the other groups in the top bar'
         ->and($html)->not->toContain('data-test="menu-chart"');
 });
 
+it('has an arrow to hide the chart tree and one to show it again, remembered before the first paint', function () {
+    $html = $this->actingAs(chartUser())->get('/chart')->getContent();
+
+    expect($html)->toContain('data-test="tree-close"')
+        ->and($html)->toContain('data-test="tree-open"')
+        ->and($html)->toContain(__('chart.close_tree'))
+        ->and($html)->toContain("localStorage.getItem('sidebar-collapsed')");
+});
+
 it('opens the chart for the roles that have it and refuses the others', function () {
     foreach ([RoleId::HeadOffice, RoleId::FinancialManager, RoleId::Accountant] as $role) {
         $this->actingAs(chartUser($role))->get('/chart')->assertOk();

@@ -36,6 +36,8 @@ return [
     'level' => 'Level',
     'home' => 'All classes',
     'resize' => 'Resize sidebar',
+    'close_tree' => 'Hide the chart of accounts',
+    'open_tree' => 'Show the chart of accounts',
     'add' => 'New account',
     'add_child' => 'Add child account',
     'edit' => 'Edit',

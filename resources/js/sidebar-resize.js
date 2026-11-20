@@ -1,33 +1,74 @@
 /**
- * Lets the reader drag the chart sidebar's inner edge to resize it (desktop only).
+ * The chart sidebar on a desktop: drag its inner edge to resize it, or fold it away with the arrow at its top.
  *
- * The width lives in the `--sidebar-w` custom property on <html>, which the sidebar
- * uses for its width; it is clamped, remembered in localStorage, and can be moved
- * with the arrow keys when the handle has focus.
+ * The width lives in the `--sidebar-w` custom property on <html>, which the sidebar uses for its width; it is
+ * clamped, remembered in localStorage, and can be moved with the arrow keys when the handle has focus. A folded
+ * sidebar is a narrow rail (`data-tree-collapsed` on <html>) with the arrow to open it again.
+ *
+ * Moving to another page with wire:navigate replaces the attributes of <html>, so both are put back on every
+ * navigation (and early in <head> on a full load, see partials/head), and the sidebar keeps its size and state.
  */
 const KEY = 'sidebar-width';
+const COLLAPSED_KEY = 'sidebar-collapsed';
 const MIN = 240;
 const MAX = 640;
 const STEP = 16;
+const RAIL = 56;
 
 const clamp = (value) => Math.min(MAX, Math.max(MIN, Math.round(value)));
 
-const apply = (width) => document.documentElement.style.setProperty('--sidebar-w', `${width}px`);
-
-const remember = (width) => {
+const read = (key) => {
     try {
-        localStorage.setItem(KEY, String(width));
+        return localStorage.getItem(key);
     } catch {
-        // Storage can be blocked; the width then simply resets on the next visit.
+        return null;
     }
 };
 
-try {
-    const saved = Number(localStorage.getItem(KEY));
-    if (saved) apply(clamp(saved));
-} catch {
-    // Ignore: the default width applies.
-}
+const write = (key, value) => {
+    try {
+        localStorage.setItem(key, value);
+    } catch {
+        // Storage can be blocked; the sidebar then simply resets on the next visit.
+    }
+};
+
+const isCollapsed = () => read(COLLAPSED_KEY) === '1';
+
+const apply = (width) => document.documentElement.style.setProperty('--sidebar-w', `${width}px`);
+
+/** Puts the remembered state back on <html>: the rail when folded, else the remembered width (or the default). */
+const restore = () => {
+    const root = document.documentElement;
+
+    if (isCollapsed()) {
+        root.dataset.treeCollapsed = '1';
+        apply(RAIL);
+
+        return;
+    }
+
+    delete root.dataset.treeCollapsed;
+    const saved = Number(read(KEY));
+    if (saved) {
+        apply(clamp(saved));
+    } else {
+        root.style.removeProperty('--sidebar-w');
+    }
+};
+
+restore();
+
+document.addEventListener('livewire:navigating', (event) => event.detail?.onSwap?.(restore));
+document.addEventListener('livewire:navigated', restore);
+
+window.hcSidebar = {
+    isCollapsed,
+    setCollapsed(collapsed) {
+        write(COLLAPSED_KEY, collapsed ? '1' : '0');
+        restore();
+    },
+};
 
 document.addEventListener('alpine:init', () => {
     window.Alpine.data('sidebarResize', () => ({
@@ -49,7 +90,7 @@ document.addEventListener('alpine:init', () => {
                 document.body.style.cursor = '';
                 window.removeEventListener('pointermove', move);
                 window.removeEventListener('pointerup', stop);
-                remember(clamp(sidebar.getBoundingClientRect().width));
+                write(KEY, String(clamp(sidebar.getBoundingClientRect().width)));
             };
 
             window.addEventListener('pointermove', move);
@@ -62,12 +103,12 @@ document.addEventListener('alpine:init', () => {
             const rtl = document.documentElement.dir === 'rtl';
             const width = clamp(sidebar.getBoundingClientRect().width + direction * STEP * (rtl ? -1 : 1));
             apply(width);
-            remember(width);
+            write(KEY, String(width));
         },
 
         reset() {
             document.documentElement.style.removeProperty('--sidebar-w');
-            remember('');
+            write(KEY, '');
         },
     }));
 });
