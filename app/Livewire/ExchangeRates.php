@@ -14,6 +14,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 /**
@@ -90,6 +91,56 @@ class ExchangeRates extends Component
         $this->say(__($saved->status === DailyRate::APPROVED ? 'treasury.rate_saved_approved' : 'treasury.rate_saved_pending', [
             'currency' => $saved->currency, 'date' => $saved->day->format('d/m/Y'),
         ]));
+    }
+
+    /** Fills the daily form with a rate, to type its new value: once approved it replaces the day's rate. */
+    public function editDaily(int $id): void
+    {
+        Gate::authorize('screen', ['alloc', 'create']);
+        $rate = DailyRate::query()->findOrFail($id);
+        $this->currency = $rate->currency;
+        $this->day = $rate->day->toDateString();
+        $this->rate = rtrim(rtrim((string) $rate->rate, '0'), '.');
+        $this->note = (string) $rate->note;
+        $this->say(__('treasury.rate_editing', ['currency' => $rate->currency, 'date' => $rate->day->format('d/m/Y')]));
+    }
+
+    public function removeDaily(int $id, DailyRates $rates): void
+    {
+        Gate::authorize('screen', ['alloc', 'create']);
+
+        try {
+            $rates->remove($id, $this->user(), Gate::allows('screen', ['alloc', 'approve']));
+            $this->say(__('treasury.rate_removed'));
+        } catch (TreasuryException $refused) {
+            $this->fail($refused);
+        }
+    }
+
+    /** Fills the monthly form with a month's rate, to change it. */
+    public function editMonthly(int $id): void
+    {
+        Gate::authorize('screen', ['alloc', 'approve']);
+        $rate = MonthlyRate::query()->findOrFail($id);
+        $this->monthlyCurrency = $rate->currency;
+        $this->month = $rate->month;
+        $this->monthlyRate = rtrim(rtrim((string) $rate->rate, '0'), '.');
+        $this->monthlyNote = (string) $rate->note;
+        $this->say(__('treasury.monthly_editing', ['currency' => $rate->currency, 'month' => CarbonImmutable::parse($rate->month.'-01')->format('m/Y')]));
+    }
+
+    public function removeMonthly(int $id, MonthlyRates $monthly): void
+    {
+        Gate::authorize('screen', ['alloc', 'approve']);
+        $monthly->remove($id);
+        $this->say(__('treasury.monthly_removed'));
+    }
+
+    /** The Excel tools saved rates: show them with their message. */
+    #[On('excel-imported')]
+    public function excelImported(string $message): void
+    {
+        $this->say($message);
     }
 
     public function approve(int $id, DailyRates $rates): void

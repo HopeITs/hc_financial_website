@@ -1,6 +1,7 @@
 <div class="flex flex-col gap-6 px-4 pb-10 lg:px-8">
     <x-ui.page-header :title="__('navigation.screens.donors')" :subtitle="__('donors.intro')" :count="count($donors)">
         <x-slot:actions>
+            <livewire:excel-tools kind="donors" :key="'excel-donors'" />
             @if ($canSeeContracts)
                 <x-ui.button :href="route('funding.agreements')" wire:navigate icon="document-text" data-test="open-contracts">{{ __('contracts.title') }}</x-ui.button>
             @endif
@@ -117,9 +118,14 @@
                             @endif
                         </td>
                         <td>
-                            @if ($canEdit)
-                                <x-ui.button size="sm" wire:click="edit({{ $donor->id }})" data-test="edit-donor-{{ $donor->code }}">{{ __('donors.edit') }}</x-ui.button>
-                            @endif
+                            <div class="flex items-center gap-1">
+                                @if ($canEdit)
+                                    <x-ui.button size="sm" wire:click="edit({{ $donor->id }})" data-test="edit-donor-{{ $donor->code }}">{{ __('donors.edit') }}</x-ui.button>
+                                @endif
+                                @if ($canDelete && ! isset($runningCount[$donor->id]))
+                                    <x-ui.button size="sm" tone="ghost" icon="trash" wire:click="delete({{ $donor->id }})" wire:confirm="{{ __('donors.delete_confirm', ['name' => $donor->localizedName()]) }}" :aria-label="__('donors.delete')" data-test="delete-donor-{{ $donor->code }}" />
+                                @endif
+                            </div>
                         </td>
                     </tr>
                 @empty

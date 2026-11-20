@@ -46,7 +46,8 @@ return [
             $screens(['vouchers', 'approval', 'requests'], ['view', 'approve']),
             // The Financial Manager approves the daily rates, and a rate they type themselves is approved at once.
             $screens(['alloc'], ['view', 'create', 'approve']),
-            $screens(['donors'], $prepare),
+            // A donor with no agreement can be deleted (finance request of 2026-11-20).
+            $screens(['donors'], [...$prepare, 'delete']),
             $screens(['contracts'], ['view', 'create', 'edit', 'approve', 'delete']),
             $screens(['currency'], $prepare),
             $screens($monthEnd, ['view', 'edit', 'approve']),

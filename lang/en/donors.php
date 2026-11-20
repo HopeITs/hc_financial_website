@@ -8,6 +8,10 @@ return [
     'cancel' => 'Cancel',
     'added' => 'Donor :name added.',
     'saved' => 'Donor :name saved.',
+    'delete' => 'Delete donor',
+    'delete_confirm' => 'Delete the donor :name?',
+    'deleted' => 'Donor :name deleted.',
+    'delete_has_agreements' => 'Donor :name has agreements, so it cannot be deleted: make it inactive instead.',
     'choose' => 'Choose…',
 
     'code' => 'Code',

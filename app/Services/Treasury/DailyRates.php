@@ -125,6 +125,34 @@ class DailyRates
         return Money::normalize($rate->rate, 6);
     }
 
+    /**
+     * Removes a rate (finance request of 2026-11-20): the person who proposed a waiting rate may take it back, and the
+     * Financial Manager may remove any rate. It stays in the history as removed; a day without an approved rate takes
+     * the latest one before it. The vouchers already made keep the rate they were made at.
+     *
+     * @param  bool  $mayApprove  the person approves rates
+     *
+     * @throws TreasuryException
+     */
+    public function remove(int $id, User $by, bool $mayApprove): DailyRate
+    {
+        $rate = DailyRate::query()->whereKey($id)->first();
+
+        if ($rate === null || ! in_array($rate->status, [DailyRate::PENDING, DailyRate::APPROVED], true)) {
+            throw new TreasuryException([__('treasury.rate_not_removable')]);
+        }
+
+        $own = $rate->status === DailyRate::PENDING && $rate->proposed_by === (int) $by->getKey();
+
+        if (! $own && ! $mayApprove) {
+            throw new TreasuryException([__('treasury.rate_remove_not_allowed')]);
+        }
+
+        $rate->update(['status' => DailyRate::REMOVED, 'decided_by' => (int) $by->getKey(), 'decided_at' => now()]);
+
+        return $rate;
+    }
+
     private function decide(int $id, User $by, string $status): DailyRate
     {
         $rate = DailyRate::query()->whereKey($id)->first();
