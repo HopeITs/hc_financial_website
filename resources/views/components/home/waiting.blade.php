@@ -7,6 +7,10 @@
         'rejected' => ['icon' => 'x-mark', 'tone' => 'critical'],
         'decide' => ['icon' => 'clipboard-document-check', 'tone' => 'warn'],
         'my_requests' => ['icon' => 'paper-airplane', 'tone' => 'active'],
+        'rates' => ['icon' => 'currency-dollar', 'tone' => 'warn'],
+        'counts' => ['icon' => 'calculator', 'tone' => 'warn'],
+        'month_close' => ['icon' => 'lock-closed', 'tone' => 'warn'],
+        'revaluation' => ['icon' => 'scale', 'tone' => 'warn'],
     ];
     $tones = [
         'warn' => 'bg-status-warn-soft text-status-warn',
@@ -22,7 +26,7 @@
         'grid gap-px bg-secondary-soft dark:bg-line',
         'sm:grid-cols-2' => count($items) > 1,
         'xl:grid-cols-3' => count($items) === 3,
-        'xl:grid-cols-4' => count($items) === 4,
+        'xl:grid-cols-4' => count($items) >= 4,
     ])>
         @foreach ($items as $item)
             @php($look = $looks[$item['key']])
@@ -41,7 +45,7 @@
                             'text-secondary-dark dark:text-ink' => $item['count'] > 0,
                             'text-secondary-light dark:text-ink-faint' => $item['count'] === 0,
                         ]) data-test="waiting-count">{{ number_format($item['count']) }}</span>
-                        <span class="text-sm text-secondary-medium dark:text-ink-muted">{{ __('home.waiting.items.'.$item['key'], ['days' => \App\Services\Home\WaitingWork::REJECTED_DAYS]) }}</span>
+                        <span class="text-sm text-secondary-medium dark:text-ink-muted">{{ __('home.waiting.items.'.$item['key'], ['days' => \App\Services\Home\WaitingWork::REJECTED_DAYS, ...($item['params'] ?? [])]) }}</span>
                     </span>
                     <flux:icon.chevron-right variant="micro" class="size-4 shrink-0 text-secondary-light group-hover:text-secondary-dark rtl:rotate-180 dark:text-ink-faint dark:group-hover:text-ink" />
                 </a>
