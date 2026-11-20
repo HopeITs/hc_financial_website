@@ -57,6 +57,15 @@ class MonthlyRates
     }
 
     /**
+     * Deletes a month's rate (finance request of 2026-11-20): the month then takes the latest month before it, as a
+     * provisional rate. The vouchers already made keep the rate they were made at.
+     */
+    public function remove(int $id): void
+    {
+        MonthlyRate::query()->whereKey($id)->delete();
+    }
+
+    /**
      * The rate an invoice or expense of that day takes: its month's own, else the latest month before it (provisional).
      *
      * @return array{rate: string, month: string, provisional: bool}|null

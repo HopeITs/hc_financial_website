@@ -29,6 +29,9 @@ class DailyRate extends Model
 
     public const REPLACED = 'replaced';
 
+    /** Taken back by whoever proposed it, or removed by the Financial Manager: kept in the history, never used. */
+    public const REMOVED = 'removed';
+
     protected $table = 'gl_daily_rates';
 
     protected $fillable = ['day', 'currency', 'rate', 'status', 'note', 'proposed_by', 'decided_by', 'decided_at'];

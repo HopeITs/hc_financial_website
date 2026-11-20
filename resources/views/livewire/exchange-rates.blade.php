@@ -16,6 +16,9 @@
     @endif
 
     <x-ui.panel :title="__('treasury.monthly_title')" :subtitle="__('treasury.monthly_intro')">
+        <x-slot:toolbar>
+            <livewire:excel-tools kind="monthly_rates" :key="'excel-monthly-rates'" />
+        </x-slot:toolbar>
         <div class="flex flex-col gap-4 p-4">
             <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 @foreach ($currencies as $code)
@@ -68,6 +71,7 @@
                             <th class="fin-num">{{ __('treasury.exchanged_rate') }}</th>
                             <th>{{ __('treasury.set_by') }}</th>
                             <th>{{ __('treasury.note') }}</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -79,9 +83,15 @@
                                 <td class="fin-num" dir="ltr">{{ $exchanged[$row->id] !== null ? rtrim(rtrim($exchanged[$row->id]['rate'], '0'), '.') : '—' }}</td>
                                 <td>{{ $people[$row->set_by] ?? '' }}</td>
                                 <td>{{ $row->note }}</td>
+                                <td class="whitespace-nowrap">
+                                    @if ($canApprove)
+                                        <x-ui.button size="sm" tone="ghost" icon="pencil-square" wire:click="editMonthly({{ $row->id }})" :aria-label="__('treasury.edit')" data-test="edit-month-{{ $row->id }}" />
+                                        <x-ui.button size="sm" tone="ghost" icon="trash" wire:click="removeMonthly({{ $row->id }})" wire:confirm="{{ __('treasury.monthly_remove_confirm') }}" :aria-label="__('treasury.remove')" data-test="remove-month-{{ $row->id }}" />
+                                    @endif
+                                </td>
                             </tr>
                         @empty
-                            <tr><td colspan="6" class="fin-empty">{{ __('treasury.no_monthly') }}</td></tr>
+                            <tr><td colspan="7" class="fin-empty">{{ __('treasury.no_monthly') }}</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -89,7 +99,10 @@
         </div>
     </x-ui.panel>
 
-    <flux:heading size="lg" level="2">{{ __('treasury.daily_title') }}</flux:heading>
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <flux:heading size="lg" level="2">{{ __('treasury.daily_title') }}</flux:heading>
+        <livewire:excel-tools kind="daily_rates" :key="'excel-daily-rates'" />
+    </div>
     <p class="-mt-4 text-sm text-secondary-medium dark:text-ink-muted">{{ __('treasury.daily_intro') }}</p>
 
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -160,6 +173,12 @@
                             @if ($canApprove && $row->status === 'pending' && $row->proposed_by !== $me)
                                 <x-ui.button size="sm" tone="primary" wire:click="approve({{ $row->id }})" data-test="approve-rate-{{ $row->id }}">{{ __('treasury.approve') }}</x-ui.button>
                                 <x-ui.button size="sm" wire:click="reject({{ $row->id }})" wire:confirm="{{ __('treasury.reject_confirm') }}" data-test="reject-rate-{{ $row->id }}">{{ __('treasury.reject') }}</x-ui.button>
+                            @endif
+                            @if ($canPropose && in_array($row->status, ['pending', 'approved'], true))
+                                <x-ui.button size="sm" tone="ghost" icon="pencil-square" wire:click="editDaily({{ $row->id }})" :aria-label="__('treasury.edit')" data-test="edit-rate-{{ $row->id }}" />
+                            @endif
+                            @if (($canApprove && in_array($row->status, ['pending', 'approved'], true)) || ($row->status === 'pending' && $row->proposed_by === $me))
+                                <x-ui.button size="sm" tone="ghost" icon="trash" wire:click="removeDaily({{ $row->id }})" wire:confirm="{{ __('treasury.rate_remove_confirm') }}" :aria-label="__('treasury.remove')" data-test="remove-rate-{{ $row->id }}" />
                             @endif
                         </td>
                     </tr>

@@ -8,6 +8,10 @@ return [
     'cancel' => 'إلغاء',
     'added' => 'تمت إضافة المانح :name.',
     'saved' => 'تم حفظ المانح :name.',
+    'delete' => 'حذف المانح',
+    'delete_confirm' => 'حذف المانح :name؟',
+    'deleted' => 'تم حذف المانح :name.',
+    'delete_has_agreements' => 'المانح :name له اتفاقيات، فلا يمكن حذفه: اجعله غير فعّال بدلاً من ذلك.',
     'choose' => 'اختر…',
 
     'code' => 'الرمز',

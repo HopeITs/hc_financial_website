@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 /**
@@ -139,6 +140,34 @@ class Donors extends Component
         $this->notice = __($isNew ? 'donors.added' : 'donors.saved', ['name' => $attributes['name_en']]);
     }
 
+    /**
+     * Deletes a donor that no agreement names (finance request of 2026-11-20); one with agreements is deactivated
+     * instead, so the agreements keep their donor.
+     */
+    public function delete(int $id): void
+    {
+        Gate::authorize('screen', ['donors', 'delete']);
+        $donor = Donor::query()->findOrFail($id);
+
+        if ($donor->contracts()->exists()) {
+            $this->notice = __('donors.delete_has_agreements', ['name' => $donor->name_en]);
+
+            return;
+        }
+
+        $donor->delete();
+        $this->resetForm();
+        $this->showForm = false;
+        $this->notice = __('donors.deleted', ['name' => $donor->name_en]);
+    }
+
+    /** The Excel tools saved donors: show them with their message. */
+    #[On('excel-imported')]
+    public function excelImported(string $message): void
+    {
+        $this->notice = $message;
+    }
+
     public function render(Currencies $currencies): View
     {
         $donors = Donor::query()
@@ -170,6 +199,7 @@ class Donors extends Component
             'currencyCodes' => $currencies->codes(),
             'canCreate' => Gate::allows('screen', ['donors', 'create']),
             'canEdit' => Gate::allows('screen', ['donors', 'edit']),
+            'canDelete' => Gate::allows('screen', ['donors', 'delete']),
             'canSeeContracts' => Gate::allows('screen', ['contracts', 'view']),
         ]);
     }
