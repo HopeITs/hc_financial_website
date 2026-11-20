@@ -32,7 +32,7 @@
         <x-ui.panel class="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-4" data-test="payment-form">
             <x-ui.form-select wire:model.live="loanId" :label="__('loans.loan')" :placeholder="__('loans.choose')" required>
                 @foreach ($rows as $row)
-                    <option value="{{ $row['loan']->id }}">{{ $row['loan']->project_code }} · {{ $row['loan']->beneficiary }} ({{ $row['loan']->currency }})</option>
+                    <option value="{{ $row['loan']->id }}">{{ $row['loan']->label() }} · {{ $row['loan']->beneficiary }} ({{ $row['loan']->currency }})</option>
                 @endforeach
             </x-ui.form-select>
             <x-ui.form-input type="date" wire:model.live="date" :label="__('loans.payment_date')" required />
@@ -66,40 +66,52 @@
             <x-ui.form-input type="text" dir="ltr" wire:model="nationalNumber" :label="__('loans.national_number')" maxlength="30" />
             <x-ui.form-input type="tel" dir="ltr" wire:model="mobile" :label="__('loans.mobile')" maxlength="50" />
             <x-ui.form-input wire:model="partners" :label="__('loans.partners')" maxlength="255" />
-            <x-ui.form-select wire:model.live="project" :label="__('loans.project')" :placeholder="__('loans.choose')" required>
-                @foreach ($projects as $option)
-                    <option value="{{ $option->code }}">{{ $option->code }} · {{ $option->name }}</option>
+            <x-ui.form-select wire:model.live="fundKey" :label="__('loans.funded_from')" :help="__('loans.funded_from_help')" data-test="funded-from">
+                <option value="">{{ __('loans.from_project') }}</option>
+                @foreach ($fundChoices as $key => $label)
+                    <option value="{{ $key }}">{{ __('loans.from_fund', ['fund' => $label]) }}</option>
                 @endforeach
             </x-ui.form-select>
+            @if ($fundKey === '')
+                <x-ui.form-select wire:model.live="project" :label="__('loans.project')" :placeholder="__('loans.choose')" required>
+                    @foreach ($projects as $option)
+                        <option value="{{ $option->code }}">{{ $option->code }} · {{ $option->name }}</option>
+                    @endforeach
+                </x-ui.form-select>
+            @endif
             <x-ui.form-input type="text" inputmode="decimal" dir="ltr" wire:model="loanAmount" :label="__('loans.loan_amount')" />
             <x-ui.form-input type="text" inputmode="decimal" dir="ltr" wire:model="grantAmount" :label="__('loans.grant_amount')" />
             <x-ui.form-select wire:model.live="currency" :label="__('loans.currency')">
                 <option value="USD">USD</option>
                 <option value="SYP">SYP</option>
             </x-ui.form-select>
-            @if ($currency === 'SYP')
-                <x-ui.form-input type="text" inputmode="decimal" dir="ltr" wire:model="rate" :label="__('loans.rate')" :help="__('loans.rate_help')" required data-test="loan-rate" />
+            @if ($paysInPounds)
+                <x-ui.form-input type="text" inputmode="decimal" dir="ltr" wire:model="rate" :label="__('loans.rate')" :help="$currency === 'USD' ? __('loans.rate_help_usd_in_pounds') : __('loans.rate_help')" required data-test="loan-rate" />
             @endif
             <x-ui.form-input type="date" wire:model="date" :label="__('loans.date')" required />
             <x-ui.form-input type="number" min="1" max="120" wire:model="instalments" :label="__('loans.instalments')" required />
             <x-ui.form-input type="date" wire:model="firstDue" :label="__('loans.first_due')" required />
             <x-ui.form-input type="number" min="1" max="12" wire:model="intervalMonths" :label="__('loans.interval')" required />
-            <x-ui.form-select wire:model="budgetLine" :label="__('loans.budget_line')" :placeholder="__('loans.choose')" :help="__('loans.budget_line_help')">
-                @foreach ($budgetLines as $line)
-                    <option value="{{ $line->key }}">{{ $line->name }} · {{ $line->account_code }}</option>
-                @endforeach
-            </x-ui.form-select>
-            <x-ui.form-select wire:model="cashAccount" :label="__('loans.paid_from')" :placeholder="__('loans.choose')" required>
+            @if ($fundKey === '')
+                <x-ui.form-select wire:model="budgetLine" :label="__('loans.budget_line')" :placeholder="__('loans.choose')" :help="__('loans.budget_line_help')">
+                    @foreach ($budgetLines as $line)
+                        <option value="{{ $line->key }}">{{ $line->name }} · {{ $line->account_code }}</option>
+                    @endforeach
+                </x-ui.form-select>
+            @endif
+            <x-ui.form-select wire:model.live="cashAccount" :label="__('loans.paid_from')" :placeholder="__('loans.choose')" required>
                 @foreach ($cashAccounts as $account)
                     <option value="{{ $account->code }}">{{ $account->code }} · {{ app()->getLocale() === 'ar' ? $account->name_ar : $account->name_en }}</option>
                 @endforeach
             </x-ui.form-select>
             <x-ui.form-input type="number" min="1" wire:model="requestId" :label="__('loans.request')" :help="__('loans.request_help')" />
-            <x-ui.form-select wire:model="fundSource" :label="__('loans.fund_source')">
-                @foreach ($fundSources as $source)
-                    <option value="{{ $source->value }}">{{ $source->label() }}</option>
-                @endforeach
-            </x-ui.form-select>
+            @if ($fundKey === '')
+                <x-ui.form-select wire:model="fundSource" :label="__('loans.fund_source')">
+                    @foreach ($fundSources as $source)
+                        <option value="{{ $source->value }}">{{ $source->label() }}</option>
+                    @endforeach
+                </x-ui.form-select>
+            @endif
         </x-ui.panel>
         @if ($canCreate)
             <div class="flex flex-wrap gap-2">
@@ -110,7 +122,7 @@
     @endif
 
     @if ($cardLoan !== null)
-        <x-ui.panel :title="__('loans.card_title', ['beneficiary' => $cardLoan->beneficiary])" :subtitle="$cardLoan->project_code.' · '.$cardLoan->currency" data-test="loan-card">
+        <x-ui.panel :title="__('loans.card_title', ['beneficiary' => $cardLoan->beneficiary])" :subtitle="$cardLoan->label().' · '.$cardLoan->currency" data-test="loan-card">
             <x-slot:toolbar>
                 <x-ui.button size="sm" tone="ghost" icon="x-mark" wire:click="closeCard" :aria-label="__('loans.close_card')" data-test="close-card" />
             </x-slot:toolbar>
@@ -267,7 +279,7 @@
                 @forelse ($rows as $row)
                     <tr wire:key="loan-{{ $row['loan']->id }}" @if ($row['flagged']) class="bg-status-critical-soft" data-late-flag @endif>
                         <td><x-ui.button tone="ghost" size="sm" wire:click="openCard({{ $row['loan']->id }})" :title="__('loans.open_card')" data-test="open-card-{{ $row['loan']->id }}">{{ $row['loan']->beneficiary }}</x-ui.button>@if ($row['loan']->mobile) <span class="type-meta text-secondary-medium dark:text-ink-muted" dir="ltr">· {{ $row['loan']->mobile }}</span>@endif</td>
-                        <td><span dir="ltr">{{ $row['loan']->project_code }}</span></td>
+                        <td><span dir="auto">{{ $row['loan']->label() }}</span></td>
                         <td><span dir="ltr">{{ $row['loan']->currency }}</span></td>
                         <td class="fin-num"><x-money :amount="$row['loan']->loan_amount" /></td>
                         <td class="fin-num"><x-money :amount="$row['loan']->grant_amount" /></td>

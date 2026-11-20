@@ -16,6 +16,7 @@ use App\Models\Voucher;
 use App\Models\VoucherLine;
 use App\Services\Ledger\LedgerRuleException;
 use App\Services\Ledger\LineDraft;
+use App\Services\Ledger\NetAssets;
 use App\Services\Ledger\PendingVoucherChanges;
 use App\Services\Ledger\PostVoucher;
 use App\Services\Ledger\VoucherDraft;
@@ -78,10 +79,16 @@ class MicroLoans
         string $mobile = '',
         string $partners = '',
         int $intervalMonths = 1,
+        ?string $fundFunder = null,
+        ?string $fundCity = null,
     ): array {
         $problems = [];
         $loan = $this->amount($loanAmount);
         $grant = $this->amount($grantAmount);
+        // Funded from an instalment fund (finance decision of 2026-11-22): no project, the funder and the city only.
+        $fromFund = $fundFunder !== null && trim($fundFunder) !== '';
+        $cash = GlAccount::query()->find($cashAccount);
+        $payCurrency = (string) $cash?->currency;
 
         if (trim($beneficiary) === '') {
             $problems[] = __('loans.problem.beneficiary');
@@ -100,8 +107,8 @@ class MicroLoans
             $problems[] = __('loans.problem.currency');
         }
 
-        $project = GlProject::query()->find($projectCode);
-        if ($project === null || $project->is_general_account) {
+        $project = $fromFund ? null : GlProject::query()->find($projectCode);
+        if (! $fromFund && ($project === null || $project->is_general_account)) {
             $problems[] = __('loans.problem.project');
         }
 
@@ -113,20 +120,36 @@ class MicroLoans
             $problems[] = __('loans.problem.mobile');
         }
 
-        $rate = $currency === 'SYP' ? $this->rate($rate) : '1.000000';
+        // A loan in dollars can be paid in pounds, at the rate of the invoice (the month's by default).
+        $rate = $currency === 'SYP' || $payCurrency === 'SYP' ? $this->rate($rate) : '1.000000';
         if ($rate === null) {
             $problems[] = __('loans.problem.rate');
         }
 
-        if (($cashProblem = $this->cashProblem($cashAccount, $currency)) !== null) {
+        if (($cashProblem = $this->cashProblem($cashAccount, $currency === 'USD' ? ['USD', 'SYP'] : [$currency])) !== null) {
             $problems[] = $cashProblem;
         }
 
         $budgetLine = null;
-        if (bccomp($grant, '0', 2) > 0) {
+        if (bccomp($grant, '0', 2) > 0 && ! $fromFund) {
             $budgetLine = GlBudgetLine::query()->find($budgetLineKey);
             if ($budgetLine === null || $budgetLine->project_code !== $projectCode) {
                 $problems[] = __('loans.problem.budget_line');
+            }
+        }
+
+        if ($fromFund) {
+            $fundSource = FundSource::RecoveredLoans;
+
+            if ($cash !== null && (string) $cash->city !== (string) $fundCity) {
+                $problems[] = __('loans.problem.fund_city', ['city' => (string) $fundCity]);
+            } elseif ($cash !== null && $rate !== null && in_array($currency, ['USD', 'SYP'], true)) {
+                $paid = $this->paidAmount(bcadd($loan, $grant, 2), $currency, $payCurrency, $rate);
+                $available = app(InstalmentFunds::class)->available((string) $fundFunder, (string) $fundCity, $payCurrency, $date);
+
+                if (bccomp($paid, $available, 2) > 0) {
+                    $problems[] = __('loans.problem.fund_short', ['available' => $available, 'currency' => $payCurrency]);
+                }
             }
         }
 
@@ -139,7 +162,7 @@ class MicroLoans
             }
         }
 
-        if ($problems !== [] || $project === null || $rate === null) {
+        if ($problems !== [] || (! $fromFund && $project === null) || $rate === null || $cash === null) {
             throw new LoanException($problems === [] ? [__('loans.problem.amount')] : $problems);
         }
 
@@ -147,15 +170,18 @@ class MicroLoans
             'national_number' => $this->optional($nationalNumber, 30), 'mobile' => $this->optional($mobile, 50),
             'partners' => $this->optional($partners, 255), 'payment_interval_months' => $intervalMonths, 'first_payment_date' => $firstDue->toDateString(),
         ];
+        $funder = $fromFund ? trim((string) $fundFunder) : (string) $project?->donor;
+        $city = $fromFund ? (string) $fundCity : ((string) $cash->city !== '' ? (string) $cash->city : (string) $project?->city);
+        $tags = $this->fundTags($project, $funder, $city);
 
-        return DB::transaction(function () use ($beneficiary, $project, $loan, $grant, $currency, $rate, $date, $rows, $cashAccount, $budgetLine, $fundSource, $preparedBy, $requestId, $details) {
-            $draft = $this->disbursement($beneficiary, $project, $loan, $grant, $currency, $rate, $date, $cashAccount, $budgetLine, $fundSource, $preparedBy, $requestId);
+        return DB::transaction(function () use ($beneficiary, $project, $loan, $grant, $currency, $rate, $date, $rows, $cash, $budgetLine, $fundSource, $preparedBy, $requestId, $details, $funder, $city, $tags) {
+            $draft = $this->disbursement($beneficiary, $project, $loan, $grant, $currency, $rate, $date, $cash, $budgetLine, $fundSource, $preparedBy, $requestId, $tags);
             $voucher = $this->posting->post($draft);
 
             $record = MicroLoan::query()->create([
-                'beneficiary' => trim($beneficiary), 'project_code' => $project->code,
+                'beneficiary' => trim($beneficiary), 'project_code' => $project?->code,
                 'loan_amount' => $loan, 'grant_amount' => $grant, 'currency' => $currency,
-                'disbursement_voucher_id' => $voucher->id,
+                'disbursement_voucher_id' => $voucher->id, 'funder' => $funder !== '' ? $funder : null, 'city' => $city !== '' ? $city : null,
             ] + $details);
             foreach ($rows as $row) {
                 $record->instalments()->create(['due_date' => $row['due_date'], 'amount' => $row['amount']]);
@@ -249,8 +275,9 @@ class MicroLoans
     {
         $loan->load('instalments');
         $owed = $loan->owed();
-        $project = GlProject::query()->find($loan->project_code);
-        $grantLine = GlBudgetLine::query()->where('project_code', $loan->project_code)->where('account_code', self::GRANTS_ACCOUNT)->orderBy('key')->first();
+        $project = $loan->project_code !== null ? GlProject::query()->find($loan->project_code) : null;
+        // A loan from a project goes to that project's grants budget line; one from an instalment fund straight to 5413.
+        $grantLine = $project !== null ? GlBudgetLine::query()->where('project_code', $project->code)->where('account_code', self::GRANTS_ACCOUNT)->orderBy('key')->first() : null;
         $problems = [];
 
         if (bccomp($owed, '0', 2) <= 0) {
@@ -261,7 +288,7 @@ class MicroLoans
             $problems[] = __('loans.problem.write_off_reason');
         }
 
-        if ($grantLine === null) {
+        if ($project !== null && $grantLine === null) {
             $problems[] = __('loans.problem.no_grant_line', ['project' => $loan->project_code, 'account' => self::GRANTS_ACCOUNT]);
         }
 
@@ -274,31 +301,31 @@ class MicroLoans
             }
         }
 
-        if ($problems !== [] || $project === null || $grantLine === null) {
-            throw new LoanException($problems === [] ? [__('loans.problem.project')] : $problems);
+        if ($problems !== []) {
+            throw new LoanException($problems);
         }
 
         return DB::transaction(function () use ($loan, $date, $reason, $preparedBy, $owed, $project, $grantLine, $fallback) {
             $book = $this->bookPart($loan, $owed, $owed, $fallback);
             $fundSource = $this->fundSourceOf($loan);
+            $tags = $this->loanTags($loan);
             $name = $loan->beneficiary;
 
             $voucher = $this->posting->post(new VoucherDraft(
                 type: VoucherType::Journal, date: $date, preparedBy: $preparedBy,
                 lines: [
                     new LineDraft(
-                        accountCode: $grantLine->account_code, currency: $loan->currency, debit: $owed, rate: $book['rate'], debitUsd: $book['usd'],
-                        projectCode: $project->code, budgetLineKey: $grantLine->key, contact: $name, donor: $project->donor,
-                        restriction: $project->restriction, donorCurrency: $project->donor_currency, debitDonor: $this->donorAmount($book['usd'], $project),
-                        reason: trim($reason),
+                        ...$tags,
+                        accountCode: $grantLine?->account_code ?? self::GRANTS_ACCOUNT, currency: $loan->currency, debit: $owed, rate: $book['rate'], debitUsd: $book['usd'],
+                        budgetLineKey: $grantLine?->key, contact: $name, debitDonor: $this->donorAmount($book['usd'], $project), reason: trim($reason),
                     ),
                     new LineDraft(
+                        ...$tags,
                         accountCode: self::LOANS_ACCOUNT, currency: $loan->currency, credit: $owed, rate: $book['rate'], creditUsd: $book['usd'],
-                        projectCode: $project->code, fundSource: $fundSource, contact: $name, donor: $project->donor,
-                        restriction: $project->restriction, donorCurrency: $project->donor_currency, creditDonor: $this->donorAmount($book['usd'], $project),
+                        fundSource: $fundSource, contact: $name, creditDonor: $this->donorAmount($book['usd'], $project),
                     ),
                 ],
-                description: __('loans.write_off_description', ['beneficiary' => $name, 'project' => $project->code]),
+                description: __('loans.write_off_description', ['beneficiary' => $name, 'project' => $this->loanLabel($loan)]),
             ));
 
             $open = $loan->instalments()->lockForUpdate()->get()->filter(fn (MicroInstalment $i) => bccomp($i->outstanding(), '0', 2) > 0)->values();
@@ -567,46 +594,99 @@ class MicroLoans
     }
 
     /**
+     * The disbursement: the loan on 1204 and the grant on its budget line (or on 5413 for a loan from an instalment
+     * fund), both in the loan's currency, and the cash out in the cash account's currency: the same amount, or, for a
+     * loan in dollars paid in pounds, its pounds at the invoice's rate.
+     *
      * @param  numeric-string  $loan
      * @param  numeric-string  $grant
      * @param  numeric-string  $rate
+     * @param  array{projectCode: string|null, donor: string|null, restriction: string|null, donorCurrency: string|null, city: string|null}  $tags
      */
-    private function disbursement(string $beneficiary, GlProject $project, string $loan, string $grant, string $currency, string $rate, CarbonImmutable $date, string $cashAccount, ?GlBudgetLine $budgetLine, FundSource $fundSource, int $preparedBy, ?int $requestId): VoucherDraft
+    private function disbursement(string $beneficiary, ?GlProject $project, string $loan, string $grant, string $currency, string $rate, CarbonImmutable $date, GlAccount $cash, ?GlBudgetLine $budgetLine, FundSource $fundSource, int $preparedBy, ?int $requestId, array $tags): VoucherDraft
     {
         $total = bcadd($loan, $grant, 2);
         $totalUsd = $this->toUsd($total, $currency, $rate);
         $loanUsd = bccomp($grant, '0', 2) > 0 ? $this->toUsd($loan, $currency, $rate) : $totalUsd;
         $grantUsd = bcsub($totalUsd, $loanUsd, 2);
+        $lineRate = $currency === 'USD' ? '1.000000' : $rate;
+        $payCurrency = (string) $cash->currency;
         $name = trim($beneficiary);
         $lines = [];
 
         if (bccomp($loan, '0', 2) > 0) {
             $lines[] = new LineDraft(
-                accountCode: self::LOANS_ACCOUNT, currency: $currency, debit: $loan, rate: $rate, debitUsd: $loanUsd,
-                projectCode: $project->code, fundSource: $fundSource, contact: $name, donor: $project->donor,
-                restriction: $project->restriction, donorCurrency: $project->donor_currency, debitDonor: $this->donorAmount($loanUsd, $project),
+                ...$tags,
+                accountCode: self::LOANS_ACCOUNT, currency: $currency, debit: $loan, rate: $lineRate, debitUsd: $loanUsd,
+                fundSource: $fundSource, contact: $name, debitDonor: $this->donorAmount($loanUsd, $project),
             );
         }
 
-        if ($budgetLine !== null) {
+        if (bccomp($grant, '0', 2) > 0) {
             $lines[] = new LineDraft(
-                accountCode: $budgetLine->account_code, currency: $currency, debit: $grant, rate: $rate, debitUsd: $grantUsd,
-                projectCode: $project->code, budgetLineKey: $budgetLine->key, donor: $project->donor,
-                restriction: $project->restriction, donorCurrency: $project->donor_currency, debitDonor: $this->donorAmount($grantUsd, $project),
+                ...$tags,
+                accountCode: $budgetLine?->account_code ?? self::GRANTS_ACCOUNT, currency: $currency, debit: $grant, rate: $lineRate, debitUsd: $grantUsd,
+                budgetLineKey: $budgetLine?->key, contact: $name, debitDonor: $this->donorAmount($grantUsd, $project),
             );
         }
 
         $lines[] = new LineDraft(
-            accountCode: $cashAccount, currency: $currency, credit: $total, rate: $rate, creditUsd: $totalUsd,
-            projectCode: $project->code, fundSource: $fundSource, donor: $project->donor,
-            restriction: $project->restriction, donorCurrency: $project->donor_currency, creditDonor: $this->donorAmount($totalUsd, $project),
+            ...$tags,
+            accountCode: $cash->code, currency: $payCurrency, credit: $this->paidAmount($total, $currency, $payCurrency, $rate), rate: $payCurrency === 'USD' ? '1.000000' : $rate, creditUsd: $totalUsd,
+            fundSource: $fundSource, creditDonor: $this->donorAmount($totalUsd, $project),
         );
 
         return new VoucherDraft(
             type: VoucherType::Payment, date: $date, preparedBy: $preparedBy, lines: $lines,
-            description: __('loans.disbursement_description', ['beneficiary' => $name, 'project' => $project->code]),
+            description: __('loans.disbursement_description', ['beneficiary' => $name, 'project' => $project?->code ?? $tags['donor'].' · '.$tags['city']]),
             requestId: $requestId,
         );
+    }
+
+    /**
+     * What is paid out in the cash account's currency for an amount in the loan's: the same, or the pounds of a loan in
+     * dollars at the invoice's rate.
+     *
+     * @param  numeric-string  $amount
+     * @param  numeric-string  $rate
+     * @return numeric-string
+     */
+    private function paidAmount(string $amount, string $currency, string $payCurrency, string $rate): string
+    {
+        return $currency === 'USD' && $payCurrency === 'SYP' ? Money::normalize(bcmul($amount, $rate, 6)) : Money::normalize($amount);
+    }
+
+    /**
+     * The tags a loan's lines carry: its project's (donor, restriction), or, for a loan from an instalment fund, the
+     * funder and the city with the donor's restriction, since recovered money stays under the donor's rules.
+     *
+     * @return array{projectCode: string|null, donor: string|null, restriction: string|null, donorCurrency: string|null, city: string|null}
+     */
+    private function fundTags(?GlProject $project, ?string $funder, ?string $city): array
+    {
+        if ($project !== null) {
+            return ['projectCode' => $project->code, 'donor' => $project->donor, 'restriction' => $project->restriction, 'donorCurrency' => $project->donor_currency, 'city' => null];
+        }
+
+        return ['projectCode' => null, 'donor' => $funder !== '' ? $funder : null, 'restriction' => NetAssets::RESTRICTED, 'donorCurrency' => null, 'city' => $city !== '' ? $city : null];
+    }
+
+    /** How a loan is named in a voucher's description: its project, or its funder and city. */
+    private function loanLabel(MicroLoan $loan): string
+    {
+        return $loan->project_code ?? trim($loan->funder.' · '.$loan->city, ' ·');
+    }
+
+    /**
+     * A loan's tags, from its project or its fund.
+     *
+     * @return array{projectCode: string|null, donor: string|null, restriction: string|null, donorCurrency: string|null, city: string|null}
+     */
+    private function loanTags(MicroLoan $loan): array
+    {
+        $project = $loan->project_code !== null ? GlProject::query()->find($loan->project_code) : null;
+
+        return $this->fundTags($project, $loan->funder, $loan->city);
     }
 
     /**
@@ -618,19 +698,20 @@ class MicroLoans
      */
     private function receipt(MicroLoan $loan, CarbonImmutable $date, string $amount, string $rate, array $book, string $cashAccount, int $preparedBy): VoucherDraft
     {
-        $project = GlProject::query()->findOrFail($loan->project_code);
+        $project = $loan->project_code !== null ? GlProject::query()->find($loan->project_code) : null;
+        $tags = $this->loanTags($loan);
         $usd = $this->toUsd($amount, $loan->currency, $rate);
         $difference = bcsub($usd, $book['usd'], 2);
         $lines = [
             new LineDraft(
+                ...$tags,
                 accountCode: $cashAccount, currency: $loan->currency, debit: $amount, rate: $rate, debitUsd: $usd,
-                projectCode: $project->code, fundSource: FundSource::RecoveredLoans, donor: $project->donor,
-                restriction: $project->restriction, donorCurrency: $project->donor_currency, debitDonor: $this->donorAmount($usd, $project),
+                fundSource: FundSource::RecoveredLoans, debitDonor: $this->donorAmount($usd, $project),
             ),
             new LineDraft(
+                ...$tags,
                 accountCode: self::LOANS_ACCOUNT, currency: $loan->currency, credit: $amount, rate: $book['rate'], creditUsd: $book['usd'],
-                projectCode: $project->code, fundSource: FundSource::RecoveredLoans, contact: $loan->beneficiary, donor: $project->donor,
-                restriction: $project->restriction, donorCurrency: $project->donor_currency, creditDonor: $this->donorAmount($book['usd'], $project),
+                fundSource: FundSource::RecoveredLoans, contact: $loan->beneficiary, creditDonor: $this->donorAmount($book['usd'], $project),
             ),
         ];
 
@@ -642,16 +723,18 @@ class MicroLoans
 
         return new VoucherDraft(
             type: VoucherType::Receipt, date: $date, preparedBy: $preparedBy, lines: $lines,
-            description: __('loans.receipt_description', ['beneficiary' => $loan->beneficiary, 'project' => $project->code]),
+            description: __('loans.receipt_description', ['beneficiary' => $loan->beneficiary, 'project' => $this->loanLabel($loan)]),
         );
     }
 
-    private function cashProblem(string $code, string $currency): ?string
+    /** @param  string|list<string>  $currencies  the currencies the cash account may be in */
+    private function cashProblem(string $code, string|array $currencies): ?string
     {
+        $currencies = (array) $currencies;
         $account = GlAccount::query()->find($code);
 
-        if ($account === null || ! $account->is_cash || $account->currency !== $currency || preg_match((string) config('ledger.in_transit_pattern'), $account->code) === 1) {
-            return __('loans.problem.cash_account', ['currency' => $currency]);
+        if ($account === null || ! $account->is_cash || ! in_array((string) $account->currency, $currencies, true) || preg_match((string) config('ledger.in_transit_pattern'), $account->code) === 1) {
+            return __('loans.problem.cash_account', ['currency' => implode(' / ', $currencies)]);
         }
 
         return null;
@@ -671,8 +754,12 @@ class MicroLoans
      * @param  numeric-string  $usd
      * @return numeric-string
      */
-    private function donorAmount(string $usd, GlProject $project): string
+    private function donorAmount(string $usd, ?GlProject $project): string
     {
+        if ($project === null) {
+            return $usd;
+        }
+
         $donorRate = Money::normalize($project->donor_rate, 6);
 
         if ($project->donor_currency === 'USD' || bccomp($donorRate, '0', 6) <= 0) {

@@ -11,6 +11,7 @@ use App\Models\GlProject;
 use App\Models\MicroLoan;
 use App\Models\User;
 use App\Services\Ledger\LedgerRuleException;
+use App\Services\Loans\InstalmentFunds;
 use App\Services\Loans\LoanException;
 use App\Services\Loans\MicroLoans as Loans;
 use Carbon\CarbonImmutable;
@@ -45,6 +46,9 @@ class MicroLoans extends Component
     public string $intervalMonths = '1';
 
     public string $project = '';
+
+    /** "funder|city" to fund the loan from an instalment fund (no project), or '' for a project's budget. */
+    public string $fundKey = '';
 
     public string $loanAmount = '';
 
@@ -126,6 +130,7 @@ class MicroLoans extends Component
                 FundSource::tryFrom($this->fundSource) ?? FundSource::DonorGrant, (int) $user->getAuthIdentifier(),
                 ctype_digit($this->requestId) ? (int) $this->requestId : null,
                 $this->nationalNumber, $this->mobile, $this->partners, (int) $this->intervalMonths,
+                ...$this->fundParts(),
             );
         } catch (LoanException $e) {
             $this->failures = $e->problems;
@@ -315,6 +320,18 @@ class MicroLoans extends Component
         $this->notice = $message;
     }
 
+    /** @return array{fundFunder: string|null, fundCity: string|null} the chosen instalment fund, for MicroLoans::open */
+    private function fundParts(): array
+    {
+        if ($this->fundKey === '') {
+            return ['fundFunder' => null, 'fundCity' => null];
+        }
+
+        [$funder, $city] = array_pad(explode('|', $this->fundKey, 2), 2, '');
+
+        return ['fundFunder' => $funder, 'fundCity' => $city];
+    }
+
     private function cardLoan(): MicroLoan
     {
         return MicroLoan::query()->findOrFail((int) $this->card);
@@ -323,17 +340,32 @@ class MicroLoans extends Component
     private function fillMonthlyRate(): void
     {
         $date = $this->day($this->date);
+        // A loan in pounds, or one in dollars paid from a pound account, takes the month's pound rate.
+        $pounds = $this->currency === 'SYP' || GlAccount::query()->whereKey($this->cashAccount)->value('currency') === 'SYP';
 
-        if ($this->currency !== 'USD' && $date !== null) {
-            $monthly = app(MonthlyRates::class)->forDay($this->currency, $date);
+        if ($pounds && $date !== null) {
+            $monthly = app(MonthlyRates::class)->forDay('SYP', $date);
             $this->rate = $monthly !== null ? rtrim(rtrim($monthly['rate'], '0'), '.') : $this->rate;
         }
+    }
+
+    public function updatedCashAccount(): void
+    {
+        if ($this->tab !== 'payments') {
+            $this->fillMonthlyRate();
+        }
+    }
+
+    public function updatedFundKey(): void
+    {
+        $this->cashAccount = '';
+        $this->budgetLine = '';
     }
 
     protected function draftFields(): array
     {
         return [
-            'tab', 'beneficiary', 'nationalNumber', 'mobile', 'partners', 'intervalMonths', 'project', 'loanAmount', 'grantAmount',
+            'tab', 'beneficiary', 'nationalNumber', 'mobile', 'partners', 'intervalMonths', 'project', 'fundKey', 'loanAmount', 'grantAmount',
             'currency', 'rate', 'date', 'instalments', 'firstDue', 'cashAccount', 'budgetLine', 'fundSource', 'requestId', 'loanId', 'paymentAmount',
         ];
     }
@@ -389,7 +421,13 @@ class MicroLoans extends Component
             'rows' => $rows,
             'projects' => GlProject::query()->where('is_general_account', false)->orderBy('code')->get(['code', 'name']),
             'budgetLines' => GlBudgetLine::query()->when($this->project !== '', fn ($query) => $query->where('project_code', $this->project))->orderBy('key')->get(['key', 'name', 'account_code']),
-            'cashAccounts' => GlAccount::query()->where('is_cash', true)->where('is_active', true)->where('currency', $currency)->orderBy('code')->get(),
+            // A new loan in dollars can be paid in pounds; a loan from an instalment fund is paid from that city's cash.
+            'cashAccounts' => GlAccount::query()->where('is_cash', true)->where('is_active', true)
+                ->whereIn('currency', $this->tab !== 'payments' && $currency === 'USD' ? ['USD', 'SYP'] : [$currency])
+                ->when($this->tab !== 'payments' && $this->fundKey !== '', fn ($query) => $query->where('city', $this->fundParts()['fundCity']))
+                ->orderBy('code')->get(),
+            'fundChoices' => app(InstalmentFunds::class)->choices($today),
+            'paysInPounds' => $this->currency === 'SYP' || GlAccount::query()->whereKey($this->cashAccount)->value('currency') === 'SYP',
             'fundSources' => FundSource::cases(),
             'canCreate' => auth()->user() instanceof User && auth()->user()->canOnScreen('payments', ScreenAction::Create),
         ]);

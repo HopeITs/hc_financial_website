@@ -30,7 +30,7 @@ $treasury = ['tills', 'treasury', 'alloc', 'transfers', 'cities', 'currency', 'd
 $monthEnd = ['monthend'];
 // `single` is the payment voucher and `receipt` the receipt voucher. `multiatt` and `bonds` are old screens that left
 // the menu; their keys stay until their code is removed.
-$entries = ['single', 'receipt', 'journal', 'advance', 'multi', 'multiatt', 'payments', 'vouchers', 'bonds'];
+$entries = ['single', 'receipt', 'journal', 'advance', 'multi', 'multiatt', 'payments', 'loanfunds', 'vouchers', 'bonds'];
 
 return [
 
@@ -49,6 +49,8 @@ return [
             // A donor with no agreement can be deleted (finance request of 2026-11-20).
             $screens(['donors'], [...$prepare, 'delete']),
             $screens(['contracts'], ['view', 'create', 'edit', 'approve', 'delete']),
+            // Only the Financial Manager exchanges an instalment fund's pounds with the organisation (2026-11-22).
+            $screens(['loanfunds'], ['view', 'approve']),
             $screens(['currency'], $prepare),
             $screens($monthEnd, ['view', 'edit', 'approve']),
         ),

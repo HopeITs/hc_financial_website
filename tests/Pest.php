@@ -91,6 +91,7 @@ function createFinanceSchema(): void
     (require database_path('migrations/2026_11_19_120000_create_gl_monthly_rates_table.php'))->up();
     (require database_path('migrations/2026_11_20_100000_create_gl_cash_counts_and_revaluations_tables.php'))->up();
     (require database_path('migrations/2026_11_21_090000_add_payments_to_gl_micro_loans.php'))->up();
+    (require database_path('migrations/2026_11_22_090000_create_instalment_funds.php'))->up();
 
     Schema::create('log', function ($table) {
         $table->increments('id');

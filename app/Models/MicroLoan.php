@@ -17,12 +17,14 @@ use Illuminate\Support\Carbon;
  * @property string|null $partners
  * @property int $payment_interval_months
  * @property Carbon|null $first_payment_date
- * @property string $project_code
+ * @property string|null $project_code none for a loan funded from an instalment fund
  * @property string $loan_amount
  * @property string $grant_amount
  * @property string $currency
  * @property int|null $legacy_micro_project_id
  * @property string|null $disbursement_voucher_id
+ * @property string|null $funder the donor whose instalment fund it belongs to (finance decision of 2026-11-22)
+ * @property string|null $city the city of the cash it was given from
  * @property Carbon $created_at
  */
 class MicroLoan extends Model
@@ -31,7 +33,7 @@ class MicroLoan extends Model
 
     protected $fillable = [
         'beneficiary', 'national_number', 'mobile', 'partners', 'project_code', 'loan_amount', 'grant_amount', 'currency',
-        'payment_interval_months', 'first_payment_date', 'legacy_micro_project_id', 'disbursement_voucher_id',
+        'payment_interval_months', 'first_payment_date', 'legacy_micro_project_id', 'disbursement_voucher_id', 'funder', 'city',
     ];
 
     protected function casts(): array
@@ -67,6 +69,12 @@ class MicroLoan extends Model
     public function disbursement(): BelongsTo
     {
         return $this->belongsTo(Voucher::class, 'disbursement_voucher_id')->withTrashed();
+    }
+
+    /** How the loan is shown: its project, or, for a loan from an instalment fund, its funder and city. */
+    public function label(): string
+    {
+        return $this->project_code ?? trim($this->funder.' · '.$this->city, ' ·');
     }
 
     /**

@@ -61,7 +61,7 @@ class MicroLoansExcel extends ExcelDataset
                 : null;
 
             yield [
-                $loan->beneficiary, (string) $loan->national_number, (string) $loan->mobile, (string) $loan->partners, $loan->project_code, $loan->currency,
+                $loan->beneficiary, (string) $loan->national_number, (string) $loan->mobile, (string) $loan->partners, $loan->label(), $loan->currency,
                 (float) $loan->loan_amount, (float) $loan->grant_amount, $line !== null && $loan->currency !== 'USD' ? (float) $line->rate : null,
                 $loan->created_at?->toDateString(), $loan->instalments->count(), $first?->due_date->toDateString() ?? $loan->first_payment_date?->toDateString(),
                 $loan->payment_interval_months, $line?->account_code, '', '', '',

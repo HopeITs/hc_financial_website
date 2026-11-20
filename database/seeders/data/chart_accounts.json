@@ -697,7 +697,6 @@
     "city": null,
     "is_cash": false,
     "required_tags": [
-      "Project",
       "Contact",
       "Fund source"
     ],
@@ -2074,8 +2073,6 @@
     "city": null,
     "is_cash": false,
     "required_tags": [
-      "Project",
-      "Budget line",
       "Contact"
     ],
     "usage_note": "Only the grant part. The loan part goes to 1204.",
