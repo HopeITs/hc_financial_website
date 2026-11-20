@@ -10,6 +10,21 @@
         --brand-soft: color-mix(in srgb, var(--color-brand) 22%, var(--color-surface-1));
     }
 
+    /* The page tabs (components/navigation/page-tabs): @persist wraps them in this div, which sticks under the top bar
+       and stretches over the main area's padding (p-6, lg:p-8), so the tabs run edge to edge above the page. */
+    [x-persist='page-tabs'] {
+        position: sticky;
+        top: 4rem;
+        z-index: 30;
+        margin: -1.5rem -1.5rem 0;
+    }
+
+    @media (width >= 64rem) {
+        [x-persist='page-tabs'] {
+            margin: -2rem -2rem 0;
+        }
+    }
+
     /* A top-bar item: a rounded pill; the current one (or the open group) is filled with the soft brand tint. */
     .nav-pill {
         display: inline-flex;

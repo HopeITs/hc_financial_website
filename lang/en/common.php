@@ -28,4 +28,16 @@ return [
     'selected_of' => ':selected selected of :total',
     'page_total' => 'Total on this page',
     'selected_total' => 'Total of the selected',
+
+    'tabs' => [
+        'label' => 'Open pages',
+        'hint' => 'Middle-click a link to open it in a new tab',
+        'close' => 'Close tab',
+        'close_others' => 'Close other tabs',
+        'close_right' => 'Close tabs to the right',
+        'reload' => 'Reload',
+        'duplicate' => 'Duplicate',
+        'pin' => 'Pin tab',
+        'unpin' => 'Unpin tab',
+    ],
 ];

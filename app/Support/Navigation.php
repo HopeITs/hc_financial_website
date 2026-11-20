@@ -44,6 +44,37 @@ class Navigation
         return (string) config('navigation.paths.'.$screen);
     }
 
+    /** The menu group a screen is in, `entries` for `single`; null for a screen outside the menu. */
+    public static function groupOf(?string $screen): ?string
+    {
+        foreach ((array) config('navigation.groups') as $group => $screens) {
+            if (in_array($screen, $screens, true)) {
+                return (string) $group;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Every screen of the menu by its address, with its group and label, for the page tabs to name a page they open
+     * in the background (finance request of 2026-11-20). The home page is one of them.
+     *
+     * @return array<string, array{group: string, label: string}>
+     */
+    public static function tabScreens(): array
+    {
+        $screens = ['home' => ['group' => 'home', 'label' => __('home.title')]];
+
+        foreach ((array) config('navigation.groups') as $group => $slugs) {
+            foreach ($slugs as $slug) {
+                $screens[self::path($slug)] = ['group' => (string) $group, 'label' => __('navigation.screens.'.$slug)];
+            }
+        }
+
+        return $screens;
+    }
+
     /** The route name of a screen: its path with dots, `reports.trial-balance` for `tb`. */
     public static function routeName(string $screen): string
     {
