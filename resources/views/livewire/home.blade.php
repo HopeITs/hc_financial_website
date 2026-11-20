@@ -5,6 +5,26 @@
 
     <livewire:home-waiting />
 
+    @if ($actions !== [])
+        <nav aria-label="{{ __('home.quick.title') }}" class="flex flex-col gap-2" data-test="home-quick">
+            <h2 class="text-sm font-semibold text-secondary-medium dark:text-ink-muted">{{ __('home.quick.title') }}</h2>
+            <ul role="list" class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+                @foreach ($actions as $action)
+                    <li wire:key="quick-{{ $action['slug'] }}">
+                        <a href="{{ $action['url'] }}" wire:navigate class="group flex h-full items-center gap-3 rounded-xl border border-secondary-soft bg-white px-4 py-3 shadow-card hover:border-primary/40 hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-primary dark:border-transparent dark:bg-surface-1 dark:shadow-raised dark:hover:bg-white/[0.04]" data-test="quick-{{ $action['slug'] }}">
+                            <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary-soft text-primary dark:bg-surface-2 dark:text-brand-text" aria-hidden="true">
+                                <flux:icon :name="$action['icon']" variant="mini" class="size-5" />
+                            </span>
+                            <span class="min-w-0 text-sm font-medium text-secondary-dark dark:text-ink">{{ __('navigation.screens.'.$action['slug']) }}</span>
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
+        </nav>
+    @endif
+
+    <livewire:home-overview />
+
     <div class="grid grid-cols-2 gap-3 xl:grid-cols-4" data-test="home-totals">
         <x-ui.stat-tile :label="__('home.stat_projects')" :value="number_format($projects->count())" icon="folder" />
         <x-ui.stat-tile :label="__('home.stat_cities')" :value="number_format($projects->pluck('cityName')->unique()->count())" icon="map-pin" />

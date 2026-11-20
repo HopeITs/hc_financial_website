@@ -3,8 +3,11 @@
 namespace App\Livewire;
 
 use App\Contracts\ProjectBalanceSource;
+use App\Enums\ScreenAction;
 use App\Livewire\Concerns\DefersLoading;
+use App\Models\User;
 use App\Services\Projects\ProjectAccess;
+use App\Support\Navigation;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
@@ -38,6 +41,39 @@ class Home extends Component
             'projects' => $balances->activeProjects($cityId, $limit),
             'cities' => $cities,
             'cityId' => $cityId,
+            'actions' => $this->quickActions(),
         ]);
     }
+
+    /**
+     * The everyday entries the person may make, as buttons (finance request of 2026-11-22).
+     *
+     * @return list<array{slug: string, icon: string, url: string}>
+     */
+    private function quickActions(): array
+    {
+        $user = auth()->user();
+        if (! $user instanceof User) {
+            return [];
+        }
+
+        $actions = [];
+        foreach (self::QUICK_ACTIONS as $slug => $icon) {
+            if ($user->canOnScreen($slug, ScreenAction::Create)) {
+                $actions[] = ['slug' => $slug, 'icon' => $icon, 'url' => route(Navigation::routeName($slug))];
+            }
+        }
+
+        return $actions;
+    }
+
+    /** The quick actions, screen slug => icon, in the order they show. */
+    private const QUICK_ACTIONS = [
+        'single' => 'arrow-up-circle',
+        'receipt' => 'arrow-down-circle',
+        'journal' => 'book-open',
+        'multi' => 'table-cells',
+        'transfers' => 'arrows-right-left',
+        'tills' => 'calculator',
+    ];
 }
