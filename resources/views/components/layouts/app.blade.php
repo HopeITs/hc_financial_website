@@ -11,6 +11,13 @@
         <x-navigation.sidebar />
 
         <flux:main class="bg-ground text-secondary-dark dark:bg-surface-0 dark:text-ink">
+            @auth
+                @persist('page-tabs')
+                    <x-navigation.page-tabs />
+                @endpersist
+            @endauth
+            {{-- The page's menu group, for its tab's icon (resources/js/page-tabs.js). --}}
+            <span hidden data-page-tab data-group="{{ request()->routeIs('home') ? 'home' : (\App\Support\Navigation::groupOf(is_string(request()->route('screen')) ? request()->route('screen') : null) ?? 'other') }}"></span>
             <div class="mx-auto flex min-h-full w-full max-w-[90rem] min-[150rem]:max-w-[110rem] flex-1 flex-col pt-4">
                 {{ $slot }}
             </div>

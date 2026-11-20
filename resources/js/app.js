@@ -5,6 +5,7 @@ import './modal-shell';
 import './scroll-lock';
 import './section-rail';
 import './sidebar-resize';
+import './page-tabs';
 import './paged-table';
 import './unsaved-guard';
 import './shortcuts';
