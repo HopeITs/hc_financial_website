@@ -15,13 +15,14 @@ use Illuminate\Support\Carbon;
  * @property Carbon $due_date
  * @property string $amount
  * @property string $paid_amount
+ * @property string $written_off_amount forgiven: moved to the project's grants line (finance decision of 2026-11-21)
  * @property string|null $paid_voucher_id
  */
 class MicroInstalment extends Model
 {
     protected $table = 'gl_micro_instalments';
 
-    protected $fillable = ['loan_id', 'due_date', 'amount', 'paid_amount', 'paid_voucher_id'];
+    protected $fillable = ['loan_id', 'due_date', 'amount', 'paid_amount', 'written_off_amount', 'paid_voucher_id'];
 
     protected function casts(): array
     {
@@ -29,6 +30,7 @@ class MicroInstalment extends Model
             'due_date' => 'date',
             'amount' => 'decimal:2',
             'paid_amount' => 'decimal:2',
+            'written_off_amount' => 'decimal:2',
         ];
     }
 
@@ -39,12 +41,12 @@ class MicroInstalment extends Model
     }
 
     /**
-     * What is still owed on this instalment.
+     * What is still owed on this instalment: its amount less what was paid and what was written off.
      *
      * @return numeric-string
      */
     public function outstanding(): string
     {
-        return bcsub(Money::normalize($this->amount), Money::normalize($this->paid_amount), 2);
+        return bcsub(bcsub(Money::normalize($this->amount), Money::normalize($this->paid_amount), 2), Money::normalize($this->written_off_amount ?? '0'), 2);
     }
 }

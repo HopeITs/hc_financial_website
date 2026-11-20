@@ -10,6 +10,7 @@ use App\Models\Voucher;
 use App\Models\VoucherAudit;
 use App\Services\Approvals\ApprovalChain;
 use App\Services\Ledger\Rules\ApproverIsNotPreparer;
+use App\Services\Loans\MicroLoans;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
@@ -98,6 +99,8 @@ class VoucherApprovals
             }
 
             VoucherAudit::query()->create(['voucher_id' => $voucher->id, 'action' => 'reject', 'changed_by' => $rejectorId, 'reason' => trim($reason)]);
+            // A rejected micro-loan repayment or write-off goes back to the instalments it settled.
+            app(MicroLoans::class)->forgetVoucher($voucher);
             $voucher->delete();
         });
     }
