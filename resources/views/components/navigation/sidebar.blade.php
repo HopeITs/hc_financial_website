@@ -61,13 +61,21 @@
         url(code) { return {{ \Illuminate\Support\Js::from(route('chart')) }} + '?account=' + encodeURIComponent(code); },
     }"
 >
-    <div class="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-secondary-soft px-4 dark:border-line">
-        <p class="text-base font-semibold">{{ __('chart.tree') }}</p>
-        <span class="type-meta text-secondary-medium dark:text-ink-muted">{{ __('chart.count', ['count' => count($rows)]) }}</span>
-        <flux:sidebar.toggle class="size-11! touch-manipulation lg:hidden" icon="x-mark" />
+    {{-- Folded on a desktop: a narrow rail with only the arrow that opens the tree again. --}}
+    <div class="hidden h-14 shrink-0 items-center justify-center border-b border-secondary-soft lg:tree-collapsed:flex dark:border-line">
+        <flux:button size="sm" variant="ghost" square type="button" icon="chevron-double-right" class="rtl:[&_svg]:-scale-x-100" x-on:click="window.hcSidebar?.setCollapsed(false)" aria-label="{{ __('chart.open_tree') }}" title="{{ __('chart.open_tree') }}" data-test="tree-open" />
     </div>
 
-    <div class="flex shrink-0 flex-col gap-2 border-b border-secondary-soft p-3 dark:border-line">
+    <div class="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-secondary-soft px-4 lg:tree-collapsed:hidden dark:border-line">
+        <p class="min-w-0 truncate text-base font-semibold">{{ __('chart.tree') }}</p>
+        <div class="flex shrink-0 items-center gap-1">
+            <span class="type-meta text-secondary-medium dark:text-ink-muted">{{ __('chart.count', ['count' => count($rows)]) }}</span>
+            <flux:button size="sm" variant="ghost" square type="button" icon="chevron-double-left" class="hidden! lg:inline-flex! rtl:[&_svg]:-scale-x-100" x-on:click="window.hcSidebar?.setCollapsed(true)" aria-label="{{ __('chart.close_tree') }}" title="{{ __('chart.close_tree') }}" data-test="tree-close" />
+            <flux:sidebar.toggle class="size-11! touch-manipulation lg:hidden" icon="x-mark" />
+        </div>
+    </div>
+
+    <div class="flex shrink-0 flex-col gap-2 border-b border-secondary-soft p-3 lg:tree-collapsed:hidden dark:border-line">
         <input
             type="search"
             x-model="q"
@@ -82,7 +90,7 @@
         </div>
     </div>
 
-    <nav class="min-h-0 flex-1 overflow-y-auto p-2" aria-label="{{ __('chart.tree') }}" data-test="chart-tree">
+    <nav class="min-h-0 flex-1 overflow-y-auto p-2 lg:tree-collapsed:hidden" aria-label="{{ __('chart.tree') }}" data-test="chart-tree">
         <template x-for="row in visible" :key="row.code">
             <div
                 class="flex items-center rounded-lg hover:bg-secondary-soft/70 dark:hover:bg-white/[0.06]"
@@ -132,7 +140,7 @@
         aria-label="{{ __('chart.resize') }}"
         tabindex="0"
         data-test="sidebar-resizer"
-        class="absolute inset-y-0 -end-1 z-10 hidden w-2 cursor-col-resize touch-none transition-colors hover:bg-primary/30 focus-visible:bg-primary/40 focus-visible:outline-none lg:block"
+        class="absolute inset-y-0 -end-1 z-10 hidden w-2 cursor-col-resize touch-none transition-colors hover:bg-primary/30 focus-visible:bg-primary/40 focus-visible:outline-none lg:block lg:tree-collapsed:hidden"
         :class="dragging && 'bg-primary/40'"
         x-on:pointerdown="start($event)"
         x-on:dblclick="reset()"

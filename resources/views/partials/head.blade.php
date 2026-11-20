@@ -10,5 +10,19 @@
 <meta name="theme-color" content="#dcddde" media="(prefers-color-scheme: light)" data-theme-color="light">
 <meta name="theme-color" content="#1c1d20" media="(prefers-color-scheme: dark)" data-theme-color="dark">
 
+{{-- Before the first paint: the chart sidebar's remembered width, or its folded rail (resources/js/sidebar-resize.js keeps them across pages). --}}
+<script>
+    try {
+        const root = document.documentElement;
+        const width = Number(localStorage.getItem('sidebar-width'));
+        if (localStorage.getItem('sidebar-collapsed') === '1') {
+            root.dataset.treeCollapsed = '1';
+            root.style.setProperty('--sidebar-w', '56px');
+        } else if (width) {
+            root.style.setProperty('--sidebar-w', Math.min(640, Math.max(240, Math.round(width))) + 'px');
+        }
+    } catch (e) {}
+</script>
+
 @vite(['resources/css/app.css', 'resources/js/app.js'])
 @fluxAppearance

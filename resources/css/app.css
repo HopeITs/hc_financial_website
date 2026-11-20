@@ -20,3 +20,6 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* The chart sidebar folded to a rail on a desktop (data-tree-collapsed on <html>, see resources/js/sidebar-resize.js). */
+@custom-variant tree-collapsed (&:where([data-tree-collapsed] *));
