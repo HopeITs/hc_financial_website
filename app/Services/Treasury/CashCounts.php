@@ -130,6 +130,34 @@ class CashCounts
     }
 
     /**
+     * Deletes a day's count of an account (finance request of 2026-11-20), while no adjustment voucher stands on it.
+     *
+     * @throws TreasuryException
+     */
+    public function remove(CarbonImmutable $day, string $code): void
+    {
+        $count = CashCount::query()->whereDate('day', $day->toDateString())->where('account_code', $code)->first();
+
+        if ($count === null) {
+            throw new TreasuryException([__('treasury.count_missing')]);
+        }
+
+        if ($this->hasStandingVoucher($count)) {
+            throw new TreasuryException([__('treasury.count_locked', ['voucher' => $count->voucher_id])]);
+        }
+
+        $count->delete();
+    }
+
+    /** Whether a day's count of an account has an adjustment voucher that stands, so the count can no longer change. */
+    public function isLocked(CarbonImmutable $day, string $code): bool
+    {
+        $count = CashCount::query()->whereDate('day', $day->toDateString())->where('account_code', $code)->first();
+
+        return $count !== null && $this->hasStandingVoucher($count);
+    }
+
+    /**
      * Prepares the voucher that books a count's difference on 5505.
      *
      * @throws TreasuryException

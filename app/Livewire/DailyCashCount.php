@@ -10,6 +10,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
@@ -76,6 +77,32 @@ class DailyCashCount extends Component
         $this->notice = bccomp((string) $count->difference, '0', 2) === 0
             ? __('treasury.count_matches', ['account' => $code])
             : __('treasury.count_differs', ['account' => $code, 'difference' => number_format((float) $count->difference, 2)]);
+    }
+
+    public function removeCount(string $code, CashCounts $counts): void
+    {
+        Gate::authorize('screen', ['tills', 'create']);
+
+        try {
+            $counts->remove($this->date(), $code);
+        } catch (TreasuryException $refused) {
+            $this->fail($refused);
+
+            return;
+        }
+
+        $this->loadCounts($counts);
+        $this->problems = [];
+        $this->notice = __('treasury.count_removed', ['account' => $code]);
+    }
+
+    /** The Excel tools saved counts: show them with their message. */
+    #[On('excel-imported')]
+    public function excelImported(string $message): void
+    {
+        $this->loadCounts(app(CashCounts::class));
+        $this->problems = [];
+        $this->notice = $message;
     }
 
     public function adjust(string $code, CashCounts $counts): void

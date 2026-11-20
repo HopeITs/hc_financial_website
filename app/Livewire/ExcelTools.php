@@ -67,7 +67,7 @@ class ExcelTools extends Component
     public function template(ExcelSheet $sheet): StreamedResponse
     {
         $dataset = $this->dataset();
-        Gate::authorize('screen', [$dataset->screen(), $dataset->importAction()]);
+        $this->authorizeImport($dataset);
 
         return $this->download($sheet->write([
             __('excel.sheet.'.$this->kind) => ['headings' => $dataset->headings(), 'rows' => $dataset->exampleRows($this->context)],
@@ -78,7 +78,7 @@ class ExcelTools extends Component
     public function openImport(): void
     {
         $dataset = $this->dataset();
-        Gate::authorize('screen', [$dataset->screen(), $dataset->importAction()]);
+        $this->authorizeImport($dataset);
         $this->reset('rows', 'problems', 'fileName', 'upload');
         $this->resetErrorBag();
         $this->showImport = true;
@@ -92,7 +92,7 @@ class ExcelTools extends Component
     public function updatedUpload(ExcelSheet $sheet): void
     {
         $dataset = $this->dataset();
-        Gate::authorize('screen', [$dataset->screen(), $dataset->importAction()]);
+        $this->authorizeImport($dataset);
         $this->reset('rows', 'problems');
         $this->validate(['upload' => ['required', 'file', 'mimes:xlsx', 'max:5120']]);
 
@@ -109,7 +109,7 @@ class ExcelTools extends Component
     public function save(): void
     {
         $dataset = $this->dataset();
-        Gate::authorize('screen', [$dataset->screen(), $dataset->importAction()]);
+        $this->authorizeImport($dataset);
 
         try {
             $saved = $dataset->save($this->rows, $this->user(), $this->context);
@@ -133,8 +133,14 @@ class ExcelTools extends Component
             'headings' => $dataset->headings(),
             'reviewed' => $reviewed,
             'broken' => count(array_filter($reviewed, fn (array $row): bool => $row['problems'] !== [])),
-            'canImport' => Gate::allows('screen', [$dataset->screen(), $dataset->importAction()]),
+            'canImport' => $dataset->importable() && Gate::allows('screen', [$dataset->screen(), $dataset->importAction()]),
         ]);
+    }
+
+    private function authorizeImport(ExcelDataset $dataset): void
+    {
+        abort_unless($dataset->importable(), 403);
+        Gate::authorize('screen', [$dataset->screen(), $dataset->importAction()]);
     }
 
     private function dataset(): ExcelDataset

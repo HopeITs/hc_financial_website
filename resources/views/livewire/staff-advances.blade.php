@@ -4,11 +4,12 @@
 
 <div class="flex flex-col gap-6 px-4 pb-10 lg:px-8" data-test="staff-advances">
     <x-ui.page-header :title="__('navigation.screens.advance')" :subtitle="__('advances.intro')" :count="count($open)">
-        @if ($canCreate && $mode === '')
-            <x-slot:actions>
+        <x-slot:actions>
+            <livewire:excel-tools kind="advances" :key="'excel-advances'" />
+            @if ($canCreate && $mode === '')
                 <x-ui.button tone="primary" icon="plus" wire:click="startGive" data-test="start-give">{{ __('advances.give') }}</x-ui.button>
-            </x-slot:actions>
-        @endif
+            @endif
+        </x-slot:actions>
     </x-ui.page-header>
 
     @if ($notice)

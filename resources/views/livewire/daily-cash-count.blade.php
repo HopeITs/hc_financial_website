@@ -3,7 +3,11 @@
 @endphp
 
 <div class="flex flex-col gap-6 px-4 pb-10 lg:px-8" data-test="daily-count">
-    <x-ui.page-header :title="__('navigation.screens.tills')" :subtitle="__('treasury.count_intro')" />
+    <x-ui.page-header :title="__('navigation.screens.tills')" :subtitle="__('treasury.count_intro')">
+        <x-slot:actions>
+            <livewire:excel-tools kind="cash_counts" :context="['day' => $day, 'city' => $city]" :key="'excel-counts-'.md5($day.'|'.$city)" />
+        </x-slot:actions>
+    </x-ui.page-header>
 
     @if ($notice)
         <div class="rounded-lg border border-secondary-soft bg-white px-4 py-2 text-sm dark:border-line dark:bg-surface-1" role="status" data-test="notice">{{ $notice }}</div>
@@ -81,6 +85,9 @@
                                 <x-ui.button size="sm" wire:click="saveCount('{{ $row['code'] }}')" data-test="save-count-{{ $row['code'] }}">{{ __('treasury.save_count') }}</x-ui.button>
                                 @if ($row['difference'] !== null && bccomp($row['difference'], '0', 2) !== 0)
                                     <x-ui.button size="sm" tone="primary" wire:click="adjust('{{ $row['code'] }}')" wire:confirm="{{ __('treasury.adjust_confirm') }}" data-test="adjust-{{ $row['code'] }}">{{ __('treasury.adjust') }}</x-ui.button>
+                                @endif
+                                @if ($row['counted'] !== null)
+                                    <x-ui.button size="sm" tone="ghost" icon="trash" wire:click="removeCount('{{ $row['code'] }}')" wire:confirm="{{ __('treasury.count_remove_confirm') }}" :aria-label="__('treasury.remove')" data-test="remove-count-{{ $row['code'] }}" />
                                 @endif
                             @endif
                         </td>

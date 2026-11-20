@@ -26,6 +26,12 @@ abstract class ExcelDataset
         return 'create';
     }
 
+    /** False for a list that is only exported (its records are made on their own screen). */
+    public function importable(): bool
+    {
+        return true;
+    }
+
     /** The start of the file names: `donors` gives donors-2026-11-20.xlsx and donors-template.xlsx. */
     abstract public function fileName(): string;
 
@@ -72,7 +78,7 @@ abstract class ExcelDataset
     }
 
     /**
-     * What a row would do ('new' or 'update') and what is wrong in it. The rows before it are given, to find the same
+     * What a row would do ('new', 'update', or 'skip' for a row left to fill later) and what is wrong in it. The rows before it are given, to find the same
      * record twice in one file.
      *
      * @param  array<string, string>  $cells
@@ -140,12 +146,14 @@ abstract class ExcelDataset
             throw new ExcelException([trans_choice('excel.not_saved', $broken, ['count' => $broken])]);
         }
 
-        DB::transaction(function () use ($reviewed, $user, $context): void {
-            foreach ($reviewed as $row) {
+        $saving = array_values(array_filter($reviewed, fn (array $row): bool => $row['action'] !== 'skip'));
+
+        DB::transaction(function () use ($saving, $user, $context): void {
+            foreach ($saving as $row) {
                 $this->saveRow($row['cells'], $user, $context);
             }
         });
 
-        return count($reviewed);
+        return count($saving);
     }
 }
