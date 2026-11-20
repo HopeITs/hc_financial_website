@@ -105,6 +105,10 @@ class ContractPage extends Component
 
     public bool $instalmentConditional = false;
 
+    /** The instalment the form changes, or null while it adds one. */
+    #[Locked]
+    public ?int $editingInstalment = null;
+
     public string $receiptInstalment = '';
 
     public string $receiptAccount = '';
@@ -345,17 +349,59 @@ class ContractPage extends Component
             'instalmentConditional' => ['boolean'],
         ]);
 
-        ContractInstalment::query()->create([
-            'contract_id' => $contract->id,
-            'number' => (int) $contract->instalments()->max('number') + 1,
+        $values = [
             'due_on' => $data['instalmentDue'],
             'amount' => $data['instalmentAmount'],
             'condition' => trim((string) $data['instalmentCondition']) ?: null,
             'is_conditional' => $data['instalmentConditional'],
+        ];
+
+        if ($this->editingInstalment !== null) {
+            $contract->instalments()->whereKey($this->editingInstalment)->firstOrFail()->update($values);
+            $this->cancelInstalmentEdit();
+            $this->say(__('contracts.instalment_saved'));
+
+            return;
+        }
+
+        ContractInstalment::query()->create($values + [
+            'contract_id' => $contract->id,
+            'number' => (int) $contract->instalments()->max('number') + 1,
         ]);
 
         $this->reset('instalmentDue', 'instalmentAmount', 'instalmentCondition', 'instalmentConditional');
         $this->say(__('contracts.instalment_added'));
+    }
+
+    /** Fills the form with an instalment, to change it (finance request of 2026-11-20), while the agreement is not approved. */
+    public function editInstalment(int $id): void
+    {
+        $this->authorizeChange();
+        $contract = $this->contract();
+        if ($this->isLocked($contract)) {
+            return;
+        }
+
+        $instalment = $contract->instalments()->whereKey($id)->firstOrFail();
+        $this->editingInstalment = $instalment->id;
+        $this->instalmentDue = $instalment->due_on->toDateString();
+        $this->instalmentAmount = (string) $instalment->amount;
+        $this->instalmentCondition = (string) $instalment->condition;
+        $this->instalmentConditional = $instalment->is_conditional;
+        $this->resetValidation();
+    }
+
+    public function cancelInstalmentEdit(): void
+    {
+        $this->reset('editingInstalment', 'instalmentDue', 'instalmentAmount', 'instalmentCondition', 'instalmentConditional');
+        $this->resetValidation();
+    }
+
+    /** The Excel tools saved instalments: show them with their message. */
+    #[On('excel-imported')]
+    public function excelImported(string $message): void
+    {
+        $this->say($message);
     }
 
     public function removeInstalment(int $id): void

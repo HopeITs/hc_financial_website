@@ -230,11 +230,14 @@
         @endif
         <x-ui.panel :title="__('contracts.tab_instalments')" :subtitle="__('contracts.instalments_hint')">
             <x-slot:toolbar>
-                @if ($instalmentsBalanced)
-                    <flux:badge size="sm" color="green">{{ __('contracts.instalments_balanced') }}</flux:badge>
-                @else
-                    <flux:badge size="sm" color="amber">{{ __('contracts.instalments_unbalanced') }}</flux:badge>
-                @endif
+                <div class="flex flex-wrap items-center gap-2">
+                    @if ($instalmentsBalanced)
+                        <flux:badge size="sm" color="green">{{ __('contracts.instalments_balanced') }}</flux:badge>
+                    @else
+                        <flux:badge size="sm" color="amber">{{ __('contracts.instalments_unbalanced') }}</flux:badge>
+                    @endif
+                    <livewire:excel-tools kind="instalments" :context="['contract' => $contract->id]" :key="'excel-instalments-'.$contract->id" />
+                </div>
             </x-slot:toolbar>
             <div class="fin-table-wrap">
                 <table class="fin-table" data-test="instalments-table">
@@ -308,6 +311,7 @@
                                         <x-ui.button size="sm" wire:click="markConditionMet({{ $instalment->id }})" wire:confirm="{{ __('contracts.condition_met_confirm') }}" data-test="condition-met-{{ $instalment->number }}">{{ __('contracts.mark_condition_met') }}</x-ui.button>
                                     @endif
                                     @if ($canChangeMoney)
+                                        <x-ui.button size="sm" tone="ghost" icon="pencil-square" wire:click="editInstalment({{ $instalment->id }})" :aria-label="__('contracts.edit_instalment')" data-test="edit-instalment-{{ $instalment->number }}" />
                                         <x-ui.button size="sm" tone="ghost" icon="trash" wire:click="removeInstalment({{ $instalment->id }})" wire:confirm="{{ __('contracts.remove_confirm') }}" :aria-label="__('contracts.remove')" />
                                     @endif
                                 </td>
@@ -391,7 +395,14 @@
                         <x-ui.form-input wire:model="instalmentCondition" :label="__('contracts.condition')" :help="__('contracts.condition_help')" data-test="instalment-condition" />
                     </div>
                     <flux:checkbox wire:model="instalmentConditional" :label="__('contracts.conditional')" :description="__('contracts.conditional_help')" data-test="instalment-conditional" />
-                    <div><x-ui.button type="submit" icon="plus" data-test="add-instalment">{{ __('contracts.add_instalment') }}</x-ui.button></div>
+                    <div class="flex gap-2">
+                        @if ($editingInstalment !== null)
+                            <x-ui.button type="submit" tone="primary" icon="check" data-test="save-instalment">{{ __('contracts.save_instalment') }}</x-ui.button>
+                            <x-ui.button type="button" wire:click="cancelInstalmentEdit">{{ __('contracts.cancel') }}</x-ui.button>
+                        @else
+                            <x-ui.button type="submit" icon="plus" data-test="add-instalment">{{ __('contracts.add_instalment') }}</x-ui.button>
+                        @endif
+                    </div>
                 </form>
             @endif
         </x-ui.panel>
