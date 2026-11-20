@@ -47,7 +47,7 @@ class LoanScheduleExcel extends ExcelDataset
             };
 
             yield [
-                (string) $instalment->loan?->beneficiary, (string) $instalment->loan?->project_code, (string) $instalment->loan?->currency,
+                (string) $instalment->loan?->beneficiary, (string) $instalment->loan?->label(), (string) $instalment->loan?->currency,
                 $instalment->due_date->toDateString(), (float) $instalment->amount, (float) $instalment->paid_amount,
                 (float) ($instalment->written_off_amount ?? 0), (float) $owed, __('loans.'.$state),
             ];

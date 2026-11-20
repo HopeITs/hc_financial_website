@@ -85,6 +85,11 @@ return [
     'delete' => 'Delete the loan',
     'delete_confirm' => 'Delete this loan and its disbursement voucher, still waiting for approval?',
     'deleted' => 'The loan and its disbursement voucher are deleted.',
+    'funded_from' => 'Funded from',
+    'funded_from_help' => 'A project\'s budget, or the instalment fund of a funder in a city (no project).',
+    'from_project' => 'A project\'s budget',
+    'from_fund' => 'Instalment fund: :fund',
+    'rate_help_usd_in_pounds' => 'A loan in dollars paid in pounds: the pounds at the invoice\'s rate, the month\'s by default.',
     'problem' => [
         'beneficiary' => 'Enter the beneficiary’s name.',
         'amount' => 'Enter the loan and grant amounts as numbers.',
@@ -107,5 +112,7 @@ return [
         'delete_paid' => 'This loan has repayments: it cannot be deleted. Reverse its vouchers instead.',
         'delete_old' => 'This loan was opened before its voucher was kept with it: reverse its vouchers instead.',
         'delete_given' => 'The loan was given (voucher :voucher is approved): reverse the voucher instead.',
+        'fund_city' => 'A loan from this fund is paid from a cash account of :city.',
+        'fund_short' => 'The instalment fund holds only :available :currency.',
     ],
 ];

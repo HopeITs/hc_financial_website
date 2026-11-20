@@ -14,6 +14,7 @@ use App\Livewire\FinancialStatements;
 use App\Livewire\FollowUpReport;
 use App\Livewire\Home;
 use App\Livewire\LiquidityPosition;
+use App\Livewire\InstalmentFundsScreen;
 use App\Livewire\MicroLoans;
 use App\Livewire\MonthEndScreen;
 use App\Livewire\Notifications;
@@ -83,6 +84,7 @@ Route::middleware('auth')->group(function () {
     // Vouchers from Excel (finance decision of 2026-11-20) take the place of the old multi entry.
     $screen('multi', VoucherImportScreen::class);
     $screen('payments', MicroLoans::class);
+    $screen('loanfunds', InstalmentFundsScreen::class);
 
     // The old approval screen is the list of vouchers waiting for approval.
     $screen('approval', Approval::class);

@@ -310,7 +310,7 @@ class FollowUpReports
             ->when($filters->project, fn (Builder $query, string $value) => $query->where('m.project_code', $value))
             ->when($filters->limitedTo !== null, fn (Builder $query) => $query->whereIn('m.project_code', $filters->limitedTo ?? []))
             ->orderBy('m.project_code')->orderBy('m.beneficiary')->orderBy('m.id')
-            ->get(['m.id', 'm.beneficiary', 'm.project_code', 'm.loan_amount', 'm.grant_amount', 'm.currency']);
+            ->get(['m.id', 'm.beneficiary', 'm.project_code', 'm.funder', 'm.city', 'm.loan_amount', 'm.grant_amount', 'm.currency']);
 
         $instalments = DB::table('gl_micro_instalments as i')
             ->leftJoin('gl_vouchers as v', 'v.id', '=', 'i.paid_voucher_id')
@@ -336,7 +336,8 @@ class FollowUpReports
                 }
             }
             $rows[] = [
-                'beneficiary' => $loan->beneficiary, 'project' => $loan->project_code, 'currency' => $loan->currency,
+                // A loan from an instalment fund has no project: its funder and city stand for it.
+                'beneficiary' => $loan->beneficiary, 'project' => $loan->project_code ?? trim($loan->funder.' · '.$loan->city, ' ·'), 'currency' => $loan->currency,
                 'loan' => Money::normalize($loan->loan_amount), 'grant' => Money::normalize($loan->grant_amount),
                 'due' => $due, 'collected' => $collected, 'arrears' => bcsub($due, $collected, 2),
                 'late' => (string) $late, 'late_flag' => $late >= MicroLoans::LATE_FLAG ? '1' : '',
