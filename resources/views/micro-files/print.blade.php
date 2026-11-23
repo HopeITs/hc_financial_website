@@ -1,6 +1,7 @@
 @php
     // Each form is its original page (public/images/micro-forms) with the file's values set on its lines; the places
-    // are in resources/css/micro-forms.css. The forms print in Arabic; the delivery protocol adds the English lines.
+    // are in public/css/micro-forms.css, a plain stylesheet that needs no build. The forms print in Arabic; the delivery
+    // protocol adds the English lines.
     $ar = fn (string $key, array $replace = []) => __('micro_print.'.$key, $replace, 'ar');
     $en = fn (string $key, array $replace = []) => __('micro_print.'.$key, $replace, 'en');
     $page = fn (string $image) => asset('images/micro-forms/'.$image.'.jpg');
@@ -21,7 +22,7 @@
     };
     $shown = isset($rooms[$form]) ? $rows->take($rooms[$form]) : $rows;
     $rest = isset($rooms[$form]) ? $rows->slice($rooms[$form])->values() : collect();
-    $cell = 'overflow-hidden whitespace-nowrap px-1.5';
+    $cell = 'mf-cell';
 @endphp
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -30,9 +31,10 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>{{ $ar('titles.'.$form) }} · {{ $name }}</title>
         @vite(['resources/css/app.css'])
+        <link rel="stylesheet" href="{{ asset('css/micro-forms.css') }}">
     </head>
-    <body class="bg-secondary-soft py-6 print:bg-white print:py-0" data-test="micro-print-{{ $form }}">
-        <div class="mf-bar print:hidden">
+    <body class="mf-sheet" data-test="micro-print-{{ $form }}">
+        <div class="mf-bar">
             <x-ui.button tone="primary" icon="printer" onclick="window.print()" data-test="print-now">{{ $ar('print') }}</x-ui.button>
         </div>
 
@@ -88,16 +90,16 @@
                     @endforeach
                     @for ($index = 0; $index < 15; $index++)
                         @php($item = $shown[$index] ?? null)
-                        <span @class(['justify-center', 'mf-shade' => $index % 2 === 1])>{{ $index + 1 }}</span>
+                        <span @class(['mf-mid', 'mf-shade' => $index % 2 === 1])>{{ $index + 1 }}</span>
                         <span @class(['mf-shade' => $index % 2 === 1])>{{ $item?->name }}</span>
                         <span @class(['mf-shade' => $index % 2 === 1])>{{ $item?->kind }}</span>
-                        <span @class(['justify-center', 'mf-shade' => $index % 2 === 1]) dir="ltr">{{ $item !== null ? $quantity($item->quantity) : '' }}</span>
+                        <span @class(['mf-mid', 'mf-shade' => $index % 2 === 1]) dir="ltr">{{ $item !== null ? $quantity($item->quantity) : '' }}</span>
                         <span @class(['mf-shade' => $index % 2 === 1])>{{ $item !== null ? $ar('conditions.'.$item->condition) : '' }}</span>
                     @endfor
                 </div>
                 <div class="mf-purchase-text">
                     <p>{{ $ar('pledges_title') }}</p>
-                    <ul class="list-disc ps-10">
+                    <ul class="mf-list">
                         @foreach (__('micro_print.purchase_pledges', [], 'ar') as $pledge)
                             <li>{{ $pledge }}</li>
                         @endforeach
@@ -118,7 +120,7 @@
                     @foreach ($shown as $item)
                         <span class="{{ $cell }}">{{ $item->name }}</span>
                         <span class="{{ $cell }}">{{ $item->kind }}</span>
-                        <span class="{{ $cell }} text-center" dir="ltr">{{ $quantity($item->quantity) }}</span>
+                        <span class="{{ $cell }} mf-mid" dir="ltr">{{ $quantity($item->quantity) }}</span>
                         <span></span>
                         <span></span>
                         <span></span>
@@ -137,22 +139,22 @@
             <section class="mf-page">
                 <img class="mf-bg" src="{{ $page('undertaking') }}" alt="">
                 <div class="mf-undertaking-box">
-                <table class="w-full border-collapse" data-test="print-invoices">
+                <table class="mf-table" data-test="print-invoices">
                     <thead>
                         <tr>
-                            <th class="border border-secondary-light px-1 text-start">{{ $ar('merchant') }}</th>
-                            <th class="border border-secondary-light px-1 text-start">{{ $ar('invoice_number') }}</th>
-                            <th class="border border-secondary-light px-1 text-start">{{ $ar('materials') }}</th>
-                            <th class="border border-secondary-light px-1 text-start">{{ $ar('amount') }}</th>
+                            <th>{{ $ar('merchant') }}</th>
+                            <th>{{ $ar('invoice_number') }}</th>
+                            <th>{{ $ar('materials') }}</th>
+                            <th>{{ $ar('amount') }}</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($invoices as $invoice)
                             <tr>
-                                <td class="border border-secondary-light px-1">{{ $invoice->merchant }}</td>
-                                <td class="border border-secondary-light px-1" dir="ltr">{{ $invoice->number }}</td>
-                                <td class="border border-secondary-light px-1">{{ $invoice->description_ar }}</td>
-                                <td class="border border-secondary-light px-1"><x-money :amount="$invoice->amount" :currency="$invoice->currency" /></td>
+                                <td>{{ $invoice->merchant }}</td>
+                                <td dir="ltr">{{ $invoice->number }}</td>
+                                <td>{{ $invoice->description_ar }}</td>
+                                <td><x-money :amount="$invoice->amount" :currency="$invoice->currency" /></td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -181,45 +183,49 @@
             <section class="mf-page">
                 <img class="mf-bg" src="{{ $page('letterhead') }}" alt="">
                 <div class="mf-body">
-                    <h1 class="mb-4 text-center text-xl font-bold">{{ $ar('titles.protocol') }} <span dir="ltr">· {{ $en('titles.protocol') }}</span></h1>
-                    <div class="grid grid-cols-2 gap-x-6 gap-y-1">
+                    <h1 class="mf-title">{{ $ar('titles.protocol') }} <span dir="ltr">· {{ $en('titles.protocol') }}</span></h1>
+                    <div class="mf-info">
                         <div>{{ $ar('beneficiary_name') }} <b>{{ $name }}</b> · <span dir="ltr">{{ $file->name_en }}</span></div>
                         <div>{{ $ar('national_number') }} <b dir="ltr">{{ $file->national_number }}</b></div>
                         <div>{{ $ar('project_number') }} <b dir="ltr">{{ $file->project_number }}</b></div>
                         <div>{{ $ar('donor') }} <b>{{ $funder }}</b></div>
                     </div>
-                    <table class="mt-3 w-full border-collapse text-sm" data-test="print-invoices">
+                    <table class="mf-table" data-test="print-invoices">
                         <thead>
-                            <tr class="bg-primary text-white">
-                                <th class="border border-primary px-2 py-1 text-start">#</th>
-                                <th class="border border-primary px-2 py-1 text-start">{{ $ar('invoice_number') }}<br><span dir="ltr">{{ $en('invoice_number') }}</span></th>
-                                <th class="border border-primary px-2 py-1 text-start">{{ $ar('date') }}<br><span dir="ltr">{{ $en('date') }}</span></th>
-                                <th class="border border-primary px-2 py-1 text-start">{{ $ar('description') }}</th>
-                                <th class="border border-primary px-2 py-1 text-start" dir="ltr">{{ $en('description') }}</th>
-                                <th class="border border-primary px-2 py-1 text-start">{{ $ar('amount') }}<br><span dir="ltr">{{ $en('amount') }}</span></th>
+                            <tr>
+                                <th>#</th>
+                                <th>{{ $ar('invoice_number') }}<br><span dir="ltr">{{ $en('invoice_number') }}</span></th>
+                                <th>{{ $ar('date') }}<br><span dir="ltr">{{ $en('date') }}</span></th>
+                                <th>{{ $ar('description') }}</th>
+                                <th dir="ltr">{{ $en('description') }}</th>
+                                <th>{{ $ar('amount') }}<br><span dir="ltr">{{ $en('amount') }}</span></th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach ($invoices as $index => $invoice)
                                 <tr>
-                                    <td class="border border-secondary-light px-2 py-1">{{ $index + 1 }}</td>
-                                    <td class="border border-secondary-light px-2 py-1" dir="ltr">{{ $invoice->number }}</td>
-                                    <td class="border border-secondary-light px-2 py-1" dir="ltr">{{ $day($invoice->purchase_date) }}</td>
-                                    <td class="border border-secondary-light px-2 py-1">{{ $invoice->description_ar }}@if ($invoice->is_seizure) ({{ $ar('seizure_invoice') }})@endif</td>
-                                    <td class="border border-secondary-light px-2 py-1" dir="ltr">{{ $invoice->description_en }}@if ($invoice->is_seizure) ({{ $en('seizure_invoice') }})@endif</td>
-                                    <td class="border border-secondary-light px-2 py-1"><x-money :amount="$invoice->loan_amount" :currency="$file->currency" /></td>
+                                    <td>{{ $index + 1 }}</td>
+                                    <td dir="ltr">{{ $invoice->number }}</td>
+                                    <td dir="ltr">{{ $day($invoice->purchase_date) }}</td>
+                                    <td>{{ $invoice->description_ar }}@if ($invoice->is_seizure) ({{ $ar('seizure_invoice') }})@endif</td>
+                                    <td dir="ltr">{{ $invoice->description_en }}@if ($invoice->is_seizure) ({{ $en('seizure_invoice') }})@endif</td>
+                                    <td><x-money :amount="$invoice->loan_amount" :currency="$file->currency" /></td>
                                 </tr>
                             @endforeach
-                            <tr class="font-semibold">
-                                <td class="border border-secondary-light px-2 py-1" colspan="5">{{ $ar('total') }} / {{ $en('total') }}</td>
-                                <td class="border border-secondary-light px-2 py-1"><x-money :amount="$totals['invoiced']" :currency="$file->currency" /></td>
+                            <tr class="mf-strong">
+                                <td colspan="5">{{ $ar('total') }} / {{ $en('total') }}</td>
+                                <td><x-money :amount="$totals['invoiced']" :currency="$file->currency" /></td>
                             </tr>
                         </tbody>
                     </table>
-                    <p class="mt-3 font-semibold">{{ $words['ar'] }}</p>
-                    <p class="font-semibold" dir="ltr">{{ $words['en'] }}</p>
-                    <p class="mt-3">{{ $ar('received_all') }}<br><span dir="ltr">{{ $en('received_all') }}</span></p>
-                    @include('micro-files.signatures', ['roles' => [$ar('beneficiary').' / '.$en('beneficiary'), $ar('project_manager').' / '.$en('project_manager'), $ar('accounting').' / '.$en('accounting')]])
+                    <p class="mf-gap mf-strong">{{ $words['ar'] }}</p>
+                    <p class="mf-strong" dir="ltr">{{ $words['en'] }}</p>
+                    <p class="mf-gap">{{ $ar('received_all') }}<br><span dir="ltr">{{ $en('received_all') }}</span></p>
+                    <div class="mf-signs-row">
+                        <span class="mf-sign">{{ $ar('beneficiary') }} / {{ $en('beneficiary') }}</span>
+                        <span class="mf-sign">{{ $ar('project_manager') }} / {{ $en('project_manager') }}</span>
+                        <span class="mf-sign">{{ $ar('accounting') }} / {{ $en('accounting') }}</span>
+                    </div>
                 </div>
             </section>
         @endif
@@ -229,22 +235,22 @@
             <section class="mf-page" data-test="print-annex">
                 <img class="mf-bg" src="{{ $page('letterhead') }}" alt="">
                 <div class="mf-body">
-                    <h2 class="mb-3 text-center text-lg font-bold">{{ $ar('annex', ['form' => $ar('titles.'.$form)]) }}</h2>
-                    <table class="w-full border-collapse text-sm">
+                    <h2 class="mf-title">{{ $ar('annex', ['form' => $ar('titles.'.$form)]) }}</h2>
+                    <table class="mf-table">
                         <tbody>
                             @foreach ($rest as $index => $row)
                                 <tr>
-                                    <td class="border border-secondary-light px-2 py-1">{{ $rooms[$form] + $index + 1 }}</td>
+                                    <td>{{ $rooms[$form] + $index + 1 }}</td>
                                     @if ($form === 'order')
-                                        <td class="border border-secondary-light px-2 py-1"><x-money :amount="$row->amount" :currency="$row->currency" /></td>
-                                        <td class="border border-secondary-light px-2 py-1" dir="ltr">{{ $row->number }}</td>
-                                        <td class="border border-secondary-light px-2 py-1">{{ $row->description_ar }}</td>
-                                        <td class="border border-secondary-light px-2 py-1">{{ $row->merchant }}</td>
+                                        <td><x-money :amount="$row->amount" :currency="$row->currency" /></td>
+                                        <td dir="ltr">{{ $row->number }}</td>
+                                        <td>{{ $row->description_ar }}</td>
+                                        <td>{{ $row->merchant }}</td>
                                     @else
-                                        <td class="border border-secondary-light px-2 py-1">{{ $row->name }}</td>
-                                        <td class="border border-secondary-light px-2 py-1">{{ $row->kind }}</td>
-                                        <td class="border border-secondary-light px-2 py-1" dir="ltr">{{ $quantity($row->quantity) }}</td>
-                                        <td class="border border-secondary-light px-2 py-1">{{ $ar('conditions.'.$row->condition) }}</td>
+                                        <td>{{ $row->name }}</td>
+                                        <td>{{ $row->kind }}</td>
+                                        <td dir="ltr">{{ $quantity($row->quantity) }}</td>
+                                        <td>{{ $ar('conditions.'.$row->condition) }}</td>
                                     @endif
                                 </tr>
                             @endforeach
