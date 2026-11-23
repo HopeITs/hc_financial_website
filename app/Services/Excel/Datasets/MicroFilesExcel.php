@@ -17,8 +17,9 @@ use Illuminate\Support\Facades\DB;
 /**
  * Beneficiaries' files from Excel (finance request of 2026-11-23): one row per beneficiary, saved as a new file with no
  * voucher, exactly as the files screen saves it. A row whose project number is already a file still being prepared
- * (new or sent back) changes that file and keeps its purchase list; a file already sent for approval is refused.
- * Funding is a project's code, or the funder and the city of an instalment fund.
+ * (new or sent back) changes that file; a file already sent for approval is left as it is. Funding is a project's code,
+ * or the funder and the city of an instalment fund. The purchase list is an optional second sheet, under each file's
+ * project number: when it lists a file's items they replace the file's list, otherwise the file keeps its own.
  */
 class MicroFilesExcel extends ExcelDataset
 {
@@ -97,8 +98,19 @@ class MicroFilesExcel extends ExcelDataset
             $problems[] = __('excel.twice');
         }
 
+        $items = $this->itemsFor($cells['project_number'], $context);
+
+        // A file already sent for approval is changed on the screen only: an export imported again leaves it as it is.
         if ($existing !== null && ! in_array($existing->stage, MicroLoan::EDITABLE, true)) {
-            $problems[] = __('excel.micro_file_sent', ['stage' => __('micro.stages.'.$existing->stage)]);
+            return $items === []
+                ? ['action' => 'skip', 'problems' => $problems]
+                : ['action' => 'skip', 'problems' => [...$problems, __('excel.micro_file_sent', ['stage' => __('micro.stages.'.$existing->stage)])]];
+        }
+
+        foreach ($items as $item) {
+            if ($item['condition'] === null) {
+                $problems[] = __('excel.bad_condition', ['row' => $item['row']]);
+            }
         }
 
         if ($problems !== []) {
@@ -109,7 +121,7 @@ class MicroFilesExcel extends ExcelDataset
         DB::beginTransaction();
 
         try {
-            $this->saveFile($cells, $user, $existing);
+            $this->saveFile($cells, $user, $existing, $context);
         } catch (LoanException $refused) {
             $problems = $refused->problems;
         } finally {
@@ -122,24 +134,103 @@ class MicroFilesExcel extends ExcelDataset
     protected function saveRow(array $cells, User $user, array $context): void
     {
         try {
-            $this->saveFile($cells, $user, $this->existing($cells));
+            $this->saveFile($cells, $user, $this->existing($cells), $context);
         } catch (LoanException $refused) {
             throw new ExcelException($refused->problems);
         }
     }
 
+    /** The purchase list, an optional second sheet: one row per item, under the file's project number. */
+    public function extraSheet(): ?array
+    {
+        return ['key' => 'micro_items', 'columns' => ['project_number', 'item', 'item_kind', 'quantity', 'condition']];
+    }
+
+    public function extraExampleRows(array $context): array
+    {
+        return [
+            ['3520', 'Sewing machine', 'Juki', 1, 'new'],
+            ['3520', 'Work table', '', 2, 'used'],
+            ['3521', 'Industrial oven', '', 1, 'new'],
+        ];
+    }
+
+    public function extraExportRows(array $context): iterable
+    {
+        foreach (MicroLoan::query()->whereNotNull('requested_amount')->with('items')->orderBy('id')->get() as $file) {
+            foreach ($file->items as $item) {
+                yield [(string) $file->project_number, $item->name, (string) $item->kind, (float) $item->quantity, $item->condition];
+            }
+        }
+    }
+
+    /** Every item must belong to a file of the main sheet, by its project number. */
+    public function extraProblems(array $read, array $context): array
+    {
+        $numbers = array_filter(array_map(fn (array $row): string => trim($row['cells'][0] ?? ''), $read));
+        $problems = [];
+
+        foreach ($context['extra'] ?? [] as $row) {
+            $number = trim($row['cells'][0] ?? '');
+            if (! in_array($number, $numbers, true)) {
+                $problems[] = __('excel.item_without_file', ['row' => $row['row'], 'number' => $number !== '' ? $number : '—']);
+            }
+        }
+
+        return $problems;
+    }
+
+    /**
+     * The purchase list a file takes from the second sheet, with each row's number in the sheet; a condition that is
+     * neither new nor used is null.
+     *
+     * @param  array<string, mixed>  $context
+     * @return list<array{row: int, name: string, kind: string, quantity: string, condition: string|null}>
+     */
+    private function itemsFor(string $projectNumber, array $context): array
+    {
+        if ($projectNumber === '') {
+            return [];
+        }
+
+        $items = [];
+
+        foreach ($context['extra'] ?? [] as $row) {
+            $cells = array_map(fn (mixed $cell): string => trim((string) $cell), $row['cells']);
+            if ($cells[0] !== $projectNumber) {
+                continue;
+            }
+
+            $condition = mb_strtolower($cells[4] ?? '');
+            $items[] = [
+                'row' => (int) $row['row'], 'name' => $cells[1] ?? '', 'kind' => $cells[2] ?? '', 'quantity' => $cells[3] ?? '',
+                'condition' => match ($condition) {
+                    '', 'new', 'جديد' => MicroItem::NEW,
+                    'used', 'مستعمل' => MicroItem::USED,
+                    default => null,
+                },
+            ];
+        }
+
+        return $items;
+    }
+
     /**
      * @param  array<string, string>  $cells
+     * @param  array<string, mixed>  $context
      *
      * @throws LoanException
      */
-    private function saveFile(array $cells, User $user, ?MicroLoan $existing): void
+    private function saveFile(array $cells, User $user, ?MicroLoan $existing, array $context): void
     {
         $funding = $cells['project'] !== '' ? 'project:'.$cells['project'] : 'fund:'.$cells['fund_funder'].'|'.$cells['fund_city'];
-        // A file changed from Excel keeps the purchase list typed on the screen.
-        $items = $existing?->items()->get()->map(fn (MicroItem $item): array => [
-            'name' => $item->name, 'kind' => (string) $item->kind, 'quantity' => (string) $item->quantity, 'condition' => $item->condition,
-        ])->all() ?? [];
+        $fromSheet = $this->itemsFor($cells['project_number'], $context);
+        // The purchase list of the second sheet, when it has the file's items; otherwise a changed file keeps its own.
+        $items = $fromSheet !== []
+            ? array_map(fn (array $item): array => ['name' => $item['name'], 'kind' => $item['kind'], 'quantity' => $item['quantity'], 'condition' => (string) $item['condition']], $fromSheet)
+            : ($existing?->items()->get()->map(fn (MicroItem $item): array => [
+                'name' => $item->name, 'kind' => (string) $item->kind, 'quantity' => (string) $item->quantity, 'condition' => $item->condition,
+            ])->all() ?? []);
 
         $this->files->save($user, $existing, [
             'beneficiary' => $cells['beneficiary'], 'name_en' => $cells['name_en'], 'national_number' => $cells['national_number'], 'mobile' => $cells['mobile'],

@@ -42,6 +42,9 @@ class ExcelTools extends Component
     /** @var list<array{row: int, cells: list<string>}> the rows read from the file */
     public array $rows = [];
 
+    /** @var list<array{row: int, cells: list<string>}> the rows read from the optional second sheet */
+    public array $extra = [];
+
     public string $fileName = '';
 
     /** @var list<string> */
@@ -61,6 +64,7 @@ class ExcelTools extends Component
 
         return $this->download($sheet->write([
             __('excel.sheet.'.$this->kind) => ['headings' => $dataset->exportHeadings(), 'rows' => $dataset->exportRows($this->context)],
+            ...$this->extraSheet($dataset, $dataset->extraExportRows($this->context)),
         ], $this->rtl()), $dataset->fileName().'-'.now()->format('Y-m-d').'.xlsx');
     }
 
@@ -71,6 +75,7 @@ class ExcelTools extends Component
 
         return $this->download($sheet->write([
             __('excel.sheet.'.$this->kind) => ['headings' => $dataset->headings(), 'rows' => $dataset->exampleRows($this->context)],
+            ...$this->extraSheet($dataset, $dataset->extraExampleRows($this->context)),
             ...$dataset->referenceSheets($this->context),
         ], $this->rtl()), $dataset->fileName().'-template.xlsx');
     }
@@ -79,25 +84,31 @@ class ExcelTools extends Component
     {
         $dataset = $this->dataset();
         $this->authorizeImport($dataset);
-        $this->reset('rows', 'problems', 'fileName', 'upload');
+        $this->reset('rows', 'extra', 'problems', 'fileName', 'upload');
         $this->resetErrorBag();
         $this->showImport = true;
     }
 
     public function closeImport(): void
     {
-        $this->reset('rows', 'problems', 'fileName', 'upload', 'showImport');
+        $this->reset('rows', 'extra', 'problems', 'fileName', 'upload', 'showImport');
     }
 
     public function updatedUpload(ExcelSheet $sheet): void
     {
         $dataset = $this->dataset();
         $this->authorizeImport($dataset);
-        $this->reset('rows', 'problems');
+        $this->reset('rows', 'extra', 'problems');
         $this->validate(['upload' => ['required', 'file', 'mimes:xlsx', 'max:5120']]);
 
         try {
             $this->rows = $sheet->read($this->upload->getRealPath(), count($dataset->columns()), ExcelDataset::MAX_ROWS);
+            // The optional second sheet, by its name in either language (the template may come from either).
+            if (($extra = $dataset->extraSheet()) !== null) {
+                $this->extra = $sheet->readNamed($this->upload->getRealPath(), [
+                    __('excel.sheet.'.$extra['key'], [], 'ar'), __('excel.sheet.'.$extra['key'], [], 'en'),
+                ], count($extra['columns']), ExcelDataset::MAX_ROWS);
+            }
             $this->fileName = $this->upload->getClientOriginalName();
         } catch (InvalidArgumentException $failed) {
             $this->problems = [$failed->getMessage()];
@@ -112,7 +123,7 @@ class ExcelTools extends Component
         $this->authorizeImport($dataset);
 
         try {
-            $saved = $dataset->save($this->rows, $this->user(), $this->context);
+            $saved = $dataset->save($this->rows, $this->user(), $this->workContext());
         } catch (ExcelException $refused) {
             $this->problems = $refused->problems;
 
@@ -126,13 +137,16 @@ class ExcelTools extends Component
     public function render(): View
     {
         $dataset = $this->dataset();
-        $reviewed = $this->rows !== [] ? $dataset->review($this->rows, $this->user(), $this->context) : [];
+        $reviewed = $this->rows !== [] ? $dataset->review($this->rows, $this->user(), $this->workContext()) : [];
+        $extraProblems = $this->rows !== [] ? $dataset->extraProblems($this->rows, $this->workContext()) : [];
 
         return view('livewire.excel-tools', [
             'columns' => $dataset->columns(),
             'headings' => $dataset->headings(),
             'reviewed' => $reviewed,
-            'broken' => count(array_filter($reviewed, fn (array $row): bool => $row['problems'] !== [])),
+            'broken' => count(array_filter($reviewed, fn (array $row): bool => $row['problems'] !== [])) + count($extraProblems),
+            'extraProblems' => $extraProblems,
+            'extraName' => ($extra = $dataset->extraSheet()) !== null ? __('excel.sheet.'.$extra['key']) : null,
             'canImport' => $dataset->importable() && Gate::allows('screen', [$dataset->screen(), $dataset->importAction()]),
         ]);
     }
@@ -141,6 +155,29 @@ class ExcelTools extends Component
     {
         abort_unless($dataset->importable(), 403);
         Gate::authorize('screen', [$dataset->screen(), $dataset->importAction()]);
+    }
+
+    /**
+     * The context the dataset checks and saves with: the screen's, and the rows of the optional second sheet.
+     *
+     * @return array<string, mixed>
+     */
+    private function workContext(): array
+    {
+        return $this->context + ['extra' => $this->extra];
+    }
+
+    /**
+     * The optional second sheet of a template or an export, right after the main one.
+     *
+     * @param  iterable<list<string|int|float|null>>  $rows
+     * @return array<string, array{headings: list<string>, rows: iterable<list<string|int|float|null>>}>
+     */
+    private function extraSheet(ExcelDataset $dataset, iterable $rows): array
+    {
+        $extra = $dataset->extraSheet();
+
+        return $extra === null ? [] : [__('excel.sheet.'.$extra['key']) => ['headings' => $dataset->extraHeadings(), 'rows' => $rows]];
     }
 
     private function dataset(): ExcelDataset

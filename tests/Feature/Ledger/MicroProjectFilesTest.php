@@ -282,3 +282,45 @@ it('imports beneficiaries\' files from Excel, all or none, and changes a file st
         ->and($file->items()->pluck('name')->all())->toBe(['Oven'])
         ->and(MicroLoan::query()->count())->toBe(2);
 });
+
+it('takes the purchase list from an optional second sheet, by project number, and leaves files already sent as they are', function () {
+    $samir = ['3600', 'Samir', '', '', '', '', 'Bakery', 'Aleppo', 'F2F', '', '', 'USD', '', '2500', '', '50', '', '1'];
+    $items = [
+        ['row' => 2, 'cells' => ['3600', 'Oven', 'Industrial', '1', 'new']],
+        ['row' => 3, 'cells' => ['3600', 'Table', '', '2', 'مستعمل']],
+    ];
+
+    // An item of no file of the first sheet holds the whole import back.
+    Livewire::actingAs($this->accountant)->test(ExcelTools::class, ['kind' => 'micro_files'])
+        ->set('rows', [['row' => 2, 'cells' => $samir]])
+        ->set('extra', [...$items, ['row' => 4, 'cells' => ['9999', 'Chair', '', '1', 'new']]])
+        ->assertSeeHtml('data-test="excel-extra-problems"')
+        ->call('save')->assertNotDispatched('excel-imported');
+
+    expect(MicroLoan::query()->count())->toBe(0);
+
+    Livewire::actingAs($this->accountant)->test(ExcelTools::class, ['kind' => 'micro_files'])
+        ->set('rows', [['row' => 2, 'cells' => $samir]])
+        ->set('extra', $items)
+        ->call('save')->assertDispatched('excel-imported');
+
+    $file = MicroLoan::query()->sole();
+    expect($file->items()->get()->map(fn ($item): array => [$item->name, (string) $item->quantity, $item->condition])->all())
+        ->toBe([['Oven', '1.00', 'new'], ['Table', '2.00', 'used']]);
+
+    // Once sent for approval, the file is left as it is, and its purchase list cannot change from Excel.
+    app(MicroFiles::class)->addQuote($this->accountant, $file, 'Samir', MicroQuote::BENEFICIARY, '', '2500', 'USD', null);
+    app(MicroFiles::class)->addQuote($this->accountant, $file, 'Abu Sami', MicroQuote::MERCHANT, '', '2600', 'USD', null);
+    app(MicroFiles::class)->submit($file);
+    $samir[13] = '9000';
+
+    Livewire::actingAs($this->accountant)->test(ExcelTools::class, ['kind' => 'micro_files'])
+        ->set('rows', [['row' => 2, 'cells' => $samir]])
+        ->call('save')->assertDispatched('excel-imported');
+    expect((string) $file->fresh()->requested_amount)->toBe('2500.00');
+
+    Livewire::actingAs($this->accountant)->test(ExcelTools::class, ['kind' => 'micro_files'])
+        ->set('rows', [['row' => 2, 'cells' => $samir]])
+        ->set('extra', $items)
+        ->call('save')->assertNotDispatched('excel-imported');
+});
