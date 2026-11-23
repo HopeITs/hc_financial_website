@@ -9,6 +9,7 @@ use App\Services\Excel\Datasets\DailyRatesExcel;
 use App\Services\Excel\Datasets\DonorsExcel;
 use App\Services\Excel\Datasets\InstalmentsExcel;
 use App\Services\Excel\Datasets\LoanScheduleExcel;
+use App\Services\Excel\Datasets\MicroFilesExcel;
 use App\Services\Excel\Datasets\MicroLoansExcel;
 use App\Services\Excel\Datasets\MonthlyRatesExcel;
 
@@ -26,6 +27,7 @@ class ExcelKinds
         'advances' => AdvancesExcel::class,
         'micro_loans' => MicroLoansExcel::class,
         'loan_schedule' => LoanScheduleExcel::class,
+        'micro_files' => MicroFilesExcel::class,
     ];
 
     public function for(string $kind): ExcelDataset

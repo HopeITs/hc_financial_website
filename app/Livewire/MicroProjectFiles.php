@@ -20,6 +20,7 @@ use App\Support\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -302,6 +303,14 @@ class MicroProjectFiles extends Component
             $this->load($file);
             $this->notice = __('micro.closed', ['voucher' => $file->closing_voucher_id ?? '—']);
         });
+    }
+
+    /** The Excel tools saved files: show them with their message. */
+    #[On('excel-imported')]
+    public function excelImported(string $message): void
+    {
+        $this->clearFeedback();
+        $this->notice = $message;
     }
 
     /** The first instalment proposed two months after the signature. */
