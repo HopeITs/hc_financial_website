@@ -2,21 +2,16 @@
 
 namespace App\Livewire;
 
-use App\Enums\FundSource;
 use App\Enums\ScreenAction;
 use App\Livewire\Concerns\HasFormDraft;
 use App\Models\GlAccount;
-use App\Models\GlBudgetLine;
-use App\Models\GlProject;
 use App\Models\MicroLoan;
 use App\Models\User;
 use App\Services\Ledger\LedgerRuleException;
-use App\Services\Loans\InstalmentFunds;
 use App\Services\Loans\LoanException;
 use App\Services\Loans\MicroLoans as Loans;
-use Carbon\CarbonImmutable;
 use App\Services\Treasury\DailyRates;
-use App\Services\Treasury\MonthlyRates;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
@@ -24,53 +19,18 @@ use Livewire\Attributes\Url;
 use Livewire\Component;
 
 /**
- * Micro project loans: a new beneficiary's loan and grant with the generated schedule, and the instalments received.
- * Both save a voucher waiting for approval (the "Payments (micro loans)" screen of config/navigation.php).
+ * Micro project loans: the instalments received, and each loan's card (schedule, payments, reschedule, pay off, write
+ * off). A loan opens from its micro-project file when the beneficiary signs the delivery protocol (MicroProjectFiles);
+ * it is no longer typed here (finance decisions of 2026-11-23).
  */
 #[Layout('components.layouts.app')]
 class MicroLoans extends Component
 {
     use HasFormDraft;
 
-    #[Url]
-    public string $tab = 'loans';
-
-    public string $beneficiary = '';
-
-    public string $nationalNumber = '';
-
-    public string $mobile = '';
-
-    public string $partners = '';
-
-    public string $intervalMonths = '1';
-
-    public string $project = '';
-
-    /** "funder|city" to fund the loan from an instalment fund (no project), or '' for a project's budget. */
-    public string $fundKey = '';
-
-    public string $loanAmount = '';
-
-    public string $grantAmount = '';
-
-    public string $currency = 'USD';
-
-    public string $rate = '';
-
     public string $date = '';
 
-    public string $instalments = '12';
-
-    public string $firstDue = '';
-
     public string $cashAccount = '';
-
-    public string $budgetLine = '';
-
-    public string $fundSource = 'donor_grant';
-
-    public string $requestId = '';
 
     public string $loanId = '';
 
@@ -106,45 +66,6 @@ class MicroLoans extends Component
     public function mount(): void
     {
         $this->date = now()->toDateString();
-        $this->firstDue = now()->addMonth()->toDateString();
-    }
-
-    public function open(Loans $loans): void
-    {
-        $this->resetFeedback();
-        $user = $this->guard(ScreenAction::Create);
-
-        $date = $this->day($this->date);
-        $firstDue = $this->day($this->firstDue);
-
-        if ($date === null || $firstDue === null) {
-            $this->failures = [__('loans.problem.date')];
-
-            return;
-        }
-
-        try {
-            $result = $loans->open(
-                $this->beneficiary, $this->project, $this->loanAmount, $this->grantAmount, $this->currency, $this->rate, $date,
-                (int) $this->instalments, $firstDue, $this->cashAccount, $this->budgetLine,
-                FundSource::tryFrom($this->fundSource) ?? FundSource::DonorGrant, (int) $user->getAuthIdentifier(),
-                ctype_digit($this->requestId) ? (int) $this->requestId : null,
-                $this->nationalNumber, $this->mobile, $this->partners, (int) $this->intervalMonths,
-                ...$this->fundParts(),
-            );
-        } catch (LoanException $e) {
-            $this->failures = $e->problems;
-
-            return;
-        } catch (LedgerRuleException $e) {
-            $this->failures = array_map(fn ($violation) => $violation->message, $e->violations);
-
-            return;
-        }
-
-        $this->forgetDraft();
-        $this->notice = __('loans.opened', ['number' => $result['voucher']->id]);
-        $this->beneficiary = $this->loanAmount = $this->grantAmount = $this->nationalNumber = $this->mobile = $this->partners = '';
     }
 
     public function receive(Loans $loans): void
@@ -153,7 +74,7 @@ class MicroLoans extends Component
         $user = $this->guard(ScreenAction::Create);
 
         $date = $this->day($this->date);
-        $loan = MicroLoan::query()->find((int) $this->loanId);
+        $loan = MicroLoan::query()->active()->find((int) $this->loanId);
 
         if ($date === null || $loan === null) {
             $this->failures = [$date === null ? __('loans.problem.date') : __('loans.problem.loan')];
@@ -176,17 +97,6 @@ class MicroLoans extends Component
         $this->forgetDraft();
         $this->notice = __('loans.received', ['number' => $voucher->id]);
         $this->paymentAmount = '';
-    }
-
-    /** A pound loan is given at the month's rate by default, like any payment; it can be changed. */
-    public function updatedCurrency(): void
-    {
-        $this->fillMonthlyRate();
-    }
-
-    public function updatedDate(): void
-    {
-        $this->fillMonthlyRate();
     }
 
     /** Opens a loan's card: its schedule, payments and the beneficiary's details. */
@@ -230,7 +140,7 @@ class MicroLoans extends Component
     /** On the payments tab: the amount becomes everything the chosen loan still owes. */
     public function fillOwed(Loans $loans): void
     {
-        $loan = MicroLoan::query()->find((int) $this->loanId);
+        $loan = MicroLoan::query()->active()->find((int) $this->loanId);
         if ($loan !== null) {
             $this->paymentAmount = $loans->payOffAmount($loan);
         }
@@ -241,7 +151,6 @@ class MicroLoans extends Component
     {
         $this->guard(ScreenAction::Create);
         $loan = $this->cardLoan();
-        $this->tab = 'payments';
         $this->loanId = (string) $loan->id;
         $this->paymentAmount = $loans->payOffAmount($loan);
         $this->date = CarbonImmutable::today()->toDateString();
@@ -320,54 +229,14 @@ class MicroLoans extends Component
         $this->notice = $message;
     }
 
-    /** @return array{fundFunder: string|null, fundCity: string|null} the chosen instalment fund, for MicroLoans::open */
-    private function fundParts(): array
-    {
-        if ($this->fundKey === '') {
-            return ['fundFunder' => null, 'fundCity' => null];
-        }
-
-        [$funder, $city] = array_pad(explode('|', $this->fundKey, 2), 2, '');
-
-        return ['fundFunder' => $funder, 'fundCity' => $city];
-    }
-
     private function cardLoan(): MicroLoan
     {
         return MicroLoan::query()->findOrFail((int) $this->card);
     }
 
-    private function fillMonthlyRate(): void
-    {
-        $date = $this->day($this->date);
-        // A loan in pounds, or one in dollars paid from a pound account, takes the month's pound rate.
-        $pounds = $this->currency === 'SYP' || GlAccount::query()->whereKey($this->cashAccount)->value('currency') === 'SYP';
-
-        if ($pounds && $date !== null) {
-            $monthly = app(MonthlyRates::class)->forDay('SYP', $date);
-            $this->rate = $monthly !== null ? rtrim(rtrim($monthly['rate'], '0'), '.') : $this->rate;
-        }
-    }
-
-    public function updatedCashAccount(): void
-    {
-        if ($this->tab !== 'payments') {
-            $this->fillMonthlyRate();
-        }
-    }
-
-    public function updatedFundKey(): void
-    {
-        $this->cashAccount = '';
-        $this->budgetLine = '';
-    }
-
     protected function draftFields(): array
     {
-        return [
-            'tab', 'beneficiary', 'nationalNumber', 'mobile', 'partners', 'intervalMonths', 'project', 'fundKey', 'loanAmount', 'grantAmount',
-            'currency', 'rate', 'date', 'instalments', 'firstDue', 'cashAccount', 'budgetLine', 'fundSource', 'requestId', 'loanId', 'paymentAmount',
-        ];
+        return ['date', 'cashAccount', 'loanId', 'paymentAmount'];
     }
 
     protected function draftScreen(): string
@@ -384,20 +253,15 @@ class MicroLoans extends Component
     {
         $this->guard(ScreenAction::View);
         $today = CarbonImmutable::today();
-        $currency = $this->currency;
 
-        if ($this->tab === 'payments' && ($loan = MicroLoan::query()->find((int) $this->loanId)) !== null) {
-            $currency = $loan->currency;
-        }
-
-        $rows = MicroLoan::query()->with('instalments')->orderBy('project_code')->orderBy('beneficiary')->orderBy('id')->get()
+        $rows = MicroLoan::query()->active()->with('instalments')->orderBy('project_code')->orderBy('beneficiary')->orderBy('id')->get()
             ->map(function (MicroLoan $loan) use ($loans, $today): array {
                 $late = $loans->latePayments($loan, $today);
 
                 return ['loan' => $loan, 'arrears' => $loans->arrears($loan, $today), 'late' => $late, 'flagged' => $late >= Loans::LATE_FLAG];
             });
 
-        $paymentLoan = $this->tab === 'payments' ? MicroLoan::query()->find((int) $this->loanId) : null;
+        $paymentLoan = MicroLoan::query()->active()->find((int) $this->loanId);
         $paymentDay = $this->day($this->date) ?? $today;
         $daily = $paymentLoan !== null && $paymentLoan->currency !== 'USD' ? app(DailyRates::class)->rateFor($paymentLoan->currency, $paymentDay) : null;
         $cardLoan = $this->card !== '' ? MicroLoan::query()->with(['instalments', 'payments.voucher', 'disbursement'])->find((int) $this->card) : null;
@@ -419,16 +283,9 @@ class MicroLoans extends Component
             ],
             'today' => $today,
             'rows' => $rows,
-            'projects' => GlProject::query()->where('is_general_account', false)->orderBy('code')->get(['code', 'name']),
-            'budgetLines' => GlBudgetLine::query()->when($this->project !== '', fn ($query) => $query->where('project_code', $this->project))->orderBy('key')->get(['key', 'name', 'account_code']),
-            // A new loan in dollars can be paid in pounds; a loan from an instalment fund is paid from that city's cash.
+            // An instalment is received in the loan's currency.
             'cashAccounts' => GlAccount::query()->where('is_cash', true)->where('is_active', true)
-                ->whereIn('currency', $this->tab !== 'payments' && $currency === 'USD' ? ['USD', 'SYP'] : [$currency])
-                ->when($this->tab !== 'payments' && $this->fundKey !== '', fn ($query) => $query->where('city', $this->fundParts()['fundCity']))
-                ->orderBy('code')->get(),
-            'fundChoices' => app(InstalmentFunds::class)->choices($today),
-            'paysInPounds' => $this->currency === 'SYP' || GlAccount::query()->whereKey($this->cashAccount)->value('currency') === 'SYP',
-            'fundSources' => FundSource::cases(),
+                ->where('currency', $paymentLoan->currency ?? 'USD')->orderBy('code')->get(),
             'canCreate' => auth()->user() instanceof User && auth()->user()->canOnScreen('payments', ScreenAction::Create),
         ]);
     }

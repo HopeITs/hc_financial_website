@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\FundSource;
 use App\Enums\RoleId;
 use App\Livewire\MicroLoans;
 use App\Livewire\Salaries;
@@ -11,6 +12,8 @@ use App\Models\LedgerRequest;
 use App\Models\MicroLoan;
 use App\Models\PayrollSplit;
 use App\Models\User;
+use App\Services\Loans\MicroLoans as LoanService;
+use Carbon\CarbonImmutable;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
@@ -111,28 +114,30 @@ it('drafts a rate proposal on transfers, restores it, and forgets it once the ra
         ->and(fdBDraft($ann->getKey(), 'alloc'))->toBeNull();
 });
 
-it('drafts a loan on micro loans, restores it, and forgets it once the loan is opened', function () {
+it('drafts an instalment on micro loans, restores it, and forgets it once the instalment is received', function () {
     $ann = fdBUser();
     $request = LedgerRequest::query()->create([
         'type' => 'purchase', 'project_code' => 'F2F', 'amount' => '5000.00', 'currency' => 'USD', 'status' => 'approved', 'requested_by' => 3,
     ]);
+    $loan = app(LoanService::class)->open(
+        'Huda', 'F2F', '1000', '0', 'USD', '', CarbonImmutable::parse('2026-03-01'), 4, CarbonImmutable::parse('2026-04-30'), '1111', '',
+        FundSource::DonorGrant, 5, $request->id,
+    )['loan'];
 
     Livewire::actingAs($ann)->test(MicroLoans::class)
-        ->set('beneficiary', 'Huda')->set('project', 'F2F')->set('loanAmount', '1000')->set('grantAmount', '200')
-        ->set('instalments', '4')->set('cashAccount', '1111')->set('budgetLine', 'F2F|Grants')->set('requestId', (string) $request->id)
+        ->set('loanId', (string) $loan->id)->set('paymentAmount', '250')->set('cashAccount', '1111')
         ->call('saveDraft')
         ->assertDispatched('form-clean');
 
     $page = Livewire::actingAs($ann)->test(MicroLoans::class)
         ->assertSeeHtml('data-test="draft-offer"')
-        ->assertSet('beneficiary', '')
+        ->assertSet('paymentAmount', '')
         ->call('restoreDraft')
-        ->assertSet('beneficiary', 'Huda')->assertSet('loanAmount', '1000')->assertSet('instalments', '4')
-        ->assertSet('budgetLine', 'F2F|Grants')->assertSet('requestId', (string) $request->id);
+        ->assertSet('loanId', (string) $loan->id)->assertSet('paymentAmount', '250')->assertSet('cashAccount', '1111');
 
-    $page->call('open')->assertSet('failures', []);
+    $page->call('receive')->assertSet('failures', []);
 
-    expect(MicroLoan::query()->count())->toBe(1)
+    expect(MicroLoan::query()->sole()->owed())->toBe('750.00')
         ->and(fdBDraft($ann->getKey(), 'payments'))->toBeNull();
 });
 

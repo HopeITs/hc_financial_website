@@ -1,7 +1,3 @@
-@php
-    $tabClass = fn (bool $active) => 'rounded-md px-3 py-1.5 text-sm font-medium '.($active ? 'bg-primary text-white' : 'text-secondary-medium hover:bg-secondary-soft dark:text-ink-muted dark:hover:bg-surface-2');
-@endphp
-
 <div class="flex flex-col gap-6 px-4 pb-10 lg:px-8" data-test="micro-loans" x-data="unsavedGuard" data-unsaved-message="{{ __('drafts.leave_warning') }}" x-on:form-clean.window="clean()">
     <x-ui.page-header :title="__('loans.title')" :subtitle="__('loans.intro')">
         <x-slot:actions>
@@ -23,13 +19,12 @@
         </div>
     @endif
 
-    <div class="flex gap-2" role="tablist">
-        <button type="button" role="tab" wire:click="$set('tab', 'loans')" class="{{ $tabClass($tab === 'loans') }}" data-test="tab-loans">{{ __('loans.tabs.loans') }}</button>
-        <button type="button" role="tab" wire:click="$set('tab', 'payments')" class="{{ $tabClass($tab === 'payments') }}" data-test="tab-payments">{{ __('loans.tabs.payments') }}</button>
-    </div>
+    <p class="text-sm text-secondary-medium dark:text-ink-muted" data-test="files-pointer">
+        {{ __('loans.opened_from_files') }}
+        <a href="{{ route(\App\Support\Navigation::routeName('microfiles')) }}" wire:navigate class="underline">{{ __('navigation.screens.microfiles') }}</a>
+    </p>
 
-    @if ($tab === 'payments')
-        <x-ui.panel class="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-4" data-test="payment-form">
+    <x-ui.panel class="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-4" data-test="payment-form">
             <x-ui.form-select wire:model.live="loanId" :label="__('loans.loan')" :placeholder="__('loans.choose')" required>
                 @foreach ($rows as $row)
                     <option value="{{ $row['loan']->id }}">{{ $row['loan']->label() }} · {{ $row['loan']->beneficiary }} ({{ $row['loan']->currency }})</option>
@@ -60,66 +55,6 @@
                 <x-ui.button wire:click="saveDraft" data-test="save-draft">{{ __('drafts.save') }}</x-ui.button>
             </div>
         @endif
-    @else
-        <x-ui.panel class="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-4" data-test="loan-form">
-            <x-ui.form-input wire:model="beneficiary" :label="__('loans.beneficiary')" required />
-            <x-ui.form-input type="text" dir="ltr" wire:model="nationalNumber" :label="__('loans.national_number')" maxlength="30" />
-            <x-ui.form-input type="tel" dir="ltr" wire:model="mobile" :label="__('loans.mobile')" maxlength="50" />
-            <x-ui.form-input wire:model="partners" :label="__('loans.partners')" maxlength="255" />
-            <x-ui.form-select wire:model.live="fundKey" :label="__('loans.funded_from')" :help="__('loans.funded_from_help')" data-test="funded-from">
-                <option value="">{{ __('loans.from_project') }}</option>
-                @foreach ($fundChoices as $key => $label)
-                    <option value="{{ $key }}">{{ __('loans.from_fund', ['fund' => $label]) }}</option>
-                @endforeach
-            </x-ui.form-select>
-            @if ($fundKey === '')
-                <x-ui.form-select wire:model.live="project" :label="__('loans.project')" :placeholder="__('loans.choose')" required>
-                    @foreach ($projects as $option)
-                        <option value="{{ $option->code }}">{{ $option->code }} · {{ $option->name }}</option>
-                    @endforeach
-                </x-ui.form-select>
-            @endif
-            <x-ui.form-input type="text" inputmode="decimal" dir="ltr" wire:model="loanAmount" :label="__('loans.loan_amount')" />
-            <x-ui.form-input type="text" inputmode="decimal" dir="ltr" wire:model="grantAmount" :label="__('loans.grant_amount')" />
-            <x-ui.form-select wire:model.live="currency" :label="__('loans.currency')">
-                <option value="USD">USD</option>
-                <option value="SYP">SYP</option>
-            </x-ui.form-select>
-            @if ($paysInPounds)
-                <x-ui.form-input type="text" inputmode="decimal" dir="ltr" wire:model="rate" :label="__('loans.rate')" :help="$currency === 'USD' ? __('loans.rate_help_usd_in_pounds') : __('loans.rate_help')" required data-test="loan-rate" />
-            @endif
-            <x-ui.form-input type="date" wire:model="date" :label="__('loans.date')" required />
-            <x-ui.form-input type="number" min="1" max="120" wire:model="instalments" :label="__('loans.instalments')" required />
-            <x-ui.form-input type="date" wire:model="firstDue" :label="__('loans.first_due')" required />
-            <x-ui.form-input type="number" min="1" max="12" wire:model="intervalMonths" :label="__('loans.interval')" required />
-            @if ($fundKey === '')
-                <x-ui.form-select wire:model="budgetLine" :label="__('loans.budget_line')" :placeholder="__('loans.choose')" :help="__('loans.budget_line_help')">
-                    @foreach ($budgetLines as $line)
-                        <option value="{{ $line->key }}">{{ $line->name }} · {{ $line->account_code }}</option>
-                    @endforeach
-                </x-ui.form-select>
-            @endif
-            <x-ui.form-select wire:model.live="cashAccount" :label="__('loans.paid_from')" :placeholder="__('loans.choose')" required>
-                @foreach ($cashAccounts as $account)
-                    <option value="{{ $account->code }}">{{ $account->code }} · {{ app()->getLocale() === 'ar' ? $account->name_ar : $account->name_en }}</option>
-                @endforeach
-            </x-ui.form-select>
-            <x-ui.form-input type="number" min="1" wire:model="requestId" :label="__('loans.request')" :help="__('loans.request_help')" />
-            @if ($fundKey === '')
-                <x-ui.form-select wire:model="fundSource" :label="__('loans.fund_source')">
-                    @foreach ($fundSources as $source)
-                        <option value="{{ $source->value }}">{{ $source->label() }}</option>
-                    @endforeach
-                </x-ui.form-select>
-            @endif
-        </x-ui.panel>
-        @if ($canCreate)
-            <div class="flex flex-wrap gap-2">
-                <x-ui.button tone="primary" wire:click="open" x-on:click="leaving()" data-test="open-loan">{{ __('loans.open') }}</x-ui.button>
-                <x-ui.button wire:click="saveDraft" data-test="save-draft">{{ __('drafts.save') }}</x-ui.button>
-            </div>
-        @endif
-    @endif
 
     @if ($cardLoan !== null)
         <x-ui.panel :title="__('loans.card_title', ['beneficiary' => $cardLoan->beneficiary])" :subtitle="$cardLoan->label().' · '.$cardLoan->currency" data-test="loan-card">

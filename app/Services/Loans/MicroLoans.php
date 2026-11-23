@@ -468,6 +468,11 @@ class MicroLoans
         }
 
         MicroLoan::query()->where('disbursement_voucher_id', $voucher->id)->whereDoesntHave('payments')->delete();
+
+        // A micro-project file's purchase or closing (from the migration of 2026-11-23 on).
+        if (Schema::hasTable('gl_micro_purchases')) {
+            app(MicroPurchases::class)->forgetVoucher($voucher);
+        }
     }
 
     /**
@@ -504,6 +509,11 @@ class MicroLoans
      */
     private function book(MicroLoan $loan): ?array
     {
+        // A loan opened from a micro-project file keeps the dollars of its repayable part (MicroPurchases::close).
+        if ($loan->book_usd !== null && bccomp(Money::normalize($loan->loan_amount), '0', 2) > 0) {
+            return ['orig' => Money::normalize($loan->loan_amount), 'usd' => Money::normalize($loan->book_usd)];
+        }
+
         if ($loan->disbursement_voucher_id === null) {
             return null;
         }
@@ -544,6 +554,10 @@ class MicroLoans
     /** The fund source the loan was given from, kept on its 1204 line; the donor's grant when unknown. */
     private function fundSourceOf(MicroLoan $loan): FundSource
     {
+        if ($loan->fund_source !== null && FundSource::tryFrom($loan->fund_source) !== null) {
+            return FundSource::from($loan->fund_source);
+        }
+
         $value = $loan->disbursement_voucher_id !== null
             ? VoucherLine::query()->where('voucher_id', $loan->disbursement_voucher_id)->where('account_code', self::LOANS_ACCOUNT)->value('fund_source')
             : null;

@@ -54,7 +54,7 @@ class MicroLoansExcel extends ExcelDataset
     {
         $today = CarbonImmutable::today();
 
-        foreach (MicroLoan::query()->with('instalments')->orderBy('project_code')->orderBy('beneficiary')->get() as $loan) {
+        foreach (MicroLoan::query()->active()->with('instalments')->orderBy('project_code')->orderBy('beneficiary')->get() as $loan) {
             $first = $loan->instalments->first();
             $line = $loan->disbursement_voucher_id !== null
                 ? DB::table('gl_voucher_lines')->where('voucher_id', $loan->disbursement_voucher_id)->where('account_code', '!=', MicroLoans::LOANS_ACCOUNT)->where('credit_orig', '>', 0)->first(['account_code', 'rate'])

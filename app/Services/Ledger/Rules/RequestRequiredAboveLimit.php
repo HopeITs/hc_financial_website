@@ -5,6 +5,7 @@ namespace App\Services\Ledger\Rules;
 use App\Enums\VoucherSource;
 use App\Enums\VoucherType;
 use App\Models\LedgerRequest;
+use App\Models\MicroLoan;
 use App\Services\Ledger\LedgerContext;
 use App\Services\Ledger\Violation;
 use App\Services\Ledger\VoucherDraft;
@@ -12,7 +13,7 @@ use App\Services\Ledger\VoucherDraft;
 /**
  * Financial Manager decision (plan 6.9): a payment not linked to an approved request is refused above USD 500 per
  * voucher. The amount is the voucher's USD total, so an SYP voucher is compared at its own voucher rate.
- * A transfer may link a request too, and then it must be an approved one. Migrated vouchers are history and are not held to it. The budget line limit is not a rule (warning only).
+ * A transfer may link a request too, and then it must be an approved one. A micro-project purchase is covered by its approved file. Migrated vouchers are history and are not held to it. The budget line limit is not a rule (warning only).
  */
 final class RequestRequiredAboveLimit implements PostingRule
 {
@@ -37,6 +38,15 @@ final class RequestRequiredAboveLimit implements PostingRule
 
         if ($draft->type !== VoucherType::Payment) {
             return [];
+        }
+
+        // A micro-project file's purchases (finance decision of 2026-11-23): its approved payment order is the request.
+        if ($draft->microLoanId !== null) {
+            $stage = MicroLoan::query()->whereKey($draft->microLoanId)->value('stage');
+
+            return in_array($stage, [MicroLoan::APPROVED, MicroLoan::ACTIVE], true)
+                ? []
+                : [new Violation($this->number(), __('ledger.rules.micro_file_not_approved', ['file' => $draft->microLoanId]))];
         }
 
         $configured = config('ledger.request_limit_usd');

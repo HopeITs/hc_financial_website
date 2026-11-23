@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\MicroFileDocumentController;
+use App\Http\Controllers\MicroFilePrintController;
 use App\Http\Controllers\RequestQuoteController;
 use App\Http\Controllers\SwitchLocaleController;
 use App\Http\Controllers\VoucherPrintController;
@@ -15,6 +17,7 @@ use App\Livewire\FollowUpReport;
 use App\Livewire\Home;
 use App\Livewire\LiquidityPosition;
 use App\Livewire\InstalmentFundsScreen;
+use App\Livewire\MicroProjectFiles;
 use App\Livewire\MicroLoans;
 use App\Livewire\MonthEndScreen;
 use App\Livewire\Notifications;
@@ -83,6 +86,10 @@ Route::middleware('auth')->group(function () {
     Route::get('entries/operations', fn () => redirect()->route(Navigation::routeName('single'), status: 301))->middleware('screen:single');
     // Vouchers from Excel (finance decision of 2026-11-20) take the place of the old multi entry.
     $screen('multi', VoucherImportScreen::class);
+    // Micro-project files (finance decisions of 2026-11-23): details, quotes, payment order, purchases, receipt protocol.
+    $screen('microfiles', MicroProjectFiles::class);
+    Route::get('entries/micro-files/{file}/print/{form}', MicroFilePrintController::class)->whereNumber('file')->defaults('screen', 'microfiles')->middleware('screen')->name('entries.micro-files.print');
+    Route::get('entries/micro-files/documents/{kind}/{id}', MicroFileDocumentController::class)->whereIn('kind', ['quote', 'invoice'])->whereNumber('id')->defaults('screen', 'microfiles')->middleware('screen')->name('entries.micro-files.document');
     $screen('payments', MicroLoans::class);
     $screen('loanfunds', InstalmentFundsScreen::class);
 

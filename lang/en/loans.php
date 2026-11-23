@@ -2,7 +2,8 @@
 
 return [
     'title' => 'Micro loans',
-    'intro' => 'Give a beneficiary a loan and a grant with a monthly repayment schedule, and record the instalments received. Both save a voucher waiting for approval.',
+    'intro' => 'Record the instalments received, and follow each loan on its card. A receipt saves a voucher waiting for approval.',
+    'opened_from_files' => 'A new loan opens from its beneficiary\'s file, when the delivery protocol is signed:',
     'tabs' => ['loans' => 'New loan', 'payments' => 'Instalment received'],
     'beneficiary' => 'Beneficiary',
     'national_number' => 'ID number',

@@ -20,6 +20,7 @@ use Illuminate\Support\Carbon;
  * @property VoucherType $type
  * @property string|null $transfer_kind
  * @property int|null $request_id
+ * @property int|null $micro_loan_id the micro-project file it pays for, which stands for its request
  * @property string|null $reverses_id
  * @property string|null $reversal_reason
  * @property Carbon $date
@@ -44,7 +45,7 @@ class Voucher extends Model implements Approvable
     protected $keyType = 'string';
 
     protected $fillable = [
-        'id', 'type', 'transfer_kind', 'request_id', 'reverses_id', 'reversal_reason', 'date', 'description', 'status', 'prepared_by', 'approved_by', 'approved_at',
+        'id', 'type', 'transfer_kind', 'request_id', 'micro_loan_id', 'reverses_id', 'reversal_reason', 'date', 'description', 'status', 'prepared_by', 'approved_by', 'approved_at',
         'is_carry_forward', 'is_temporary', 'source', 'legacy_action_id',
     ];
 
@@ -60,6 +61,7 @@ class Voucher extends Model implements Approvable
             'is_temporary' => 'boolean',
             'legacy_action_id' => 'integer',
             'request_id' => 'integer',
+            'micro_loan_id' => 'integer',
         ];
     }
 
