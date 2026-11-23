@@ -1,10 +1,11 @@
 <div class="flex flex-col gap-6 px-4 pb-10 lg:px-8" data-test="micro-files">
     <x-ui.page-header :title="__('navigation.screens.microfiles')" :subtitle="__('micro.intro')">
-        @if ($canEdit)
-            <x-slot:actions>
+        <x-slot:actions>
+            <livewire:excel-tools kind="micro_files" :key="'excel-micro-files'" />
+            @if ($canEdit)
                 <x-ui.button tone="primary" icon="plus" wire:click="newFile" data-test="new-file">{{ __('micro.new_file') }}</x-ui.button>
-            </x-slot:actions>
-        @endif
+            @endif
+        </x-slot:actions>
     </x-ui.page-header>
 
     @if ($notice)

@@ -2,6 +2,7 @@
 
 use App\Enums\RoleId;
 use App\Enums\VoucherType;
+use App\Livewire\ExcelTools;
 use App\Livewire\MicroProjectFiles;
 use App\Livewire\MicroProjectsHome;
 use App\Models\GlBudgetLine;
@@ -244,4 +245,40 @@ it('shows the section in one place: the files at each step, what waits for whom,
     Livewire::withQueryParams(['file' => 'new'])->actingAs($this->accountant)->test(MicroProjectFiles::class)
         ->assertSeeHtml('data-test="file-panel"')
         ->assertSeeHtml('data-test="current-step"');
+});
+
+it('imports beneficiaries\' files from Excel, all or none, and changes a file still being prepared', function () {
+    // project_number, beneficiary, name_en, national_number, mobile, partners, profession, address, project, fund_funder, fund_city,
+    // currency, rate, requested_amount, seizure_fee, recovery_percent, instalment_amount, interval
+    $samir = ['3600', 'Samir', 'Samir', '0102', '0944 111 222', '', 'Bakery', 'Aleppo', 'F2F', '', '', 'USD', '', '2500', '', '50', '', '1'];
+    $rana = ['3601', 'Rana', '', '', '', '', 'Sewing', 'Aleppo', 'F2F', '', '', 'SYP', '15000', '37500000', '0', '50', '187500', '1'];
+    $broken = ['3602', '', '', '', '', '', '', '', 'NOPE', '', '', 'EUR', '', '0', '', '', '', ''];
+
+    Livewire::actingAs($this->accountant)->test(ExcelTools::class, ['kind' => 'micro_files'])
+        ->set('rows', [['row' => 2, 'cells' => $samir], ['row' => 3, 'cells' => $broken]])
+        ->assertSee(__('loans.problem.beneficiary'))
+        ->call('save')->assertNotDispatched('excel-imported');
+
+    expect(MicroLoan::query()->count())->toBe(0);
+
+    Livewire::actingAs($this->accountant)->test(ExcelTools::class, ['kind' => 'micro_files'])
+        ->set('rows', [['row' => 2, 'cells' => $samir], ['row' => 3, 'cells' => $rana]])
+        ->call('save')->assertDispatched('excel-imported');
+
+    $file = MicroLoan::query()->where('project_number', '3600')->sole();
+    expect($file->stage)->toBe(MicroLoan::DRAFT)
+        ->and((string) $file->instalment_amount)->toBe('12.50')
+        ->and(MicroLoan::query()->where('project_number', '3601')->sole()->currency)->toBe('SYP')
+        ->and(Voucher::query()->count())->toBe(0);
+
+    // The same project number changes the file and keeps its purchase list.
+    $file->items()->create(['name' => 'Oven', 'quantity' => 1, 'condition' => 'new', 'sort' => 1]);
+    $samir[13] = '3000';
+    Livewire::actingAs($this->accountant)->test(ExcelTools::class, ['kind' => 'micro_files'])
+        ->set('rows', [['row' => 2, 'cells' => $samir]])
+        ->call('save')->assertDispatched('excel-imported');
+
+    expect((string) $file->fresh()->requested_amount)->toBe('3000.00')
+        ->and($file->items()->pluck('name')->all())->toBe(['Oven'])
+        ->and(MicroLoan::query()->count())->toBe(2);
 });
