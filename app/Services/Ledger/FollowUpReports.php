@@ -4,6 +4,7 @@ namespace App\Services\Ledger;
 
 use App\Enums\TransferKind;
 use App\Enums\VoucherStatus;
+use App\Models\MicroLoan;
 use App\Services\Loans\MicroLoans;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
@@ -306,6 +307,7 @@ class FollowUpReports
 
         $loans = DB::table('gl_micro_loans as m')
             ->leftJoin('gl_projects as p', 'p.code', '=', 'm.project_code')
+            ->where('m.stage', MicroLoan::ACTIVE)
             ->when($filters->city, fn (Builder $query, string $value) => $query->where('p.city', $value))
             ->when($filters->project, fn (Builder $query, string $value) => $query->where('m.project_code', $value))
             ->when($filters->limitedTo !== null, fn (Builder $query) => $query->whereIn('m.project_code', $filters->limitedTo ?? []))

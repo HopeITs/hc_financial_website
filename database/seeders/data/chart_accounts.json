@@ -640,7 +640,6 @@
     "city": null,
     "is_cash": false,
     "required_tags": [
-      "Project",
       "Contact"
     ],
     "usage_note": "Cash given to a staff member or the procurement team for an activity. Settled with receipts (to expenses) and any money returned. Not an expense.",

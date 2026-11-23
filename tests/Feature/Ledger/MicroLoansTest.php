@@ -249,20 +249,14 @@ function loanUser(RoleId $role, string $name): User
     return User::query()->findOrFail(createFinanceUser($name, 'secret pass', $role->name, $role->value));
 }
 
-it('lets the accountant open a loan and receive an instalment from the screen', function () {
+it('lets the accountant receive an instalment from the screen', function () {
     $ann = loanUser(RoleId::Accountant, 'Ann');
+    ['loan' => $loan] = openLoan();
 
     Livewire::actingAs($ann)->test(MicroLoansScreen::class)
-        ->set('beneficiary', 'Huda')->set('project', 'F2F')->set('loanAmount', '1000')->set('grantAmount', '200')
-        ->set('instalments', '4')->set('cashAccount', '1111')->set('budgetLine', 'F2F|Grants')->set('requestId', (string) approvedLoanRequest()->id)
-        ->call('open')
-        ->assertSet('failures', [])
-        ->assertSeeHtml('data-test="loan-list"');
-
-    $loan = MicroLoan::query()->firstOrFail();
-
-    Livewire::actingAs($ann)->test(MicroLoansScreen::class)
-        ->set('tab', 'payments')->set('loanId', (string) $loan->id)->set('paymentAmount', '250')->set('cashAccount', '1111')
+        ->assertSeeHtml('data-test="loan-list"')
+        ->assertDontSeeHtml('data-test="loan-form"')
+        ->set('loanId', (string) $loan->id)->set('paymentAmount', '250')->set('cashAccount', '1111')
         ->call('receive')
         ->assertSet('failures', [])
         ->set('paymentAmount', '5000')
@@ -273,11 +267,13 @@ it('lets the accountant open a loan and receive an instalment from the screen', 
 });
 
 it('shows the loans screen to the financial manager but lets only the preparers save', function () {
+    ['loan' => $loan] = openLoan();
+
     Livewire::actingAs(loanUser(RoleId::FinancialManager, 'Fatima'))->test(MicroLoansScreen::class)
         ->assertOk()
-        ->assertDontSeeHtml('data-test="open-loan"')
-        ->set('beneficiary', 'Huda')
-        ->call('open')
+        ->assertDontSeeHtml('data-test="receive"')
+        ->set('loanId', (string) $loan->id)->set('paymentAmount', '100')->set('cashAccount', '1111')
+        ->call('receive')
         ->assertForbidden();
 
     $this->actingAs(loanUser(RoleId::Cashier, 'Carl'))->get(route('entries.micro-loans'))->assertForbidden();
@@ -365,17 +361,15 @@ it('adds a late column to the loans report and flags a beneficiary with three la
     expect($run()['rows'][0])->toMatchArray(['late' => '2', 'late_flag' => '']);
 });
 
-it('opens a loan with the beneficiary details from the screen and highlights a flagged beneficiary', function () {
+it('keeps a loan\'s beneficiary details, shows them on the screen and highlights a flagged beneficiary', function () {
     $ann = loanUser(RoleId::Accountant, 'Ann');
 
-    Livewire::actingAs($ann)->test(MicroLoansScreen::class)
-        ->set('beneficiary', 'Huda')->set('nationalNumber', '0102')->set('mobile', '0999 123 456')->set('partners', 'Rima')
-        ->set('project', 'F2F')->set('loanAmount', '1000')->set('grantAmount', '0')->set('instalments', '4')->set('intervalMonths', '2')
-        ->set('cashAccount', '1111')->set('requestId', (string) approvedLoanRequest()->id)
-        ->call('open')
-        ->assertSet('failures', [])
-        ->assertSet('mobile', '')
-        ->assertSee('0999 123 456');
+    app(MicroLoans::class)->open(
+        'Huda', 'F2F', '1000', '0', 'USD', '', CarbonImmutable::parse('2026-03-01'), 4, CarbonImmutable::parse('2026-04-30'), '1111', '',
+        FundSource::DonorGrant, 5, approvedLoanRequest()->id, '0102', '0999 123 456', 'Rima', 2,
+    );
+
+    Livewire::actingAs($ann)->test(MicroLoansScreen::class)->assertSee('0999 123 456');
 
     $loan = MicroLoan::query()->firstOrFail();
     expect($loan->national_number)->toBe('0102')->and($loan->payment_interval_months)->toBe(2);

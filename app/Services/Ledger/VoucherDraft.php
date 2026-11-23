@@ -27,6 +27,7 @@ final readonly class VoucherDraft
         public ?string $transferKind = null,
         public ?string $reversesId = null,
         public ?string $reversalReason = null,
+        public ?int $microLoanId = null,
     ) {}
 
     /** The month the voucher belongs to, as in `gl_month_closes` (YYYY-MM). */
@@ -41,7 +42,17 @@ final readonly class VoucherDraft
         return new self(
             $this->type, $this->date, $this->preparedBy, $this->lines, $this->description,
             $this->source, $this->legacyActionId, $this->isCarryForward, $this->isTemporary, $requestId, $this->transferKind,
-            $this->reversesId, $this->reversalReason,
+            $this->reversesId, $this->reversalReason, $this->microLoanId,
+        );
+    }
+
+    /** The same voucher, paying for a micro-project file, whose approval stands for the request. */
+    public function forMicroLoan(int $loanId): self
+    {
+        return new self(
+            $this->type, $this->date, $this->preparedBy, $this->lines, $this->description,
+            $this->source, $this->legacyActionId, $this->isCarryForward, $this->isTemporary, $this->requestId, $this->transferKind,
+            $this->reversesId, $this->reversalReason, $loanId,
         );
     }
 
@@ -51,7 +62,7 @@ final readonly class VoucherDraft
         return new self(
             $this->type, $this->date, $this->preparedBy, $lines, $this->description,
             $this->source, $this->legacyActionId, $this->isCarryForward, $this->isTemporary, $this->requestId, $this->transferKind,
-            $this->reversesId, $this->reversalReason,
+            $this->reversesId, $this->reversalReason, $this->microLoanId,
         );
     }
 }

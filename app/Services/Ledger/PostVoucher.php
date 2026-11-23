@@ -54,6 +54,7 @@ class PostVoucher
                 'type' => $draft->type,
                 'transfer_kind' => $draft->transferKind,
                 'request_id' => $draft->requestId,
+                'micro_loan_id' => $draft->microLoanId,
                 'date' => $draft->date->toDateString(),
                 'description' => $draft->description,
                 'status' => VoucherStatus::PendingApproval,
@@ -82,6 +83,11 @@ class PostVoucher
      */
     public function replace(Voucher $voucher, VoucherDraft $draft, int $by): Voucher
     {
+        // An edit keeps the micro-project file the voucher pays for.
+        if ($draft->microLoanId === null && $voucher->micro_loan_id !== null) {
+            $draft = $draft->forMicroLoan($voucher->micro_loan_id);
+        }
+
         return DB::transaction(function () use ($voucher, $draft, $by) {
             $draft = $this->rounding->balance($draft);
             $violations = $this->violations($draft);
@@ -163,6 +169,7 @@ class PostVoucher
             isTemporary: $voucher->is_temporary,
             requestId: $voucher->request_id,
             transferKind: $voucher->transfer_kind,
+            microLoanId: $voucher->micro_loan_id,
         );
 
         $context = LedgerContext::forDraft($draft);
