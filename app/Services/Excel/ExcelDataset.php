@@ -78,6 +78,54 @@ abstract class ExcelDataset
     }
 
     /**
+     * A second sheet the import reads too when the file has it (finance request of 2026-11-23): the lang key of its
+     * name (`excel.sheet.<key>`) and its columns. Its rows reach {@see check()} and {@see saveRow()} in the context, under
+     * `extra`. Null when the import reads one sheet only.
+     *
+     * @return array{key: string, columns: list<string>}|null
+     */
+    public function extraSheet(): ?array
+    {
+        return null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     * @return list<list<string|int|float|null>>
+     */
+    public function extraExampleRows(array $context): array
+    {
+        return [];
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     * @return iterable<list<string|int|float|null>>
+     */
+    public function extraExportRows(array $context): iterable
+    {
+        return [];
+    }
+
+    /**
+     * What is wrong in the second sheet as a whole, such as rows that belong to no record of the file.
+     *
+     * @param  list<array{row: int, cells: list<string>}>  $read
+     * @param  array<string, mixed>  $context
+     * @return list<string>
+     */
+    public function extraProblems(array $read, array $context): array
+    {
+        return [];
+    }
+
+    /** @return list<string> */
+    public function extraHeadings(): array
+    {
+        return array_map(fn (string $column): string => __('excel.col.'.$column), $this->extraSheet()['columns'] ?? []);
+    }
+
+    /**
      * What a row would do ('new', 'update', or 'skip' for a row left to fill later) and what is wrong in it. The rows before it are given, to find the same
      * record twice in one file.
      *
@@ -144,6 +192,10 @@ abstract class ExcelDataset
 
         if ($broken > 0) {
             throw new ExcelException([trans_choice('excel.not_saved', $broken, ['count' => $broken])]);
+        }
+
+        if (($extraProblems = $this->extraProblems($read, $context)) !== []) {
+            throw new ExcelException($extraProblems);
         }
 
         $saving = array_values(array_filter($reviewed, fn (array $row): bool => $row['action'] !== 'skip'));

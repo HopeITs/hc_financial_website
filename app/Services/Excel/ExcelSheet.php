@@ -100,6 +100,60 @@ class ExcelSheet
         return $rows;
     }
 
+    /**
+     * Reads a sheet found by one of its names, under its heading row, as {@see read()} does. An optional sheet: none, or
+     * one with no row, gives no rows.
+     *
+     * @param  list<string>  $names
+     * @return list<array{row: int, cells: list<string>}>
+     *
+     * @throws InvalidArgumentException when the file cannot be read or the sheet holds too many rows
+     */
+    public function readNamed(string $path, array $names, int $columns, int $maxRows): array
+    {
+        $reader = new Reader;
+
+        try {
+            $reader->open($path);
+        } catch (\Throwable) {
+            throw new InvalidArgumentException(__('excel.unreadable'));
+        }
+
+        $rows = [];
+        $wanted = array_map(fn (string $name): string => mb_substr(trim($name), 0, 31), $names);
+
+        try {
+            foreach ($reader->getSheetIterator() as $sheet) {
+                if (! in_array(trim($sheet->getName()), $wanted, true)) {
+                    continue;
+                }
+
+                foreach ($sheet->getRowIterator() as $number => $row) {
+                    if ($number === 1) {
+                        continue;
+                    }
+
+                    $cells = array_pad(array_map($this->text(...), array_slice($row->toArray(), 0, $columns)), $columns, '');
+                    if (implode('', $cells) === '') {
+                        continue;
+                    }
+
+                    $rows[] = ['row' => (int) $number, 'cells' => $cells];
+
+                    if (count($rows) > $maxRows) {
+                        throw new InvalidArgumentException(__('excel.too_many', ['max' => $maxRows]));
+                    }
+                }
+
+                break;
+            }
+        } finally {
+            $reader->close();
+        }
+
+        return $rows;
+    }
+
     private function text(mixed $cell): string
     {
         if ($cell instanceof DateTimeInterface) {
