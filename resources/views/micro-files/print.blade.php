@@ -1,13 +1,27 @@
 @php
-    // The forms print in Arabic whatever the screen's language; the receipt protocol adds the English lines.
+    // Each form is its original page (public/images/micro-forms) with the file's values set on its lines; the places
+    // are in resources/css/micro-forms.css. The forms print in Arabic; the delivery protocol adds the English lines.
     $ar = fn (string $key, array $replace = []) => __('micro_print.'.$key, $replace, 'ar');
     $en = fn (string $key, array $replace = []) => __('micro_print.'.$key, $replace, 'en');
+    $page = fn (string $image) => asset('images/micro-forms/'.$image.'.jpg');
     $name = $file->beneficiary;
-    $funder = $file->project?->donor ?? $file->funder ?? '—';
+    $funder = $file->project?->donor ?? $file->funder ?? '';
     $quantity = fn ($value): string => rtrim(rtrim((string) $value, '0'), '.');
-    $cell = 'border border-secondary-light px-2 py-1 text-start align-top';
-    $head = 'border border-primary bg-primary px-2 py-1 text-start font-semibold text-white';
-    $band = 'mt-4 mb-2 bg-primary py-1 text-center text-sm font-semibold text-white';
+    $day = fn ($date): string => $date?->format('d/m/Y') ?? '';
+    $managers = collect($file->approvals ?? [])->mapWithKeys(fn (array $step): array => [(int) $step['role'] => $names[(int) $step['user']] ?? $step['name']]);
+    $programManager = $managers[\App\Enums\RoleId::ProgramManager->value] ?? '';
+    $financeManager = $managers[\App\Enums\RoleId::FinancialManager->value] ?? '';
+    $purchasing = (string) ($file->purchases->firstWhere('kind', 'advance')?->person ?? '');
+    // The rows a form has no room for go on a page of their own, on the letterhead.
+    $rooms = ['order' => 7, 'purchase' => 15, 'quote' => 11];
+    $rows = match ($form) {
+        'order' => $invoices,
+        'purchase', 'quote' => $file->items,
+        default => collect(),
+    };
+    $shown = isset($rooms[$form]) ? $rows->take($rooms[$form]) : $rows;
+    $rest = isset($rooms[$form]) ? $rows->slice($rooms[$form])->values() : collect();
+    $cell = 'overflow-hidden whitespace-nowrap px-1.5';
 @endphp
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -17,192 +31,227 @@
         <title>{{ $ar('titles.'.$form) }} · {{ $name }}</title>
         @vite(['resources/css/app.css'])
     </head>
-    <body class="bg-white p-6 text-sm leading-relaxed text-secondary-dark print:p-0" data-test="micro-print-{{ $form }}">
-        <div class="mb-4 print:hidden">
+    <body class="bg-secondary-soft py-6 print:bg-white print:py-0" data-test="micro-print-{{ $form }}">
+        <div class="mf-bar print:hidden">
             <x-ui.button tone="primary" icon="printer" onclick="window.print()" data-test="print-now">{{ $ar('print') }}</x-ui.button>
         </div>
 
-        <header class="mb-4 flex items-center justify-between border-b-2 border-primary pb-2">
-            <img src="{{ asset('logo.png') }}" alt="{{ $en('brand') }}" class="h-12">
-            <b class="text-lg tracking-wide text-primary">{{ $ar('brand') }}</b>
-        </header>
-
-        <h1 class="mb-4 text-center text-2xl font-bold">
-            {{ $ar('titles.'.$form) }}
-            @if ($form === 'protocol')
-                <span dir="ltr"> · {{ $en('titles.protocol') }}</span>
-            @endif
-        </h1>
-
-        @if ($form === 'purchase')
-            <p>{{ $ar('purchase_intro', ['number' => $file->project_number ?? '—', 'name' => $name, 'mobile' => $file->mobile ?? '—', 'profession' => $file->profession ?? '—', 'address' => $file->address ?? '—']) }}</p>
-            <table class="mt-2 w-full border-collapse">
-                <thead><tr><th class="{{ $head }}">{{ $ar('no') }}</th><th class="{{ $head }}">{{ $ar('item') }}</th><th class="{{ $head }}">{{ $ar('kind') }}</th><th class="{{ $head }}">{{ $ar('quantity') }}</th><th class="{{ $head }}">{{ $ar('condition') }}</th></tr></thead>
-                <tbody>
-                    @foreach ($file->items as $index => $item)
-                        <tr><td class="{{ $cell }}">{{ $index + 1 }}</td><td class="{{ $cell }}">{{ $item->name }}</td><td class="{{ $cell }}">{{ $item->kind }}</td><td class="{{ $cell }}" dir="ltr">{{ $quantity($item->quantity) }}</td><td class="{{ $cell }}">{{ $ar('conditions.'.$item->condition) }}</td></tr>
-                    @endforeach
-                </tbody>
-            </table>
-            <p class="mt-3">{{ $ar('pledges_title') }}</p>
-            <ul class="list-disc ps-6">
-                @foreach (__('micro_print.purchase_pledges', [], 'ar') as $pledge)
-                    <li>{{ $pledge }}</li>
-                @endforeach
-            </ul>
-            <p class="mt-3">{{ $ar('beneficiary_sign') }} ........................................</p>
-            @include('micro-files.signatures', ['roles' => [$ar('micro_manager'), $ar('financial_manager'), $ar('purchasing_officer')]])
-        @elseif ($form === 'quote')
-            <div class="grid grid-cols-2 gap-x-6 gap-y-1">
-                <div>{{ $ar('supplier') }} ........................................</div>
-                <div>{{ $ar('filled_on') }} ....................</div>
-                <div>{{ $ar('quote_for') }} <b>{{ $name }}</b></div>
-            </div>
-            <table class="mt-2 w-full border-collapse">
-                <thead><tr><th class="{{ $head }}">{{ $ar('product') }}</th><th class="{{ $head }}">{{ $ar('kind') }}</th><th class="{{ $head }}">{{ $ar('needed') }}</th><th class="{{ $head }}">{{ $ar('price') }}</th><th class="{{ $head }}">{{ $ar('line_total') }}</th><th class="{{ $head }}">{{ $ar('notes') }}</th></tr></thead>
-                <tbody>
-                    @foreach ($file->items as $item)
-                        <tr><td class="{{ $cell }}">{{ $item->name }}</td><td class="{{ $cell }}">{{ $item->kind }}</td><td class="{{ $cell }}" dir="ltr">{{ $quantity($item->quantity) }}</td><td class="{{ $cell }}"></td><td class="{{ $cell }}"></td><td class="{{ $cell }}"></td></tr>
-                    @endforeach
-                    <tr><td class="{{ $cell }}" colspan="3"></td><td class="{{ $cell }} font-semibold">{{ $ar('final_total') }}</td><td class="{{ $cell }}"></td><td class="{{ $cell }}"></td></tr>
-                </tbody>
-            </table>
-            <p class="mt-3 text-xs">{{ $ar('quote_note') }}</p>
-            @include('micro-files.signatures', ['roles' => [$ar('merchant_sign'), '', $ar('stamp')]])
-        @elseif ($form === 'order')
-            <div class="grid grid-cols-2 gap-x-6 gap-y-1">
-                <div>{{ $ar('order_date') }} <b dir="ltr">{{ ($file->submitted_at ?? $file->created_at)?->format('d/m/Y') }}</b></div>
-                <div>{{ $ar('order_number') }} <b dir="ltr">{{ $file->id }}</b></div>
-            </div>
-            <p class="{{ $band }}">{{ $ar('project_info') }}</p>
-            <div class="grid grid-cols-2 gap-x-6 gap-y-1">
-                <div>{{ $ar('beneficiary_name') }} <b>{{ $name }}</b></div>
-                <div>{{ $ar('beneficiary_en') }} <b dir="ltr">{{ $file->name_en ?? '—' }}</b></div>
-                <div>{{ $ar('project') }} <b>{{ $file->profession ?? '—' }}</b></div>
-                <div>{{ $ar('project_number') }} <b dir="ltr">{{ $file->project_number ?? '—' }}</b></div>
-                <div>{{ $ar('mobile') }} <b dir="ltr">{{ $file->mobile ?? '—' }}</b></div>
-                <div>{{ $ar('national_number') }} <b dir="ltr">{{ $file->national_number ?? '—' }}</b></div>
-                <div>{{ $ar('donor') }} <b>{{ $funder }}</b></div>
-                <div>{{ $ar('first_due') }} <b>{{ $file->first_payment_date?->format('d/m/Y') ?? $ar('first_due_later') }}</b></div>
-            </div>
-            <p class="{{ $band }}">{{ $ar('budget') }}</p>
-            <div class="grid grid-cols-2 gap-x-6 gap-y-1">
-                <div>{{ $ar('requested') }} <x-money :amount="$file->requested_amount" :currency="$file->currency" /></div>
-                <div>{{ $ar('seizure') }} <x-money :amount="$file->seizure_fee" :currency="$file->currency" /></div>
-                <div>{{ $ar('percent') }} <b dir="ltr">{{ $quantity($file->recovery_percent) }}%</b></div>
-                <div>{{ $ar('instalment') }} <x-money :amount="$file->instalment_amount" :currency="$file->currency" /></div>
-                @if ($file->currency === 'SYP')
-                    <div>{{ $ar('usd_equivalent') }} <x-money :amount="$usdValue" currency="USD" /> <span dir="ltr">@ {{ $quantity($file->rate) }}</span></div>
+        @if ($form === 'order')
+            <section class="mf-page">
+                <img class="mf-bg" src="{{ $page('order') }}" alt="">
+                <span class="mf-field mf-order-date" dir="ltr">{{ $day($file->submitted_at ?? $file->created_at) }}</span>
+                <span class="mf-field mf-order-number" dir="ltr">{{ $file->id }}</span>
+                <span class="mf-field mf-order-name">{{ $name }}</span>
+                <span class="mf-field mf-order-name-en mf-ltr">{{ $file->name_en }}</span>
+                <span class="mf-field mf-order-project">{{ $file->profession }}</span>
+                <span class="mf-field mf-order-number-project" dir="ltr">{{ $file->project_number }}</span>
+                <span class="mf-field mf-order-mobile" dir="ltr">{{ $file->mobile }}</span>
+                <span class="mf-field mf-order-national" dir="ltr">{{ $file->national_number }}</span>
+                <span class="mf-field mf-order-donor">{{ $funder }}</span>
+                <span class="mf-field mf-order-first-due" dir="ltr">{{ $day($file->first_payment_date) }}</span>
+                <span class="mf-field mf-order-requested"><x-money :amount="$file->requested_amount" :currency="$file->currency" /></span>
+                <span class="mf-field mf-order-seizure"><x-money :amount="$file->seizure_fee" :currency="$file->currency" /></span>
+                <span class="mf-field mf-order-percent" dir="ltr">{{ $quantity($file->recovery_percent) }}%</span>
+                <span class="mf-field mf-order-instalment"><x-money :amount="$file->instalment_amount" :currency="$file->currency" /></span>
+                <span class="mf-field mf-center mf-order-sign-manager">{{ $programManager }}</span>
+                <span class="mf-field mf-center mf-order-sign-finance">{{ $financeManager }}</span>
+                @if ((float) $file->extra_amount > 0)
+                    <span class="mf-field mf-order-extra"><x-money :amount="$file->extra_amount" /></span>
+                    <span class="mf-field mf-order-extra-reason">{{ $file->extra_reason }}</span>
                 @endif
-            </div>
-            <p class="mt-2 text-xs">{{ $ar('extra_note_up') }}<br>{{ $ar('extra_note_over') }}</p>
-            @if (($file->approvals ?? []) !== [])
-                <p class="mt-2">{{ $ar('approvals') }}
-                    @foreach ($file->approvals as $step)
-                        {{ \App\Enums\RoleId::tryFrom((int) $step['role'])?->label() }}: {{ $names[(int) $step['user']] ?? $step['name'] }} ({{ $step['at'] }})@if (! $loop->last) · @endif
+                <div class="mf-order-invoices" data-test="print-invoices">
+                    @foreach ($shown as $invoice)
+                        <span class="{{ $cell }}"><x-money :amount="$invoice->amount" :currency="$invoice->currency" /></span>
+                        <span class="{{ $cell }}" dir="ltr">{{ $invoice->number }}</span>
+                        <span class="{{ $cell }}">{{ $invoice->description_ar }}</span>
+                        <span class="{{ $cell }}">{{ $invoice->merchant }}@if ($invoice->is_seizure) · {{ $ar('seizure_invoice') }}@endif</span>
                     @endforeach
-                </p>
-            @endif
-            @include('micro-files.signatures', ['roles' => [$ar('project_manager'), '', $ar('finance_officer')]])
-            <p class="{{ $band }}">{{ $ar('extra') }}</p>
-            <div class="grid grid-cols-2 gap-x-6 gap-y-1">
-                <div>{{ $ar('extra_amount') }} <x-money :amount="$file->extra_amount" :currency="$file->currency" /></div>
-                <div>{{ $ar('extra_reason') }} {{ $file->extra_reason ?? '—' }}</div>
-            </div>
-            <p class="{{ $band }}">{{ $ar('invoices') }}</p>
-            <table class="w-full border-collapse">
-                <thead><tr><th class="{{ $head }}">{{ $ar('invoice_amount') }}</th><th class="{{ $head }}">{{ $ar('invoice_number') }}</th><th class="{{ $head }}">{{ $ar('statement') }}</th><th class="{{ $head }}">{{ $ar('notes') }}</th></tr></thead>
-                <tbody>
-                    @forelse ($invoices as $invoice)
-                        <tr><td class="{{ $cell }}"><x-money :amount="$invoice->amount" :currency="$invoice->currency" /></td><td class="{{ $cell }}" dir="ltr">{{ $invoice->number }}</td><td class="{{ $cell }}">{{ $invoice->description_ar }}</td><td class="{{ $cell }}">{{ $invoice->merchant }}@if ($invoice->is_seizure) · {{ $ar('seizure_invoice') }}@endif</td></tr>
-                    @empty
-                        <tr><td class="{{ $cell }} h-8" colspan="4"></td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-            <p class="mt-2">{{ $ar('invoices_total') }} <x-money :amount="$totals['invoiced']" :currency="$file->currency" /></p>
-            <p class="mt-1 text-xs">{{ $ar('under_note') }}</p>
-            @include('micro-files.signatures', ['roles' => [$ar('project_manager'), $ar('purchasing_officer'), $ar('finance_officer')]])
+                </div>
+                @if ($invoices->isNotEmpty())
+                    <span class="mf-field mf-order-total"><x-money :amount="$totals['invoiced']" :currency="$file->currency" /></span>
+                @endif
+                <span class="mf-field mf-center mf-order-sign-2-manager">{{ $programManager }}</span>
+                <span class="mf-field mf-center mf-order-sign-2-purchasing">{{ $purchasing }}</span>
+                <span class="mf-field mf-center mf-order-sign-2-finance">{{ $financeManager }}</span>
+            </section>
+        @elseif ($form === 'purchase')
+            <section class="mf-page">
+                <img class="mf-bg" src="{{ $page('purchase') }}" alt="">
+                <span class="mf-field mf-purchase-number" dir="ltr">{{ $file->project_number }}</span>
+                <span class="mf-field mf-purchase-name">{{ $name }}</span>
+                <span class="mf-field mf-purchase-mobile" dir="ltr">{{ $file->mobile }}</span>
+                <span class="mf-field mf-purchase-profession">{{ $file->profession }}</span>
+                <span class="mf-field mf-purchase-area">{{ $file->address }}</span>
+                <div class="mf-purchase-items" data-test="print-items">
+                    @foreach (['no', 'item', 'kind', 'quantity', 'condition'] as $heading)
+                        <span class="mf-head">{{ $ar($heading) }}</span>
+                    @endforeach
+                    @for ($index = 0; $index < 15; $index++)
+                        @php($item = $shown[$index] ?? null)
+                        <span @class(['justify-center', 'mf-shade' => $index % 2 === 1])>{{ $index + 1 }}</span>
+                        <span @class(['mf-shade' => $index % 2 === 1])>{{ $item?->name }}</span>
+                        <span @class(['mf-shade' => $index % 2 === 1])>{{ $item?->kind }}</span>
+                        <span @class(['justify-center', 'mf-shade' => $index % 2 === 1]) dir="ltr">{{ $item !== null ? $quantity($item->quantity) : '' }}</span>
+                        <span @class(['mf-shade' => $index % 2 === 1])>{{ $item !== null ? $ar('conditions.'.$item->condition) : '' }}</span>
+                    @endfor
+                </div>
+                <div class="mf-purchase-text">
+                    <p>{{ $ar('pledges_title') }}</p>
+                    <ul class="list-disc ps-10">
+                        @foreach (__('micro_print.purchase_pledges', [], 'ar') as $pledge)
+                            <li>{{ $pledge }}</li>
+                        @endforeach
+                    </ul>
+                    <p>{{ $ar('beneficiary_sign') }}</p>
+                </div>
+                <div class="mf-purchase-signs">
+                    <span>{{ $ar('micro_manager') }}</span>
+                    <span>{{ $ar('financial_manager') }}</span>
+                    <span>{{ $ar('purchasing_officer') }}</span>
+                </div>
+            </section>
+        @elseif ($form === 'quote')
+            <section class="mf-page">
+                <img class="mf-bg" src="{{ $page('quote') }}" alt="">
+                <span class="mf-field mf-quote-for">{{ $name }}</span>
+                <div class="mf-quote-items" data-test="print-items">
+                    @foreach ($shown as $item)
+                        <span class="{{ $cell }}">{{ $item->name }}</span>
+                        <span class="{{ $cell }}">{{ $item->kind }}</span>
+                        <span class="{{ $cell }} text-center" dir="ltr">{{ $quantity($item->quantity) }}</span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    @endforeach
+                </div>
+            </section>
         @elseif ($form === 'bond')
-            <p>{{ $ar('bond_signer', ['name' => $name, 'number' => $file->national_number ?? '....................']) }}</p>
-            <p class="mt-2">{{ $ar('bond_received', ['amount' => '']) }} <x-money :amount="$total" :currency="$file->currency" /></p>
-            <p class="font-semibold">{{ $words['ar'] }}</p>
-            <p class="mt-2">{{ $ar('bond_text') }}</p>
-            <p class="mt-2">{{ $ar('bond_address') }}</p>
-            <p class="mt-2">{{ $ar('place_date') }}</p>
-            @include('micro-files.signatures', ['roles' => [$ar('declarant'), $ar('witness'), $ar('witness')]])
-        @elseif ($form === 'protocol')
-            <div class="grid grid-cols-2 gap-x-6 gap-y-1">
-                <div>{{ $ar('beneficiary_name') }} <b>{{ $name }}</b> · <span dir="ltr">{{ $file->name_en }}</span></div>
-                <div>{{ $ar('national_number') }} <b dir="ltr">{{ $file->national_number ?? '—' }}</b></div>
-                <div>{{ $ar('project_number') }} <b dir="ltr">{{ $file->project_number ?? '—' }}</b></div>
-                <div>{{ $ar('donor') }} <b>{{ $funder }}</b></div>
-            </div>
-            <table class="mt-2 w-full border-collapse">
-                <thead>
-                    <tr>
-                        <th class="{{ $head }}">#</th>
-                        <th class="{{ $head }}">{{ $ar('invoice_number') }}<br><span dir="ltr">{{ $en('invoice_number') }}</span></th>
-                        <th class="{{ $head }}">{{ $ar('date') }}<br><span dir="ltr">{{ $en('date') }}</span></th>
-                        <th class="{{ $head }}">{{ $ar('description') }}</th>
-                        <th class="{{ $head }}" dir="ltr">{{ $en('description') }}</th>
-                        <th class="{{ $head }}">{{ $ar('amount') }}<br><span dir="ltr">{{ $en('amount') }}</span></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($invoices as $index => $invoice)
-                        <tr>
-                            <td class="{{ $cell }}">{{ $index + 1 }}</td>
-                            <td class="{{ $cell }}" dir="ltr">{{ $invoice->number }}</td>
-                            <td class="{{ $cell }}" dir="ltr">{{ $invoice->purchase_date->format('d/m/Y') }}</td>
-                            <td class="{{ $cell }}">{{ $invoice->description_ar }}@if ($invoice->is_seizure) ({{ $ar('seizure_invoice') }})@endif</td>
-                            <td class="{{ $cell }}" dir="ltr">{{ $invoice->description_en }}@if ($invoice->is_seizure) ({{ $en('seizure_invoice') }})@endif</td>
-                            <td class="{{ $cell }}"><x-money :amount="$invoice->loan_amount" :currency="$file->currency" /></td>
-                        </tr>
-                    @endforeach
-                    <tr><td class="{{ $cell }} font-semibold" colspan="5">{{ $ar('total') }} / {{ $en('total') }}</td><td class="{{ $cell }} font-semibold"><x-money :amount="$totals['invoiced']" :currency="$file->currency" /></td></tr>
-                </tbody>
-            </table>
-            <p class="mt-2 font-semibold">{{ $words['ar'] }}</p>
-            <p class="font-semibold" dir="ltr">{{ $words['en'] }}</p>
-            <p class="mt-2">{{ $ar('received_all') }}<br><span dir="ltr">{{ $en('received_all') }}</span></p>
-            @include('micro-files.signatures', ['roles' => [$ar('beneficiary').' / '.$en('beneficiary'), $ar('project_manager').' / '.$en('project_manager'), $ar('accounting').' / '.$en('accounting')]])
+            <section class="mf-page">
+                <img class="mf-bg" src="{{ $page('bond') }}" alt="">
+                <span class="mf-field mf-bond-name">{{ $name }}</span>
+                <span class="mf-field mf-bond-national" dir="ltr">{{ $file->national_number }}</span>
+                <span class="mf-field mf-bond-amount"><x-money :amount="$total" :currency="$file->currency" /></span>
+                <span class="mf-field mf-bond-words">{{ $words['ar'] }}</span>
+            </section>
         @elseif ($form === 'undertaking')
-            <table class="w-full border-collapse">
-                <thead><tr><th class="{{ $head }}">{{ $ar('merchant') }}</th><th class="{{ $head }}">{{ $ar('invoice_number') }}</th><th class="{{ $head }}">{{ $ar('date') }}</th><th class="{{ $head }}">{{ $ar('materials') }}</th><th class="{{ $head }}">{{ $ar('amount') }}</th></tr></thead>
-                <tbody>
-                    @foreach ($invoices as $invoice)
-                        <tr><td class="{{ $cell }}">{{ $invoice->merchant }}</td><td class="{{ $cell }}" dir="ltr">{{ $invoice->number }}</td><td class="{{ $cell }}" dir="ltr">{{ $invoice->purchase_date->format('d/m/Y') }}</td><td class="{{ $cell }}">{{ $invoice->description_ar }}</td><td class="{{ $cell }}"><x-money :amount="$invoice->amount" :currency="$invoice->currency" /></td></tr>
-                    @endforeach
-                </tbody>
-            </table>
-            <p class="mt-3">{{ $ar('undertaking_text') }}</p>
-            <p class="mt-2 font-semibold">{{ $ar('undertaking_pledges_title') }}</p>
-            <ul class="list-disc ps-6">
-                @foreach (__('micro_print.undertaking_pledges', [], 'ar') as $pledge)
-                    <li>{{ $pledge }}</li>
-                @endforeach
-            </ul>
-            <p class="mt-3">{{ $ar('undertaking_sign', ['name' => $name]) }}</p>
-            @include('micro-files.signatures', ['roles' => [$ar('micro_manager_sign'), '', $ar('purchasing_sign')]])
+            <section class="mf-page">
+                <img class="mf-bg" src="{{ $page('undertaking') }}" alt="">
+                <div class="mf-undertaking-box">
+                <table class="w-full border-collapse" data-test="print-invoices">
+                    <thead>
+                        <tr>
+                            <th class="border border-secondary-light px-1 text-start">{{ $ar('merchant') }}</th>
+                            <th class="border border-secondary-light px-1 text-start">{{ $ar('invoice_number') }}</th>
+                            <th class="border border-secondary-light px-1 text-start">{{ $ar('materials') }}</th>
+                            <th class="border border-secondary-light px-1 text-start">{{ $ar('amount') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($invoices as $invoice)
+                            <tr>
+                                <td class="border border-secondary-light px-1">{{ $invoice->merchant }}</td>
+                                <td class="border border-secondary-light px-1" dir="ltr">{{ $invoice->number }}</td>
+                                <td class="border border-secondary-light px-1">{{ $invoice->description_ar }}</td>
+                                <td class="border border-secondary-light px-1"><x-money :amount="$invoice->amount" :currency="$invoice->currency" /></td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+                </div>
+                <span class="mf-field mf-undertaking-name">{{ $name }}</span>
+                <span class="mf-field mf-undertaking-date" dir="ltr">{{ $day($file->protocol_signed_on) }}</span>
+            </section>
         @elseif ($form === 'card')
-            <div class="grid grid-cols-2 gap-x-6 gap-y-1">
-                <div>{{ $ar('beneficiary_name') }} <b>{{ $name }}</b></div>
-                <div>{{ $ar('project_number') }} <b dir="ltr">{{ $file->project_number ?? '—' }}</b></div>
-                <div>{{ $ar('supporter') }} <b>{{ $funder }}</b></div>
-                <div>{{ $ar('recovery') }} <x-money :amount="$file->loan_amount" :currency="$file->currency" /></div>
-            </div>
-            <table class="mt-2 w-full border-collapse">
-                <thead><tr><th class="{{ $head }}">#</th><th class="{{ $head }}">{{ $ar('due_date') }}</th><th class="{{ $head }}">{{ $ar('instalment') }}</th><th class="{{ $head }}">{{ $ar('paid_on') }}</th><th class="{{ $head }}">{{ $ar('receipt_number') }}</th><th class="{{ $head }}">{{ $ar('signature') }}</th></tr></thead>
-                <tbody>
-                    @foreach ($file->instalments as $index => $instalment)
-                        <tr><td class="{{ $cell }}">{{ $index + 1 }}</td><td class="{{ $cell }}" dir="ltr">{{ $instalment->due_date->format('d/m/Y') }}</td><td class="{{ $cell }}"><x-money :amount="$instalment->amount" /></td><td class="{{ $cell }}"></td><td class="{{ $cell }}"></td><td class="{{ $cell }}"></td></tr>
-                    @endforeach
-                </tbody>
-            </table>
-            <p class="mt-3 border border-secondary-light p-3 text-xs">{{ $ar('card_hours') }}</p>
+            <section class="mf-page">
+                <img class="mf-bg" src="{{ $page('card-front') }}" alt="">
+                @foreach ([false, true] as $turned)
+                    <div @class(['mf-turned' => $turned])>
+                        @foreach ([1, 2] as $copy)
+                            <span class="mf-field mf-card-name-{{ $copy }}">{{ $name }}</span>
+                            <span class="mf-field mf-card-project-{{ $copy }}" dir="ltr">{{ $file->project_number }}</span>
+                            <span class="mf-field mf-card-donor-{{ $copy }}">{{ $funder }}</span>
+                        @endforeach
+                    </div>
+                @endforeach
+            </section>
+            <section class="mf-page">
+                <img class="mf-bg" src="{{ $page('card-inside') }}" alt="">
+            </section>
+        @elseif ($form === 'protocol')
+            <section class="mf-page">
+                <img class="mf-bg" src="{{ $page('letterhead') }}" alt="">
+                <div class="mf-body">
+                    <h1 class="mb-4 text-center text-xl font-bold">{{ $ar('titles.protocol') }} <span dir="ltr">· {{ $en('titles.protocol') }}</span></h1>
+                    <div class="grid grid-cols-2 gap-x-6 gap-y-1">
+                        <div>{{ $ar('beneficiary_name') }} <b>{{ $name }}</b> · <span dir="ltr">{{ $file->name_en }}</span></div>
+                        <div>{{ $ar('national_number') }} <b dir="ltr">{{ $file->national_number }}</b></div>
+                        <div>{{ $ar('project_number') }} <b dir="ltr">{{ $file->project_number }}</b></div>
+                        <div>{{ $ar('donor') }} <b>{{ $funder }}</b></div>
+                    </div>
+                    <table class="mt-3 w-full border-collapse text-sm" data-test="print-invoices">
+                        <thead>
+                            <tr class="bg-primary text-white">
+                                <th class="border border-primary px-2 py-1 text-start">#</th>
+                                <th class="border border-primary px-2 py-1 text-start">{{ $ar('invoice_number') }}<br><span dir="ltr">{{ $en('invoice_number') }}</span></th>
+                                <th class="border border-primary px-2 py-1 text-start">{{ $ar('date') }}<br><span dir="ltr">{{ $en('date') }}</span></th>
+                                <th class="border border-primary px-2 py-1 text-start">{{ $ar('description') }}</th>
+                                <th class="border border-primary px-2 py-1 text-start" dir="ltr">{{ $en('description') }}</th>
+                                <th class="border border-primary px-2 py-1 text-start">{{ $ar('amount') }}<br><span dir="ltr">{{ $en('amount') }}</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($invoices as $index => $invoice)
+                                <tr>
+                                    <td class="border border-secondary-light px-2 py-1">{{ $index + 1 }}</td>
+                                    <td class="border border-secondary-light px-2 py-1" dir="ltr">{{ $invoice->number }}</td>
+                                    <td class="border border-secondary-light px-2 py-1" dir="ltr">{{ $day($invoice->purchase_date) }}</td>
+                                    <td class="border border-secondary-light px-2 py-1">{{ $invoice->description_ar }}@if ($invoice->is_seizure) ({{ $ar('seizure_invoice') }})@endif</td>
+                                    <td class="border border-secondary-light px-2 py-1" dir="ltr">{{ $invoice->description_en }}@if ($invoice->is_seizure) ({{ $en('seizure_invoice') }})@endif</td>
+                                    <td class="border border-secondary-light px-2 py-1"><x-money :amount="$invoice->loan_amount" :currency="$file->currency" /></td>
+                                </tr>
+                            @endforeach
+                            <tr class="font-semibold">
+                                <td class="border border-secondary-light px-2 py-1" colspan="5">{{ $ar('total') }} / {{ $en('total') }}</td>
+                                <td class="border border-secondary-light px-2 py-1"><x-money :amount="$totals['invoiced']" :currency="$file->currency" /></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="mt-3 font-semibold">{{ $words['ar'] }}</p>
+                    <p class="font-semibold" dir="ltr">{{ $words['en'] }}</p>
+                    <p class="mt-3">{{ $ar('received_all') }}<br><span dir="ltr">{{ $en('received_all') }}</span></p>
+                    @include('micro-files.signatures', ['roles' => [$ar('beneficiary').' / '.$en('beneficiary'), $ar('project_manager').' / '.$en('project_manager'), $ar('accounting').' / '.$en('accounting')]])
+                </div>
+            </section>
         @endif
 
-        <footer class="mt-8 text-center text-xs text-primary">{{ $ar('footer') }}</footer>
+        {{-- What a form has no room for, on a page of its own --}}
+        @if ($rest->isNotEmpty())
+            <section class="mf-page" data-test="print-annex">
+                <img class="mf-bg" src="{{ $page('letterhead') }}" alt="">
+                <div class="mf-body">
+                    <h2 class="mb-3 text-center text-lg font-bold">{{ $ar('annex', ['form' => $ar('titles.'.$form)]) }}</h2>
+                    <table class="w-full border-collapse text-sm">
+                        <tbody>
+                            @foreach ($rest as $index => $row)
+                                <tr>
+                                    <td class="border border-secondary-light px-2 py-1">{{ $rooms[$form] + $index + 1 }}</td>
+                                    @if ($form === 'order')
+                                        <td class="border border-secondary-light px-2 py-1"><x-money :amount="$row->amount" :currency="$row->currency" /></td>
+                                        <td class="border border-secondary-light px-2 py-1" dir="ltr">{{ $row->number }}</td>
+                                        <td class="border border-secondary-light px-2 py-1">{{ $row->description_ar }}</td>
+                                        <td class="border border-secondary-light px-2 py-1">{{ $row->merchant }}</td>
+                                    @else
+                                        <td class="border border-secondary-light px-2 py-1">{{ $row->name }}</td>
+                                        <td class="border border-secondary-light px-2 py-1">{{ $row->kind }}</td>
+                                        <td class="border border-secondary-light px-2 py-1" dir="ltr">{{ $quantity($row->quantity) }}</td>
+                                        <td class="border border-secondary-light px-2 py-1">{{ $ar('conditions.'.$row->condition) }}</td>
+                                    @endif
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        @endif
     </body>
 </html>

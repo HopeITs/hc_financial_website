@@ -31,6 +31,20 @@
                     </div>
                 @endif
 
+                @if ($extraName !== null && $reviewed !== [])
+                    <p class="text-sm text-secondary-medium dark:text-ink-muted" data-test="excel-extra">{{ trans_choice('excel.extra_read', count($extra), ['count' => count($extra), 'sheet' => $extraName]) }}</p>
+                @endif
+
+                @if ($extraProblems !== [])
+                    <div class="rounded-lg border border-status-critical bg-status-critical-soft px-4 py-2 text-sm text-status-critical" role="alert" data-test="excel-extra-problems">
+                        <ul class="list-disc ps-5">
+                            @foreach ($extraProblems as $problem)
+                                <li>{{ $problem }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 @if ($reviewed !== [])
                     <p @class(['text-sm font-medium', 'text-status-good' => $broken === 0, 'text-status-warn' => $broken > 0]) data-test="excel-summary">
                         {{ $broken === 0 ? trans_choice('excel.all_good', count($reviewed), ['count' => count($reviewed), 'file' => $fileName]) : trans_choice('excel.some_broken', $broken, ['count' => $broken, 'file' => $fileName]) }}

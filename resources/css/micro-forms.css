@@ -1,0 +1,229 @@
+/*
+ * The paper forms of a micro-project file (finance request of 2026-11-23). Each page is the original form, as an image
+ * (public/images/micro-forms), with the file's values set on its lines: every position below is measured in millimetres
+ * from the page's top-left corner on the original A4 form.
+ */
+
+@page {
+    size: A4;
+    margin: 0;
+}
+
+.mf-page {
+    position: relative;
+    width: 210mm;
+    height: 297mm;
+    margin: 0 auto 8mm;
+    overflow: hidden;
+    background: white;
+    color: var(--color-secondary-dark);
+    font-size: 10.5pt;
+    line-height: 1.3;
+    box-shadow: 0 2px 12px rgb(0 0 0 / 0.15);
+    break-after: page;
+}
+
+.mf-page:last-of-type {
+    break-after: auto;
+}
+
+@media print {
+    .mf-page {
+        margin: 0;
+        box-shadow: none;
+    }
+}
+
+.mf-bar {
+    width: 210mm;
+    margin: 0 auto 4mm;
+}
+
+.mf-bg {
+    position: absolute;
+    inset: 0;
+    width: 210mm;
+    height: 297mm;
+}
+
+/* A value on a dotted line: its box sits on the dots, beside its label (on the right, numbers included). */
+.mf-field {
+    position: absolute;
+    height: 5.2mm;
+    overflow: hidden;
+    white-space: nowrap;
+    text-align: right;
+    font-weight: 600;
+    transform: translateY(1mm);
+}
+
+.mf-center {
+    text-align: center;
+}
+
+.mf-ltr {
+    direction: ltr;
+}
+
+/* The upside-down cards of the payment card: the same fields, turned around the page's centre. */
+.mf-turned {
+    position: absolute;
+    inset: 0;
+    transform: rotate(180deg);
+}
+
+/* ---- Payment order (طلب صرف) ---- */
+.mf-order-date { top: 45.3mm; left: 121mm; width: 52mm; }
+.mf-order-number { top: 45.3mm; left: 16mm; width: 79mm; }
+.mf-order-name { top: 64.6mm; left: 95mm; width: 63mm; }
+.mf-order-name-en { top: 64.6mm; left: 16mm; width: 32mm; }
+.mf-order-project { top: 71.4mm; left: 95mm; width: 83mm; }
+.mf-order-number-project { top: 71.4mm; left: 16mm; width: 50mm; }
+.mf-order-mobile { top: 78.2mm; left: 94mm; width: 78mm; }
+.mf-order-national { top: 78.2mm; left: 16mm; width: 49mm; }
+.mf-order-donor { top: 84.9mm; left: 95mm; width: 76mm; }
+.mf-order-first-due { top: 84.9mm; left: 16mm; width: 47mm; }
+.mf-order-requested { top: 106.1mm; left: 106mm; width: 62mm; }
+.mf-order-seizure { top: 106.1mm; left: 16mm; width: 65mm; }
+.mf-order-percent { top: 112.9mm; left: 107mm; width: 74mm; }
+.mf-order-instalment { top: 112.9mm; left: 16mm; width: 62mm; }
+.mf-order-sign-manager { top: 144.2mm; left: 133mm; width: 46mm; }
+.mf-order-sign-finance { top: 144.2mm; left: 27mm; width: 46mm; }
+.mf-order-extra { top: 163.9mm; left: 149mm; width: 25mm; }
+.mf-order-extra-reason { top: 163.9mm; left: 64mm; width: 66mm; }
+.mf-order-total { top: 246.3mm; left: 16mm; width: 152mm; }
+.mf-order-sign-2-manager { top: 267.6mm; left: 149mm; width: 46mm; }
+.mf-order-sign-2-purchasing { top: 267.6mm; left: 80.5mm; width: 46mm; }
+.mf-order-sign-2-finance { top: 267.6mm; left: 14mm; width: 46mm; }
+
+/* The invoices table: amount, number, description, notes, from the right; seven rows. */
+.mf-order-invoices {
+    position: absolute;
+    top: 197.5mm;
+    left: 12.7mm;
+    width: 184.7mm;
+    display: grid;
+    grid-template-columns: 51.4mm 28.5mm 57mm 47.8mm;
+    grid-auto-rows: 6.8mm;
+    align-items: center;
+    font-size: 9.5pt;
+}
+
+.mf-order-invoices > span,
+.mf-quote-items > span {
+    text-align: center;
+}
+
+/* ---- Purchase request (طلب مشتريات) ---- */
+.mf-purchase-number { top: 49.6mm; left: 16mm; width: 43mm; }
+.mf-purchase-name { top: 64.1mm; left: 97mm; width: 79mm; }
+.mf-purchase-mobile { top: 64.1mm; left: 16mm; width: 53mm; }
+.mf-purchase-profession { top: 71.6mm; left: 132mm; width: 35mm; }
+.mf-purchase-area { top: 71.6mm; left: 14mm; width: 23mm; }
+
+/* The items table is the form's own Word table: number, item, kind, quantity, condition, from the right. */
+.mf-purchase-items {
+    position: absolute;
+    top: 86.5mm;
+    left: 12.7mm;
+    width: 165.3mm;
+    display: grid;
+    grid-template-columns: 12mm 64mm 60mm 16mm 13.3mm;
+    grid-auto-rows: 5.3mm;
+    font-size: 9pt;
+}
+
+.mf-purchase-items > span {
+    border: 0.2mm solid var(--color-secondary-light);
+    padding-inline: 1.5mm;
+    overflow: hidden;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+}
+
+.mf-purchase-items > .mf-head {
+    background: var(--color-primary);
+    color: white;
+    justify-content: center;
+}
+
+.mf-purchase-items > .mf-shade {
+    background: var(--color-secondary-soft);
+}
+
+.mf-purchase-text {
+    position: absolute;
+    top: 176mm;
+    right: 14mm;
+    width: 182mm;
+    font-size: 11pt;
+    line-height: 5.6mm;
+}
+
+.mf-purchase-signs {
+    position: absolute;
+    top: 215.5mm;
+    left: 4mm;
+    width: 166mm;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    text-align: center;
+    font-size: 10pt;
+}
+
+/* ---- Price quote list (قائمة عرض أسعار) ---- */
+.mf-quote-supplier { top: 49mm; left: 108mm; width: 67mm; }
+.mf-quote-date { top: 49mm; left: 16mm; width: 54mm; }
+.mf-quote-for { top: 56.8mm; left: 83mm; width: 69mm; }
+
+/* product, kind, quantity, price, total, notes, from the right; eleven rows. */
+.mf-quote-items {
+    position: absolute;
+    top: 84.2mm;
+    left: 12.7mm;
+    width: 184.4mm;
+    display: grid;
+    grid-template-columns: 48.6mm 25.3mm 24.8mm 24.3mm 30.7mm 30.7mm;
+    grid-auto-rows: 7.22mm;
+    align-items: center;
+    font-size: 9.5pt;
+}
+
+/* ---- Trust bond (سند أمانة) ---- */
+.mf-bond-name { top: 49.3mm; left: 133mm; width: 40mm; }
+.mf-bond-national { top: 56.4mm; left: 62mm; width: 62mm; }
+.mf-bond-amount { top: 88.3mm; left: 13mm; width: 162mm; }
+.mf-bond-words { top: 95.5mm; left: 13mm; width: 182mm; }
+
+/* ---- Equipment receipt undertaking (تعهد استلام المعدات المطلوبة) ---- */
+.mf-undertaking-box {
+    position: absolute;
+    top: 51mm;
+    left: 64mm;
+    width: 82mm;
+    height: 87mm;
+    overflow: hidden;
+    font-size: 8pt;
+}
+
+.mf-undertaking-name { top: 210.6mm; left: 106mm; width: 60mm; }
+.mf-undertaking-date { top: 228.8mm; left: 106mm; width: 74mm; }
+
+/* ---- Payment card (كرت الدفعات): the two upright fronts; the turned copy fills the two upside-down ones ---- */
+.mf-card-name-1 { top: 96.8mm; left: 10mm; width: 57mm; }
+.mf-card-project-1 { top: 106.2mm; left: 10mm; width: 57mm; }
+.mf-card-donor-1 { top: 115.6mm; left: 10mm; width: 57mm; }
+.mf-card-name-2 { top: 96.8mm; left: 115mm; width: 57mm; }
+.mf-card-project-2 { top: 106.2mm; left: 115mm; width: 57mm; }
+.mf-card-donor-2 { top: 115.6mm; left: 115mm; width: 57mm; }
+
+/* ---- Pages on the letterhead (the delivery protocol, and the rows a form has no room for) ---- */
+.mf-body {
+    position: absolute;
+    top: 32mm;
+    left: 15mm;
+    right: 15mm;
+    bottom: 22mm;
+    overflow: hidden;
+}
