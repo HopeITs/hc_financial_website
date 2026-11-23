@@ -27,6 +27,8 @@ return [
             'rejected' => 'Your vouchers rejected in the last :days days',
             'decide' => 'Requests waiting for your decision',
             'my_requests' => 'Your requests waiting for a decision',
+            'micro_approve' => 'Micro-project payment orders waiting for your approval',
+            'micro_returned' => 'Micro-project files sent back for changes',
             'rates' => 'Daily rates waiting for your approval',
             'counts' => 'Cash and bank accounts not counted today',
             'month_close' => 'Month :month is not closed yet',

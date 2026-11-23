@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Services\Loans\InstalmentFunds;
 use App\Services\Loans\LoanException;
 use App\Services\Loans\MicroFiles;
+use App\Services\Loans\MicroOverview;
 use App\Services\Loans\MicroPurchases;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
@@ -39,8 +40,13 @@ class MicroProjectFiles extends Component
     #[Url]
     public string $file = '';
 
+    /** Which files the list shows: those on their way, one step of MicroOverview::STEPS, the cancelled ones, or all. */
     #[Url]
     public string $show = 'open';
+
+    /** A name, project number, national number or mobile to look for. */
+    #[Url]
+    public string $search = '';
 
     /** @var array<string, string> */
     public array $form = [];
@@ -93,7 +99,9 @@ class MicroProjectFiles extends Component
         $this->resetInvoice();
         $this->resetAdvance();
 
-        if ($this->file !== '' && ($found = MicroLoan::query()->find((int) $this->file)) !== null) {
+        if ($this->file === 'new' && auth()->user() instanceof User && auth()->user()->canOnScreen('microfiles', ScreenAction::Create)) {
+            $this->blank();
+        } elseif ($this->file !== '' && ($found = MicroLoan::query()->find((int) $this->file)) !== null) {
             $this->load($found);
         } else {
             $this->file = '';
@@ -305,20 +313,30 @@ class MicroProjectFiles extends Component
         }
     }
 
-    public function render(MicroFiles $files, MicroPurchases $purchases, InstalmentFunds $funds): View
+    public function render(MicroFiles $files, MicroPurchases $purchases, InstalmentFunds $funds, MicroOverview $overview): View
     {
         $user = $this->guard(ScreenAction::View);
         $current = $this->current();
         $stages = match ($this->show) {
+            'draft' => [MicroLoan::DRAFT, MicroLoan::RETURNED],
+            'submitted' => [MicroLoan::SUBMITTED],
+            'approved', 'ready' => [MicroLoan::APPROVED],
             'active' => [MicroLoan::ACTIVE],
             'cancelled' => [MicroLoan::CANCELLED],
             'all' => null,
             default => [MicroLoan::DRAFT, MicroLoan::SUBMITTED, MicroLoan::RETURNED, MicroLoan::APPROVED],
         };
+        $search = trim($this->search);
 
         $list = MicroLoan::query()->whereNotNull('requested_amount')
             ->when($stages !== null, fn ($query) => $query->whereIn('stage', $stages))
-            ->orderByDesc('id')->limit(200)->get();
+            ->when($search !== '', fn ($query) => $query->where(fn ($inner) => $inner
+                ->where('beneficiary', 'like', '%'.$search.'%')->orWhere('name_en', 'like', '%'.$search.'%')
+                ->orWhere('project_number', 'like', '%'.$search.'%')->orWhere('national_number', 'like', '%'.$search.'%')
+                ->orWhere('mobile', 'like', '%'.$search.'%')))
+            ->orderByDesc('id')->limit(200)->get()
+            // The purchases step and the protocol step are both approved files: the protocol's have their invoices booked.
+            ->when(in_array($this->show, ['approved', 'ready'], true), fn ($rows) => $rows->filter(fn (MicroLoan $file): bool => $overview->stepOf($file) === $this->show)->values());
 
         $totals = $current !== null ? $purchases->totals($current) : null;
         $advances = $current !== null
@@ -354,6 +372,8 @@ class MicroProjectFiles extends Component
                 'recovery' => rtrim(rtrim((string) $current->recovery_percent, '0'), '.').' %',
             ],
             'currencies' => MicroFiles::CURRENCIES,
+            // The step bar of the open file: the steps done, the one it is at, and those to come.
+            'currentStep' => $current !== null ? $overview->stepOf($current) : ($this->file === 'new' ? 'draft' : null),
             'extraNeedsEmail' => $current !== null && $purchases->extraNeedsEmail($current),
             'advances' => $advances,
             'fundings' => $this->fundings($funds),

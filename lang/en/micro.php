@@ -7,9 +7,22 @@ return [
     'show' => 'Show',
     'shows' => [
         'open' => 'Files in progress',
-        'active' => 'Opened loans',
+        'draft' => 'Step 1: file and quotes',
+        'submitted' => 'Step 2: waiting for approval',
+        'approved' => 'Step 3: purchases',
+        'ready' => 'Step 4: ready for the delivery protocol',
+        'active' => 'Step 5: opened loans',
         'cancelled' => 'Cancelled',
         'all' => 'All',
+    ],
+    'search' => 'Search',
+    'search_hint' => 'Name, project number, national number or mobile',
+    'next' => [
+        'draft' => 'Next: fill in the details and the purchase list, add two quotes, choose one, then send for approval.',
+        'submitted' => 'Next: the approvers approve the payment order, or send it back with a reason.',
+        'approved' => 'Next: pay the invoices directly or through an advance, and book each invoice.',
+        'ready' => 'Next: print the delivery protocol, have it signed, and open the loan.',
+        'active' => 'The loan is open: receive its instalments from Loans and instalments.',
     ],
     'stage' => 'Stage',
     'stages' => [

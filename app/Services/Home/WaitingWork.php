@@ -12,6 +12,7 @@ use App\Models\LedgerRequest;
 use App\Models\MonthClose;
 use App\Models\User;
 use App\Models\Voucher;
+use App\Services\Loans\MicroOverview;
 use App\Services\Projects\ProjectAccess;
 use App\Services\Treasury\CashBook;
 use App\Services\Treasury\Revaluations;
@@ -19,6 +20,7 @@ use App\Support\Navigation;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * What waits for the signed-in person (U-03), shown at the top of the home page: vouchers to approve, their own
@@ -72,7 +74,36 @@ class WaitingWork
             ];
         }
 
-        return [...$items, ...$this->treasury($user)];
+        return [...$items, ...$this->microProjects($user), ...$this->treasury($user)];
+    }
+
+    /**
+     * Micro projects (finance request of 2026-11-23): payment orders waiting for the person's approval, and the files
+     * sent back for changes, for those who prepare them.
+     *
+     * @return list<array{key: string, count: int, url: string}>
+     */
+    private function microProjects(User $user): array
+    {
+        // Until the migration of 2026-11-23 has run there are no files.
+        if (! Schema::hasColumn('gl_micro_loans', 'stage')) {
+            return [];
+        }
+
+        $items = [];
+        $waiting = null;
+
+        if ($user->canOnScreen('microfiles', ScreenAction::Approve)) {
+            $waiting = app(MicroOverview::class)->waitingFor($user);
+            $items[] = ['key' => 'micro_approve', 'count' => $waiting['approve']->count(), 'url' => route(Navigation::routeName('microfiles'), ['show' => 'submitted'])];
+        }
+
+        if ($user->canOnScreen('microfiles', ScreenAction::Create)) {
+            $waiting ??= app(MicroOverview::class)->waitingFor($user);
+            $items[] = ['key' => 'micro_returned', 'count' => $waiting['returned']->count(), 'url' => route(Navigation::routeName('microfiles'), ['show' => 'draft'])];
+        }
+
+        return $items;
     }
 
     /**

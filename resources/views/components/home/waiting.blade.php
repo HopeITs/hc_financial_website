@@ -7,6 +7,8 @@
         'rejected' => ['icon' => 'x-mark', 'tone' => 'critical'],
         'decide' => ['icon' => 'clipboard-document-check', 'tone' => 'warn'],
         'my_requests' => ['icon' => 'paper-airplane', 'tone' => 'active'],
+        'micro_approve' => ['icon' => 'briefcase', 'tone' => 'warn'],
+        'micro_returned' => ['icon' => 'arrow-uturn-left', 'tone' => 'critical'],
         'rates' => ['icon' => 'currency-dollar', 'tone' => 'warn'],
         'counts' => ['icon' => 'calculator', 'tone' => 'warn'],
         'month_close' => ['icon' => 'lock-closed', 'tone' => 'warn'],

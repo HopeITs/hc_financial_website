@@ -4,6 +4,7 @@
         'home' => 'home',
         'funding' => 'banknotes',
         'entries' => 'document-text',
+        'micro' => 'briefcase',
         'treasury' => 'building-library',
         'reports' => 'chart-bar',
         'chart' => 'rectangle-stack',
