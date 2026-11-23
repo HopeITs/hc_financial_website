@@ -21,9 +21,11 @@ return [
 
     'groups' => [
         'funding' => ['donors', 'contracts', 'rdonor'],
-        'entries' => ['single', 'receipt', 'journal', 'advance', 'vouchers', 'approval', 'requests', 'microfiles', 'payments', 'loanfunds', 'salaries', 'multi'],
+        'entries' => ['single', 'receipt', 'journal', 'advance', 'vouchers', 'approval', 'requests', 'salaries', 'multi'],
+        // Micro projects in one place (finance request of 2026-11-23).
+        'micro' => ['microhome', 'microfiles', 'payments', 'loanfunds', 'loans'],
         'treasury' => ['treasury', 'tills', 'transfers', 'alloc', 'monthend', 'opening', 'currency', 'denoms'],
-        'reports' => ['rexp', 'rcash', 'rrev', 'rfixed', 'rattach', 'tb', 'statement', 'statements', 'recon', 'mapprovals', 'uncomp', 'xreserve', 'advances', 'loans'],
+        'reports' => ['rexp', 'rcash', 'rrev', 'rfixed', 'rattach', 'tb', 'statement', 'statements', 'recon', 'mapprovals', 'uncomp', 'xreserve', 'advances'],
         'chart' => ['chart'],
         'settings' => ['users', 'employees', 'cities', 'log', 'auditlog'],
     ],
@@ -38,6 +40,7 @@ return [
         'journal' => 'entries/journal',
         'advance' => 'entries/advances',
         'multi' => 'entries/multi',
+        'microhome' => 'micro-projects',
         'microfiles' => 'entries/micro-files',
         'payments' => 'entries/micro-loans',
         'loanfunds' => 'entries/instalment-funds',

@@ -24,10 +24,13 @@
         <div class="flex flex-wrap gap-4 p-4 pb-0">
             <div class="w-56">
                 <x-ui.form-select wire:model.live="show" :label="__('micro.show')" data-test="show">
-                    @foreach (['open', 'active', 'cancelled', 'all'] as $option)
+                    @foreach (['open', 'draft', 'submitted', 'approved', 'ready', 'active', 'cancelled', 'all'] as $option)
                         <option value="{{ $option }}">{{ __('micro.shows.'.$option) }}</option>
                     @endforeach
                 </x-ui.form-select>
+            </div>
+            <div class="w-72">
+                <x-ui.form-input type="search" wire:model.live.debounce.400ms="search" :label="__('micro.search')" :placeholder="__('micro.search_hint')" data-test="search" />
             </div>
         </div>
         <x-ui.scroll-table :paginate="false">
@@ -76,6 +79,25 @@
                     @endif
                     <div class="ms-auto"><x-ui.button size="sm" tone="ghost" icon="x-mark" wire:click="closeFile" :aria-label="__('micro.close_file')" data-test="close-file" /></div>
                 </div>
+
+                @if ($currentStep !== null)
+                    {{-- Where the file is: the steps done, the one it is at, and those to come --}}
+                    @php($stepIndex = array_search($currentStep, \App\Services\Loans\MicroOverview::STEPS, true))
+                    <ol class="flex flex-wrap gap-2" data-test="file-steps">
+                        @foreach (\App\Services\Loans\MicroOverview::STEPS as $index => $step)
+                            <li @class([
+                                'flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium',
+                                'bg-status-good-soft text-status-good' => $index < $stepIndex,
+                                'bg-primary text-white' => $index === $stepIndex,
+                                'bg-secondary-soft text-secondary-medium dark:bg-surface-2 dark:text-ink-muted' => $index > $stepIndex,
+                            ]) @if ($index === $stepIndex) aria-current="step" data-test="current-step" @endif>
+                                <span class="tabular-nums">{{ $index + 1 }}</span>
+                                {{ __('micro_home.steps.'.$step.'.title') }}
+                            </li>
+                        @endforeach
+                    </ol>
+                    <p class="text-sm text-secondary-medium dark:text-ink-muted">{{ __('micro.next.'.$currentStep) }}</p>
+                @endif
 
                 @if ($current?->return_reason && in_array($current->stage, ['returned', 'cancelled'], true))
                     <p class="text-sm text-status-critical" data-test="return-reason">{{ __('micro.reason_was', ['reason' => $current->return_reason]) }}</p>
@@ -432,6 +454,7 @@
                         <p class="text-sm" data-test="active-note">
                             {{ __('micro.active_note', ['loan' => $figures['loan'], 'grant' => $figures['grant'], 'currency' => $current->currency, 'first' => $current->first_payment_date?->format('d/m/Y') ?? '—']) }}
                             <a href="{{ route(\App\Support\Navigation::routeName('payments'), ['card' => $current->id]) }}" wire:navigate class="underline">{{ __('micro.open_loan') }}</a>
+                            · <a href="{{ route(\App\Support\Navigation::routeName('payments'), ['loanId' => $current->id]) }}" wire:navigate class="underline" data-test="receive-for-file">{{ __('micro_home.receive') }}</a>
                         </p>
                     @endif
                 @endif

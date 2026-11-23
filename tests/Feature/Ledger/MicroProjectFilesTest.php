@@ -3,16 +3,19 @@
 use App\Enums\RoleId;
 use App\Enums\VoucherType;
 use App\Livewire\MicroProjectFiles;
+use App\Livewire\MicroProjectsHome;
 use App\Models\GlBudgetLine;
 use App\Models\MicroLoan;
 use App\Models\MicroQuote;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Models\WebUserRole;
+use App\Services\Home\WaitingWork;
 use App\Services\Ledger\VoucherApprovals;
 use App\Services\Loans\LoanException;
 use App\Services\Loans\MicroFiles;
 use App\Services\Loans\MicroLoans;
+use App\Services\Loans\MicroOverview;
 use App\Services\Loans\MicroPurchases;
 use App\Services\Treasury\MonthlyRates;
 use App\Support\AmountInWords;
@@ -205,4 +208,40 @@ it('writes amounts in words in Arabic and English', function () {
     expect($words->arabic('58500000', 'SYP'))->toBe('فقط ثمانية وخمسون مليون وخمسمائة ألف ليرة سورية لا غير')
         ->and($words->arabic('200000', 'SYP'))->toBe('فقط مئتا ألف ليرة سورية لا غير')
         ->and($words->english('3015.50', 'USD'))->toBe('Only three thousand fifteen US dollars and 50/100');
+});
+
+it('shows the section in one place: the files at each step, what waits for whom, and the latest loans', function () {
+    $files = app(MicroFiles::class);
+    mfFile($this->accountant);
+    $waiting = mfFile($this->accountant);
+    $files->addQuote($this->accountant, $waiting, 'Huda', MicroQuote::BENEFICIARY, '', '1000', 'USD', null);
+    $files->addQuote($this->accountant, $waiting, 'Abu Sami', MicroQuote::MERCHANT, '', '1050', 'USD', null);
+    $files->submit($waiting);
+    $ready = mfApproved($this->accountant, $this->program, $this->manager);
+    app(MicroPurchases::class)->payInvoice($this->accountant, $ready, ['date' => '2026-05-10', 'cash_account' => '1111', 'amount' => '400', 'merchant' => 'Abu Sami', 'number' => 'F-1', 'description_ar' => 'ماكينة']);
+
+    expect(app(MicroOverview::class)->steps())->toBe(['draft' => 1, 'submitted' => 1, 'approved' => 0, 'ready' => 1, 'active' => 0]);
+
+    $page = Livewire::actingAs($this->program)->test(MicroProjectsHome::class)
+        ->assertSeeHtml('data-test="step-count-ready"')
+        ->assertSeeHtml('data-test="waiting-approve"');
+    expect($page->html())->toContain('Huda Saleh');
+
+    Livewire::actingAs($this->accountant)->test(MicroProjectsHome::class)
+        ->assertSeeHtml('data-test="waiting-ready"')
+        ->assertDontSeeHtml('data-test="waiting-approve"');
+
+    $home = collect(app(WaitingWork::class)->for($this->program))->pluck('count', 'key');
+    expect($home['micro_approve'])->toBe(1);
+
+    // The files screen opens on a step, finds a file by its number, and opens a new file from a link.
+    Livewire::withQueryParams(['show' => 'ready'])->actingAs($this->accountant)->test(MicroProjectFiles::class)
+        ->assertSeeHtml('data-test="file-row-'.$ready->id.'"')
+        ->assertDontSeeHtml('data-test="file-row-'.$waiting->id.'"')
+        ->set('show', 'all')->set('search', 'nobody')
+        ->assertDontSeeHtml('data-test="file-row-'.$ready->id.'"');
+
+    Livewire::withQueryParams(['file' => 'new'])->actingAs($this->accountant)->test(MicroProjectFiles::class)
+        ->assertSeeHtml('data-test="file-panel"')
+        ->assertSeeHtml('data-test="current-step"');
 });

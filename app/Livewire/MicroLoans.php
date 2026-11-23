@@ -32,6 +32,8 @@ class MicroLoans extends Component
 
     public string $cashAccount = '';
 
+    /** The loan the instalment is received for; a link can name it (from a beneficiary's file). */
+    #[Url]
     public string $loanId = '';
 
     public string $paymentAmount = '';

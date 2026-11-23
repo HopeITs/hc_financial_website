@@ -18,6 +18,7 @@ use App\Livewire\Home;
 use App\Livewire\LiquidityPosition;
 use App\Livewire\InstalmentFundsScreen;
 use App\Livewire\MicroProjectFiles;
+use App\Livewire\MicroProjectsHome;
 use App\Livewire\MicroLoans;
 use App\Livewire\MonthEndScreen;
 use App\Livewire\Notifications;
@@ -87,6 +88,7 @@ Route::middleware('auth')->group(function () {
     // Vouchers from Excel (finance decision of 2026-11-20) take the place of the old multi entry.
     $screen('multi', VoucherImportScreen::class);
     // Micro-project files (finance decisions of 2026-11-23): details, quotes, payment order, purchases, receipt protocol.
+    $screen('microhome', MicroProjectsHome::class);
     $screen('microfiles', MicroProjectFiles::class);
     Route::get('entries/micro-files/{file}/print/{form}', MicroFilePrintController::class)->whereNumber('file')->defaults('screen', 'microfiles')->middleware('screen')->name('entries.micro-files.print');
     Route::get('entries/micro-files/documents/{kind}/{id}', MicroFileDocumentController::class)->whereIn('kind', ['quote', 'invoice'])->whereNumber('id')->defaults('screen', 'microfiles')->middleware('screen')->name('entries.micro-files.document');
