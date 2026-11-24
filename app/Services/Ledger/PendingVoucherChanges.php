@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Voucher;
 use App\Models\VoucherAudit;
 use App\Models\VoucherLine;
+use App\Services\Entries\ProjectRevenues;
 use App\Services\Ledger\Rules\MonthIsOpen;
 use App\Services\Loans\MicroLoans;
 use App\Services\Payroll\Payrolls;
@@ -113,6 +114,9 @@ class PendingVoucherChanges
             }
             if (Schema::hasTable('gl_payrolls')) {
                 app(Payrolls::class)->forgetVoucher($voucher);
+            }
+            if (Schema::hasTable('gl_revenue_sheets')) {
+                app(ProjectRevenues::class)->forgetVoucher($voucher);
             }
             $voucher->delete();
         });

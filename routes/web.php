@@ -31,6 +31,7 @@ use App\Livewire\OperationalReport;
 use App\Livewire\OperationsHome;
 use App\Livewire\PaymentVoucher;
 use App\Livewire\PayrollScreen;
+use App\Livewire\ProjectRevenuesScreen;
 use App\Livewire\Purchases;
 use App\Livewire\ReceiptVoucher;
 use App\Livewire\RecurringPaymentsScreen;
@@ -111,6 +112,8 @@ Route::middleware('auth')->group(function () {
     $screen('operations', OperationsHome::class);
     // Everything waiting for one's approval (finance decision of 2026-11-25).
     $screen('inbox', ApprovalsInboxScreen::class);
+    // What the projects earn themselves: a day's takings and the price lists (finance request of 2026-11-24).
+    $screen('revenues', ProjectRevenuesScreen::class);
     // Rent and the other recurring payments (finance decision of 2026-11-24).
     $screen('recurring', RecurringPaymentsScreen::class);
     // The monthly payroll of each project, its summary and payslips (finance request of 2026-11-24).

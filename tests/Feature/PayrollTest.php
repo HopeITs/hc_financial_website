@@ -26,6 +26,7 @@ beforeEach(function () {
     (require database_path('migrations/2026_10_25_090000_add_contract_dates_to_gl_projects.php'))->up();
     (require database_path('migrations/2026_10_26_090000_create_gl_payroll_splits_table.php'))->up();
     (require database_path('migrations/2026_11_25_100000_create_payroll_tables.php'))->up();
+    (require database_path('migrations/2026_11_25_110000_create_project_revenues.php'))->up();
     seedChartWithTestProjects();
 
     foreach (['F2F', 'SZ'] as $code) {
