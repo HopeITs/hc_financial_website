@@ -34,7 +34,7 @@
             <x-ui.form-input wire:model.live.debounce.400ms="requestId" :label="__('ledger.builder.request')" :help="__('ledger.builder.request_help')" dir="ltr" inputmode="numeric" />
         @endif
         <div class="sm:col-span-2 lg:col-span-4">
-            <x-ui.form-textarea wire:model.live.debounce.400ms="description" :label="__('ledger.builder.description')" rows="2" />
+            <x-ui.form-textarea wire:model.blur="description" :label="__('ledger.builder.description')" rows="2" />
         </div>
     </x-ui.panel>
 
@@ -136,8 +136,8 @@
                                     @endforeach
                                 </x-ui.form-select>
                             </td>
-                            <td><input type="text" wire:model.live.debounce.400ms="lines.{{ $i }}.contact" class="{{ $cell }}" aria-label="{{ __('ledger.builder.contact') }} {{ $i + 1 }}"></td>
-                            <td><input type="text" wire:model.live.debounce.400ms="lines.{{ $i }}.center" class="{{ $cell }}" aria-label="{{ __('ledger.builder.center') }} {{ $i + 1 }}"></td>
+                            <td><input type="text" wire:model.blur="lines.{{ $i }}.contact" class="{{ $cell }}" aria-label="{{ __('ledger.builder.contact') }} {{ $i + 1 }}"></td>
+                            <td><input type="text" wire:model.blur="lines.{{ $i }}.center" class="{{ $cell }}" aria-label="{{ __('ledger.builder.center') }} {{ $i + 1 }}"></td>
                             <td>
                                 @if ($isPounds)
                                     <x-ui.form-select bare wire:model.live="lines.{{ $i }}.lira_type" :label="(__('ledger.builder.lira_type')).' '.($i + 1)">

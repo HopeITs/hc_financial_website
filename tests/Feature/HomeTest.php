@@ -58,6 +58,19 @@ it('filters the projects by city', function () {
     Livewire::actingAs(homeUser())->test(Home::class)->set('cityId', 99)->assertSee('3,000.75')->assertSee('500.00');
 });
 
+it('keeps the project balances for a minute, then reads them again', function () {
+    $user = homeUser();
+    Livewire::actingAs($user)->test(Home::class)->assertSee('500.00');
+
+    DB::connection('legacy')->table('cash_balances')->where('Account_ID', 20)->update(['Account_Net' => 700]);
+
+    Livewire::actingAs($user)->test(Home::class)->assertSee('500.00')->assertDontSee('700.00');
+
+    $this->travel(61)->seconds();
+
+    Livewire::actingAs($user)->test(Home::class)->assertSee('700.00');
+});
+
 it('keeps the balances behind the ProjectBalanceSource interface', function () {
     expect(app(ProjectBalanceSource::class))->toBeInstanceOf(LegacyProjectBalanceSource::class);
 
