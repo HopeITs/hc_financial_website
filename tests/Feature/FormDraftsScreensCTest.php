@@ -20,6 +20,7 @@ beforeEach(function () {
     (require database_path('migrations/2026_10_24_110000_add_request_and_transfer_columns_to_gl_vouchers.php'))->up();
     (require database_path('migrations/2026_10_25_090000_create_request_module_tables.php'))->up();
     (require database_path('migrations/2026_11_24_100000_create_purchase_files.php'))->up();
+    (require database_path('migrations/2026_11_25_090000_create_gl_recurring_payments_table.php'))->up();
     if (! Schema::hasColumn('gl_projects', 'contract_number')) {
         (require database_path('migrations/2026_10_25_090000_add_contract_dates_to_gl_projects.php'))->up();
     }

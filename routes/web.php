@@ -30,6 +30,7 @@ use App\Livewire\OperationsHome;
 use App\Livewire\PaymentVoucher;
 use App\Livewire\Purchases;
 use App\Livewire\ReceiptVoucher;
+use App\Livewire\RecurringPaymentsScreen;
 use App\Livewire\ReferenceList;
 use App\Livewire\Requests;
 use App\Livewire\Salaries;
@@ -104,6 +105,8 @@ Route::middleware('auth')->group(function () {
 
     // The financial operations in one place (finance request of 2026-11-24).
     $screen('operations', OperationsHome::class);
+    // Rent and the other recurring payments (finance decision of 2026-11-24).
+    $screen('recurring', RecurringPaymentsScreen::class);
     $screen('requests', Requests::class);
     // Purchase files (finance request of 2026-11-24): the procurement cycle of an approved request, and its forms.
     $screen('purchases', Purchases::class);
