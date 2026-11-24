@@ -7,6 +7,9 @@ use App\Models\Contract;
 use App\Models\ContractInstalment;
 use App\Models\ContractProject;
 use App\Models\Donor;
+use App\Models\LedgerRequest;
+use App\Models\Payroll;
+use App\Models\Purchase;
 use App\Models\User;
 use App\Models\WebUserRole;
 use App\Services\Home\HomeOverview as Overview;
@@ -167,4 +170,24 @@ it('puts the overview on the home page only with the parts the role sees', funct
         ->assertDontSeeHtml('data-test="home-liquidity"')
         ->assertDontSeeHtml('data-test="home-rates"')
         ->assertDontSeeHtml('data-test="home-funding"');
+});
+
+it('lists the operations\' next steps only when something is there, for those who take them', function () {
+    $ann = hdUser(RoleId::Accountant, 'Ann');
+    $cashier = hdUser(RoleId::Cashier, 'Carl');
+
+    expect(hdWaiting($ann))->not->toHaveKey('purchases_pay')->not->toHaveKey('payroll_pay');
+
+    $request = LedgerRequest::query()->create(['type' => 'extra', 'project_code' => 'F2F', 'amount' => '100', 'currency' => 'USD', 'status' => 'approved', 'requested_by' => $ann->getKey()]);
+    $purchase = fn (string $title, string $stage, ?string $returned = null) => Purchase::query()->create([
+        'request_id' => $request->id, 'project_code' => 'F2F', 'title' => $title, 'stage' => $stage, 'return_reason' => $returned, 'created_by' => $ann->getKey(),
+    ]);
+    $purchase('Paint', Purchase::RECEIVED);
+    $purchase('Chairs', Purchase::ORDERED);
+    $purchase('Desks', Purchase::SOURCING, 'A third quote, please');
+    Payroll::query()->create(['project_code' => 'F2F', 'month' => '2026-11-01', 'pay_currency' => 'SYP', 'status' => Payroll::APPROVED, 'prepared_by' => $ann->getKey()]);
+
+    expect(hdWaiting($ann))->toMatchArray(['purchases_returned' => 1, 'purchases_receive' => 1, 'purchases_pay' => 1, 'payroll_pay' => 1])
+        ->and(hdWaiting($cashier))->toMatchArray(['purchases_pay' => 1])
+        ->and(hdWaiting($cashier))->not->toHaveKey('purchases_receive')->not->toHaveKey('payroll_pay');
 });

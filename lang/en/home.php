@@ -34,6 +34,12 @@ return [
             'counts' => 'Cash and bank accounts not counted today',
             'month_close' => 'Month :month is not closed yet',
             'revaluation' => 'The pounds\' revaluation of :month is not prepared',
+            'purchases_returned' => 'Purchase orders sent back for changes',
+            'purchases_receive' => 'Purchases waiting to be received',
+            'purchases_pay' => 'Received purchases waiting for payment',
+            'payroll_returned' => 'Payrolls sent back for changes',
+            'payroll_pay' => 'Approved payrolls waiting for payment',
+            'recurring_due' => 'Recurring payments due and not paid',
         ],
     ],
 

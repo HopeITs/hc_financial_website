@@ -14,6 +14,12 @@
         'counts' => ['icon' => 'calculator', 'tone' => 'warn'],
         'month_close' => ['icon' => 'lock-closed', 'tone' => 'warn'],
         'revaluation' => ['icon' => 'scale', 'tone' => 'warn'],
+        'purchases_returned' => ['icon' => 'arrow-uturn-left', 'tone' => 'critical'],
+        'purchases_receive' => ['icon' => 'truck', 'tone' => 'active'],
+        'purchases_pay' => ['icon' => 'banknotes', 'tone' => 'warn'],
+        'payroll_returned' => ['icon' => 'arrow-uturn-left', 'tone' => 'critical'],
+        'payroll_pay' => ['icon' => 'user-group', 'tone' => 'warn'],
+        'recurring_due' => ['icon' => 'arrow-path', 'tone' => 'warn'],
     ];
     $tones = [
         'warn' => 'bg-status-warn-soft text-status-warn',

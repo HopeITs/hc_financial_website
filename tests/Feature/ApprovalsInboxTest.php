@@ -83,3 +83,26 @@ it('puts what waits for the approver first on the home page, and the projects\' 
     Livewire::actingAs($fatima)->test(Home::class)->assertSeeHtml('data-test="home-totals"');
     Livewire::actingAs(aiUser(RoleId::Cashier, 'Carl'))->test(Home::class)->assertDontSeeHtml('data-test="home-totals"');
 });
+
+it('approves only the ticked items, or everything at once', function () {
+    $ann = aiUser(RoleId::Accountant, 'Ann');
+    $fatima = aiUser(RoleId::FinancialManager, 'Fatima');
+    $first = aiVoucher($ann);
+    $second = aiVoucher($ann);
+    $third = aiVoucher($ann);
+
+    $page = Livewire::actingAs($fatima)->test(ApprovalsInboxScreen::class)
+        ->assertSeeHtml('data-test="approve-everything"')
+        ->set('selected', ['vouchers|'.$first->id])
+        ->assertSeeHtml('data-test="selected-bar"')
+        ->call('approveSelected')
+        ->assertSet('selected', []);
+
+    expect($first->fresh()->status)->toBe(VoucherStatus::Approved)
+        ->and($second->fresh()->status)->toBe(VoucherStatus::PendingApproval);
+
+    $page->call('approveEverything')->assertSet('problems', []);
+
+    expect($second->fresh()->status)->toBe(VoucherStatus::Approved)
+        ->and($third->fresh()->status)->toBe(VoucherStatus::Approved);
+});

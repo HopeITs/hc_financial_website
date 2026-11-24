@@ -23,6 +23,9 @@ class ApprovalsInboxScreen extends Component
     /** @var list<string> */
     public array $problems = [];
 
+    /** @var list<string> the ticked items, as "kind|id" (role review of 2026-11-26) */
+    public array $selected = [];
+
     public function approve(ApprovalsInbox $inbox, string $kind, string $id): void
     {
         $this->clearFeedback();
@@ -54,6 +57,54 @@ class ApprovalsInboxScreen extends Component
         }
 
         $this->notice = trans_choice('approvals.approved_many', $done, ['count' => $done]);
+    }
+
+    /** Approves the ticked items of every kind; those a rule refuses stay ticked, with the reason. */
+    public function approveSelected(ApprovalsInbox $inbox): void
+    {
+        $this->approveMany($inbox, array_values(array_filter($this->listed($inbox), fn (array $item): bool => in_array($item['kind'].'|'.$item['id'], $this->selected, true))));
+    }
+
+    /** Approves everything waiting, of every kind. */
+    public function approveEverything(ApprovalsInbox $inbox): void
+    {
+        $this->approveMany($inbox, $this->listed($inbox));
+    }
+
+    /** @param  list<array{kind: string, id: string, title: string}>  $items */
+    private function approveMany(ApprovalsInbox $inbox, array $items): void
+    {
+        $this->clearFeedback();
+        $done = 0;
+        $left = [];
+
+        foreach ($items as $item) {
+            $refused = $inbox->approve($this->user(), $item['kind'], $item['id']);
+
+            if ($refused === []) {
+                $done++;
+            } else {
+                $left[] = $item['kind'].'|'.$item['id'];
+                $this->problems = [...$this->problems, ...array_map(fn (string $reason): string => $item['title'].': '.$reason, $refused)];
+            }
+        }
+
+        $this->selected = $left;
+        $this->notice = trans_choice('approvals.approved_many', $done, ['count' => $done]);
+    }
+
+    /** @return list<array{kind: string, id: string, title: string}> everything waiting, as the list shows it */
+    private function listed(ApprovalsInbox $inbox): array
+    {
+        $items = [];
+
+        foreach ($inbox->for($this->user()) as $kind => $rows) {
+            foreach ($rows as $row) {
+                $items[] = ['kind' => $kind, 'id' => $row['id'], 'title' => $row['title']];
+            }
+        }
+
+        return $items;
     }
 
     public function render(ApprovalsInbox $inbox): View
