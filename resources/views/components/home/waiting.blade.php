@@ -3,6 +3,7 @@
 @php
     // Each kind of waiting work: its icon and the status colour it takes when something is there.
     $looks = [
+        'inbox' => ['icon' => 'inbox-arrow-down', 'tone' => 'warn'],
         'approve' => ['icon' => 'clock', 'tone' => 'warn'],
         'rejected' => ['icon' => 'x-mark', 'tone' => 'critical'],
         'decide' => ['icon' => 'clipboard-document-check', 'tone' => 'warn'],

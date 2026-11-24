@@ -14,6 +14,7 @@ use App\Services\Entries\EntryException;
 use App\Services\Ledger\VoucherApprovals;
 use App\Services\Purchasing\PurchaseFiles;
 use App\Services\Purchasing\PurchasePayments;
+use App\Services\Search\GlobalSearch;
 use Illuminate\Support\Carbon;
 use Livewire\Livewire;
 
@@ -185,4 +186,14 @@ it('shows the purchase files screen and prints its forms', function () {
     }
 
     $this->actingAs(puUser(RoleId::Employee, 'Emp'))->get(route('entries.purchases'))->assertForbidden();
+});
+
+it('finds a purchase file from the search, by number or supplier', function () {
+    $ann = puUser(RoleId::Accountant, 'Ann');
+    $purchase = puPurchase($ann);
+    puQuote($ann, $purchase, 'Al Amal', ['48', '95']);
+    $search = app(GlobalSearch::class);
+
+    expect(collect($search->search($ann, $purchase->number('PO'))['purchases'] ?? [])->pluck('label')->all())->toBe([$purchase->number('PR').' · Paint and brushes'])
+        ->and($search->search($ann, 'Al Amal')['purchases'] ?? [])->toHaveCount(1);
 });

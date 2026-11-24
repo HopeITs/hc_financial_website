@@ -4,10 +4,15 @@ namespace App\Services\Search;
 
 use App\Models\GlAccount;
 use App\Models\GlProject;
+use App\Models\LedgerRequest;
+use App\Models\MicroLoan;
+use App\Models\Purchase;
+use App\Models\StaffMember;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Services\Projects\ProjectAccess;
 use App\Support\Navigation;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * The Ctrl+K search (U-06): vouchers by number or description, accounts by code or name, projects and screens. Each
@@ -33,10 +38,118 @@ class GlobalSearch
 
         return array_filter([
             'vouchers' => $this->vouchers($user, $term),
+            'purchases' => $this->purchases($user, $term),
+            'requests' => $this->requests($user, $term),
+            'staff' => $this->staff($user, $term),
+            'micro' => $this->microFiles($user, $term),
             'accounts' => $this->accounts($user, $term),
             'projects' => $this->projects($user, $term),
             'screens' => $this->screens($user, $term),
         ]);
+    }
+
+    /**
+     * Purchase files by number (PR-0012, PO-0012… or 12), what is bought or the supplier (finance request of 2026-11-25).
+     *
+     * @return list<array{label: string, detail: string|null, url: string}>
+     */
+    private function purchases(User $user, string $term): array
+    {
+        if (! $user->canOnScreen('purchases') || ! Schema::hasTable('gl_purchases')) {
+            return [];
+        }
+
+        $like = $this->like($term);
+        $number = preg_replace('/\D/', '', $term);
+
+        return array_values(Purchase::query()
+            ->with('awardedQuote')
+            ->when(($codes = $this->projectCodes($user)) !== null, fn ($query) => $query->whereIn('project_code', $codes))
+            ->where(fn ($query) => $query
+                ->where('title', 'like', '%'.$like.'%')
+                ->orWhereHas('quotes', fn ($quotes) => $quotes->where('supplier', 'like', '%'.$like.'%'))
+                ->when($number !== '', fn ($inner) => $inner->orWhere('id', (int) $number)))
+            ->orderByDesc('id')
+            ->limit(self::PER_GROUP)
+            ->get()
+            ->map(fn (Purchase $purchase): array => [
+                'label' => $purchase->number('PR').' · '.$purchase->title,
+                'detail' => $purchase->project_code.' · '.__('purchases.stages.'.$purchase->stage).($purchase->awardedQuote !== null ? ' · '.$purchase->awardedQuote->supplier : ''),
+                'url' => route(Navigation::routeName('purchases'), ['file' => $purchase->id]),
+            ])->all());
+    }
+
+    /** @return list<array{label: string, detail: string|null, url: string}> project requests by number or description */
+    private function requests(User $user, string $term): array
+    {
+        if (! $user->canOnScreen('requests') || ! Schema::hasTable('gl_requests')) {
+            return [];
+        }
+
+        $like = $this->like($term);
+        $number = preg_replace('/\D/', '', $term);
+
+        return array_values(LedgerRequest::query()
+            ->when(($codes = $this->projectCodes($user)) !== null, fn ($query) => $query->whereIn('project_code', $codes))
+            ->where(fn ($query) => $query->where('description', 'like', '%'.$like.'%')->when($number !== '', fn ($inner) => $inner->orWhere('id', (int) $number)))
+            ->orderByDesc('id')
+            ->limit(self::PER_GROUP)
+            ->get()
+            ->map(fn (LedgerRequest $request): array => [
+                'label' => '#'.$request->id.' · '.($request->description ?? $request->project_code),
+                'detail' => $request->project_code.' · '.__('requests.status.'.$request->status),
+                'url' => route(Navigation::routeName('requests'), ['request' => $request->id]),
+            ])->all());
+    }
+
+    /** @return list<array{label: string, detail: string|null, url: string}> employees by name or ID, to their payroll */
+    private function staff(User $user, string $term): array
+    {
+        if (! $user->canOnScreen('payroll') || ! Schema::hasTable('gl_staff')) {
+            return [];
+        }
+
+        $like = $this->like($term);
+
+        return array_values(StaffMember::query()
+            ->where(fn ($query) => $query->where('name', 'like', '%'.$like.'%')->when(ctype_digit($term), fn ($inner) => $inner->orWhere('employee_id', (int) $term)))
+            ->orderBy('name')
+            ->limit(self::PER_GROUP)
+            ->get()
+            ->map(fn (StaffMember $member): array => [
+                'label' => $member->name.' · #'.$member->employee_id,
+                'detail' => trim($member->project_code.' · '.$member->position, ' ·'),
+                'url' => route(Navigation::routeName('payroll'), ['tab' => 'staff']),
+            ])->all());
+    }
+
+    /** @return list<array{label: string, detail: string|null, url: string}> micro-project files by beneficiary or project number */
+    private function microFiles(User $user, string $term): array
+    {
+        if (! $user->canOnScreen('microfiles') || ! Schema::hasColumn('gl_micro_loans', 'stage')) {
+            return [];
+        }
+
+        $like = $this->like($term);
+
+        return array_values(MicroLoan::query()
+            ->where(fn ($query) => $query->where('beneficiary', 'like', '%'.$like.'%')->orWhere('project_number', 'like', $like.'%'))
+            ->orderByDesc('id')
+            ->limit(self::PER_GROUP)
+            ->get()
+            ->map(fn (MicroLoan $file): array => [
+                'label' => $file->beneficiary,
+                'detail' => trim(($file->project_number ?? '').' · '.__('micro.stages.'.$file->stage), ' ·'),
+                'url' => route(Navigation::routeName('microfiles'), ['file' => $file->id]),
+            ])->all());
+    }
+
+    /** @return list<string>|null the project codes the person is limited to, or null when not limited */
+    private function projectCodes(User $user): ?array
+    {
+        $limit = $this->access->limitedTo($user);
+
+        return $limit === null ? null : GlProject::query()->whereIn('legacy_account_id', $limit)->pluck('code')->all();
     }
 
     /** @return list<array{label: string, detail: string|null, url: string}> */

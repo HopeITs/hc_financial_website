@@ -1,6 +1,5 @@
 @php
     $cell = 'w-full min-w-20 rounded-md border border-secondary-light bg-white px-2 py-1.5 text-sm text-secondary-dark disabled:opacity-60 dark:border-field-line dark:bg-surface-2 dark:text-ink';
-    $badgeColors = ['draft' => 'zinc', 'submitted' => 'amber', 'approved' => 'green', 'rejected' => 'red', 'returned' => 'orange', 'closed' => 'zinc'];
 @endphp
 
 <div class="flex flex-col gap-6 px-4 pb-10 lg:px-8" data-test="requests">
@@ -142,7 +141,7 @@
                             <td>{{ __('requests.types.'.$row->type) }}</td>
                             <td class="fin-num"><x-money :amount="$row->amount" currency="USD" /></td>
                             <td>{{ $names[$row->requested_by] ?? '—' }}</td>
-                            <td><flux:badge size="sm" :color="$badgeColors[$row->status] ?? 'zinc'">{{ $row->state()?->label() ?? $row->status }}</flux:badge></td>
+                            <td><x-ui.status-badge :status="$row->status" :label="$row->state()?->label() ?? $row->status" /></td>
                         </tr>
                     @empty
                         <tr><td colspan="7" class="fin-empty" data-test="no-requests">{{ __('requests.no_match') }}</td></tr>
@@ -159,7 +158,7 @@
 
         <x-ui.page-header :title="__('requests.request_number', ['number' => $current->id])" :subtitle="$current->description ?: __('requests.no_description')">
             <x-slot:actions>
-                <flux:badge size="lg" :color="$badgeColors[$current->status] ?? 'zinc'" data-test="request-status">{{ $current->state()?->label() ?? $current->status }}</flux:badge>
+                <x-ui.status-badge size="lg" :status="$current->status" :label="$current->state()?->label() ?? $current->status" data-test="request-status" />
             </x-slot:actions>
         </x-ui.page-header>
 

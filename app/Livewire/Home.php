@@ -33,7 +33,15 @@ class Home extends Component
 
     public function render(ProjectBalanceSource $balances, ProjectAccess $access): View
     {
-        $limit = $access->limitedTo(auth()->user());
+        $user = auth()->user();
+
+        // The home page follows the role (finance decision of 2026-11-25): the projects' balances only for those who
+        // see the projects' money; the others get what waits for them and their quick actions, without that read.
+        if (! $user instanceof User || ! $access->seesMoney($user)) {
+            return view('livewire.home', ['showMoney' => false, 'projects' => collect(), 'cities' => collect(), 'cityId' => null, 'actions' => $this->quickActions()]);
+        }
+
+        $limit = $access->limitedTo($user);
         $scope = md5((string) json_encode($limit));
         $cities = collect(Cache::remember('home.cities.'.$scope, self::CACHE_SECONDS, fn (): array => $balances->cities($limit)->all()));
 
@@ -41,6 +49,7 @@ class Home extends Component
         $cityId = $this->cityId !== null && $cities->has($this->cityId) ? $this->cityId : null;
 
         return view('livewire.home', [
+            'showMoney' => true,
             'projects' => $this->activeProjects($balances, $cityId, $limit, $scope),
             'cities' => $cities,
             'cityId' => $cityId,

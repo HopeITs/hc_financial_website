@@ -40,6 +40,11 @@ class WaitingWork
         $id = (int) $user->getAuthIdentifier();
         $items = [];
 
+        // For those who approve, everything waiting for them comes first, in one place (finance decision of 2026-11-25).
+        if ($user->canOnScreen('inbox', ScreenAction::View)) {
+            $items[] = ['key' => 'inbox', 'count' => app(ApprovalsInbox::class)->count($user), 'url' => route(Navigation::routeName('inbox'))];
+        }
+
         if ($user->canOnScreen('vouchers', ScreenAction::Approve)) {
             $items[] = [
                 'key' => 'approve',

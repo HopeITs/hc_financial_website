@@ -90,10 +90,10 @@
                 </div>
 
                 @if ($canCreate)
-                    <div class="flex flex-wrap gap-3">
+                    <x-ui.action-bar>
                         <x-ui.button size="sm" icon="plus" wire:click="addLine" data-test="add-line">{{ __('revenues.add_line') }}</x-ui.button>
                         <x-ui.button tone="primary" icon="check" wire:click="record" data-test="record">{{ __('revenues.record') }}</x-ui.button>
-                    </div>
+                    </x-ui.action-bar>
                 @endif
             </div>
         </x-ui.panel>

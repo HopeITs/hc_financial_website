@@ -16,6 +16,7 @@ use App\Services\Excel\ExcelException;
 use App\Services\Ledger\VoucherApprovals;
 use App\Services\Payroll\PayrollException;
 use App\Services\Payroll\Payrolls;
+use App\Services\Search\GlobalSearch;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
@@ -162,4 +163,13 @@ it('adds staff from Excel and takes a month\'s absences, bonuses and deductions 
 
     expect(fn () => app(PayrollLinesExcel::class)->save([['row' => 2, 'cells' => ['99', 'Nobody', '0', '0', '0', '']]], $ann, ['payroll' => $payroll->id]))
         ->toThrow(ExcelException::class);
+});
+
+it('finds an employee from the search', function () {
+    prStaff();
+
+    $found = app(GlobalSearch::class)->search(prUser(RoleId::Accountant, 'Ann'), 'Joseph');
+
+    expect(collect($found['staff'] ?? [])->pluck('label')->all())->toBe(['Joseph · #68'])
+        ->and(app(GlobalSearch::class)->search(prUser(RoleId::Cashier, 'Carl'), 'Joseph'))->not->toHaveKey('staff');
 });

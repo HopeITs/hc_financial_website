@@ -23,6 +23,7 @@ return [
         'subtitle' => 'Open a number to see the list.',
         'all_clear' => 'Nothing waits for you right now.',
         'items' => [
+            'inbox' => 'Everything waiting for your approval',
             'approve' => 'Vouchers waiting for your approval',
             'rejected' => 'Your vouchers rejected in the last :days days',
             'decide' => 'Requests waiting for your decision',

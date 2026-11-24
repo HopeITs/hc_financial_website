@@ -25,6 +25,7 @@
 
     <livewire:home-overview />
 
+    @if ($showMoney)
     <div class="grid grid-cols-2 gap-3 xl:grid-cols-4" data-test="home-totals">
         <x-ui.stat-tile :label="__('home.stat_projects')" :value="number_format($projects->count())" icon="folder" />
         <x-ui.stat-tile :label="__('home.stat_cities')" :value="number_format($projects->pluck('cityName')->unique()->count())" icon="map-pin" />
@@ -82,4 +83,5 @@
             </x-ui.panel>
         </section>
     </div>
+    @endif
 </div>
