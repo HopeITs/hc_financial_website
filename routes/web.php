@@ -26,10 +26,11 @@ use App\Livewire\MonthEndScreen;
 use App\Livewire\Notifications;
 use App\Livewire\OpeningBalances;
 use App\Livewire\OperationalReport;
+use App\Livewire\OperationsHome;
 use App\Livewire\PaymentVoucher;
+use App\Livewire\Purchases;
 use App\Livewire\ReceiptVoucher;
 use App\Livewire\ReferenceList;
-use App\Livewire\Purchases;
 use App\Livewire\Requests;
 use App\Livewire\Salaries;
 use App\Livewire\StaffAdvances;
@@ -101,6 +102,8 @@ Route::middleware('auth')->group(function () {
     // The old approval screen is the list of vouchers waiting for approval.
     $screen('approval', Approval::class);
 
+    // The financial operations in one place (finance request of 2026-11-24).
+    $screen('operations', OperationsHome::class);
     $screen('requests', Requests::class);
     // Purchase files (finance request of 2026-11-24): the procurement cycle of an approved request, and its forms.
     $screen('purchases', Purchases::class);

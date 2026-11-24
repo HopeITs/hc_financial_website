@@ -82,7 +82,7 @@ it('shows each role only its screens', function (RoleId $role) {
     $this->actingAs($user)->get('/home')->assertOk();
 
     expect(collect(Navigation::visibleGroups($user))->flatten()->all())
-        ->toEqualCanonicalizing($navigation->intersect($permitted)->values()->all());
+        ->toEqualCanonicalizing($navigation->intersect($permitted)->diff(config('navigation.hidden'))->values()->all());
 })->with(fn () => RoleId::cases());
 
 it('keeps the opening balances screen for Head Office only', function () {

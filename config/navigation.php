@@ -20,17 +20,24 @@
 return [
 
     'groups' => [
+        // The organisation's financial operations in one place (finance request of 2026-11-24): its page, then the
+        // requests and purchases, the advances, the salaries and the moves between accounts.
+        'operations' => ['operations', 'requests', 'purchases', 'advance', 'salaries', 'transfers'],
         'funding' => ['donors', 'contracts', 'rdonor'],
-        'entries' => ['single', 'receipt', 'journal', 'advance', 'vouchers', 'approval', 'requests', 'purchases', 'salaries', 'multi'],
+        // The accounting: the vouchers, the manual entry and Excel. The payment and receipt vouchers are made by the
+        // operations and stay out of the menu (see `hidden`).
+        'entries' => ['vouchers', 'approval', 'journal', 'multi', 'single', 'receipt'],
         // Micro projects in one place (finance request of 2026-11-23).
         'micro' => ['microhome', 'microfiles', 'payments', 'loanfunds', 'loans'],
-        'treasury' => ['treasury', 'tills', 'transfers', 'alloc', 'monthend', 'opening', 'currency', 'denoms'],
+        'treasury' => ['treasury', 'tills', 'alloc', 'monthend', 'opening', 'currency', 'denoms'],
         'reports' => ['rexp', 'rcash', 'rrev', 'rfixed', 'rattach', 'tb', 'statement', 'statements', 'recon', 'mapprovals', 'uncomp', 'xreserve', 'advances'],
         'chart' => ['chart'],
         'settings' => ['users', 'employees', 'cities', 'log', 'auditlog'],
     ],
 
     'paths' => [
+        'operations' => 'operations',
+
         'donors' => 'funding/donors',
         'contracts' => 'funding/agreements',
         'rdonor' => 'funding/donor-report',
@@ -82,5 +89,11 @@ return [
         'log' => 'settings/log',
         'auditlog' => 'settings/audit-log',
     ],
+
+    /*
+     * Screens that keep their address and permission but are not in the menu: the payment and receipt vouchers are
+     * made by the operations (purchases, revenues…) and the manual entry (finance request of 2026-11-24).
+     */
+    'hidden' => ['single', 'receipt'],
 
 ];

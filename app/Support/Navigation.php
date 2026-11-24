@@ -31,13 +31,13 @@ class Navigation
 
     /** The entries the top bar's "New" menu offers, screen slug => icon, in the order they show (finance request of 2026-11-24). */
     public const NEW_ENTRIES = [
-        'single' => 'arrow-up-circle',
-        'receipt' => 'arrow-down-circle',
-        'journal' => 'book-open',
-        'requests' => 'clipboard-document-list',
         'purchases' => 'shopping-cart',
+        'requests' => 'clipboard-document-list',
+        'advance' => 'hand-raised',
+        'transfers' => 'arrows-right-left',
         'microfiles' => 'briefcase',
         'payments' => 'banknotes',
+        'journal' => 'book-open',
     ];
 
     /**
@@ -117,14 +117,18 @@ class Navigation
     }
 
     /**
+     * The menu groups with the screens the person may view, leaving out the screens kept out of the menu
+     * (config/navigation.php `hidden`).
+     *
      * @return array<string, list<string>>
      */
     public static function visibleGroups(?User $user): array
     {
         $groups = [];
+        $hidden = (array) config('navigation.hidden');
 
         foreach ((array) config('navigation.groups') as $group => $screens) {
-            $visible = array_values(array_filter($screens, fn (string $screen): bool => $user?->canOnScreen($screen) ?? false));
+            $visible = array_values(array_filter($screens, fn (string $screen): bool => ! in_array($screen, $hidden, true) && ($user?->canOnScreen($screen) ?? false)));
 
             if ($visible !== []) {
                 $groups[$group] = $visible;

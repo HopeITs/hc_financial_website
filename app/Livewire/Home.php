@@ -84,11 +84,11 @@ class Home extends Component
 
     /** The quick actions, screen slug => icon, in the order they show. */
     private const QUICK_ACTIONS = [
-        'single' => 'arrow-up-circle',
-        'receipt' => 'arrow-down-circle',
-        'journal' => 'book-open',
-        'multi' => 'table-cells',
+        'purchases' => 'shopping-cart',
+        'advance' => 'hand-raised',
         'transfers' => 'arrows-right-left',
+        'payments' => 'banknotes',
+        'journal' => 'book-open',
         'tills' => 'calculator',
     ];
 }
