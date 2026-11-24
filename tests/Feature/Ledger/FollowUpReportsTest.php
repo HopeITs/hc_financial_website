@@ -140,6 +140,7 @@ it('bridges the transfer company balance of each project through one month, with
     (require database_path('migrations/2026_10_25_090000_create_request_module_tables.php'))->up();
     (require database_path('migrations/2026_11_24_100000_create_purchase_files.php'))->up();
     (require database_path('migrations/2026_11_25_090000_create_gl_recurring_payments_table.php'))->up();
+    (require database_path('migrations/2026_11_25_100000_create_payroll_tables.php'))->up();
     DB::statement('PRAGMA foreign_keys = OFF');
 
     followVoucher('M-1', '2026-02-10', [['account' => '1161', 'debit' => 1000, 'project' => 'SZ'], ['account' => '1111', 'credit' => 1000]]);

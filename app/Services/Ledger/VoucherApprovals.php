@@ -11,6 +11,7 @@ use App\Models\VoucherAudit;
 use App\Services\Approvals\ApprovalChain;
 use App\Services\Ledger\Rules\ApproverIsNotPreparer;
 use App\Services\Loans\MicroLoans;
+use App\Services\Payroll\Payrolls;
 use App\Services\Purchasing\PurchaseFiles;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -106,6 +107,10 @@ class VoucherApprovals
             // A rejected purchase payment puts its purchase file back to "received" (2026-11-24).
             if (Schema::hasTable('gl_purchases')) {
                 app(PurchaseFiles::class)->forgetVoucher($voucher);
+            }
+            // A rejected payroll voucher puts its payroll back to "approved".
+            if (Schema::hasTable('gl_payrolls')) {
+                app(Payrolls::class)->forgetVoucher($voucher);
             }
             $voucher->delete();
         });

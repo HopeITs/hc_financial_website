@@ -13,6 +13,7 @@ beforeEach(function () {
     (require database_path('migrations/2026_10_25_090000_create_request_module_tables.php'))->up();
     (require database_path('migrations/2026_11_24_100000_create_purchase_files.php'))->up();
     (require database_path('migrations/2026_11_25_090000_create_gl_recurring_payments_table.php'))->up();
+    (require database_path('migrations/2026_11_25_100000_create_payroll_tables.php'))->up();
     DB::statement('PRAGMA foreign_keys = OFF');
 
     DB::table('gl_vouchers')->insert(['id' => 'CRV-2026-0001', 'type' => 'CRV', 'date' => '2026-03-10', 'status' => 'approved', 'prepared_by' => 5, 'created_at' => now(), 'updated_at' => now()]);
