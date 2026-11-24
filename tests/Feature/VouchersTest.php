@@ -118,6 +118,29 @@ it('lets the financial manager approve, and records who and when', function () {
     expect($voucher->fresh()->approved_by)->toBe((int) $manager->getAuthIdentifier());
 });
 
+it('approves the ticked pending vouchers together, leaving the ones a rule refuses pending with the reason', function () {
+    $ann = screenUser(RoleId::Accountant, 'Ann');
+    $manager = screenUser(RoleId::FinancialManager, 'Fatima');
+    $first = screenVoucher($ann);
+    $second = screenVoucher($ann);
+    $own = screenVoucher($manager);
+
+    vouchersPage($manager)
+        ->set('selected', [$first->id, $second->id, $own->id])
+        ->assertSeeHtml('data-test="approve-selected"')
+        ->call('approveSelected')
+        ->assertSee('2 vouchers are approved.')
+        ->assertSee($own->id.': '.__('ledger.rules.approver_not_preparer'))
+        ->assertSet('selected', [$own->id]);
+
+    expect($first->fresh()->status)->toBe(VoucherStatus::Approved)
+        ->and($second->fresh()->status)->toBe(VoucherStatus::Approved)
+        ->and($own->fresh()->status)->toBe(VoucherStatus::PendingApproval);
+
+    vouchersPage($ann)->set('selected', [$own->id])->assertDontSeeHtml('data-test="approve-selected"')
+        ->call('approveSelected')->assertForbidden();
+});
+
 it('does not let the preparer approve or reject their own voucher', function () {
     $head = screenUser(RoleId::HeadOffice, 'Hana');
     $voucher = screenVoucher($head);

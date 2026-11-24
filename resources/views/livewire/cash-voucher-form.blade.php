@@ -16,6 +16,9 @@
             @if ($savedVoucher)
                 <a href="{{ route(\App\Support\Navigation::routeName('vouchers'), ['voucher' => $savedVoucher]) }}" wire:navigate class="font-semibold underline" dir="ltr">{{ __('entries.open_voucher', ['voucher' => $savedVoucher]) }}</a>
             @endif
+            @if ($lastSaved !== [])
+                <x-ui.button size="sm" icon="arrow-path" wire:click="repeatLast" data-test="repeat-last">{{ __('entries.repeat_last') }}</x-ui.button>
+            @endif
         </div>
     @endif
 

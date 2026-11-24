@@ -3,7 +3,6 @@
 namespace App\Livewire;
 
 use App\Contracts\ProjectBalanceSource;
-use App\Enums\ScreenAction;
 use App\Livewire\Concerns\DefersLoading;
 use App\Models\User;
 use App\Services\Projects\ProjectAccess;
@@ -53,18 +52,8 @@ class Home extends Component
     private function quickActions(): array
     {
         $user = auth()->user();
-        if (! $user instanceof User) {
-            return [];
-        }
 
-        $actions = [];
-        foreach (self::QUICK_ACTIONS as $slug => $icon) {
-            if ($user->canOnScreen($slug, ScreenAction::Create)) {
-                $actions[] = ['slug' => $slug, 'icon' => $icon, 'url' => route(Navigation::routeName($slug))];
-            }
-        }
-
-        return $actions;
+        return Navigation::creatable($user instanceof User ? $user : null, self::QUICK_ACTIONS);
     }
 
     /** The quick actions, screen slug => icon, in the order they show. */

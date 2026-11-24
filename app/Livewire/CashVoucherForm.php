@@ -9,6 +9,7 @@ use App\Services\Entries\CashVouchers;
 use App\Services\Entries\EntryException;
 use App\Services\Ledger\VoucherAttachments;
 use App\Support\Navigation;
+use App\Support\UserPreferences;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -61,6 +62,13 @@ abstract class CashVoucherForm extends Component
     /** @var list<string> */
     public array $problems = [];
 
+    /**
+     * The voucher saved last on this screen, to enter it again with one click (finance request of 2026-11-24).
+     *
+     * @var array{party?: string, center?: string, description?: string, lines?: list<array{project: string, budget_line: string, account: string, description: string, amount: string}>}
+     */
+    public array $lastSaved = [];
+
     /** CashVouchers::PAYMENT or CashVouchers::RECEIPT. */
     abstract protected function kind(): string;
 
@@ -72,7 +80,22 @@ abstract class CashVoucherForm extends Component
         Gate::authorize('screen', [$this->screen(), 'view']);
 
         $this->date = CarbonImmutable::today()->toDateString();
-        $this->lines = [$this->blankLine(), $this->blankLine()];
+        $this->rememberedDefaults(app(CashVouchers::class));
+    }
+
+    /** Fills the form again with the voucher saved last: its party, lines and amounts; not its number, request or files. */
+    public function repeatLast(): void
+    {
+        if ($this->lastSaved === []) {
+            return;
+        }
+
+        $this->party = (string) ($this->lastSaved['party'] ?? '');
+        $this->center = (string) ($this->lastSaved['center'] ?? '');
+        $this->description = (string) ($this->lastSaved['description'] ?? '');
+        $this->lines = array_values((array) ($this->lastSaved['lines'] ?? [])) ?: [$this->blankLine()];
+        $this->notice = null;
+        $this->savedVoucher = null;
     }
 
     public function addLine(): void
@@ -158,8 +181,15 @@ abstract class CashVoucherForm extends Component
             return;
         }
 
-        $this->reset('account', 'rate', 'rateTyped', 'party', 'reference', 'center', 'description', 'request', 'attachments', 'problems');
-        $this->lines = [$this->blankLine(), $this->blankLine()];
+        $this->lastSaved = [
+            'party' => $this->party, 'center' => $this->center, 'description' => $this->description,
+            'lines' => array_values(array_filter($this->lines, fn (array $line): bool => trim($line['amount'].$line['account'].$line['budget_line']) !== '')),
+        ];
+        $this->remember();
+
+        // The cash account and the project stay for the next voucher: most vouchers in a row share them.
+        $this->reset('rate', 'rateTyped', 'party', 'reference', 'center', 'description', 'request', 'attachments', 'problems');
+        $this->rememberedDefaults($vouchers);
         $this->savedVoucher = $voucher->id;
         $this->notice = __('entries.saved', ['voucher' => $voucher->id]);
     }
@@ -225,10 +255,54 @@ abstract class CashVoucherForm extends Component
     }
 
     /** @return array{project: string, budget_line: string, account: string, description: string, amount: string} */
-    private function blankLine(): array
+    private function blankLine(string $project = ''): array
     {
-        return ['project' => '', 'budget_line' => '', 'account' => '', 'description' => '', 'amount' => ''];
+        return ['project' => $project, 'budget_line' => '', 'account' => '', 'description' => '', 'amount' => ''];
     }
+
+    /**
+     * The cash account and the project the person used last on this screen, when they are still open to them, with
+     * the rate of that account; two blank lines on that project.
+     */
+    private function rememberedDefaults(CashVouchers $vouchers): void
+    {
+        $preferences = app(UserPreferences::class);
+        $userId = (int) Auth::id();
+
+        $account = (string) $preferences->get($userId, self::LAST_ACCOUNT.$this->kind());
+        if ($account !== '' && $vouchers->cashAccounts()->has($account)) {
+            $this->account = $account;
+            $this->refreshRate($vouchers);
+        }
+
+        $project = (string) $preferences->get($userId, self::LAST_PROJECT);
+        if ($project !== '' && ! $vouchers->projects()->contains(fn ($open): bool => $open->code === $project)) {
+            $project = '';
+        }
+
+        $this->lines = [$this->blankLine($project), $this->blankLine($project)];
+    }
+
+    /** Keeps the cash account and the first project of the voucher just saved, for the next one. */
+    private function remember(): void
+    {
+        $preferences = app(UserPreferences::class);
+        $userId = (int) Auth::id();
+
+        if ($this->account !== '') {
+            $preferences->set($userId, self::LAST_ACCOUNT.$this->kind(), $this->account);
+        }
+
+        $project = (string) collect($this->lines)->pluck('project')->filter()->first();
+        if ($project !== '') {
+            $preferences->set($userId, self::LAST_PROJECT, $project);
+        }
+    }
+
+    /** Preference keys: the last cash account, by kind of voucher, and the last project of any voucher. */
+    private const LAST_ACCOUNT = 'entries.last_account.';
+
+    private const LAST_PROJECT = 'entries.last_project';
 
     private function user(): User
     {

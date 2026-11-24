@@ -136,6 +136,37 @@ class Vouchers extends Component
         }
     }
 
+    /**
+     * Approves every ticked voucher that waits for approval, one by one through the same rules as one at a time
+     * (finance request of 2026-11-24): a voucher that breaks a rule stays pending and says why; the others go through.
+     */
+    public function approveSelected(VoucherApprovals $approvals): void
+    {
+        Gate::authorize('screen', ['vouchers', 'approve']);
+        $this->reset('notice', 'failures');
+
+        $pending = Voucher::query()
+            ->whereIn('id', array_values(array_unique($this->selected)))
+            ->where('status', VoucherStatus::PendingApproval->value)
+            ->orderBy('date')->orderBy('id')
+            ->get();
+
+        $approved = [];
+        foreach ($pending as $voucher) {
+            try {
+                $approvals->approve($voucher, $this->user());
+                $approved[] = (string) $voucher->id;
+            } catch (LedgerRuleException $e) {
+                foreach ($e->violations as $violation) {
+                    $this->failures[] = $voucher->id.': '.$violation->message;
+                }
+            }
+        }
+
+        $this->selected = array_values(array_diff($this->selected, $approved));
+        $this->notice = trans_choice('vouchers.bulk_approved', count($approved), ['count' => count($approved)]);
+    }
+
     public function openReject(): void
     {
         Gate::authorize('screen', ['vouchers', 'approve']);
@@ -361,6 +392,7 @@ class Vouchers extends Component
             'amended' => DB::table('gl_voucher_audit')->whereIn('voucher_id', $pageIds)->where('action', 'amend')->distinct()->pluck('voucher_id')->all(),
             'pageIds' => $pageIds,
             'pageTotal' => $amounts->reduce(fn (string $sum, $total) => bcadd($sum, Money::normalize($total), 2), Money::zero()),
+            'selectedPending' => $selected === [] ? 0 : Voucher::query()->whereIn('id', $selected)->where('status', VoucherStatus::PendingApproval->value)->count(),
             'selectedTotal' => $selected === [] ? Money::zero() : Money::normalize(DB::table('gl_voucher_lines')->whereIn('voucher_id', $selected)->sum('debit_usd')),
             'names' => $this->names($list->getCollection()->pluck('prepared_by')->unique()->values()),
             'types' => VoucherType::cases(),
