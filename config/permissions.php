@@ -27,7 +27,7 @@ $screens = static fn (array $slugs, array $actions): array => array_fill_keys($s
 
 // `reports` is the reports' own page (2026-11-25).
 $reports = ['reports', 'rexp','rcash', 'rdonor', 'rrev', 'rfixed', 'rattach', 'tb', 'statement', 'statements', 'recon', 'mapprovals', 'uncomp', 'xreserve', 'advances', 'loans'];
-$treasury = ['tills', 'treasury', 'alloc', 'transfers', 'cities', 'currency', 'denoms'];
+$treasury = ['tills', 'treasury', 'alloc', 'transfers', 'currency'];
 $monthEnd = ['monthend'];
 // `single` is the payment voucher and `receipt` the receipt voucher. `multiatt` and `bonds` are old screens that left
 // the menu; their keys stay until their code is removed.
@@ -70,7 +70,7 @@ return [
         ),
 
         RoleId::Accountant->value => array_merge(
-            $screens(['home', 'project-money', ...$reports, 'cities', 'currency', 'denoms', 'donors', 'employees', 'requests', $operations, ...$microHome], $view),
+            $screens(['home', 'project-money', ...$reports, 'currency', 'donors', 'employees', 'requests', $operations, ...$microHome], $view),
             // `tills` is the daily cash count, `treasury` the liquidity position with the month's revaluation.
             $screens(['chart', ...$entries, 'alloc', 'transfers', 'tills', 'treasury', 'salaries', 'payroll', 'contracts'], $prepare),
         ),

@@ -80,7 +80,7 @@
                         </p>
                     @endif
 
-                    <div><x-ui.button type="submit" tone="primary" icon="arrows-right-left" data-test="save-move">{{ __('treasury.save') }}</x-ui.button></div>
+                    <x-ui.action-bar><x-ui.button type="submit" tone="primary" icon="arrows-right-left" data-test="save-move">{{ __('treasury.save') }}</x-ui.button></x-ui.action-bar>
                 </div>
             </x-ui.panel>
         </form>

@@ -34,7 +34,7 @@ return [
         // The reports' own page, in three parts (ReportsHome), then each report.
         'reports' => ['reports', 'tb', 'statements', 'statement', 'rexp', 'rrev', 'rfixed', 'rattach', 'recon', 'uncomp', 'xreserve', 'rcash', 'advances', 'mapprovals'],
         'chart' => ['chart'],
-        'settings' => ['users', 'cities', 'currency', 'denoms', 'opening', 'auditlog', 'employees', 'log'],
+        'settings' => ['users', 'currency', 'opening', 'auditlog', 'employees', 'log'],
     ],
 
     'paths' => [
@@ -71,7 +71,6 @@ return [
         'alloc' => 'treasury/exchange-rates',
         'transfers' => 'treasury/transfers',
         'currency' => 'treasury/currencies',
-        'denoms' => 'treasury/denominations',
 
         'rexp' => 'reports/expenses',
         'rcash' => 'reports/cash-balances',
@@ -92,7 +91,6 @@ return [
 
         'users' => 'settings/users',
         'employees' => 'settings/employees',
-        'cities' => 'settings/cities',
         'log' => 'settings/log',
         'auditlog' => 'settings/audit-log',
     ],
@@ -105,5 +103,12 @@ return [
      * advances screen) and the old program's monthly approvals.
      */
     'hidden' => ['single', 'receipt', 'approval', 'salaries', 'employees', 'log', 'rcash', 'advances', 'mapprovals'],
+
+    /*
+     * Hidden screens another one fully covers (2026-11-26): they leave the users' permission list, so nobody is given
+     * them any more. The payment and receipt vouchers, the approval and the salary split stay there: they still decide
+     * who pays, receives, approves and splits salaries.
+     */
+    'retired' => ['employees', 'log', 'rcash', 'advances', 'mapprovals'],
 
 ];

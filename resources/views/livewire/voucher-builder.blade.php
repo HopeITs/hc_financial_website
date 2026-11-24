@@ -252,11 +252,11 @@
         </x-ui.panel>
     </section>
 
-    <div class="flex flex-wrap items-center gap-3">
+    <x-ui.action-bar class="items-center">
         <x-ui.button tone="primary" wire:click="save" x-on:click="leaving()" :disabled="! $ready" wire:loading.attr="disabled" wire:target="save" data-shortcut="save" aria-keyshortcuts="Control+S" data-test="save-voucher">{{ __('ledger.builder.save') }}</x-ui.button>
         @if ($editing === null)
             <x-ui.button wire:click="saveDraft" data-test="save-draft">{{ __('drafts.save') }}</x-ui.button>
         @endif
         <span class="type-meta text-secondary-medium dark:text-ink-muted">{{ __('ledger.builder.number_note') }}</span>
-    </div>
+    </x-ui.action-bar>
 </div>

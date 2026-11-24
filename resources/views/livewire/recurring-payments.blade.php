@@ -62,10 +62,10 @@
                         @endforeach
                     </x-ui.form-select>
                 </div>
-                <div class="flex items-end gap-3 sm:col-span-2 lg:col-span-4">
+                <x-ui.action-bar class="sm:col-span-2 lg:col-span-4">
                     <x-ui.button tone="primary" icon="check" wire:click="save" data-test="save-recurring">{{ __('recurring.save') }}</x-ui.button>
                     <x-ui.button tone="ghost" wire:click="cancelEdit">{{ __('recurring.cancel') }}</x-ui.button>
-                </div>
+                </x-ui.action-bar>
             </div>
         </x-ui.panel>
     @endif

@@ -87,10 +87,10 @@
             <div><x-ui.button wire:click="addLine" icon="plus" data-test="add-line">{{ __('requests.add_line') }}</x-ui.button></div>
         </section>
 
-        <div class="flex flex-wrap gap-3">
-            <x-ui.button tone="primary" wire:click="save" x-on:click="leaving()" data-test="save-request">{{ __('requests.save') }}</x-ui.button>
+        <x-ui.action-bar>
             <x-ui.button wire:click="cancelForm">{{ __('requests.cancel') }}</x-ui.button>
-        </div>
+            <x-ui.button tone="primary" wire:click="save" x-on:click="leaving()" data-test="save-request">{{ __('requests.save') }}</x-ui.button>
+        </x-ui.action-bar>
         </div>
     @elseif ($mode === 'list')
         <x-ui.page-header :title="__('navigation.screens.requests')" :subtitle="__('requests.intro')" :count="$list->total()">
