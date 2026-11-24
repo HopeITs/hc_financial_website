@@ -347,7 +347,7 @@
                                                     <a href="{{ route(\App\Support\Navigation::routeName('vouchers'), ['voucher' => $purchase->voucher_id]) }}" wire:navigate class="underline">{{ $purchase->voucher_id }}</a>
                                                 </td>
                                                 <td>
-                                                    @if ($current->stage === 'approved' && $canEdit && $purchase->voucher?->status === \App\Enums\VoucherStatus::PendingApproval)
+                                                    @if ($current->stage === 'approved' && $canPay && $purchase->voucher?->status === \App\Enums\VoucherStatus::PendingApproval)
                                                         <x-ui.button size="sm" tone="ghost" icon="trash" wire:click="removePurchase({{ $purchase->id }})" wire:confirm="{{ __('micro.remove_purchase_confirm') }}" :aria-label="__('micro.remove_purchase')" data-test="remove-purchase-{{ $purchase->id }}" />
                                                     @endif
                                                 </td>
@@ -359,7 +359,7 @@
                                 </table>
                             </x-ui.scroll-table>
 
-                            @if ($current->stage === 'approved' && $canEdit)
+                            @if ($current->stage === 'approved' && $canPay)
                                 {{-- An invoice, paid from the cash or from an advance --}}
                                 <form wire:submit="payInvoice" class="mt-4 flex flex-col gap-4 rounded-lg border border-secondary-soft p-4 dark:border-line" data-test="invoice-form">
                                     <h3 class="font-semibold">{{ __('micro.invoice_title') }}</h3>
@@ -440,7 +440,7 @@
                     @endif
 
                     {{-- 6. The receipt protocol: the loan opens --}}
-                    @if ($current->stage === 'approved' && $canEdit)
+                    @if ($current->stage === 'approved' && $canPay)
                         <x-ui.form-section :title="__('micro.close_title')" :hint="__('micro.close_hint')">
                             <form wire:submit="close" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" data-test="close-form">
                                 <x-ui.form-input type="date" wire:model.live="signedOn" :label="__('micro.signed_on')" required data-test="c-signed" />
