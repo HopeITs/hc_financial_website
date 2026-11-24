@@ -77,6 +77,7 @@ return [
             // Role review of 2026-11-26: the accountant prepares the opening balances and counts the month's end; the
             // Financial Manager approves the opening voucher and closes the month (one prepares, another approves).
             $screens(['opening'], ['view', 'create']),
+            $screens(['mytill'], $view),
             $screens($monthEnd, ['view', 'edit']),
         ),
 
@@ -87,7 +88,8 @@ return [
         ),
 
         RoleId::Cashier->value => array_merge(
-            $screens(['home', 'treasury', 'rcash', 'purchases', 'recurring', $operations], $view),
+            // "My till": the cashier's day in one page (role review of 2026-11-26).
+            $screens(['home', 'mytill', 'treasury', 'rcash', 'purchases', 'recurring', $operations], $view),
             // The cashier also receives the beneficiaries' instalments in cash (role review of 2026-11-26).
             $screens(['single', 'receipt', 'advance', 'tills', 'revenues', 'payments'], ['view', 'create']),
         ),

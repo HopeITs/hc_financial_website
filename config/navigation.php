@@ -27,7 +27,8 @@ return [
         'micro' => ['microhome', 'microfiles', 'payments', 'loanfunds', 'loans'],
         'funding' => ['donors', 'contracts', 'rdonor'],
         // The treasury's daily and monthly work (finance decision of 2026-11-25); its set-up screens are in settings.
-        'treasury' => ['treasury', 'tills', 'alloc', 'monthend'],
+        // "My till" first: the cashier's day in one page (role review of 2026-11-26).
+        'treasury' => ['mytill', 'treasury', 'tills', 'alloc', 'monthend'],
         // The accounting: the vouchers (with those waiting for approval), the manual entry and Excel. The payment and
         // receipt vouchers are made by the operations and stay out of the menu (see `hidden`).
         'entries' => ['vouchers', 'journal', 'multi', 'approval', 'single', 'receipt'],
@@ -64,6 +65,7 @@ return [
         'purchases' => 'entries/purchases',
         'salaries' => 'entries/salaries',
 
+        'mytill' => 'treasury/my-till',
         'tills' => 'treasury/daily-count',
         'monthend' => 'treasury/month-end',
         'opening' => 'treasury/opening-balances',

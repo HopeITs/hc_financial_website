@@ -25,6 +25,7 @@ use App\Livewire\MicroProjectFiles;
 use App\Livewire\MicroProjectsHome;
 use App\Livewire\MicroLoans;
 use App\Livewire\MonthEndScreen;
+use App\Livewire\MyTill;
 use App\Livewire\Notifications;
 use App\Livewire\OpeningBalances;
 use App\Livewire\OperationalReport;
@@ -130,6 +131,8 @@ Route::middleware('auth')->group(function () {
     // the SYP balances by general account and the tills by project owner.
     $screen('treasury', LiquidityPosition::class);
     $screen('tills', DailyCashCount::class);
+    // "My till": the cashier's day in one page (role review of 2026-11-26).
+    $screen('mytill', MyTill::class);
     $screen('monthend', MonthEndScreen::class);
     $screen('opening', OpeningBalances::class);
     // One treasury (finance decision of 2026-11-19): the daily rates take the place of the allocation rates per city.
