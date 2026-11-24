@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\MicroFileDocumentController;
 use App\Http\Controllers\MicroFilePrintController;
+use App\Http\Controllers\PayrollPrintController;
 use App\Http\Controllers\PurchasePrintController;
 use App\Http\Controllers\PurchaseQuoteController;
 use App\Http\Controllers\RequestQuoteController;
@@ -28,6 +29,7 @@ use App\Livewire\OpeningBalances;
 use App\Livewire\OperationalReport;
 use App\Livewire\OperationsHome;
 use App\Livewire\PaymentVoucher;
+use App\Livewire\PayrollScreen;
 use App\Livewire\Purchases;
 use App\Livewire\ReceiptVoucher;
 use App\Livewire\RecurringPaymentsScreen;
@@ -107,6 +109,9 @@ Route::middleware('auth')->group(function () {
     $screen('operations', OperationsHome::class);
     // Rent and the other recurring payments (finance decision of 2026-11-24).
     $screen('recurring', RecurringPaymentsScreen::class);
+    // The monthly payroll of each project, its summary and payslips (finance request of 2026-11-24).
+    $screen('payroll', PayrollScreen::class);
+    Route::get('operations/payroll/{payroll}/print/{form}', PayrollPrintController::class)->whereNumber('payroll')->whereIn('form', PayrollPrintController::FORMS)->defaults('screen', 'payroll')->middleware('screen')->name('operations.payroll.print');
     $screen('requests', Requests::class);
     // Purchase files (finance request of 2026-11-24): the procurement cycle of an approved request, and its forms.
     $screen('purchases', Purchases::class);

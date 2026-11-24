@@ -22,7 +22,7 @@ return [
     'groups' => [
         // The organisation's financial operations in one place (finance request of 2026-11-24): its page, then the
         // requests and purchases, the advances, the salaries and the moves between accounts.
-        'operations' => ['operations', 'requests', 'purchases', 'recurring', 'advance', 'salaries', 'transfers'],
+        'operations' => ['operations', 'requests', 'purchases', 'recurring', 'advance', 'payroll', 'salaries', 'transfers'],
         'funding' => ['donors', 'contracts', 'rdonor'],
         // The accounting: the vouchers, the manual entry and Excel. The payment and receipt vouchers are made by the
         // operations and stay out of the menu (see `hidden`).
@@ -38,6 +38,7 @@ return [
     'paths' => [
         'operations' => 'operations',
         'recurring' => 'operations/recurring',
+        'payroll' => 'operations/payroll',
 
         'donors' => 'funding/donors',
         'contracts' => 'funding/agreements',

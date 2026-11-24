@@ -43,7 +43,7 @@ class OperationsHome extends Component
             'recurring' => ['screen' => 'recurring', 'icon' => 'arrow-path'],
             'advances' => ['screen' => 'advance', 'icon' => 'hand-raised'],
             'micro' => ['screen' => 'microhome', 'icon' => 'briefcase'],
-            'salaries' => ['screen' => 'salaries', 'icon' => 'user-group'],
+            'salaries' => ['screen' => 'payroll', 'icon' => 'user-group'],
             'other_payments' => ['screen' => 'single', 'icon' => 'arrow-up-circle', 'action' => ScreenAction::Create],
         ],
         'income' => [

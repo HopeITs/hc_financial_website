@@ -60,6 +60,8 @@ return [
             $screens(['microfiles'], ['view', 'approve']),
             // Purchase files: the Financial Manager approves the purchase order, the General Manager after above the threshold (2026-11-24).
             $screens(['purchases'], ['view', 'approve']),
+            // The Financial Manager sets the payroll's rate and approves it (2026-11-24).
+            $screens(['payroll'], ['view', 'edit', 'approve']),
             $screens(['currency'], $prepare),
             $screens($monthEnd, ['view', 'edit', 'approve']),
         ),
@@ -67,7 +69,7 @@ return [
         RoleId::Accountant->value => array_merge(
             $screens(['home', 'project-money', ...$reports, 'cities', 'currency', 'denoms', 'donors', 'employees', 'requests', $operations, ...$microHome], $view),
             // `tills` is the daily cash count, `treasury` the liquidity position with the month's revaluation.
-            $screens(['chart', ...$entries, 'alloc', 'transfers', 'tills', 'treasury', 'salaries', 'contracts'], $prepare),
+            $screens(['chart', ...$entries, 'alloc', 'transfers', 'tills', 'treasury', 'salaries', 'payroll', 'contracts'], $prepare),
         ),
 
         RoleId::ProjectManager->value => array_merge(
