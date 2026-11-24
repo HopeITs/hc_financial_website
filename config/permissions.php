@@ -36,6 +36,8 @@ $entries = ['single', 'receipt', 'journal', 'advance', 'multi', 'multiatt', 'mic
 $microHome = ['microhome'];
 // The financial operations' page (2026-11-24): each of its parts shows only to those who see its screen.
 $operations = 'operations';
+// Everything waiting for one's approval in one place (2026-11-25), for those who approve.
+$inbox = 'inbox';
 
 return [
 
@@ -47,7 +49,7 @@ return [
         RoleId::HeadOffice->value => $screens(['home', 'requests', 'project-money', 'multiatt', 'bonds', ...$everyScreen], $all),
 
         RoleId::FinancialManager->value => array_merge(
-            $screens(['home', 'chart', 'project-money', ...$treasury, ...$reports, 'employees', 'salaries', 'users', 'log', 'auditlog', 'single', 'receipt', 'advance', 'multi', 'multiatt', 'payments', 'bonds', 'recurring', $operations, ...$microHome], $view),
+            $screens(['home', 'chart', 'project-money', ...$treasury, ...$reports, 'employees', 'salaries', 'users', 'log', 'auditlog', 'single', 'receipt', 'advance', 'multi', 'multiatt', 'payments', 'bonds', 'recurring', $operations, $inbox, ...$microHome], $view),
             $screens(['vouchers', 'approval', 'requests'], ['view', 'approve']),
             // The Financial Manager approves the daily rates, and a rate they type themselves is approved at once.
             $screens(['alloc'], ['view', 'create', 'approve']),
@@ -89,12 +91,12 @@ return [
         RoleId::Donor->value => $screens(['home'], $view),
 
         RoleId::GeneralManager->value => array_merge(
-            $screens(['home', 'chart', 'project-money', ...$treasury, ...$reports, 'donors', $operations, ...$microHome], $view),
+            $screens(['home', 'chart', 'project-money', ...$treasury, ...$reports, 'donors', $operations, $inbox, ...$microHome], $view),
             $screens(['requests', 'vouchers', 'approval', 'contracts', 'microfiles', 'purchases'], ['view', 'approve']),
         ),
 
         RoleId::ProgramManager->value => array_merge(
-            $screens(['home', 'project-money', 'donors', 'contracts', 'purchases', $operations, ...$microHome], $view),
+            $screens(['home', 'project-money', 'donors', 'contracts', 'purchases', $operations, $inbox, ...$microHome], $view),
             $screens(['requests', 'microfiles'], ['view', 'approve']),
         ),
 
