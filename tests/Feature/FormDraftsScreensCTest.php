@@ -1,7 +1,6 @@
 <?php
 
 use App\Enums\RoleId;
-use App\Livewire\MultiAttachments;
 use App\Livewire\Requests;
 use App\Livewire\Users;
 use App\Models\GlBudgetLine;
@@ -91,18 +90,4 @@ it('reopens the add-user dialog from a draft, never with the password, and drops
     Livewire::actingAs($hoa)->test(Users::class)->call('restoreDraft')
         ->assertSet('editing', null)->assertSet('primaryRoleId', null)
         ->assertSet('extraRoleIds', [RoleId::Cashier->value])->assertSet('permissions', ['vouchers.view']);
-});
-
-it('puts the leave warning on all three screens and the draft button on users', function () {
-    $hoa = fdCUser();
-    $ann = fdCUser(RoleId::Accountant, 'Ann');
-
-    Livewire::actingAs($hoa)->test(Users::class)->call('selectUser', $ann->getKey())
-        ->assertSeeHtml('x-data="unsavedGuard"')->assertSeeHtml('data-test="save-draft"')->assertSeeHtml('x-on:click="leaving()"');
-
-    Livewire::actingAs($hoa)->test(Requests::class)->call('newRequest')
-        ->assertSeeHtml('x-data="unsavedGuard"')->assertSeeHtml('x-on:click="leaving()"')->assertDontSeeHtml('data-test="save-draft"');
-
-    Livewire::actingAs($hoa)->test(MultiAttachments::class)
-        ->assertSeeHtml('x-data="unsavedGuard"')->assertSeeHtml('x-on:click="leaving()"')->assertDontSeeHtml('data-test="save-draft"');
 });

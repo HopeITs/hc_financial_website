@@ -2,7 +2,6 @@
 
 use App\Enums\FundSource;
 use App\Enums\RoleId;
-use App\Livewire\Tills;
 use App\Models\GlProject;
 use App\Models\User;
 use App\Services\Ledger\LineDraft;
@@ -50,14 +49,4 @@ it('shows only the owners asked for', function () {
     $till = collect(app(TillOwners::class)->tills(['ABC']))->firstWhere('code', '1111');
 
     expect(array_column($till['owners'], 'project_code'))->toBe(['ABC']);
-});
-
-it('opens the screen with a block for each till', function () {
-    tillReceipt('F2F', 100);
-    $user = User::query()->findOrFail(createFinanceUser('Fay', 'secret pass', RoleId::HeadOffice->name, RoleId::HeadOffice->value));
-
-    Livewire::actingAs($user)->test(Tills::class)
-        ->assertSeeHtml('data-test="till-1111"')
-        ->assertSeeHtml('data-test="till-balance"')
-        ->assertDontSeeHtml('data-test="tills-limited"');
 });

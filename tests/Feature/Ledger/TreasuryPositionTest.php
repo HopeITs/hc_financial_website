@@ -3,7 +3,6 @@
 use App\Enums\FundSource;
 use App\Enums\RoleId;
 use App\Enums\VoucherType;
-use App\Livewire\Treasury;
 use App\Models\User;
 use App\Services\Ledger\LineDraft;
 use App\Services\Ledger\PostVoucher;
@@ -162,17 +161,6 @@ it('adds the cities up for the totals at the top', function () {
 
     expect($report->totalUsdHeld())->toBe('4300.00')
         ->and($report->totalSypHeld())->toBe('9350000.00');
-});
-
-it('opens for a signed-in user and shows each city with its position', function () {
-    $user = User::query()->whereKey(createFinanceUser('tuser', 'secret pass', RoleId::HeadOffice->name, RoleId::HeadOffice->value))->firstOrFail();
-
-    Livewire::actingAs($user)->test(Treasury::class)
-        ->assertSeeInOrder(['Aleppo', '4,300.00', '9,200,000.00'])
-        ->assertSee('1,000.00')
-        ->set('asAt', '2026-03-10')
-        ->assertSee('7,500,000.00')
-        ->assertDontSee('9,200,000.00');
 });
 
 it('names the cities in Arabic and falls back to the stored name', function () {

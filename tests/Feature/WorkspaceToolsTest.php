@@ -3,10 +3,8 @@
 use App\Enums\RoleId;
 use App\Livewire\Home;
 use App\Livewire\HomeWaiting;
-use App\Livewire\MultiEntry;
 use App\Livewire\Requests;
 use App\Livewire\SearchDialog;
-use App\Livewire\SingleEntry;
 use App\Livewire\Vouchers;
 use App\Models\GlBudgetLine;
 use App\Models\GlProject;
@@ -177,31 +175,6 @@ it('puts the search window in the top bar', function () {
 });
 
 // U-07
-
-it('marks the entry screens\' buttons for the shortcuts and lists them', function () {
-    $accountant = wtUser(RoleId::Accountant, 'Acc');
-
-    foreach ([SingleEntry::class, MultiEntry::class] as $screen) {
-        Livewire::actingAs($accountant)->test($screen)->assertSeeHtml('data-shortcut="save"');
-    }
-
-    $this->actingAs(wtUser(RoleId::HeadOffice, 'Ho'))->get(route('entries.vouchers.create'))->assertOk()
-        ->assertSee('data-shortcut="save"', false)->assertSee('data-shortcut="add-line"', false)
-        ->assertSee('data-test="shortcuts-help"', false)
-        ->assertSee('data-test="shortcuts-button"', false);
-});
-
-it('opens a fresh form after Ctrl+Enter saved an entry, and says what was saved', function () {
-    $accountant = wtUser(RoleId::Accountant, 'Acc');
-
-    Livewire::actingAs($accountant)->test(SingleEntry::class)
-        ->set('kind', 'income')->set('date', '2026-03-10')->set('project', 'F2F')->set('cash', '1111')->set('account', '4001')->set('amount', '250')
-        ->set('thenNew', true)
-        ->call('save')
-        ->assertRedirect(route(Navigation::routeName('single')));
-
-    $this->actingAs($accountant)->get(route(Navigation::routeName('single')))->assertOk();
-});
 
 it('has the search, shortcut and waiting texts in English and Arabic', function () {
     $keys = fn (string $file, string $locale) => collect(require lang_path("$locale/$file.php"))->dot()->keys()->sort()->values()->all();

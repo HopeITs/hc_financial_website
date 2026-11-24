@@ -34,6 +34,7 @@ use App\Livewire\Purchases;
 use App\Livewire\ReceiptVoucher;
 use App\Livewire\RecurringPaymentsScreen;
 use App\Livewire\ReferenceList;
+use App\Livewire\ReportsHome;
 use App\Livewire\Requests;
 use App\Livewire\Salaries;
 use App\Livewire\StaffAdvances;
@@ -128,6 +129,9 @@ Route::middleware('auth')->group(function () {
     // One treasury (finance decision of 2026-11-19): the daily rates take the place of the allocation rates per city.
     $screen('alloc', ExchangeRates::class);
     $screen('transfers', TreasuryTransfers::class);
+
+    // Every report in one page, in three parts (finance decision of 2026-11-25).
+    $screen('reports', ReportsHome::class);
 
     foreach (['rexp', 'rcash', 'rrev', 'rfixed', 'rattach'] as $report) {
         $screen($report, OperationalReport::class)->defer($defer);
