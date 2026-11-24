@@ -15,6 +15,7 @@ return [
     ],
 
     'screens' => [
+        'inbox' => 'Waiting for my approval',
         'reports' => 'All reports',
         'operations' => 'Financial operations',
         'chart' => 'Chart of accounts',
@@ -69,6 +70,7 @@ return [
     ],
 
     'descriptions' => [
+        'inbox' => 'Vouchers, requests, purchase orders, payrolls and payment orders waiting for you, approved with one click',
         'reports' => 'Every report in one page: financial statements, projects and follow-up',
         'operations' => 'Every financial operation in one place: donors, transfers, spending and money received',
         'single' => 'Invoices and expenses paid from a cash or bank account, by project and budget line',

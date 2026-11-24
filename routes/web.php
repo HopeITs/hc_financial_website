@@ -9,6 +9,7 @@ use App\Http\Controllers\RequestQuoteController;
 use App\Http\Controllers\SwitchLocaleController;
 use App\Http\Controllers\VoucherPrintController;
 use App\Livewire\Approval;
+use App\Livewire\ApprovalsInboxScreen;
 use App\Livewire\AuditLog;
 use App\Livewire\Chart;
 use App\Livewire\CurrencySettings;
@@ -108,6 +109,8 @@ Route::middleware('auth')->group(function () {
 
     // The financial operations in one place (finance request of 2026-11-24).
     $screen('operations', OperationsHome::class);
+    // Everything waiting for one's approval (finance decision of 2026-11-25).
+    $screen('inbox', ApprovalsInboxScreen::class);
     // Rent and the other recurring payments (finance decision of 2026-11-24).
     $screen('recurring', RecurringPaymentsScreen::class);
     // The monthly payroll of each project, its summary and payslips (finance request of 2026-11-24).
