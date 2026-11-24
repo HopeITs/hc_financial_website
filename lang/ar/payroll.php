@@ -90,6 +90,7 @@ return [
     'voucher_description' => 'رواتب :project · :month',
 
     'problem' => [
+        'not_on_payroll' => 'الموظف :id ليس في جدول الرواتب هذا.',
         'employee_id' => 'اكتب رقم الموظف.',
         'employee_taken' => 'رقم الموظف هذا موجود بالقائمة.',
         'name' => 'اكتب الاسم.',

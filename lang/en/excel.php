@@ -38,6 +38,8 @@ return [
     'empty' => 'The first sheet of the file has no row under its headings.',
     'too_many' => 'The file has more than :max rows: split it.',
     'sheet' => [
+        'staff' => 'Staff',
+        'payroll_lines' => 'Payroll',
         'daily_rates' => 'Daily rates',
         'monthly_rates' => 'Monthly rates',
         'donors' => 'Donors',
@@ -59,6 +61,14 @@ return [
         'fund_sources' => 'Fund sources',
     ],
     'col' => [
+        'employee_id' => 'Employee ID',
+        'name' => 'Name',
+        'position' => 'Position',
+        'basic_pay' => 'Basic pay',
+        'adjustment' => 'Adjustment / bonus',
+        'unpaid_days' => 'Unpaid days',
+        'other_deductions' => 'Other deductions',
+        'net' => 'Net pay',
         'currency' => 'Currency',
         'day' => 'Day (YYYY-MM-DD)',
         'rate' => 'Rate',

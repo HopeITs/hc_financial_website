@@ -6,9 +6,13 @@ use App\Livewire\PayrollScreen;
 use App\Models\GlBudgetLine;
 use App\Models\Payroll;
 use App\Models\PayrollSplit;
+use App\Models\StaffMember;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Models\VoucherLine;
+use App\Services\Excel\Datasets\PayrollLinesExcel;
+use App\Services\Excel\Datasets\StaffExcel;
+use App\Services\Excel\ExcelException;
 use App\Services\Ledger\VoucherApprovals;
 use App\Services\Payroll\PayrollException;
 use App\Services\Payroll\Payrolls;
@@ -128,4 +132,34 @@ it('shows the payroll and prints the summary and the payslips', function () {
         ->assertOk()->assertSee('Payroll Summary');
 
     $this->actingAs(prUser(RoleId::Cashier, 'Carl'))->get(route('operations.payroll'))->assertForbidden();
+});
+
+it('adds staff from Excel and takes a month\'s absences, bonuses and deductions from Excel', function () {
+    $ann = prUser(RoleId::Accountant, 'Ann');
+    $staff = app(StaffExcel::class);
+
+    $read = [
+        ['row' => 2, 'cells' => ['68', 'Joseph', 'Project Manager', 'F2F', '1000', 'usd', '1']],
+        ['row' => 3, 'cells' => ['69', 'Rana', 'Teacher', 'F2F', '600', 'USD', '']],
+    ];
+    expect($staff->save($read, $ann, []))->toBe(2)
+        ->and(StaffMember::query()->where('employee_id', 68)->value('currency'))->toBe('USD');
+
+    // A wrong row stops the whole file.
+    expect(fn () => $staff->save([['row' => 2, 'cells' => ['70', '', '', 'NOPE', '0', 'EUR', 'maybe']]], $ann, []))->toThrow(ExcelException::class);
+
+    prSplit(68, ['F2F|Staff' => '100']);
+    prSplit(69, ['F2F|Staff' => '100']);
+    $payroll = app(Payrolls::class)->open($ann, 'F2F', '2026-10', 'USD');
+
+    app(PayrollLinesExcel::class)->save([
+        ['row' => 2, 'cells' => ['68', 'Joseph', '0', '4.2', '0', '']],
+        ['row' => 3, 'cells' => ['69', 'Rana', '50', '', '10', 'Bonus']],
+    ], $ann, ['payroll' => $payroll->id]);
+
+    expect($payroll->lines()->where('employee_id', 68)->value('net'))->toBe('860.00')
+        ->and($payroll->lines()->where('employee_id', 69)->value('net'))->toBe('640.00');
+
+    expect(fn () => app(PayrollLinesExcel::class)->save([['row' => 2, 'cells' => ['99', 'Nobody', '0', '0', '0', '']]], $ann, ['payroll' => $payroll->id]))
+        ->toThrow(ExcelException::class);
 });
