@@ -16,6 +16,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
@@ -202,6 +203,18 @@ class PayrollScreen extends Component
             $this->open = '';
             $this->notice = __('payroll.deleted');
         });
+    }
+
+    /** The Excel tools saved staff or a payroll's changes: show them with their message. */
+    #[On('excel-imported')]
+    public function excelImported(string $message): void
+    {
+        if (ctype_digit($this->open) && ($payroll = Payroll::query()->find((int) $this->open)) !== null) {
+            $this->load($payroll);
+        }
+
+        $this->clearFeedback();
+        $this->notice = $message;
     }
 
     public function newStaff(): void

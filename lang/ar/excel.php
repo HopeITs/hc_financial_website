@@ -38,6 +38,8 @@ return [
     'empty' => 'الورقة الأولى من الملف لا تحوي أي صف تحت العناوين.',
     'too_many' => 'الملف فيه أكثر من :max صف: قسّمه.',
     'sheet' => [
+        'staff' => 'الموظفون',
+        'payroll_lines' => 'الرواتب',
         'daily_rates' => 'الأسعار اليومية',
         'monthly_rates' => 'الأسعار الشهرية',
         'donors' => 'المانحون',
@@ -59,6 +61,14 @@ return [
         'fund_sources' => 'مصادر التمويل',
     ],
     'col' => [
+        'employee_id' => 'رقم الموظف',
+        'name' => 'الاسم',
+        'position' => 'الوظيفة',
+        'basic_pay' => 'الراتب الأساسي',
+        'adjustment' => 'تعديل / مكافأة',
+        'unpaid_days' => 'أيام غير مدفوعة',
+        'other_deductions' => 'حسومات أخرى',
+        'net' => 'الصافي',
         'currency' => 'العملة',
         'day' => 'اليوم (YYYY-MM-DD)',
         'rate' => 'السعر',

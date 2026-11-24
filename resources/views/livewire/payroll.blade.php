@@ -64,6 +64,7 @@
 
         <x-ui.panel :title="__('payroll.staff_title')" :subtitle="__('payroll.staff_hint')" :count="$members->count()">
             <x-slot:toolbar>
+                <livewire:excel-tools kind="staff" :key="'excel-staff'" />
                 @if ($canCreate)
                     <x-ui.button size="sm" icon="plus" wire:click="newStaff" data-test="new-staff">{{ __('payroll.staff_new') }}</x-ui.button>
                 @endif
@@ -162,6 +163,8 @@
                     <div class="flex flex-wrap items-center gap-3">
                         <a href="{{ route('operations.payroll.print', ['payroll' => $current->id, 'form' => 'summary']) }}" target="_blank" rel="noopener" class="text-sm underline" data-test="print-summary">{{ __('payroll.print_summary') }}</a>
                         <a href="{{ route('operations.payroll.print', ['payroll' => $current->id, 'form' => 'payslips']) }}" target="_blank" rel="noopener" class="text-sm underline" data-test="print-payslips">{{ __('payroll.print_payslips') }}</a>
+                        {{-- The month's absences, bonuses and deductions from Excel (finance request of 2026-11-25). --}}
+                        <livewire:excel-tools kind="payroll_lines" :context="['payroll' => $current->id]" :key="'excel-payroll-'.$current->id.'-'.$current->status" />
                         <div class="ms-auto"><x-ui.button size="sm" tone="ghost" icon="x-mark" wire:click="closePayroll" :aria-label="__('payroll.close')" /></div>
                     </div>
 

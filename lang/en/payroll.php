@@ -90,6 +90,7 @@ return [
     'voucher_description' => 'Salaries :project · :month',
 
     'problem' => [
+        'not_on_payroll' => 'Employee :id is not on this payroll.',
         'employee_id' => 'Write the employee ID.',
         'employee_taken' => 'This employee ID is already on the register.',
         'name' => 'Write the name.',
