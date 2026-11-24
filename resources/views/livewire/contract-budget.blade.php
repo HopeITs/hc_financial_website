@@ -45,7 +45,17 @@
                             @forelse ($section['lines'] as $line)
                                 @php($lineSpent = $spent[$line->key] ?? '0.00')
                                 <tr wire:key="line-{{ md5($line->key) }}">
-                                    <td>{{ $line->name }}</td>
+                                    <td>
+                                        {{ $line->name }}
+                                        @if ($hasCategories)
+                                            @if ($canChange)
+                                                <x-ui.input size="sm" class="mt-1 max-w-56" :value="$line->category" :placeholder="__('contracts.budget_category')" :aria-label="__('contracts.budget_category')"
+                                                    wire:change="setCategory(@js($line->key), $event.target.value)" data-test="category-{{ $line->key }}" />
+                                            @elseif ($line->category)
+                                                <span class="block text-xs text-secondary-medium dark:text-ink-muted">{{ $line->category }}</span>
+                                            @endif
+                                        @endif
+                                    </td>
                                     <td><span dir="ltr">{{ $line->account_code }}</span> {{ app()->getLocale() === 'ar' ? $line->account?->name_ar : $line->account?->name_en }}</td>
                                     <td class="fin-num"><x-money :amount="$line->budget" /></td>
                                     <td class="fin-num" data-test="spent-{{ $line->key }}"><x-money :amount="$lineSpent" /></td>
@@ -89,6 +99,9 @@
                     @endforeach
                 </x-ui.form-select>
                 <x-ui.form-input wire:model="lineName" :label="__('contracts.budget_line')" maxlength="200" required class="min-w-56 flex-1" data-test="budget-name" />
+                @if ($hasCategories)
+                    <x-ui.form-input wire:model="lineCategory" :label="__('contracts.budget_category')" maxlength="200" class="min-w-40" data-test="budget-category" />
+                @endif
                 <x-ui.form-select wire:model="lineAccount" :label="__('contracts.budget_account')" :placeholder="__('contracts.choose')" required searchable class="min-w-64" data-test="budget-account">
                     <option value="">{{ __('contracts.choose') }}</option>
                     @foreach ($accounts as $code => $label)

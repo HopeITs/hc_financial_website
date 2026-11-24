@@ -30,11 +30,11 @@ class ContractBudgets
     public function __construct(private readonly ContractAuditTrail $trail) {}
 
     /** Adds one budget line and writes it to the agreement's audit trail, both or neither. */
-    public function add(Contract $contract, string $projectCode, string $name, string $accountCode, string $amount, User $by, string $source = 'form'): GlBudgetLine
+    public function add(Contract $contract, string $projectCode, string $name, string $accountCode, string $amount, User $by, string $source = 'form', ?string $category = null): GlBudgetLine
     {
         $contract->loadMissing('donor');
 
-        return DB::transaction(function () use ($contract, $projectCode, $name, $accountCode, $amount, $by, $source): GlBudgetLine {
+        return DB::transaction(function () use ($contract, $projectCode, $name, $accountCode, $amount, $by, $source, $category): GlBudgetLine {
             $line = GlBudgetLine::query()->create([
                 'key' => self::key($projectCode, $name),
                 'project_code' => $projectCode,
@@ -43,6 +43,8 @@ class ContractBudgets
                 'account_code' => $accountCode,
                 'budget' => $amount,
                 'currency' => $contract->currency,
+                // The donor's budget category (2026-11-26), once its column exists.
+                ...($this->hasCategories() ? ['category' => $this->category($category)] : []),
             ]);
 
             $this->trail->lineAdded($contract, $line, $by, $source);
@@ -55,19 +57,42 @@ class ContractBudgets
      * A whole budget at once (an import from Excel, checked by the person): all lines are saved, or none. Each line is in
      * the audit trail, with one entry for the import itself.
      *
-     * @param  list<array{name: string, account: string, amount: string}>  $lines
+     * @param  list<array{name: string, account: string, amount: string, category?: string}>  $lines
      */
     public function addMany(Contract $contract, string $projectCode, array $lines, User $by): int
     {
         return DB::transaction(function () use ($contract, $projectCode, $lines, $by): int {
             foreach ($lines as $line) {
-                $this->add($contract, $projectCode, $line['name'], $line['account'], $line['amount'], $by, 'excel');
+                $this->add($contract, $projectCode, $line['name'], $line['account'], $line['amount'], $by, 'excel', $line['category'] ?? null);
             }
 
             $this->trail->budgetImported($contract, $projectCode, $lines, $by);
 
             return count($lines);
         });
+    }
+
+    /**
+     * Sets the budget category of a line (finance request of 2026-11-26): it groups lines in the donor's report and
+     * changes no amount, so it stays open on a used line.
+     */
+    public function setCategory(GlBudgetLine $line, ?string $category): void
+    {
+        if ($this->hasCategories()) {
+            $line->update(['category' => $this->category($category)]);
+        }
+    }
+
+    public function hasCategories(): bool
+    {
+        return Schema::hasColumn('gl_budget_lines', 'category');
+    }
+
+    private function category(?string $category): ?string
+    {
+        $category = trim((string) $category);
+
+        return $category === '' ? null : mb_substr($category, 0, 200);
     }
 
     /** Removes an unused budget line and writes it to the audit trail, both or neither. */

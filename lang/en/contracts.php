@@ -82,6 +82,8 @@ return [
 
     'budget_title' => 'Budget',
     'budget_hint' => 'The budget lines of each project, each on one expense account, in :currency. Entries and requests post to these lines. A project\'s lines should add up to its share.',
+    'budget_category' => 'Budget category',
+    'budget_category_saved' => 'The line\'s category was saved.',
     'budget_line' => 'Budget line',
     'budget_account' => 'Expense account',
     'budget_amount' => 'Amount',

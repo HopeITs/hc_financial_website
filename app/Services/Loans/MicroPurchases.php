@@ -18,6 +18,7 @@ use App\Services\Ledger\LineDraft;
 use App\Services\Ledger\NetAssets;
 use App\Services\Ledger\PendingVoucherChanges;
 use App\Services\Ledger\PostVoucher;
+use App\Services\Ledger\VoucherDocuments;
 use App\Services\Ledger\VoucherDraft;
 use App\Services\Ledger\Violation;
 use App\Services\Treasury\MonthlyRates;
@@ -101,6 +102,7 @@ class MicroPurchases
                     ),
                 ],
             ), $file);
+            app(VoucherDocuments::class)->record($voucher, 'invoice', (string) ($form['number'] ?? ''), null);
 
             return $this->record($by, $file, $voucher, MicroPurchase::INVOICE, $date, (string) $cash->currency, $amount, $rate, $loanAmount, $usd, $form, $scan, ['cash_account' => $cash->code]);
         });
@@ -198,6 +200,7 @@ class MicroPurchases
                     ),
                 ],
             ), $file);
+            app(VoucherDocuments::class)->record($voucher, 'invoice', (string) ($form['number'] ?? ''), null);
 
             return $this->record($by, $file, $voucher, MicroPurchase::INVOICE, $date, $advance->currency, $amount, $rate, $loanAmount, $usd, $form, $scan, ['advance_id' => $advance->id, 'person' => $advance->person]);
         });

@@ -65,6 +65,14 @@
                 <div class="sm:col-span-2 lg:col-span-4">
                     <x-ui.form-input wire:model.blur="description" :label="__('entries.description')" :help="__('entries.description_help')" data-test="description" />
                 </div>
+                <x-ui.form-select wire:model="documentType" :label="__('voucher_documents.type')" data-test="document-type">
+                    @foreach (\App\Services\Ledger\VoucherDocuments::TYPES as $type)
+                        <option value="{{ $type }}">{{ __('voucher_documents.types.'.$type) }}</option>
+                    @endforeach
+                </x-ui.form-select>
+                <div class="sm:col-span-1 lg:col-span-3">
+                    <x-ui.form-input wire:model.blur="descriptionEn" dir="ltr" :label="__('voucher_documents.description_en')" :help="__('voucher_documents.description_en_help')" data-test="description-en" />
+                </div>
             </div>
         </x-ui.panel>
 

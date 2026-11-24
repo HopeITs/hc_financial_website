@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\Voucher;
 use App\Services\Approvals\ApprovalChain;
 use App\Services\Ledger\LedgerRuleException;
+use App\Services\Ledger\VoucherDocuments;
 use App\Services\Treasury\MonthlyRates;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
@@ -374,6 +375,9 @@ class Payrolls
         );
 
         $payroll->update(['status' => Payroll::PAID, 'paid_on' => $day->toDateString(), 'cash_account' => $cashAccount, 'voucher_id' => $voucher->id]);
+        // The donor's report lists salaries as payslips (finance request of 2026-11-26).
+        app(VoucherDocuments::class)->record($voucher, 'payslip', 'PAY-'.str_pad((string) $payroll->id, 4, '0', STR_PAD_LEFT),
+            'Salaries of '.$payroll->project_code.' for '.$payroll->month->format('F Y'));
 
         return $voucher;
     }

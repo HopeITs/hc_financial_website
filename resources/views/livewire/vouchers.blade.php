@@ -163,6 +163,41 @@
             </div>
         </x-ui.panel>
 
+        {{-- The supporting document, for the donor's report (finance request of 2026-11-26). --}}
+        <x-ui.panel :title="__('voucher_documents.title')" data-test="voucher-document">
+            @can('screen', ['vouchers', 'create'])
+                @if (! $editDocument)
+                    <x-slot:toolbar>
+                        <x-ui.button size="sm" icon="pencil-square" wire:click="openDocument" data-test="edit-document">{{ __('voucher_documents.edit') }}</x-ui.button>
+                    </x-slot:toolbar>
+                @endif
+            @endcan
+            @if ($editDocument)
+                <form wire:submit="saveDocument" class="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <x-ui.form-select wire:model="documentType" :label="__('voucher_documents.type')" data-test="doc-type">
+                        <option value="">—</option>
+                        @foreach (\App\Services\Ledger\VoucherDocuments::TYPES as $documentOption)
+                            <option value="{{ $documentOption }}">{{ __('voucher_documents.types.'.$documentOption) }}</option>
+                        @endforeach
+                    </x-ui.form-select>
+                    <x-ui.form-input wire:model="documentNumber" dir="ltr" :label="__('voucher_documents.number')" data-test="doc-number" />
+                    <div class="sm:col-span-2">
+                        <x-ui.form-input wire:model="descriptionEn" dir="ltr" :label="__('voucher_documents.description_en')" data-test="doc-en" />
+                    </div>
+                    <div class="flex gap-2 sm:col-span-2 lg:col-span-4">
+                        <x-ui.button type="submit" tone="primary" icon="check" data-test="save-document">{{ __('voucher_documents.save') }}</x-ui.button>
+                        <x-ui.button tone="ghost" wire:click="$set('editDocument', false)">{{ __('voucher_documents.cancel') }}</x-ui.button>
+                    </div>
+                </form>
+            @else
+                <div class="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-4 text-sm">
+                    <div><p class="type-label text-secondary-medium dark:text-ink-muted">{{ __('voucher_documents.type') }}</p><p>{{ $voucher->document_type ? __('voucher_documents.types.'.$voucher->document_type) : '—' }}</p></div>
+                    <div><p class="type-label text-secondary-medium dark:text-ink-muted">{{ __('voucher_documents.number') }}</p><p dir="ltr" class="text-start">{{ $voucher->document_number ?? '—' }}</p></div>
+                    <div class="sm:col-span-2"><p class="type-label text-secondary-medium dark:text-ink-muted">{{ __('voucher_documents.description_en') }}</p><p dir="ltr" class="text-start">{{ $voucher->description_en ?? '—' }}</p></div>
+                </div>
+            @endif
+        </x-ui.panel>
+
         @if ($voucher->reverses_id)
             <div class="rounded-lg border border-status-warning bg-status-warning-soft px-4 py-3 text-sm" data-test="reversal-note">
                 <p class="font-semibold">{{ __('vouchers.reverse.reverses') }} <a href="{{ route('entries.vouchers', ['voucher' => $voucher->reverses_id]) }}" wire:navigate class="underline" dir="ltr">{{ $voucher->reverses_id }}</a></p>

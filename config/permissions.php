@@ -68,6 +68,7 @@ return [
             $screens(['payroll'], ['view', 'edit', 'approve']),
             $screens(['currency'], $prepare),
             $screens($monthEnd, ['view', 'edit', 'approve']),
+            $screens(['rdonorfin'], ['view', 'edit']),
         ),
 
         RoleId::Accountant->value => array_merge(
@@ -78,6 +79,8 @@ return [
             // Financial Manager approves the opening voucher and closes the month (one prepares, another approves).
             $screens(['opening'], ['view', 'create']),
             $screens(['mytill'], $view),
+            // The reasons of over- and under-spending in the donor's financial report (2026-11-26).
+            $screens(['rdonorfin'], ['view', 'edit']),
             $screens($monthEnd, ['view', 'edit']),
         ),
 

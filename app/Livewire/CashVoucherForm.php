@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Entries\CashVouchers;
 use App\Services\Entries\EntryException;
 use App\Services\Ledger\VoucherAttachments;
+use App\Services\Ledger\VoucherDocuments;
 use App\Support\Navigation;
 use App\Support\UserPreferences;
 use Carbon\CarbonImmutable;
@@ -47,6 +48,11 @@ abstract class CashVoucherForm extends Component
 
     public string $description = '';
 
+    /** The supporting document's type and the description in English, for the donor's report (2026-11-26); the reference is its number. */
+    public string $documentType = '';
+
+    public string $descriptionEn = '';
+
     public string $request = '';
 
     /** @var list<array{project: string, budget_line: string, account: string, description: string, amount: string}> */
@@ -80,6 +86,7 @@ abstract class CashVoucherForm extends Component
         Gate::authorize('screen', [$this->screen(), 'view']);
 
         $this->date = CarbonImmutable::today()->toDateString();
+        $this->documentType = $this->kind() === CashVouchers::PAYMENT ? 'invoice' : 'receipt';
         $this->rememberedDefaults(app(CashVouchers::class));
     }
 
@@ -181,6 +188,9 @@ abstract class CashVoucherForm extends Component
             return;
         }
 
+        $kind = $this->kind() === CashVouchers::PAYMENT ? 'invoice' : 'receipt';
+        app(VoucherDocuments::class)->record($voucher, $this->documentType !== '' ? $this->documentType : $kind, $this->reference, $this->descriptionEn);
+
         $this->lastSaved = [
             'party' => $this->party, 'center' => $this->center, 'description' => $this->description,
             'lines' => array_values(array_filter($this->lines, fn (array $line): bool => trim($line['amount'].$line['account'].$line['budget_line']) !== '')),
@@ -188,7 +198,7 @@ abstract class CashVoucherForm extends Component
         $this->remember();
 
         // The cash account and the project stay for the next voucher: most vouchers in a row share them.
-        $this->reset('rate', 'rateTyped', 'party', 'reference', 'center', 'description', 'request', 'attachments', 'problems');
+        $this->reset('rate', 'rateTyped', 'party', 'reference', 'center', 'description', 'descriptionEn', 'request', 'attachments', 'problems');
         $this->rememberedDefaults($vouchers);
         $this->savedVoucher = $voucher->id;
         $this->notice = __('entries.saved', ['voucher' => $voucher->id]);

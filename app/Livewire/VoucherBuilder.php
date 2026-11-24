@@ -19,6 +19,7 @@ use App\Services\Ledger\PendingVoucherChanges;
 use App\Services\Ledger\PostVoucher;
 use App\Services\Ledger\ProjectAverageRate;
 use App\Services\Ledger\VoucherDraft;
+use App\Services\Ledger\VoucherDocuments;
 use App\Services\Ledger\VoucherDraftBuilder;
 use App\Services\Ledger\VoucherWarnings;
 use App\Support\Money;
@@ -67,6 +68,13 @@ class VoucherBuilder extends Component
 
     public string $requestId = '';
 
+    /** The supporting document and the description in English, for the donor's report (2026-11-26). */
+    public string $documentType = '';
+
+    public string $documentNumber = '';
+
+    public string $descriptionEn = '';
+
     /** @var array<int, array<string, string>> */
     public array $lines = [];
 
@@ -112,6 +120,8 @@ class VoucherBuilder extends Component
 
         $this->type = $source->type->value;
         $this->description = (string) $source->description;
+        $this->loadDocument($source);
+        $this->documentNumber = '';
         $this->lines = array_map(fn (array $row): array => array_merge(self::BLANK, $row), app(PendingVoucherChanges::class)->rows($source));
     }
 
@@ -130,8 +140,16 @@ class VoucherBuilder extends Component
         $this->date = $voucher->date->toDateString();
         $this->description = (string) $voucher->description;
         $this->requestId = $voucher->request_id !== null ? (string) $voucher->request_id : '';
+        $this->loadDocument($voucher);
         $this->lines = array_map(fn (array $row): array => array_merge(self::BLANK, $row), app(PendingVoucherChanges::class)->rows($voucher));
         $this->draftSavedAt = null;
+    }
+
+    private function loadDocument(Voucher $voucher): void
+    {
+        $this->documentType = (string) $voucher->getAttribute('document_type');
+        $this->documentNumber = (string) $voucher->getAttribute('document_number');
+        $this->descriptionEn = (string) $voucher->getAttribute('description_en');
     }
 
     public function addLine(): void
@@ -236,6 +254,7 @@ class VoucherBuilder extends Component
                 $voucher = $editing !== null
                     ? app(PendingVoucherChanges::class)->update($editing, $built->draft, $user)
                     : $posting->post($built->draft);
+                app(VoucherDocuments::class)->record($voucher, $this->documentType, $this->documentNumber, $this->descriptionEn);
 
                 foreach ($this->attachments as $file) {
                     $name = Str::uuid()->toString().'.'.($file->guessExtension() ?: 'bin');

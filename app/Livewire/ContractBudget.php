@@ -49,6 +49,9 @@ class ContractBudget extends Component
 
     public string $lineAmount = '';
 
+    /** The donor's budget category of the new line (2026-11-26). */
+    public string $lineCategory = '';
+
     public string $importProject = '';
 
     public ?TemporaryUploadedFile $budgetFile = null;
@@ -90,9 +93,9 @@ class ContractBudget extends Component
             return;
         }
 
-        $budgets->add($contract, $data['lineProject'], $data['lineName'], $data['lineAccount'], $data['lineAmount'], $this->user());
+        $budgets->add($contract, $data['lineProject'], $data['lineName'], $data['lineAccount'], $data['lineAmount'], $this->user(), 'form', $this->lineCategory);
 
-        $this->reset('lineName', 'lineAccount', 'lineAmount');
+        $this->reset('lineName', 'lineAccount', 'lineAmount', 'lineCategory');
         $this->say(__('contracts.budget_line_added'));
         $this->dispatch('budget-changed');
     }
@@ -207,12 +210,21 @@ class ContractBudget extends Component
         }
 
         $count = $budgets->addMany($contract, $data['importProject'], array_map(fn (array $row): array => [
-            'name' => $row['name'], 'account' => (string) $row['account'], 'amount' => (string) $row['amount'],
+            'name' => $row['name'], 'account' => (string) $row['account'], 'amount' => (string) $row['amount'], 'category' => (string) ($row['category'] ?? ''),
         ], $chosen), $this->user());
 
         $this->cancelImport();
         $this->say(trans_choice('contracts.import_done', $count, ['count' => $count]));
         $this->dispatch('budget-changed');
+    }
+
+    /** Sets a line's budget category: it only groups lines in the donor's report, so a used line takes it too. */
+    public function setCategory(string $key, string $category, ContractBudgets $budgets): void
+    {
+        $contract = $this->changeableContract();
+        $line = GlBudgetLine::query()->whereKey($key)->whereIn('project_code', $contract->projects()->pluck('project_code'))->firstOrFail();
+        $budgets->setCategory($line, $category);
+        $this->say(__('contracts.budget_category_saved'));
     }
 
     public function cancelImport(): void
@@ -279,6 +291,7 @@ class ContractBudget extends Component
             'spent' => $spent,
             'accounts' => $this->accounts(),
             'canChange' => Gate::allows('screen', ['contracts', 'edit']) && $contract->isOpen(),
+            'hasCategories' => app(ContractBudgets::class)->hasCategories(),
             'needsMatching' => $contract->isApproved() && $sections->contains(fn (array $section): bool => ! $section['balanced']),
             'history' => $history,
             'historyPeople' => User::query()->whereIn('ID', $history->pluck('changed_by')->unique()->all())->get()->mapWithKeys(fn (User $person): array => [(int) $person->getKey() => $person->username])->all(),
