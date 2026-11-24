@@ -7,6 +7,7 @@ use App\Enums\ScreenAction;
 use App\Enums\VoucherStatus;
 use App\Models\LedgerRequest;
 use App\Models\Purchase;
+use App\Models\RecurringPayment;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Support\Navigation;
@@ -39,6 +40,7 @@ class OperationsHome extends Component
         'spending' => [
             'requests' => ['screen' => 'requests', 'icon' => 'clipboard-document-list'],
             'purchases' => ['screen' => 'purchases', 'icon' => 'shopping-cart'],
+            'recurring' => ['screen' => 'recurring', 'icon' => 'arrow-path'],
             'advances' => ['screen' => 'advance', 'icon' => 'hand-raised'],
             'micro' => ['screen' => 'microhome', 'icon' => 'briefcase'],
             'salaries' => ['screen' => 'salaries', 'icon' => 'user-group'],
@@ -79,6 +81,10 @@ class OperationsHome extends Component
 
         if (Schema::hasTable('gl_requests')) {
             $counts['requests'] = LedgerRequest::query()->where('status', RequestStatus::Submitted->value)->count();
+        }
+
+        if (Schema::hasTable('gl_recurring_payments')) {
+            $counts['recurring'] = RecurringPayment::query()->where('active', true)->whereDate('next_due', '<=', now()->toDateString())->count();
         }
 
         if (Schema::hasTable('gl_purchases')) {

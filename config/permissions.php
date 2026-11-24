@@ -30,7 +30,7 @@ $treasury = ['tills', 'treasury', 'alloc', 'transfers', 'cities', 'currency', 'd
 $monthEnd = ['monthend'];
 // `single` is the payment voucher and `receipt` the receipt voucher. `multiatt` and `bonds` are old screens that left
 // the menu; their keys stay until their code is removed.
-$entries = ['single', 'receipt', 'journal', 'advance', 'multi', 'multiatt', 'microfiles', 'payments', 'loanfunds', 'vouchers', 'bonds', 'purchases'];
+$entries = ['single', 'receipt', 'journal', 'advance', 'multi', 'multiatt', 'microfiles', 'payments', 'loanfunds', 'vouchers', 'bonds', 'purchases', 'recurring'];
 // The micro-projects section's own page, for everyone who works on micro projects (2026-11-23).
 $microHome = ['microhome'];
 // The financial operations' page (2026-11-24): each of its parts shows only to those who see its screen.
@@ -46,7 +46,7 @@ return [
         RoleId::HeadOffice->value => $screens(['home', 'requests', 'project-money', 'multiatt', 'bonds', ...$everyScreen], $all),
 
         RoleId::FinancialManager->value => array_merge(
-            $screens(['home', 'chart', 'project-money', ...$treasury, ...$reports, 'employees', 'salaries', 'users', 'log', 'auditlog', 'single', 'receipt', 'advance', 'multi', 'multiatt', 'payments', 'bonds', $operations, ...$microHome], $view),
+            $screens(['home', 'chart', 'project-money', ...$treasury, ...$reports, 'employees', 'salaries', 'users', 'log', 'auditlog', 'single', 'receipt', 'advance', 'multi', 'multiatt', 'payments', 'bonds', 'recurring', $operations, ...$microHome], $view),
             $screens(['vouchers', 'approval', 'requests'], ['view', 'approve']),
             // The Financial Manager approves the daily rates, and a rate they type themselves is approved at once.
             $screens(['alloc'], ['view', 'create', 'approve']),
@@ -77,7 +77,7 @@ return [
         ),
 
         RoleId::Cashier->value => array_merge(
-            $screens(['home', 'treasury', 'rcash', 'purchases', $operations], $view),
+            $screens(['home', 'treasury', 'rcash', 'purchases', 'recurring', $operations], $view),
             $screens(['single', 'receipt', 'advance', 'tills'], ['view', 'create']),
         ),
 
