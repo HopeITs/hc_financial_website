@@ -23,21 +23,24 @@ return [
         // The organisation's financial operations in one place (finance request of 2026-11-24): its page, then the
         // requests and purchases, the advances, the salaries and the moves between accounts.
         'operations' => ['operations', 'requests', 'purchases', 'recurring', 'advance', 'payroll', 'salaries', 'transfers'],
-        'funding' => ['donors', 'contracts', 'rdonor'],
-        // The accounting: the vouchers, the manual entry and Excel. The payment and receipt vouchers are made by the
-        // operations and stay out of the menu (see `hidden`).
-        'entries' => ['vouchers', 'approval', 'journal', 'multi', 'single', 'receipt'],
         // Micro projects in one place (finance request of 2026-11-23).
         'micro' => ['microhome', 'microfiles', 'payments', 'loanfunds', 'loans'],
-        'treasury' => ['treasury', 'tills', 'alloc', 'monthend', 'opening', 'currency', 'denoms'],
-        'reports' => ['rexp', 'rcash', 'rrev', 'rfixed', 'rattach', 'tb', 'statement', 'statements', 'recon', 'mapprovals', 'uncomp', 'xreserve', 'advances'],
+        'funding' => ['donors', 'contracts', 'rdonor'],
+        // The treasury's daily and monthly work (finance decision of 2026-11-25); its set-up screens are in settings.
+        'treasury' => ['treasury', 'tills', 'alloc', 'monthend'],
+        // The accounting: the vouchers (with those waiting for approval), the manual entry and Excel. The payment and
+        // receipt vouchers are made by the operations and stay out of the menu (see `hidden`).
+        'entries' => ['vouchers', 'journal', 'multi', 'approval', 'single', 'receipt'],
+        // The reports' own page, in three parts (ReportsHome), then each report.
+        'reports' => ['reports', 'tb', 'statements', 'statement', 'rexp', 'rrev', 'rfixed', 'rattach', 'recon', 'uncomp', 'xreserve', 'rcash', 'advances', 'mapprovals'],
         'chart' => ['chart'],
-        'settings' => ['users', 'employees', 'cities', 'log', 'auditlog'],
+        'settings' => ['users', 'cities', 'currency', 'denoms', 'opening', 'auditlog', 'employees', 'log'],
     ],
 
     'paths' => [
         'operations' => 'operations',
         'recurring' => 'operations/recurring',
+        'reports' => 'reports',
         'payroll' => 'operations/payroll',
 
         'donors' => 'funding/donors',
@@ -93,9 +96,12 @@ return [
     ],
 
     /*
-     * Screens that keep their address and permission but are not in the menu: the payment and receipt vouchers are
-     * made by the operations (purchases, revenues…) and the manual entry (finance request of 2026-11-24).
+     * Screens that keep their address and permission but are not in the menu (finance decisions of 2026-11-24/25):
+     * the payment and receipt vouchers, made by the operations and the manual entry; the vouchers waiting for approval,
+     * a tab of the vouchers; the salary split, a tab of the payroll; and screens another one covers: the old staff list
+     * and log (the payroll's staff, the audit log), the cash balances (the liquidity position), the open advances (the
+     * advances screen) and the old program's monthly approvals.
      */
-    'hidden' => ['single', 'receipt'],
+    'hidden' => ['single', 'receipt', 'approval', 'salaries', 'employees', 'log', 'rcash', 'advances', 'mapprovals'],
 
 ];

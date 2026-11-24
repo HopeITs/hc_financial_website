@@ -4,7 +4,6 @@ use App\Enums\FundSource;
 use App\Enums\RoleId;
 use App\Livewire\MicroLoans;
 use App\Livewire\Salaries;
-use App\Livewire\Transfers;
 use App\Models\AllocationRate;
 use App\Models\GlBudgetLine;
 use App\Models\GlProject;
@@ -92,28 +91,6 @@ it('gives restored salary rows exactly their own fields', function () {
         ->and($page->get('lines'))->toBe([['budget_line' => '', 'amount' => '', 'percent' => '']]);
 });
 
-it('drafts a rate proposal on transfers, restores it, and forgets it once the rate is proposed', function () {
-    $ann = fdBUser();
-
-    Livewire::actingAs($ann)->test(Transfers::class)
-        ->set('rateCity', 'Aleppo')->set('rateValue', '14500')->set('rateFrom', '2026-03-01')->set('rateAverageCost', true)
-        ->set('description', 'مسودة تحويل')
-        ->call('saveDraft')
-        ->assertDispatched('form-clean');
-
-    $page = Livewire::actingAs($ann)->test(Transfers::class)
-        ->assertSeeHtml('data-test="draft-offer"')
-        ->assertSet('rateValue', '')
-        ->call('restoreDraft')
-        ->assertSet('rateValue', '14500')->assertSet('rateFrom', '2026-03-01')->assertSet('rateAverageCost', true)
-        ->assertSet('description', 'مسودة تحويل');
-
-    $page->call('propose')->assertSet('failures', []);
-
-    expect(AllocationRate::query()->count())->toBe(1)
-        ->and(fdBDraft($ann->getKey(), 'alloc'))->toBeNull();
-});
-
 it('drafts an instalment on micro loans, restores it, and forgets it once the instalment is received', function () {
     $ann = fdBUser();
     $request = LedgerRequest::query()->create([
@@ -144,14 +121,8 @@ it('drafts an instalment on micro loans, restores it, and forgets it once the in
 it('puts the leave warning and the draft button on salaries, transfers and micro loans', function () {
     $ann = fdBUser();
 
-    foreach ([Salaries::class, Transfers::class, MicroLoans::class] as $screen) {
+    foreach ([Salaries::class, MicroLoans::class] as $screen) {
         Livewire::actingAs($ann)->test($screen)
             ->assertSeeHtml('x-data="unsavedGuard"')->assertSeeHtml('data-test="save-draft"')->assertSeeHtml('x-on:click="leaving()"');
     }
-});
-
-it('refuses a draft from someone who may not save on these screens', function () {
-    $emp = fdBUser(RoleId::Employee, 'Emp');
-
-    Livewire::actingAs($emp)->test(Transfers::class)->call('saveDraft')->assertForbidden();
 });

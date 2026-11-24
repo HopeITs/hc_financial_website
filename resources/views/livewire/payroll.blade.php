@@ -11,6 +11,10 @@
         @foreach (['payrolls', 'staff'] as $name)
             <x-ui.button size="sm" :tone="$tab === $name ? 'primary' : 'secondary'" wire:click="$set('tab', '{{ $name }}')" role="tab" :aria-selected="$tab === $name ? 'true' : 'false'" data-test="tab-{{ $name }}">{{ __('payroll.tabs.'.$name) }}</x-ui.button>
         @endforeach
+        {{-- The salary split is the payroll's third tab, on its own screen (finance decision of 2026-11-25). --}}
+        @can('screen', ['salaries', 'view'])
+            <x-ui.button size="sm" tone="secondary" :href="route(\App\Support\Navigation::routeName('salaries'))" wire:navigate data-test="tab-split">{{ __('navigation.screens.salaries') }}</x-ui.button>
+        @endcan
     </div>
 
     @if ($notice)

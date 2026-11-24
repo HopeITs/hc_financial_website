@@ -9,6 +9,8 @@ return [
     'type' => 'النوع',
     'search' => 'ابحث برقم السند أو بيانه',
     'status_label' => 'الحالة',
+    'tab_all' => 'كل السندات',
+    'tab_pending' => 'بانتظار الاعتماد (:count)',
     'all_statuses' => 'كل الحالات',
     'status' => [
         'pending_approval' => 'بانتظار الموافقة',

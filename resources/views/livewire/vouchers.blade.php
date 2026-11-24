@@ -21,6 +21,14 @@
             </x-slot:actions>
         </x-ui.page-header>
 
+        {{-- The vouchers waiting for approval are a tab of the list (finance decision of 2026-11-25). --}}
+        <div class="flex flex-wrap gap-2" role="tablist" data-test="status-tabs">
+            @foreach (['' => __('vouchers.tab_all'), 'pending_approval' => __('vouchers.tab_pending', ['count' => $pendingCount])] as $value => $label)
+                <button type="button" role="tab" wire:click="$set('status', '{{ $value }}')" aria-selected="{{ $status === $value ? 'true' : 'false' }}" data-test="tab-{{ $value === '' ? 'all' : 'pending' }}"
+                    class="border-b-2 px-3 py-1.5 text-sm font-medium {{ $status === $value ? 'border-primary text-primary dark:border-brand dark:text-brand-text' : 'border-transparent text-secondary-medium dark:text-ink-muted' }}">{{ $label }}</button>
+            @endforeach
+        </div>
+
         <div class="flex flex-wrap gap-2" role="group" aria-label="{{ __('vouchers.type') }}" data-test="type-chips">
             <button type="button" wire:click="setType('')" aria-pressed="{{ $type === '' ? 'true' : 'false' }}"
                 class="rounded-full border px-3 py-1 text-sm {{ $type === '' ? 'border-primary bg-primary text-white' : 'border-secondary-light bg-white text-secondary-dark dark:border-line-strong dark:bg-surface-2 dark:text-ink' }}">{{ __('vouchers.all_types') }}</button>

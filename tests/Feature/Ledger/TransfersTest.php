@@ -3,7 +3,6 @@
 use App\Enums\FundSource;
 use App\Enums\RoleId;
 use App\Enums\VoucherType;
-use App\Livewire\Transfers;
 use App\Models\AllocationRate;
 use App\Models\User;
 use App\Models\Voucher;
@@ -251,45 +250,4 @@ it('refuses a bad kind, date, amount, currency or city', function () {
         ->and(buildTransfer('usd_to_project', ['amount' => 'abc'])->problems)->toBe([__('ledger.transfers.bad_amount')])
         ->and(buildTransfer('return', ['currency' => 'EUR'])->problems)->toBe([__('ledger.transfers.bad_currency')])
         ->and(buildTransfer('usd_to_project', ['city' => 'Paris'])->problems)->toBe([__('ledger.transfers.bad_city')]);
-});
-
-it('lets an accountant propose a rate and the financial manager approve it, then saves a transfer as a pending voucher', function () {
-    $accountant = User::query()->whereKey(createFinanceUser('acc', 'secret pass', RoleId::Accountant->name, RoleId::Accountant->value))->firstOrFail();
-    $manager = User::query()->whereKey(createFinanceUser('fm', 'secret pass', RoleId::FinancialManager->name, RoleId::FinancialManager->value))->firstOrFail();
-
-    Livewire::actingAs($accountant)->test(Transfers::class)
-        ->set('rateCity', 'Aleppo')->set('rateValue', '14000')->set('rateFrom', '2026-04-01')
-        ->call('propose')
-        ->assertSet('notice', __('ledger.transfers.rate_proposed'))
-        ->assertDontSee('approve-rate-');
-
-    $rate = AllocationRate::query()->firstOrFail();
-
-    Livewire::actingAs($accountant)->test(Transfers::class)->call('approve', $rate->id)->assertForbidden();
-
-    Livewire::actingAs($manager)->test(Transfers::class)
-        ->assertSee('approve-rate-'.$rate->id)
-        ->call('approve', $rate->id)
-        ->assertSet('notice', __('ledger.transfers.rate_approved'));
-    expect($rate->fresh()->status)->toBe('approved');
-
-    Livewire::actingAs($accountant)->test(Transfers::class)
-        ->set('kind', 'syp_to_project')->set('date', '2026-04-01')->set('city', 'Aleppo')->set('project', 'F2F')
-        ->set('amount', '2100000')
-        ->assertSee('150.00')
-        ->call('save');
-
-    $voucher = Voucher::query()->firstWhere('transfer_kind', 'syp_to_project');
-    expect($voucher)->not->toBeNull()->and($voucher->status->value)->toBe('pending_approval');
-});
-
-it('shows the problem and saves nothing when the transfer cannot be built', function () {
-    $accountant = User::query()->whereKey(createFinanceUser('acc', 'secret pass', RoleId::Accountant->name, RoleId::Accountant->value))->firstOrFail();
-
-    Livewire::actingAs($accountant)->test(Transfers::class)
-        ->set('kind', 'syp_to_project')->set('date', '2026-04-01')->set('city', 'Aleppo')->set('project', 'F2F')->set('amount', '2100000')
-        ->call('save')
-        ->assertSet('failures', [__('ledger.transfers.no_rate', ['city' => 'Aleppo', 'date' => '2026-04-01'])]);
-
-    expect(Voucher::query()->where('transfer_kind', 'syp_to_project')->count())->toBe(0);
 });

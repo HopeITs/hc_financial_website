@@ -9,6 +9,8 @@ return [
     'type' => 'Type',
     'search' => 'Search number or description',
     'status_label' => 'Status',
+    'tab_all' => 'All vouchers',
+    'tab_pending' => 'Waiting for approval (:count)',
     'all_statuses' => 'All statuses',
     'status' => [
         'pending_approval' => 'Pending approval',

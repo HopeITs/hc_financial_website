@@ -25,7 +25,8 @@ $everyScreen = array_merge(...array_values((require __DIR__.'/navigation.php')['
 
 $screens = static fn (array $slugs, array $actions): array => array_fill_keys($slugs, $actions);
 
-$reports = ['rexp', 'rcash', 'rdonor', 'rrev', 'rfixed', 'rattach', 'tb', 'statement', 'statements', 'recon', 'mapprovals', 'uncomp', 'xreserve', 'advances', 'loans'];
+// `reports` is the reports' own page (2026-11-25).
+$reports = ['reports', 'rexp','rcash', 'rdonor', 'rrev', 'rfixed', 'rattach', 'tb', 'statement', 'statements', 'recon', 'mapprovals', 'uncomp', 'xreserve', 'advances', 'loans'];
 $treasury = ['tills', 'treasury', 'alloc', 'transfers', 'cities', 'currency', 'denoms'];
 $monthEnd = ['monthend'];
 // `single` is the payment voucher and `receipt` the receipt voucher. `multiatt` and `bonds` are old screens that left

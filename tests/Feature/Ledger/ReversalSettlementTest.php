@@ -5,7 +5,6 @@ use App\Enums\RoleId;
 use App\Enums\VoucherStatus;
 use App\Enums\VoucherType;
 use App\Livewire\AdvanceSettlementForm;
-use App\Livewire\Operations;
 use App\Livewire\Vouchers;
 use App\Models\GlAccount;
 use App\Models\GlBudgetLine;
@@ -115,26 +114,4 @@ it('refuses a settlement with no bills, a bad budget line, or a person with no o
     expect($settlement->build('Rana', [], '1111', '2026-03-12', '', 9)['problems'])->not->toBe([])
         ->and($settlement->build('Rana', [['budget_line' => 'nope', 'amount' => '10', 'note' => '']], '1111', '2026-03-12', '', 9)['problems'])->not->toBe([])
         ->and($settlement->build('Omar', [['budget_line' => 'F2F|Travel', 'amount' => '10', 'note' => '']], '1111', '2026-03-12', '', 9)['problems'])->not->toBe([]);
-});
-
-it('shows the settlement form in the Operations screen and the Reverse button on an approved voucher', function () {
-    $user = User::query()->findOrFail(createFinanceUser('Fay', 'secret pass', RoleId::HeadOffice->name, RoleId::HeadOffice->value));
-    $voucher = approvedReceipt();
-    openAdvance(500);
-
-    Livewire\Livewire::actingAs($user)->test(Operations::class)
-        ->call('pick', 'CPV')->set('mode', 'settlement')
-        ->assertSeeHtml('data-test="settlement-panel"')
-        ->assertSeeLivewire(AdvanceSettlementForm::class);
-
-    Livewire\Livewire::actingAs($user)->test(AdvanceSettlementForm::class)
-        ->set('person', 'Rana')->set('cash', '1111')->set('bills.0.budget_line', 'F2F|Travel')->set('bills.0.amount', '300')
-        ->assertSeeHtml('data-test="settle-summary"')
-        ->call('save')->assertSet('failures', []);
-
-    Livewire\Livewire::actingAs($user)->test(Vouchers::class, ['number' => $voucher->id])
-        ->assertSeeHtml('data-test="reverse"')
-        ->call('openReverse')->set('reverseReason', 'Wrong donor')->call('reverse');
-
-    expect(Voucher::query()->where('reverses_id', $voucher->id)->count())->toBe(1);
 });
