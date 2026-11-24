@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\Assistant\Assistant;
 use App\Services\Assistant\AssistantUnavailable;
 use App\Services\Assistant\EntryProposals;
+use App\Services\Assistant\Guide;
 use App\Services\Assistant\ProposalRefused;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Str;
@@ -16,6 +17,9 @@ use Livewire\Component;
 /**
  * The AI assistant's chat panel, on every page for the people it can help. The person asks; the assistant answers
  * with the tools their screens allow and shows each entry it prepared as a card, which the person saves or cancels.
+ *
+ * Without an AI key the panel is the program's built-in guide (finance request of 2026-11-26): it answers from the
+ * guide's topics, for everyone signed in, and keeps the conversation in the session.
  */
 class AssistantPanel extends Component
 {
@@ -24,6 +28,10 @@ class AssistantPanel extends Component
 
     #[Session(key: 'assistant.conversation')]
     public string $conversation = '';
+
+    /** @var list<array{type: string, text: string, links?: list<array{label: string, url: string}>, related?: list<array{key: string, title: string}>}> the guide's conversation */
+    #[Session(key: 'assistant.guide')]
+    public array $guide = [];
 
     public string $question = '';
 
@@ -43,10 +51,17 @@ class AssistantPanel extends Component
         $this->open = ! $this->open;
     }
 
-    public function send(Assistant $assistant): void
+    public function send(Assistant $assistant, Guide $guide): void
     {
         $this->reset('error', 'notice');
         $this->validate(['question' => ['required', 'string', 'max:4000']]);
+
+        if (! $this->hasKey()) {
+            $this->remember(['type' => 'user', 'text' => $this->question], ['type' => 'guide', ...$guide->answer($this->user(), $this->question)]);
+            $this->question = '';
+
+            return;
+        }
 
         // A question can take several model calls and tool runs. Only ever raise the limit: where there is none (the
         // command line, tests) setting one would cap the rest of the process.
@@ -61,6 +76,26 @@ class AssistantPanel extends Component
         } catch (AssistantUnavailable $e) {
             $this->error = $e->getMessage();
         }
+    }
+
+    /** A topic picked from the guide's suggestions. */
+    public function askTopic(string $topic, Guide $guide): void
+    {
+        $this->reset('error', 'notice');
+        $answer = $guide->topic($this->user(), $topic);
+        $title = collect($guide->suggestions())->firstWhere('key', $topic)['title'] ?? (string) __("assistant_guide.topics.{$topic}.title");
+
+        $this->remember(['type' => 'user', 'text' => $title], ['type' => 'guide', ...$answer]);
+    }
+
+    /**
+     * Adds a question and its answer to the guide's conversation, keeping the last forty items.
+     *
+     * @param  array<string, mixed>  ...$items
+     */
+    private function remember(array ...$items): void
+    {
+        $this->guide = array_slice([...$this->guide, ...$items], -40);
     }
 
     public function save(int $proposal, EntryProposals $proposals, Assistant $assistant): void
@@ -96,7 +131,7 @@ class AssistantPanel extends Component
 
     public function startOver(): void
     {
-        $this->reset('question', 'error', 'notice');
+        $this->reset('question', 'error', 'notice', 'guide');
         $this->conversation = (string) Str::uuid();
     }
 
@@ -108,9 +143,20 @@ class AssistantPanel extends Component
         return is_string($key) && $key !== '';
     }
 
-    public function render(Assistant $assistant, EntryProposals $proposals): View
+    public function render(Assistant $assistant, EntryProposals $proposals, Guide $guide): View
     {
         $user = auth()->user();
+
+        if ($user instanceof User && ! $this->hasKey()) {
+            return view('livewire.assistant-panel', [
+                'available' => true,
+                'configured' => false,
+                'items' => $this->guide,
+                'cards' => collect(),
+                'hasHistory' => $this->guide !== [],
+                'suggestions' => $guide->suggestions(),
+            ]);
+        }
 
         if (! $user instanceof User || ! $assistant->availableFor($user)) {
             return view('livewire.assistant-panel', ['available' => false]);
@@ -131,6 +177,7 @@ class AssistantPanel extends Component
             'items' => $items,
             'cards' => $cards,
             'hasHistory' => $items !== [],
+            'suggestions' => [],
         ]);
     }
 

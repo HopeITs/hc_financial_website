@@ -5,6 +5,7 @@ return [
     'close' => 'Close the assistant',
     'new' => 'New conversation',
     'placeholder' => 'Ask about balances, vouchers, budgets, or describe an operation to record',
+    'guide_placeholder' => 'Ask how to do anything in the program',
     'send' => 'Send',
     'thinking' => 'Working on it…',
     'intro' => 'Ask about the ledger in plain words, or describe an operation and I will prepare the entry for you to save. I only see what your role allows.',
