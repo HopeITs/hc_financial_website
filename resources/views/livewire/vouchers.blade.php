@@ -102,6 +102,11 @@
                             @if ($selected !== [])
                                 <button type="button" wire:click="clearSelection" class="ms-2 text-primary hover:underline dark:text-brand-text">{{ __('vouchers.clear_selection') }}</button>
                             @endif
+                            @if ($selected !== [] && $selectedPending > 0)
+                                @can('screen', ['vouchers', 'approve'])
+                                    <x-ui.button tone="primary" size="sm" icon="check" class="ms-3" wire:click="approveSelected" wire:confirm="{{ __('vouchers.bulk_approve_confirm', ['count' => $selectedPending]) }}" data-test="approve-selected">{{ __('vouchers.bulk_approve', ['count' => $selectedPending]) }}</x-ui.button>
+                                @endcan
+                            @endif
                         </td>
                         <td class="fin-num" colspan="3">
                             <div>{{ __('common.page_total') }}: <x-money :amount="$pageTotal" currency="USD" /></div>

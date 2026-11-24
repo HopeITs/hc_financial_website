@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'new' => 'New',
+
     'groups' => [
         'funding' => 'Funding',
         'micro' => 'Micro projects',

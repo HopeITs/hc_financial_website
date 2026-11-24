@@ -11,6 +11,7 @@ return [
     ],
     'all_vouchers' => 'All vouchers',
     'open_voucher' => 'Open :voucher',
+    'repeat_last' => 'Enter it again',
     'header' => 'Voucher',
     'date' => 'Date',
     'paid_from' => 'Paid from',

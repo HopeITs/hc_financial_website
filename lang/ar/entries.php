@@ -11,6 +11,7 @@ return [
     ],
     'all_vouchers' => 'كل السندات',
     'open_voucher' => 'فتح :voucher',
+    'repeat_last' => 'إدخاله مرة أخرى',
     'header' => 'السند',
     'date' => 'التاريخ',
     'paid_from' => 'دُفع من',

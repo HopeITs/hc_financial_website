@@ -88,6 +88,41 @@ it('pays an invoice in pounds at the monthly rate, by project and budget line, t
         ->assertCount('lines', 2);
 });
 
+it('remembers the last cash account and project for the next voucher, and enters the last voucher again in one click', function () {
+    cvMonthly('2026-11', '13150');
+    $ann = cvUser(RoleId::Accountant, 'Ann');
+
+    $page = Livewire::actingAs($ann)->test(PaymentVoucher::class)
+        ->set('account', '1112')
+        ->set('party', 'Al Nour bookshop')
+        ->set('lines.0.project', 'F2F')->set('lines.0.budget_line', 'F2F|Maintenance')->set('lines.0.amount', '1315000')
+        ->set('center', 'Science Zone Aleppo')
+        ->call('save')
+        ->assertSet('problems', [])
+        ->assertSet('account', '1112')
+        ->assertSet('rate', '13150')
+        ->assertSet('lines.0.project', 'F2F')
+        ->assertSet('party', '')
+        ->assertSeeHtml('data-test="repeat-last"');
+
+    $page->call('repeatLast')
+        ->assertSet('party', 'Al Nour bookshop')
+        ->assertSet('center', 'Science Zone Aleppo')
+        ->assertCount('lines', 1)
+        ->assertSet('lines.0.budget_line', 'F2F|Maintenance')
+        ->assertSet('lines.0.amount', '1315000');
+
+    Livewire::actingAs($ann)->test(PaymentVoucher::class)
+        ->assertSet('account', '1112')
+        ->assertSet('rate', '13150')
+        ->assertSet('lines.0.project', 'F2F')
+        ->assertSet('lines.1.project', 'F2F');
+
+    Livewire::actingAs($ann)->test(ReceiptVoucher::class)
+        ->assertSet('account', '')
+        ->assertSet('lines.0.project', 'F2F');
+});
+
 it('takes the month before\'s rate until the month has one, keeps a typed rate, and a new project clears the budget line', function () {
     cvMonthly('2026-10', '13000');
 

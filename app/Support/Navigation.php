@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Enums\ScreenAction;
 use App\Enums\VoucherStatus;
 use App\Models\User;
 use App\Models\Voucher;
@@ -26,6 +27,39 @@ class Navigation
         $pending = Voucher::query()->where('status', VoucherStatus::PendingApproval->value)->count();
 
         return $pending > 0 ? ['vouchers' => $pending] : [];
+    }
+
+    /** The entries the top bar's "New" menu offers, screen slug => icon, in the order they show (finance request of 2026-11-24). */
+    public const NEW_ENTRIES = [
+        'single' => 'arrow-up-circle',
+        'receipt' => 'arrow-down-circle',
+        'journal' => 'book-open',
+        'requests' => 'clipboard-document-list',
+        'microfiles' => 'briefcase',
+        'payments' => 'banknotes',
+    ];
+
+    /**
+     * The given entries the person may create, as links, in the given order: screen slug => icon in, slug, icon and
+     * address out. Used by the home page's quick actions and the top bar's "New" menu.
+     *
+     * @param  array<string, string>  $entries
+     * @return list<array{slug: string, icon: string, url: string}>
+     */
+    public static function creatable(?User $user, array $entries): array
+    {
+        if ($user === null) {
+            return [];
+        }
+
+        $links = [];
+        foreach ($entries as $slug => $icon) {
+            if ($user->canOnScreen($slug, ScreenAction::Create)) {
+                $links[] = ['slug' => $slug, 'icon' => $icon, 'url' => route(self::routeName($slug))];
+            }
+        }
+
+        return $links;
     }
 
     /**
