@@ -54,19 +54,12 @@ it('shows each reference list with what the old program keeps', function (string
         ->assertSee($expected);
 })->with([
     'donors' => ['donors', ['Caritas Poland', 'CP', 'CDCS']],
-    'cities' => ['cities', ['Aleppo', 'Homs']],
     'currency' => ['currency', ['USD', 'SYP', '100']],
-    'denoms' => ['denoms', ['500', 'SYP']],
     'employees' => ['employees', ['Maya Haddad', 'Samir', '2024-01-01']],
     'tills' => ['tills', ['Main Cash Till - Aleppo', 'SYP', 'Aleppo']],
     'bonds' => ['bonds', ['HC - Aleppo', 'Family to Family', 'Yearly']],
     'log' => ['log', ['LOGIN', 'Mai', '2026-03-01']],
 ]);
-
-it('counts the projects and cash boxes of a city', function () {
-    Livewire::actingAs(masterUser(RoleId::HeadOffice))->test(ReferenceList::class, ['screen' => 'cities'])
-        ->assertSeeHtmlInOrder(['Aleppo', '1', '1', 'Homs', '0', '0']);
-});
 
 it('searches a list, and pages it', function () {
     foreach (range(3, 30) as $id) {
@@ -217,6 +210,21 @@ it('saves roles, state and permissions given to one person, and honours them', f
         ->assertSet('permissions', ['chart.edit', 'chart.view'])->assertSet('active', false);
 });
 
+it('leaves retired screens out of the permission list and drops their old grants', function () {
+    $head = masterUser(RoleId::HeadOffice, 'Hoa');
+    $target = masterUser(RoleId::Employee, 'Eli');
+    DB::table('web_user_permissions')->insert([
+        ['user_id' => $target->getKey(), 'screen' => 'rcash', 'action' => 'view'],
+        ['user_id' => $target->getKey(), 'screen' => 'chart', 'action' => 'view'],
+    ]);
+
+    Livewire::actingAs($head)->test(Users::class)
+        ->call('selectUser', $target->getKey())
+        ->assertSet('permissions', ['chart.view'])
+        ->assertSee('data-test="perm-purchases.view"', false)
+        ->assertDontSee('data-test="perm-rcash.view"', false);
+});
+
 it('refuses a bad role, a bad permission and deactivating yourself', function () {
     $head = masterUser(RoleId::HeadOffice, 'Hoa');
 
@@ -274,7 +282,7 @@ it('never writes to a legacy table from a reference screen', function () {
     $counts = fn () => collect(['donor', 'city', 'tilltypes', 'cashaccount', 'employee', 'fiscalbond'])->map(fn (string $table) => $legacy->table($table)->count())->all();
     $before = $counts();
 
-    foreach (['donors', 'cities', 'currency', 'denoms', 'employees', 'tills', 'bonds', 'log'] as $slug) {
+    foreach (['donors', 'currency', 'employees', 'tills', 'bonds', 'log'] as $slug) {
         Livewire::actingAs(masterUser(RoleId::HeadOffice, 'U'.$slug))->test(ReferenceList::class, ['screen' => $slug])->set('search', 'x');
     }
 

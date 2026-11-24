@@ -45,7 +45,6 @@
     .ud-screen > span { flex: 0 0 10rem; font-size: .8125rem; font-weight: 500; color: var(--color-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .ud-act { display: inline-flex; align-items: center; gap: .25rem; font-size: .75rem; color: var(--color-ink-muted); cursor: pointer; }
     .ud-act input { width: .875rem; height: .875rem; accent-color: var(--color-primary); }
-    .ud-bar { display: flex; justify-content: flex-end; gap: .75rem; padding: .75rem 1.5rem; border-top: 1px solid var(--color-line); }
     .ud-pass { display: flex; flex-direction: column; gap: 1rem; padding: 1.5rem; border-top: 1px solid var(--color-line); }
     .ud-pass h3 { margin: 0; font-size: .875rem; font-weight: 700; }
     .ud-two { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
@@ -206,10 +205,10 @@
                         </fieldset>
 
                         @if ($canEdit)
-                            <div class="ud-bar">
-                                <x-ui.button type="submit" tone="primary" x-on:click="leaving()" data-test="save-access">{{ __('master.users.save_access') }}</x-ui.button>
+                            <x-ui.action-bar>
                                 <x-ui.button type="button" wire:click="saveDraft" data-test="save-draft">{{ __('drafts.save') }}</x-ui.button>
-                            </div>
+                                <x-ui.button type="submit" tone="primary" x-on:click="leaving()" data-test="save-access">{{ __('master.users.save_access') }}</x-ui.button>
+                            </x-ui.action-bar>
                         @endif
                     </form>
 

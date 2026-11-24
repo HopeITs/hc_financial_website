@@ -10,9 +10,7 @@ return [
     // The decision of task 38, one line per screen.
     'decision' => [
         'donors' => 'Read only. The donors of the old program; in the ledger a donor is an income account, edited in the chart.',
-        'cities' => 'Read only. The cities of the old program, with the projects and cash boxes of each.',
         'currency' => 'Read only. The currencies of the old program; the ledger works in USD and SYP.',
-        'denoms' => 'Read only. The note and coin values of each currency, as the cash count uses them.',
         'employees' => 'Read only. People of the old program; salaries are on their own screen and only for the finance roles.',
         'tills' => 'Read only. The cash boxes of the old program; in the ledger they are cash accounts, edited in the chart.',
         'bonds' => 'Read only. The fiscal bonds of the old program.',

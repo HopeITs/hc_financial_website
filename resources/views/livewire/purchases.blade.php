@@ -179,13 +179,13 @@
                     </div>
 
                     @if ($editable && $canEdit)
-                        <div class="mt-3 flex flex-wrap items-center gap-3">
+                        <x-ui.action-bar class="items-center">
                             <x-ui.button size="sm" icon="plus" wire:click="addItem" data-test="add-item">{{ __('purchases.add_item') }}</x-ui.button>
                             <x-ui.button tone="primary" icon="check" wire:click="save" data-test="save-purchase">{{ __('purchases.save') }}</x-ui.button>
                             @if ($current !== null && $current->quotes()->exists())
                                 <span class="text-xs text-secondary-medium dark:text-ink-muted">{{ __('purchases.items_locked') }}</span>
                             @endif
-                        </div>
+                        </x-ui.action-bar>
                     @endif
                     @if ($estimated !== null)
                         <p class="mt-2 text-sm" data-test="estimated">{{ __('purchases.estimated_total') }}: <x-money :amount="$estimated" :currency="$current->currency" /></p>

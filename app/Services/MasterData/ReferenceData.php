@@ -7,8 +7,9 @@ use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
 /**
- * The master-data screens that only show what the Windows program keeps (decision of T38): donors, cities, currencies,
- * denominations, employees, cash tills, fiscal bonds and the log. They read through the SELECT-only `legacy`
+ * The master-data screens that only show what the Windows program keeps (decision of T38): donors, currencies,
+ * employees, cash tills, fiscal bonds and the log. The old cities and denominations lists left on 2026-11-25: the cities
+ * are the ledger's own, kept with the chart of accounts, and the daily count does not count notes. They read through the SELECT-only `legacy`
  * connection (the log through the default one, which the web app also writes to at login) and never write.
  *
  * Each screen is a query, its columns and the columns a search looks in. A column is [key, label, type], the type being
@@ -19,7 +20,7 @@ class ReferenceData
     public const PER_PAGE = 25;
 
     /** @var list<string> */
-    public const SLUGS = ['donors', 'cities', 'currency', 'denoms', 'employees', 'tills', 'bonds', 'log'];
+    public const SLUGS = ['donors', 'currency', 'employees', 'tills', 'bonds', 'log'];
 
     public function has(string $slug): bool
     {
@@ -31,9 +32,7 @@ class ReferenceData
     {
         return match ($slug) {
             'donors' => [['name', 'master.col.name', 'text'], ['abbreviation', 'master.col.abbreviation', 'text']],
-            'cities' => [['name', 'master.col.name', 'text'], ['projects', 'master.col.accounts', 'number'], ['cash_boxes', 'master.col.cash_boxes', 'number']],
             'currency' => [['name', 'master.col.name', 'text'], ['local', 'master.col.local', 'yesno'], ['divisor', 'master.col.divisor', 'number']],
-            'denoms' => [['name', 'master.col.name', 'text'], ['currency', 'master.col.currency', 'text']],
             'employees' => [['name', 'master.col.name', 'text'], ['father', 'master.col.father', 'text'], ['begin', 'master.col.begin', 'date'], ['end', 'master.col.end', 'date']],
             'tills' => [['name', 'master.col.name', 'text'], ['currency', 'master.col.currency', 'text'], ['city', 'master.col.city', 'text']],
             'bonds' => [['name', 'master.col.name', 'text'], ['date', 'master.col.date', 'date'], ['account', 'master.col.account', 'text'], ['notes', 'master.col.notes', 'text']],
@@ -80,13 +79,7 @@ class ReferenceData
 
         return match ($slug) {
             'donors' => [$legacy('donor')->select('ID as id', 'Name as name', 'Abb_Name as abbreviation')->orderBy('Name'), ['Name', 'Abb_Name']],
-            'cities' => [$legacy('city')->select('city.ID as id', 'city.Name as name')
-                ->selectRaw('(select count(*) from account where account.city_id = city.ID) as projects')
-                ->selectRaw('(select count(*) from cashaccount where cashaccount.city_id = city.ID) as cash_boxes')
-                ->orderBy('city.Name'), ['city.Name']],
             'currency' => [$legacy('tilltypes')->select('ID as id', 'Name as name', 'is_local_currency as local', 'base_divisor as divisor')->orderBy('ID'), ['Name']],
-            'denoms' => [$legacy('denominations as d')->leftJoin('tilltypes as t', 't.ID', '=', 'd.currency_tilltype_id')
-                ->select('d.id as id', 'd.name as name', 't.Name as currency')->orderBy('t.Name')->orderBy('d.id'), ['d.name', 't.Name']],
             'employees' => [$legacy('employee')->select('id', 'FirstName as first', 'LastName as last', 'FatherName as father', 'BeginDate as begin', 'EndDate as end')
                 ->orderBy('FirstName')->orderBy('LastName'), ['FirstName', 'LastName', 'FatherName']],
             'tills' => [$legacy('cashaccount as c')->leftJoin('tilltypes as t', 't.ID', '=', 'c.currency_tilltype_id')->leftJoin('city as y', 'y.ID', '=', 'c.city_id')

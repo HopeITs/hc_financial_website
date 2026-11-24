@@ -146,10 +146,10 @@
                 <p class="text-sm text-status-success" data-test="ready">{{ __('ledger.builder.all_good') }}</p>
             @endif
 
-            <div class="flex flex-wrap items-center gap-3">
+            <x-ui.action-bar class="items-center">
                 <x-ui.button tone="primary" wire:click="save" x-on:click="leaving()" data-shortcut="save" aria-keyshortcuts="Control+S" data-test="save-opening">{{ __('ledger.opening.save') }}</x-ui.button>
                 <x-ui.button wire:click="saveDraft" data-test="save-draft">{{ __('drafts.save') }}</x-ui.button>
-            </div>
+            </x-ui.action-bar>
         </section>
     @endif
 </div>

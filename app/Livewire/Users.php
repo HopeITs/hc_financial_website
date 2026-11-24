@@ -148,7 +148,9 @@ class Users extends Component
         $this->primaryRoleId = $primary !== null && ! $primary->isWebOnly() ? $primary->value : null;
         $this->extraRoleIds = $person->webRoles->map(fn (WebUserRole $row): int => $row->role_id->value)->values()->all();
         $this->active = $person->isActive();
-        $this->permissions = $person->webPermissions->map(fn (WebUserPermission $row): string => $row->screen.'.'.$row->action)->sort()->values()->all();
+        // Grants on screens that left the list are dropped, so saving the person never fails on them.
+        $this->permissions = $person->webPermissions->map(fn (WebUserPermission $row): string => $row->screen.'.'.$row->action)
+            ->intersect($this->permissionKeys())->sort()->values()->all();
         $this->resetPasswordForm();
     }
 
@@ -508,7 +510,7 @@ class Users extends Component
                 fn ($query) => $query->whereIn('ID', WebUserRole::query()->where('role_id', $role->value)->select('user_id')))
             ->orderBy('Username')->pluck('Username')->map(fn (mixed $name): string => (string) $name)->values()->all();
 
-        return ['role' => $role, 'people' => $people, 'screens' => config("permissions.roles.{$role->value}", [])];
+        return ['role' => $role, 'people' => $people, 'screens' => array_diff_key(config("permissions.roles.{$role->value}", []), array_flip(config('navigation.retired', [])))];
     }
 
     /**
@@ -518,9 +520,11 @@ class Users extends Component
      */
     private function screenGroups(): array
     {
-        $groups = ['general' => ['home', 'project-money'], ...(require config_path('navigation.php'))['groups']];
+        $navigation = require config_path('navigation.php');
+        $groups = ['general' => ['home', 'project-money'], ...$navigation['groups']];
+        $retired = $navigation['retired'] ?? [];
 
-        return array_map(fn (array $slugs): array => collect($slugs)->mapWithKeys(fn (string $slug): array => [$slug => $this->actionsOf($slug)])->all(), $groups);
+        return array_map(fn (array $slugs): array => collect($slugs)->reject(fn (string $slug): bool => in_array($slug, $retired, true))->mapWithKeys(fn (string $slug): array => [$slug => $this->actionsOf($slug)])->all(), $groups);
     }
 
     /**

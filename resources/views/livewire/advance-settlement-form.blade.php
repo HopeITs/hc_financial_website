@@ -68,7 +68,7 @@
         </x-ui.panel>
     @endif
 
-    <div>
+    <x-ui.action-bar>
         <x-ui.button tone="primary" wire:click="save" :disabled="$result === null || $result['problems'] !== [] || $violations !== []" data-test="save-settlement">{{ __('ledger.settlement.save') }}</x-ui.button>
-    </div>
+    </x-ui.action-bar>
 </div>

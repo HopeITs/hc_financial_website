@@ -165,10 +165,10 @@
         </x-ui.panel>
 
         @if ($canCreate)
-            <div class="flex flex-wrap items-center gap-3">
+            <x-ui.action-bar class="items-center">
                 <x-ui.button type="submit" tone="primary" icon="check" data-test="save-voucher">{{ __('entries.save') }}</x-ui.button>
                 <span class="text-sm text-secondary-medium dark:text-ink-muted">{{ __('entries.save_hint') }}</span>
-            </div>
+            </x-ui.action-bar>
         @endif
     </form>
 </div>

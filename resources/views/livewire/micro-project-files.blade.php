@@ -180,10 +180,10 @@
                         </table>
                     </x-ui.scroll-table>
                     @if ($editable && $canEdit)
-                        <div class="mt-3 flex flex-wrap gap-2">
+                        <x-ui.action-bar>
                             <x-ui.button size="sm" icon="plus" wire:click="addItem" data-test="add-item">{{ __('micro.add_item') }}</x-ui.button>
                             <x-ui.button tone="primary" icon="check" wire:click="saveFile" data-test="save-file">{{ __('micro.save') }}</x-ui.button>
-                        </div>
+                        </x-ui.action-bar>
                     @endif
                 </x-ui.form-section>
 

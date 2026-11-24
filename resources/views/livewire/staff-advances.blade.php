@@ -67,10 +67,10 @@
                     </div>
                     <input type="file" multiple wire:model="attachments" accept=".pdf,.jpg,.jpeg,.png" class="text-sm" aria-label="{{ __('entries.attachments') }}" data-test="give-files">
                     @error('attachments.*')<p class="text-sm text-status-critical" role="alert">{{ $message }}</p>@enderror
-                    <div class="flex flex-wrap gap-2">
+                    <x-ui.action-bar>
                         <x-ui.button type="submit" tone="primary" icon="check" data-test="save-give">{{ __('entries.save') }}</x-ui.button>
                         <x-ui.button wire:click="cancel">{{ __('advances.cancel') }}</x-ui.button>
-                    </div>
+                    </x-ui.action-bar>
                 </div>
             </x-ui.panel>
         </form>
@@ -168,10 +168,10 @@
                     </div>
                     <input type="file" multiple wire:model="attachments" accept=".pdf,.jpg,.jpeg,.png" class="text-sm" aria-label="{{ __('entries.attachments') }}" data-test="settle-files">
                     @error('attachments.*')<p class="text-sm text-status-critical" role="alert">{{ $message }}</p>@enderror
-                    <div class="flex flex-wrap gap-2">
+                    <x-ui.action-bar>
                         <x-ui.button type="submit" tone="primary" icon="check" data-test="save-settle">{{ __('advances.save_settle') }}</x-ui.button>
                         <x-ui.button wire:click="cancel">{{ __('advances.cancel') }}</x-ui.button>
-                    </div>
+                    </x-ui.action-bar>
                 </div>
             </x-ui.panel>
         </form>

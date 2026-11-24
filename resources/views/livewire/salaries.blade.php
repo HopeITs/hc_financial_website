@@ -61,14 +61,14 @@
             </table>
         </x-ui.scroll-table>
 
-        <div class="flex flex-wrap gap-2">
+        <x-ui.action-bar>
             <x-ui.button wire:click="addSplitRow" icon="plus">{{ __('salaries.add_row') }}</x-ui.button>
             <x-ui.button wire:click="loadSplit" data-test="load-split">{{ __('salaries.splits.load') }}</x-ui.button>
             @if ($canCreate)
                 <x-ui.button tone="primary" wire:click="saveSplit" x-on:click="leaving()" data-test="save-split">{{ __('salaries.splits.save') }}</x-ui.button>
                 <x-ui.button wire:click="saveDraft" data-test="save-draft">{{ __('drafts.save') }}</x-ui.button>
             @endif
-        </div>
+        </x-ui.action-bar>
     @else
         <x-ui.panel class="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-4" data-test="allocation-header">
             <x-ui.form-select wire:model.live="mode" :label="__('salaries.mode')">
@@ -148,7 +148,7 @@
             </table>
         </x-ui.scroll-table>
 
-        <div class="flex flex-wrap gap-2">
+        <x-ui.action-bar>
             <x-ui.button wire:click="addLine" icon="plus">{{ __('salaries.add_row') }}</x-ui.button>
             @if ($canCreate)
                 @if ($mode === 'salary')
@@ -157,6 +157,6 @@
                 <x-ui.button tone="primary" wire:click="post" x-on:click="leaving()" data-test="post-allocation">{{ __('salaries.post') }}</x-ui.button>
                 <x-ui.button wire:click="saveDraft" data-test="save-draft">{{ __('drafts.save') }}</x-ui.button>
             @endif
-        </div>
+        </x-ui.action-bar>
     @endif
 </div>
