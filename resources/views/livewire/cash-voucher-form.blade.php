@@ -42,8 +42,8 @@
                         <option value="{{ $code }}">{{ $label }}</option>
                     @endforeach
                 </x-ui.form-select>
-                <x-ui.form-input wire:model.live.debounce.400ms="party" :label="$payment ? __('entries.payee') : __('entries.payer')" :help="$payment ? __('entries.payee_help') : __('entries.payer_help')" required data-test="party" />
-                <x-ui.form-input wire:model.live.debounce.400ms="reference" :label="$payment ? __('entries.invoice_number') : __('entries.receipt_number')" dir="ltr" data-test="reference" />
+                <x-ui.form-input wire:model.blur="party" :label="$payment ? __('entries.payee') : __('entries.payer')" :help="$payment ? __('entries.payee_help') : __('entries.payer_help')" required data-test="party" />
+                <x-ui.form-input wire:model.blur="reference" :label="$payment ? __('entries.invoice_number') : __('entries.receipt_number')" dir="ltr" data-test="reference" />
 
                 @if ($chosen !== null && $chosen->currency !== 'USD')
                     <x-ui.form-input wire:model.live.debounce.400ms="rate" type="number" step="0.000001" min="0" :label="__('entries.rate', ['currency' => $chosen->currency])" dir="ltr" required data-test="rate"
@@ -52,7 +52,7 @@
                             : __('entries.rate_help_none')" />
                 @endif
                 @if ($needsCenter)
-                    <x-ui.form-input wire:model.live.debounce.400ms="center" :label="__('entries.center')" required data-test="center" />
+                    <x-ui.form-input wire:model.blur="center" :label="__('entries.center')" required data-test="center" />
                 @endif
                 @if ($payment)
                     <x-ui.form-select wire:model.live="request" :label="__('entries.request')" :help="__('entries.request_help')" :placeholder="__('entries.no_request')" searchable data-test="request">
@@ -63,7 +63,7 @@
                     </x-ui.form-select>
                 @endif
                 <div class="sm:col-span-2 lg:col-span-4">
-                    <x-ui.form-input wire:model.live.debounce.400ms="description" :label="__('entries.description')" :help="__('entries.description_help')" data-test="description" />
+                    <x-ui.form-input wire:model.blur="description" :label="__('entries.description')" :help="__('entries.description_help')" data-test="description" />
                 </div>
             </div>
         </x-ui.panel>
@@ -118,7 +118,7 @@
                                         </x-ui.form-select>
                                     @endif
                                 </td>
-                                <td><input type="text" wire:model.live.debounce.400ms="lines.{{ $i }}.description" class="{{ $cell }}" aria-label="{{ __('entries.line_description') }} {{ $i + 1 }}" data-test="line-description-{{ $i }}"></td>
+                                <td><input type="text" wire:model.blur="lines.{{ $i }}.description" class="{{ $cell }}" aria-label="{{ __('entries.line_description') }} {{ $i + 1 }}" data-test="line-description-{{ $i }}"></td>
                                 <td><input type="text" inputmode="decimal" dir="ltr" wire:model.live.debounce.400ms="lines.{{ $i }}.amount" class="{{ $cell }} text-end" aria-label="{{ __('entries.amount') }} {{ $i + 1 }}" data-test="amount-{{ $i }}"></td>
                                 <td>
                                     <x-ui.button size="sm" tone="ghost" icon="x-mark" wire:click="removeLine({{ $i }})" :aria-label="__('entries.remove_line').' '.($i + 1)" data-test="remove-line-{{ $i }}" />
