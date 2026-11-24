@@ -1,6 +1,5 @@
 @php
     $cell = 'w-full min-w-16 rounded-md border border-secondary-light bg-white px-2 py-1.5 text-sm text-secondary-dark disabled:opacity-60 dark:border-field-line dark:bg-surface-2 dark:text-ink';
-    $statusColors = ['draft' => 'zinc', 'submitted' => 'amber', 'approved' => 'blue', 'paid' => 'green'];
     $draft = $current?->status === \App\Models\Payroll::DRAFT;
 @endphp
 
@@ -146,7 +145,7 @@
                                 <td dir="ltr" class="text-start">{{ $row->month->format('m/Y') }}</td>
                                 <td>{{ $row->project_code }} · {{ $row->project?->name }}</td>
                                 <td>{{ $row->pay_currency }}</td>
-                                <td><flux:badge size="sm" :color="$statusColors[$row->status] ?? 'zinc'">{{ __('payroll.statuses.'.$row->status) }}</flux:badge></td>
+                                <td><x-ui.status-badge :status="$row->status" :label="__('payroll.statuses.'.$row->status)" /></td>
                                 <td><x-ui.button size="sm" tone="ghost" icon="folder-open" wire:click="select({{ $row->id }})" data-test="open-{{ $row->id }}">{{ __('payroll.show') }}</x-ui.button></td>
                             </tr>
                         @empty
@@ -235,7 +234,7 @@
                         </table>
                     </x-ui.scroll-table>
 
-                    <div class="flex flex-wrap items-end gap-3">
+                    <x-ui.action-bar data-test="payroll-actions">
                         @if ($draft && $canEdit)
                             <x-ui.button icon="check" wire:click="saveLines" data-test="save-lines">{{ __('payroll.save_lines') }}</x-ui.button>
                             <x-ui.button icon="user-plus" wire:click="addStaff" data-test="add-staff">{{ __('payroll.add_staff') }}</x-ui.button>
@@ -267,7 +266,7 @@
                         @if ($current->voucher_id)
                             <p class="text-sm" data-test="payroll-voucher">{{ __('payroll.paid_by') }} <a href="{{ route(\App\Support\Navigation::routeName('vouchers'), ['voucher' => $current->voucher_id]) }}" wire:navigate class="font-semibold underline" dir="ltr">{{ $current->voucher_id }}</a></p>
                         @endif
-                    </div>
+                    </x-ui.action-bar>
                 </div>
             </x-ui.panel>
         @endif

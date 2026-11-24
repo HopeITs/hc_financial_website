@@ -82,7 +82,6 @@
                     @forelse ($list as $row)
                         @php
                             $badge = $row->trashed() ? 'rejected' : $row->status->value;
-                            $color = ['pending_approval' => 'amber', 'approved' => 'green', 'replaced' => 'zinc', 'rejected' => 'red'][$badge];
                         @endphp
                         <tr wire:key="voucher-{{ $row->id }}" @if (in_array($row->id, $amended, true)) data-amended @endif>
                             <td><input type="checkbox" wire:model.live="selected" value="{{ $row->id }}" aria-label="{{ __('vouchers.select_row', ['number' => $row->id]) }}" /></td>
@@ -97,7 +96,7 @@
                             <td>{{ $row->description ?: '—' }}</td>
                             <td class="fin-num"><x-money :amount="$amounts[$row->id] ?? '0.00'" currency="USD" /></td>
                             <td>{{ $names[$row->prepared_by] ?? '—' }}</td>
-                            <td><flux:badge size="sm" :color="$color">{{ __('vouchers.status.'.$badge) }}</flux:badge></td>
+                            <td><x-ui.status-badge :status="$badge" :label="__('vouchers.status.'.$badge)" final /></td>
                         </tr>
                     @empty
                         <tr><td colspan="8" class="fin-empty" data-test="no-vouchers">{{ __('vouchers.no_match') }}</td></tr>
@@ -131,7 +130,6 @@
     @else
         @php
             $badge = $voucher->trashed() ? 'rejected' : $voucher->status->value;
-            $color = ['pending_approval' => 'amber', 'approved' => 'green', 'replaced' => 'zinc', 'rejected' => 'red'][$badge];
         @endphp
 
         <div>
@@ -141,7 +139,7 @@
         <x-ui.page-header :title="$voucher->id" :subtitle="$voucher->description ?: __('vouchers.no_description')">
             <x-slot:actions>
                 <a href="{{ route('entries.vouchers.print', ['voucher' => $voucher->id]) }}" target="_blank" rel="noopener" class="page-action" data-test="print-voucher">{{ __('vouchers.print') }}</a>
-                <flux:badge size="lg" :color="$color" data-test="voucher-status">{{ __('vouchers.status.'.$badge) }}</flux:badge>
+                <x-ui.status-badge size="lg" :status="$badge" :label="__('vouchers.status.'.$badge)" final data-test="voucher-status" />
             </x-slot:actions>
         </x-ui.page-header>
 

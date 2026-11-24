@@ -64,7 +64,7 @@ class ApprovalsInbox
             }
         }
 
-        if ($user->canOnScreen('requests', ScreenAction::Approve)) {
+        if ($user->canOnScreen('requests', ScreenAction::Approve) && Schema::hasTable('gl_requests')) {
             $limit = $this->access->limitedTo($user);
             $requests = LedgerRequest::query()->where('status', RequestStatus::Submitted->value)
                 ->when($limit !== null, fn ($query) => $query->whereIn('project_code', GlProject::query()->whereIn('legacy_account_id', $limit ?? [])->select('code')))

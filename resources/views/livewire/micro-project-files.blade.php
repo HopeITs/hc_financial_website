@@ -55,7 +55,7 @@
                             <td>{{ $row->profession ?? '—' }}</td>
                             <td>{{ $row->label() }}</td>
                             <td class="fin-num"><x-money :amount="$row->requested_amount" :currency="$row->currency" /></td>
-                            <td><flux:badge size="sm" :color="match ($row->stage) { 'approved' => 'blue', 'active' => 'green', 'cancelled' => 'zinc', 'returned' => 'red', 'submitted' => 'amber', default => 'zinc' }">{{ __('micro.stages.'.$row->stage) }}</flux:badge></td>
+                            <td><x-ui.status-badge :status="$row->stage" :label="__('micro.stages.'.$row->stage)" /></td>
                             <td><x-ui.button size="sm" tone="ghost" icon="folder-open" wire:click="select({{ $row->id }})" data-test="open-file-{{ $row->id }}">{{ __('micro.open') }}</x-ui.button></td>
                         </tr>
                     @empty

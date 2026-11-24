@@ -4,9 +4,11 @@ use App\Enums\FundSource;
 use App\Enums\RoleId;
 use App\Enums\VoucherStatus;
 use App\Livewire\ApprovalsInboxScreen;
+use App\Livewire\Home;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Services\Home\ApprovalsInbox;
+use App\Services\Home\WaitingWork;
 use App\Services\Ledger\LineDraft;
 use App\Services\Ledger\PostVoucher;
 use Illuminate\Support\Facades\DB;
@@ -66,4 +68,18 @@ it('lists what waits for the Financial Manager and approves it with one click, t
 it('opens for those who approve and not for the others', function () {
     $this->actingAs(aiUser(RoleId::Accountant, 'Ann'))->get(route('inbox'))->assertForbidden();
     $this->actingAs(aiUser(RoleId::GeneralManager, 'Gabriel'))->get(route('inbox'))->assertOk();
+});
+
+it('puts what waits for the approver first on the home page, and the projects\' money only for those who see it', function () {
+    $ann = aiUser(RoleId::Accountant, 'Ann');
+    $fatima = aiUser(RoleId::FinancialManager, 'Fatima');
+    aiVoucher($ann);
+
+    $waiting = collect(app(WaitingWork::class)->for($fatima));
+    expect($waiting->first()['key'])->toBe('inbox')
+        ->and($waiting->first()['count'])->toBe(1)
+        ->and(collect(app(WaitingWork::class)->for($ann))->pluck('key'))->not->toContain('inbox');
+
+    Livewire::actingAs($fatima)->test(Home::class)->assertSeeHtml('data-test="home-totals"');
+    Livewire::actingAs(aiUser(RoleId::Cashier, 'Carl'))->test(Home::class)->assertDontSeeHtml('data-test="home-totals"');
 });

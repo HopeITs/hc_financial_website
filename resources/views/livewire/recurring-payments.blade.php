@@ -101,10 +101,10 @@
                                 @if ($payment->active)
                                     <span dir="ltr">{{ $payment->next_due->format('d/m/Y') }}</span>
                                     @if ($due)
-                                        <flux:badge size="sm" color="amber">{{ __('recurring.due') }}</flux:badge>
+                                        <x-ui.status-badge status="due" :label="__('recurring.due')" />
                                     @endif
                                 @else
-                                    <flux:badge size="sm" color="zinc">{{ __('recurring.stopped') }}</flux:badge>
+                                    <x-ui.status-badge status="stopped" :label="__('recurring.stopped')" />
                                 @endif
                             </td>
                             <td>

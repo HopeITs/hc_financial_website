@@ -1,6 +1,5 @@
 @php
     $cell = 'w-full min-w-20 rounded-md border border-secondary-light bg-white px-2 py-1.5 text-sm text-secondary-dark disabled:opacity-60 dark:border-field-line dark:bg-surface-2 dark:text-ink';
-    $stageColors = ['sourcing' => 'zinc', 'submitted' => 'amber', 'ordered' => 'blue', 'received' => 'indigo', 'paid' => 'green', 'cancelled' => 'zinc'];
     $service = ($current?->kind ?? ($form['kind'] ?? 'goods')) === \App\Models\Purchase::SERVICE;
 @endphp
 
@@ -56,7 +55,7 @@
                             <td>{{ $row->project_code }}</td>
                             <td class="font-medium">{{ $row->title }}</td>
                             <td>{{ $row->awardedQuote?->supplier ?? '—' }}</td>
-                            <td><flux:badge size="sm" :color="$stageColors[$row->stage] ?? 'zinc'">{{ __('purchases.stages.'.$row->stage) }}</flux:badge></td>
+                            <td><x-ui.status-badge :status="$row->stage === 'sourcing' ? 'draft' : $row->stage" :label="__('purchases.stages.'.$row->stage)" /></td>
                             <td><x-ui.button size="sm" tone="ghost" icon="folder-open" wire:click="select({{ $row->id }})" data-test="open-purchase-{{ $row->id }}">{{ __('purchases.open') }}</x-ui.button></td>
                         </tr>
                     @empty
