@@ -35,6 +35,7 @@ class Navigation
         'receipt' => 'arrow-down-circle',
         'journal' => 'book-open',
         'requests' => 'clipboard-document-list',
+        'purchases' => 'shopping-cart',
         'microfiles' => 'briefcase',
         'payments' => 'banknotes',
     ];

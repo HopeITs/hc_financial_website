@@ -37,6 +37,7 @@ beforeEach(function () {
 
     (require database_path('migrations/2026_10_24_110000_add_request_and_transfer_columns_to_gl_vouchers.php'))->up();
     (require database_path('migrations/2026_10_25_090000_create_request_module_tables.php'))->up();
+    (require database_path('migrations/2026_11_24_100000_create_purchase_files.php'))->up();
     (new ChartOfAccountsSeeder)->run();
 
     // This test's own projects; the chart seeder adds no projects.

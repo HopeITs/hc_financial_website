@@ -12,7 +12,9 @@ use App\Models\VoucherAudit;
 use App\Models\VoucherLine;
 use App\Services\Ledger\Rules\MonthIsOpen;
 use App\Services\Loans\MicroLoans;
+use App\Services\Purchasing\PurchaseFiles;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Changing or deleting a voucher that still waits for approval (finance decision of 2026-11-20): it keeps its number,
@@ -105,6 +107,9 @@ class PendingVoucherChanges
             VoucherAudit::query()->create(['voucher_id' => $voucher->id, 'action' => 'delete', 'changed_by' => (int) $by->getAuthIdentifier(), 'reason' => trim($reason)]);
             CashCount::query()->where('voucher_id', $voucher->id)->update(['voucher_id' => null]);
             app(MicroLoans::class)->forgetVoucher($voucher);
+            if (Schema::hasTable('gl_purchases')) {
+                app(PurchaseFiles::class)->forgetVoucher($voucher);
+            }
             $voucher->delete();
         });
     }

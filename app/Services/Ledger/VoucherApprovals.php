@@ -11,8 +11,10 @@ use App\Models\VoucherAudit;
 use App\Services\Approvals\ApprovalChain;
 use App\Services\Ledger\Rules\ApproverIsNotPreparer;
 use App\Services\Loans\MicroLoans;
+use App\Services\Purchasing\PurchaseFiles;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Approving and rejecting a pending voucher. Approving needs the approve action on the vouchers screen and the
@@ -101,6 +103,10 @@ class VoucherApprovals
             VoucherAudit::query()->create(['voucher_id' => $voucher->id, 'action' => 'reject', 'changed_by' => $rejectorId, 'reason' => trim($reason)]);
             // A rejected micro-loan repayment or write-off goes back to the instalments it settled.
             app(MicroLoans::class)->forgetVoucher($voucher);
+            // A rejected purchase payment puts its purchase file back to "received" (2026-11-24).
+            if (Schema::hasTable('gl_purchases')) {
+                app(PurchaseFiles::class)->forgetVoucher($voucher);
+            }
             $voucher->delete();
         });
     }
