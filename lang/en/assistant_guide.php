@@ -146,7 +146,7 @@ return [
         'reports' => [
             'title' => 'Where are the reports?',
             'keywords' => ['report', 'reports', 'trial balance', 'statement', 'balance', 'balances', 'financial statements'],
-            'answer' => "**Reports** in the menu: one page with every report in three parts:\n- **Financial statements**: trial balance, financial statements, account statement.\n- **Projects**: expenses against budget, revenue, fixed assets, attachments, donor report.\n- **Follow-up**: hawala reconciliation, uncompensated cash, exchange reserve, loan collection.\n\nReports count **approved** vouchers only.",
+            'answer' => "**Reports** in the menu: one page with every report in three parts:\n- **Financial statements**: trial balance, financial statements, account statement.\n- **Projects**: expenses against budget, revenue, fixed assets, attachments, donor report, and the **donor financial reports** for any period.\n- **Follow-up**: hawala reconciliation, uncompensated cash, exchange reserve, loan collection.\n\nReports count **approved** vouchers only.",
         ],
         'search' => [
             'title' => 'How do I find something quickly?',
@@ -176,7 +176,7 @@ return [
         'budget' => [
             'title' => 'How much of a project\'s budget is left?',
             'keywords' => ['budget', 'budget line', 'remaining', 'left'],
-            'answer' => "- Each agreement's budget and lines are in **Agreements** → the budget tab (it can be imported from Excel).\n- Spending against budget per line is in the **Expenses report**.\n- What the donor sent and how it was spent is in the **Donor report**.",
+            'answer' => "- Each agreement's budget and lines are in **Agreements** → the budget tab (it can be imported from Excel).\n- Spending against budget per line is in the **Expenses report**.\n- What the donor sent and how it was spent is in the **Donor report**.\n- For a period (a quarter, the interim or final report): Reports → **Donor financial reports**: budget vs actual, expense detail and the funds statement, in Excel or PDF on letterhead.",
         ],
     ],
 ];

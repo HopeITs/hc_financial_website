@@ -27,7 +27,7 @@ $screens = static fn (array $slugs, array $actions): array => array_fill_keys($s
 
 // `reports` is the reports' own page (2026-11-25).
 // The old program's monthly approvals left on 2026-11-26 (role review); Head Office keeps every screen.
-$reports = ['reports', 'rexp', 'rcash', 'rdonor', 'rrev', 'rfixed', 'rattach', 'tb', 'statement', 'statements', 'recon', 'uncomp', 'xreserve', 'advances', 'loans'];
+$reports = ['reports', 'rexp', 'rcash', 'rdonor', 'rdonorfin', 'rrev', 'rfixed', 'rattach', 'tb', 'statement', 'statements', 'recon', 'uncomp', 'xreserve', 'advances', 'loans'];
 $treasury = ['tills', 'treasury', 'alloc', 'transfers', 'currency'];
 $monthEnd = ['monthend'];
 // `single` is the payment voucher and `receipt` the receipt voucher. The old `multiatt` and `bonds` screens left the

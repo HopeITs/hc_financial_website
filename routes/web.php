@@ -14,6 +14,7 @@ use App\Livewire\AuditLog;
 use App\Livewire\Chart;
 use App\Livewire\CurrencySettings;
 use App\Livewire\DailyCashCount;
+use App\Livewire\DonorFinancialReport;
 use App\Livewire\DonorReportScreen;
 use App\Livewire\ExchangeRates;
 use App\Livewire\FinancialStatements;
@@ -150,6 +151,8 @@ Route::middleware('auth')->group(function () {
     $screen('statement', Statement::class)->defer($defer);
     $screen('statements', FinancialStatements::class)->defer($defer);
     $screen('rdonor', DonorReportScreen::class)->defer($defer);
+    // The donor's financial reports of a project by period (finance request of 2026-11-26).
+    $screen('rdonorfin', DonorFinancialReport::class);
 
     foreach (['recon', 'mapprovals', 'uncomp', 'xreserve', 'advances', 'loans'] as $report) {
         $screen($report, FollowUpReport::class)->defer($defer);
