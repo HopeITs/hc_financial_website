@@ -36,8 +36,20 @@
                         aria-live="polite"
                         data-test="assistant-log"
                     >
-                        @if (! $configured)
-                            <p class="rounded-lg border border-status-warn bg-status-warn-soft px-3 py-2 text-status-warn" role="alert">{{ __('assistant.errors.not_set_up') }}</p>
+                        @if ($items === [] && ! $configured)
+                            <div class="flex flex-col gap-3 text-secondary-medium dark:text-ink-muted" data-test="assistant-guide-empty">
+                                <p>{{ __('assistant_guide.intro') }}</p>
+                                <div class="flex flex-wrap gap-2">
+                                    @foreach ($suggestions as $topic)
+                                        <button
+                                            type="button"
+                                            class="rounded-full border border-secondary-light px-3 py-1 text-start text-secondary-dark hover:bg-secondary-soft dark:border-line-strong dark:text-ink dark:hover:bg-surface-3"
+                                            wire:click="askTopic('{{ $topic['key'] }}')"
+                                            data-test="guide-topic-{{ $topic['key'] }}"
+                                        >{{ $topic['title'] }}</button>
+                                    @endforeach
+                                </div>
+                            </div>
                         @elseif ($items === [])
                             <div class="flex flex-col gap-3 text-secondary-medium dark:text-ink-muted" data-test="assistant-empty">
                                 <p>{{ __('assistant.intro') }}</p>
@@ -65,6 +77,31 @@
                                         wire:key="item-{{ $index }}"
                                         data-test="assistant-reply"
                                     >{!! Str::markdown($item['text'], ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}</div>
+                                    @break
+
+                                @case('guide')
+                                    <div class="flex max-w-full flex-col gap-2" wire:key="item-{{ $index }}" data-test="guide-reply">
+                                        <div class="text-secondary-dark dark:text-ink [&_ol]:list-decimal [&_ol]:ps-5 [&_p]:my-1 [&_ul]:list-disc [&_ul]:ps-5">{!! Str::markdown($item['text'], ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}</div>
+                                        @if (($item['links'] ?? []) !== [])
+                                            <div class="flex flex-wrap gap-2">
+                                                @foreach ($item['links'] as $link)
+                                                    <x-ui.button size="sm" tone="primary" icon="arrow-top-right-on-square" :href="$link['url']" wire:navigate>{{ $link['label'] }}</x-ui.button>
+                                                @endforeach
+                                            </div>
+                                        @endif
+                                        @if (($item['related'] ?? []) !== [])
+                                            <p class="text-xs text-secondary-medium dark:text-ink-muted">{{ __('assistant_guide.related') }}</p>
+                                            <div class="flex flex-wrap gap-2">
+                                                @foreach ($item['related'] as $topic)
+                                                    <button
+                                                        type="button"
+                                                        class="rounded-full border border-secondary-light px-3 py-1 text-start text-xs text-secondary-dark hover:bg-secondary-soft dark:border-line-strong dark:text-ink dark:hover:bg-surface-3"
+                                                        wire:click="askTopic('{{ $topic['key'] }}')"
+                                                    >{{ $topic['title'] }}</button>
+                                                @endforeach
+                                            </div>
+                                        @endif
+                                    </div>
                                     @break
 
                                 @case('note')
@@ -163,16 +200,15 @@
                             rows="2"
                             maxlength="4000"
                             dir="auto"
-                            placeholder="{{ __('assistant.placeholder') }}"
-                            aria-label="{{ __('assistant.placeholder') }}"
+                            placeholder="{{ $configured ? __('assistant.placeholder') : __('assistant.guide_placeholder') }}"
+                            aria-label="{{ $configured ? __('assistant.placeholder') : __('assistant.guide_placeholder') }}"
                             x-on:keydown.enter="if (! $event.shiftKey) { $event.preventDefault(); $el.form.requestSubmit() }"
                             wire:loading.attr="disabled"
                             wire:target="send"
-                            @disabled(! $configured)
                             class="min-h-10 flex-1 resize-none rounded-lg border border-secondary-light bg-white px-3 py-2 text-sm text-secondary-dark focus:border-primary focus:outline-none dark:border-line-strong dark:bg-surface-2 dark:text-ink"
                             data-test="assistant-input"
                         ></textarea>
-                        <x-ui.button tone="primary" type="submit" icon="paper-airplane" wire:loading.attr="disabled" wire:target="send" :disabled="! $configured" :aria-label="__('assistant.send')" data-test="assistant-send" />
+                        <x-ui.button tone="primary" type="submit" icon="paper-airplane" wire:loading.attr="disabled" wire:target="send" :aria-label="__('assistant.send')" data-test="assistant-send" />
                     </form>
                 </section>
             @endif

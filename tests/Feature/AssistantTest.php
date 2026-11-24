@@ -14,6 +14,7 @@ use App\Services\Assistant\AssistantUnavailable;
 use App\Services\Assistant\ClaudeGateway;
 use App\Services\Assistant\EntryProposals;
 use App\Services\Assistant\GatewayReply;
+use App\Services\Assistant\Guide;
 use App\Services\Assistant\ProposalRefused;
 use App\Services\Assistant\Toolbox;
 use App\Services\Ledger\PostVoucher;
@@ -239,13 +240,44 @@ it('limits how many questions a person sends per minute', function () {
     expect(fn () => app(Assistant::class)->ask($user, (string) Str::uuid(), 'Second'))->toThrow(AssistantUnavailable::class);
 });
 
-it('says the assistant is not set up when there is no API key', function () {
+it('answers from the program\'s guide when there is no API key', function () {
     config(['assistant.api_key' => null]);
 
-    Livewire::actingAs(assistantUser())->test(AssistantPanel::class)
+    Livewire::actingAs(assistantUser(RoleId::Accountant, 'Ann'))->test(AssistantPanel::class)
         ->set('open', true)
-        ->assertSee(__('assistant.errors.not_set_up'))
-        ->assertSeeHtml('data-test="assistant-input"');
+        ->assertSee(__('assistant_guide.intro'))
+        ->assertSeeHtml('data-test="guide-topic-purchases"')
+        ->set('question', 'كيف بعمل رواتب الشهر؟')
+        ->call('send')
+        ->assertSet('question', '')
+        ->assertSee(__('assistant_guide.topics.payroll.title'))
+        ->assertSee(__('assistant_guide.open', ['screen' => __('navigation.screens.payroll')]))
+        ->call('askTopic', 'quotes')
+        ->assertSee(__('assistant_guide.topics.quotes.title'))
+        ->call('startOver')
+        ->assertSet('guide', []);
+});
+
+it('finds guide topics by their words in either language, Arabic prefixes allowed', function () {
+    $guide = app(Guide::class);
+    $user = assistantUser(RoleId::Accountant, 'Ann');
+    $title = fn (string $key): string => '**'.__("assistant_guide.topics.{$key}.title").'**';
+
+    expect($guide->answer($user, 'كم عرض سعر لازم لشراء لابتوب ب 1500 دولار')['text'])->toStartWith($title('quotes'))
+        ->and($guide->answer($user, 'كيف بحول مصاري من البنك لصندوق حلب')['text'])->toStartWith($title('transfers'))
+        ->and($guide->answer($user, 'بدي استلم قسط من مستفيد')['text'])->toStartWith($title('instalments'))
+        ->and($guide->answer($user, 'How do I pay the rent?')['text'])->toStartWith($title('recurring'))
+        ->and($guide->answer($user, 'hello')['text'])->toBe(__('assistant_guide.not_found'));
+});
+
+it('offers the guide to everyone signed in, without links to screens they may not open', function () {
+    config(['assistant.api_key' => null]);
+    $employee = assistantUser(RoleId::Employee, 'Eve');
+
+    Livewire::actingAs($employee)->test(AssistantPanel::class)
+        ->assertSeeHtml('data-test="assistant"');
+
+    expect(app(Guide::class)->topic($employee, 'payroll')['links'])->toBe([]);
 });
 
 it('shows nothing to a person the assistant cannot help', function () {
