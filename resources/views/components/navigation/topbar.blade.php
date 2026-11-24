@@ -4,7 +4,6 @@
     unset($groups['chart']);
     $currentScreen = request()->route('screen');
     $badges = \App\Support\Navigation::badges(auth()->user());
-    $newEntries = \App\Support\Navigation::creatable(auth()->user(), \App\Support\Navigation::NEW_ENTRIES);
 @endphp
 
 {{-- The top bar: logo, one pill per menu group (each opens a panel of screen tiles; the chart of accounts has the sidebar), language, theme and the user. --}}
@@ -49,22 +48,6 @@
     </nav>
 
     <div class="flex shrink-0 items-center gap-2">
-        @if ($newEntries !== [])
-            <flux:dropdown position="bottom" align="end">
-                <flux:button variant="primary" size="sm" icon="plus" class="touch-manipulation" :aria-label="__('navigation.new')" data-test="new-menu-button">
-                    <span class="hidden sm:inline">{{ __('navigation.new') }}</span>
-                </flux:button>
-
-                <flux:menu data-test="new-menu">
-                    @foreach ($newEntries as $entry)
-                        <flux:menu.item :href="$entry['url']" wire:navigate :icon="$entry['icon']" data-test="new-{{ $entry['slug'] }}">
-                            {{ __('navigation.screens.'.$entry['slug']) }}
-                        </flux:menu.item>
-                    @endforeach
-                </flux:menu>
-            </flux:dropdown>
-        @endif
-
         <livewire:search-dialog />
 
         <livewire:notification-bell />

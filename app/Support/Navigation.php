@@ -29,20 +29,9 @@ class Navigation
         return $pending > 0 ? ['vouchers' => $pending] : [];
     }
 
-    /** The entries the top bar's "New" menu offers, screen slug => icon, in the order they show (finance request of 2026-11-24). */
-    public const NEW_ENTRIES = [
-        'purchases' => 'shopping-cart',
-        'requests' => 'clipboard-document-list',
-        'advance' => 'hand-raised',
-        'transfers' => 'arrows-right-left',
-        'microfiles' => 'briefcase',
-        'payments' => 'banknotes',
-        'journal' => 'book-open',
-    ];
-
     /**
      * The given entries the person may create, as links, in the given order: screen slug => icon in, slug, icon and
-     * address out. Used by the home page's quick actions and the top bar's "New" menu.
+     * address out. Used by the home page's quick actions.
      *
      * @param  array<string, string>  $entries
      * @return list<array{slug: string, icon: string, url: string}>
