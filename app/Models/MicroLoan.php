@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Projects\ProjectAccess;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -116,6 +117,21 @@ class MicroLoan extends Model
     public function scopeActive(Builder $query): void
     {
         $query->where('stage', self::ACTIVE);
+    }
+
+    /**
+     * Only the files the person may see (role review of 2026-11-26): a project manager those of their own projects; a
+     * fund's files belong to no project and stay with those who are not limited to projects.
+     *
+     * @param  Builder<MicroLoan>  $query
+     */
+    public function scopeVisibleTo(Builder $query, User $user): void
+    {
+        $limit = app(ProjectAccess::class)->limitedTo($user);
+
+        if ($limit !== null) {
+            $query->whereIn('project_code', GlProject::query()->whereIn('legacy_account_id', $limit)->select('code'));
+        }
     }
 
     /** @return HasMany<MicroItem, $this> the purchase list */

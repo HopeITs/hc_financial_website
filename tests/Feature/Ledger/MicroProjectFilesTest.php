@@ -6,6 +6,7 @@ use App\Livewire\ExcelTools;
 use App\Livewire\MicroProjectFiles;
 use App\Livewire\MicroProjectsHome;
 use App\Models\GlBudgetLine;
+use App\Models\GlProject;
 use App\Models\MicroLoan;
 use App\Models\MicroQuote;
 use App\Models\User;
@@ -18,6 +19,7 @@ use App\Services\Loans\MicroFiles;
 use App\Services\Loans\MicroLoans;
 use App\Services\Loans\MicroOverview;
 use App\Services\Loans\MicroPurchases;
+use App\Services\Projects\ProjectAccess;
 use App\Services\Treasury\MonthlyRates;
 use App\Support\AmountInWords;
 use Carbon\CarbonImmutable;
@@ -221,7 +223,7 @@ it('shows the section in one place: the files at each step, what waits for whom,
     $ready = mfApproved($this->accountant, $this->program, $this->manager);
     app(MicroPurchases::class)->payInvoice($this->accountant, $ready, ['date' => '2026-05-10', 'cash_account' => '1111', 'amount' => '400', 'merchant' => 'Abu Sami', 'number' => 'F-1', 'description_ar' => 'ماكينة']);
 
-    expect(app(MicroOverview::class)->steps())->toBe(['draft' => 1, 'submitted' => 1, 'approved' => 0, 'ready' => 1, 'active' => 0]);
+    expect(app(MicroOverview::class)->steps($this->accountant))->toBe(['draft' => 1, 'submitted' => 1, 'approved' => 0, 'ready' => 1, 'active' => 0]);
 
     $page = Livewire::actingAs($this->program)->test(MicroProjectsHome::class)
         ->assertSeeHtml('data-test="step-count-ready"')
@@ -233,7 +235,7 @@ it('shows the section in one place: the files at each step, what waits for whom,
         ->assertDontSeeHtml('data-test="waiting-approve"');
 
     $home = collect(app(WaitingWork::class)->for($this->program))->pluck('count', 'key');
-    expect($home['micro_approve'])->toBe(1);
+    expect($home['inbox'])->toBe(1)->and($home)->not->toHaveKey('micro_approve');
 
     // The files screen opens on a step, finds a file by its number, and opens a new file from a link.
     Livewire::withQueryParams(['show' => 'ready'])->actingAs($this->accountant)->test(MicroProjectFiles::class)
@@ -323,4 +325,25 @@ it('takes the purchase list from an optional second sheet, by project number, an
         ->set('rows', [['row' => 2, 'cells' => $samir]])
         ->set('extra', $items)
         ->call('save')->assertNotDispatched('excel-imported');
+});
+
+it('shows a project manager only the files of their own projects', function () {
+    $file = mfFile($this->accountant);
+    $pm = mfUser(RoleId::ProjectManager, 'Pam');
+    $f2f = (int) GlProject::query()->where('code', 'F2F')->value('legacy_account_id');
+    $other = (int) GlProject::query()->where('code', '!=', 'F2F')->where('is_general_account', false)->value('legacy_account_id');
+
+    $this->mock(ProjectAccess::class, fn ($mock) => $mock->shouldReceive('limitedTo')->andReturn([$other]));
+
+    expect(MicroLoan::query()->visibleTo($pm)->count())->toBe(0)
+        ->and(MicroLoan::query()->visibleTo($this->accountant)->count())->toBe(0);
+
+    Livewire::actingAs($pm)->test(MicroProjectFiles::class)
+        ->assertDontSee('Huda Saleh')
+        ->call('select', $file->id)
+        ->assertNotFound();
+
+    $this->mock(ProjectAccess::class, fn ($mock) => $mock->shouldReceive('limitedTo')->andReturn([$f2f]));
+
+    expect(MicroLoan::query()->visibleTo($pm)->pluck('id')->all())->toBe([$file->id]);
 });

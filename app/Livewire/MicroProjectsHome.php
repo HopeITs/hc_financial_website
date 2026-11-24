@@ -24,12 +24,12 @@ class MicroProjectsHome extends Component
         $user = auth()->user();
         abort_unless($user instanceof User && $user->canOnScreen('microhome', ScreenAction::View), 403);
         $today = CarbonImmutable::today();
-        $instalments = $overview->instalments($today);
+        $instalments = $overview->instalments($today, $user);
         $fundsValue = $overview->fundsValue($today);
         $amounts = fn (array $byCurrency): array => array_map(fn (string $amount): string => number_format((float) $amount, 2), $byCurrency);
 
         return view('livewire.micro-projects-home', [
-            'steps' => $overview->steps(),
+            'steps' => $overview->steps($user),
             'waiting' => $overview->waitingFor($user),
             'loans' => $instalments['loans'],
             'owed' => $amounts($instalments['owed']),

@@ -21,6 +21,7 @@ return [
         'salaries' => ['title' => 'Salaries', 'hint' => 'The monthly payroll of each project.'],
         'other_payments' => ['title' => 'Other payments', 'hint' => 'Only what has no purchase: bank fees, money given back to a donor…'],
         'instalments' => ['title' => 'Beneficiaries\' instalments', 'hint' => 'Receive a monthly instalment of a micro-project loan.'],
+        'other_receipts' => ['title' => 'Other receipts', 'hint' => 'Only what has no operation: bank interest, a refund, a deposit returned…'],
         'revenues' => ['title' => 'Project revenues', 'hint' => 'Sales, students\' subscriptions, internet and paid courses received into a cash account.'],
     ],
 ];

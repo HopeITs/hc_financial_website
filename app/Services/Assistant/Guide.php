@@ -25,7 +25,7 @@ class Guide
 {
     /** The screen each topic opens. */
     public const SCREENS = [
-        'operations' => 'operations', 'payment' => 'single', 'receipt' => 'vouchers', 'donor' => 'contracts', 'approvals' => 'inbox',
+        'operations' => 'operations', 'payment' => 'single', 'receipt' => 'receipt', 'donor' => 'contracts', 'approvals' => 'inbox',
         'inbox' => 'inbox', 'rejected' => 'vouchers', 'journal' => 'journal', 'requests' => 'requests', 'purchases' => 'purchases',
         'quotes' => 'purchases', 'receiving' => 'purchases', 'advances' => 'advance', 'payroll' => 'payroll', 'staff' => 'payroll',
         'recurring' => 'recurring', 'transfers' => 'transfers', 'rates' => 'alloc', 'cashcount' => 'tills', 'monthend' => 'monthend',
@@ -176,7 +176,7 @@ class Guide
     /** @return list<array{label: string, url: string}> the screen as a link, when the person may open it */
     private function link(User $user, ?string $screen): array
     {
-        if ($screen === null || ! $user->canOnScreen($screen, $screen === 'single' ? ScreenAction::Create : ScreenAction::View)) {
+        if ($screen === null || ! $user->canOnScreen($screen, in_array($screen, ['single', 'receipt'], true) ? ScreenAction::Create : ScreenAction::View)) {
             return [];
         }
 

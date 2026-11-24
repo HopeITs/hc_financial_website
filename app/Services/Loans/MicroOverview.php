@@ -32,11 +32,11 @@ class MicroOverview
      *
      * @return array<string, int>
      */
-    public function steps(): array
+    public function steps(User $user): array
     {
         $counts = array_fill_keys(self::STEPS, 0);
 
-        foreach ($this->files() as $file) {
+        foreach ($this->files($user) as $file) {
             $step = $this->stepOf($file);
             if ($step !== null) {
                 $counts[$step]++;
@@ -56,7 +56,7 @@ class MicroOverview
      */
     public function waitingFor(User $user): array
     {
-        $files = $this->files();
+        $files = $this->files($user);
         $prepares = $user->canOnScreen('microfiles', ScreenAction::Create);
 
         return [
@@ -73,12 +73,12 @@ class MicroOverview
      *
      * @return array{loans: int, owed: array<string, string>, late: array<string, string>, late_loans: list<array{loan: MicroLoan, amount: string, days: int}>}
      */
-    public function instalments(CarbonImmutable $asAt): array
+    public function instalments(CarbonImmutable $asAt, ?User $user = null): array
     {
         $owed = [];
         $late = [];
         $lateLoans = [];
-        $loans = MicroLoan::query()->active()->with('instalments')->get();
+        $loans = MicroLoan::query()->active()->when($user !== null, fn ($query) => $query->visibleTo($user))->with('instalments')->get();
 
         foreach ($loans as $loan) {
             $owed[$loan->currency] = bcadd($owed[$loan->currency] ?? '0.00', $loan->owed(), 2);
@@ -140,9 +140,9 @@ class MicroOverview
     }
 
     /** @return Collection<int, MicroLoan> the files on their way */
-    private function files(): Collection
+    private function files(User $user): Collection
     {
-        return MicroLoan::query()->whereIn('stage', [MicroLoan::DRAFT, MicroLoan::RETURNED, MicroLoan::SUBMITTED, MicroLoan::APPROVED])
+        return MicroLoan::query()->visibleTo($user)->whereIn('stage', [MicroLoan::DRAFT, MicroLoan::RETURNED, MicroLoan::SUBMITTED, MicroLoan::APPROVED])
             ->orderByDesc('id')->get();
     }
 }

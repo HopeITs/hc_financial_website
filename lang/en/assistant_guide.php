@@ -36,7 +36,7 @@ return [
         'receipt' => [
             'title' => 'How do I record money received (receipt voucher)?',
             'keywords' => ['receipt', 'received', 'deposit', 'crv', 'money in'],
-            'answer' => "It depends on the money:\n- **A donor instalment**: from the agreement (Financial operations → Donor instalments).\n- **A beneficiary's instalment**: from **Loans and instalments**.\n- **Sales, courses and subscriptions**: from **Project revenues**.\n- Anything else: a receipt voucher from **Vouchers** or the manual entry.\n\nEvery voucher is saved pending approval.",
+            'answer' => "It depends on the money:\n- **A donor instalment**: from the agreement (Financial operations → Donor instalments).\n- **A beneficiary's instalment**: from **Loans and instalments**.\n- **Sales, courses and subscriptions**: from **Project revenues**.\n- Anything else (bank interest, a refund…): Financial operations → **Other receipts**.\n\nEvery voucher is saved pending approval.",
         ],
         'donor' => [
             'title' => 'How do I receive a donor instalment?',
