@@ -326,21 +326,14 @@ it('rejects with a reason, keeps it, and never reopens a rejected request', func
         ->and(fn () => rqWorkflow()->update($manager, $rejected, rqHeader(), rqLines()))->toThrow(RequestException::class, 'can no longer be changed');
 });
 
-it('needs two or three price quotes before a maintenance, fixed asset or electronics request is submitted', function (string $category) {
+it('submits a maintenance, fixed asset or electronics request without quotes, which the purchase file gathers', function (string $category) {
     $manager = rqManager();
     $request = rqWorkflow()->create($manager, rqHeader(['category' => $category]), rqLines('900.00'));
 
-    expect(fn () => rqWorkflow()->submit($manager, $request))->toThrow(RequestException::class, 'price quotes');
-
-    rqWorkflow()->addQuote($manager, $request, rqPdf('one.pdf'));
-    expect(fn () => rqWorkflow()->submit($manager, $request))->toThrow(RequestException::class, 'price quotes');
-
-    $quote = rqWorkflow()->addQuote($manager, $request, rqPdf('two.pdf'));
-    Storage::disk('local')->assertExists($quote->stored_path);
     expect(rqWorkflow()->submit($manager, $request)->status)->toBe('submitted');
 })->with(['maintenance', 'fixed_assets', 'electronics']);
 
-it('takes at most three quotes, keeps them off the public disk and never drops below two once submitted', function () {
+it('takes at most three quotes for information, keeps them off the public disk and lets them go', function () {
     $manager = rqManager();
     $request = rqWorkflow()->create($manager, rqHeader(['category' => 'electronics']), rqLines('900.00'));
 
@@ -350,11 +343,13 @@ it('takes at most three quotes, keeps them off the public disk and never drops b
 
     expect(fn () => rqWorkflow()->addQuote($manager, $request, rqPdf('d.pdf')))->toThrow(RequestException::class, 'at most 3')
         ->and($first->stored_path)->toStartWith('request-quotes/'.$request->id.'/');
+    Storage::disk('local')->assertExists($first->stored_path);
 
     rqWorkflow()->submit($manager, $request);
     rqWorkflow()->removeQuote($manager, $request, $first->id);
+    rqWorkflow()->removeQuote($manager, $request, $request->quotes()->first()->id);
 
-    expect(fn () => rqWorkflow()->removeQuote($manager, $request, $request->quotes()->first()->id))->toThrow(RequestException::class, 'price quotes');
+    expect($request->quotes()->count())->toBe(1);
 
     $this->actingAs($manager)->get(route('entries.requests.quote', $request->quotes()->first()))->assertOk();
     $this->actingAs(rqManager('Other', 99))->get(route('entries.requests.quote', $request->quotes()->first()))->assertForbidden();

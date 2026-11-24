@@ -276,7 +276,7 @@
                 <h2 class="text-base font-semibold text-secondary-dark dark:text-ink">{{ __('requests.quotes') }}</h2>
                 <x-ui.panel class="flex flex-col gap-2 p-4" data-test="request-quotes">
                     @if ($quotesNeeded)
-                        <p class="text-sm text-secondary-medium dark:text-ink-muted">{{ __('requests.quotes_help', ['min' => \App\Enums\RequestCategory::MIN_QUOTES, 'max' => \App\Enums\RequestCategory::MAX_QUOTES]) }}</p>
+                        <p class="text-sm text-secondary-medium dark:text-ink-muted">{{ __('requests.quotes_help', ['max' => \App\Enums\RequestCategory::MAX_QUOTES]) }}</p>
                     @endif
                     @forelse ($current->quotes as $quote)
                         <p class="flex flex-wrap items-baseline gap-3 text-sm" wire:key="quote-{{ $quote->id }}">
