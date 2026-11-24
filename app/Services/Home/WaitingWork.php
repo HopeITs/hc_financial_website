@@ -10,8 +10,11 @@ use App\Models\DailyRate;
 use App\Models\GlProject;
 use App\Models\LedgerRequest;
 use App\Models\MonthClose;
+use App\Models\Payroll;
+use App\Models\Purchase;
 use App\Models\User;
 use App\Models\Voucher;
+use App\Services\Entries\RecurringPayments;
 use App\Services\Loans\MicroOverview;
 use App\Services\Projects\ProjectAccess;
 use App\Services\Treasury\CashBook;
@@ -85,7 +88,7 @@ class WaitingWork
             ];
         }
 
-        return [...$items, ...$this->microProjects($user, $hasInbox), ...$this->treasury($user)];
+        return [...$items, ...$this->operations($user), ...$this->microProjects($user, $hasInbox), ...$this->treasury($user)];
     }
 
     /**
@@ -115,6 +118,59 @@ class WaitingWork
         }
 
         return $items;
+    }
+
+    /**
+     * The operations' next steps for those who take them (role review of 2026-11-26): purchase orders sent back,
+     * orders to receive and receipts to pay; payrolls sent back and approved ones to pay; recurring payments still due.
+     * Only shown when something is there, so the panel stays short.
+     *
+     * @return list<array{key: string, count: int, url: string}>
+     */
+    private function operations(User $user): array
+    {
+        $items = [];
+
+        if (Schema::hasTable('gl_purchases') && $user->canOnScreen('purchases', ScreenAction::Edit)) {
+            $purchases = fn () => $this->visible(Purchase::query(), $user);
+            $items[] = ['key' => 'purchases_returned', 'count' => $purchases()->where('stage', Purchase::SOURCING)->whereNotNull('return_reason')->count(),
+                'url' => route(Navigation::routeName('purchases'), ['show' => Purchase::SOURCING])];
+            $items[] = ['key' => 'purchases_receive', 'count' => $purchases()->where('stage', Purchase::ORDERED)->count(),
+                'url' => route(Navigation::routeName('purchases'), ['show' => Purchase::ORDERED])];
+        }
+
+        if (Schema::hasTable('gl_purchases') && $user->canOnScreen('purchases', ScreenAction::View)
+            && ($user->canOnScreen('single', ScreenAction::Create) || $user->canOnScreen('advance', ScreenAction::Create))) {
+            $items[] = ['key' => 'purchases_pay', 'count' => $this->visible(Purchase::query(), $user)->where('stage', Purchase::RECEIVED)->count(),
+                'url' => route(Navigation::routeName('purchases'), ['show' => Purchase::RECEIVED])];
+        }
+
+        if (Schema::hasTable('gl_payrolls') && $user->canOnScreen('payroll', ScreenAction::Create)) {
+            $items[] = ['key' => 'payroll_returned', 'count' => Payroll::query()->where('status', Payroll::DRAFT)->whereNotNull('return_reason')->count(),
+                'url' => route(Navigation::routeName('payroll'))];
+            $items[] = ['key' => 'payroll_pay', 'count' => Payroll::query()->where('status', Payroll::APPROVED)->count(),
+                'url' => route(Navigation::routeName('payroll'))];
+        }
+
+        if (Schema::hasTable('gl_recurring_payments') && $user->canOnScreen('recurring', ScreenAction::View) && $user->canOnScreen('single', ScreenAction::Create)) {
+            $items[] = ['key' => 'recurring_due', 'count' => app(RecurringPayments::class)->due(CarbonImmutable::today())->count(),
+                'url' => route(Navigation::routeName('recurring'))];
+        }
+
+        return array_values(array_filter($items, fn (array $item): bool => $item['count'] > 0));
+    }
+
+    /**
+     * @template TModel of \Illuminate\Database\Eloquent\Model
+     *
+     * @param  Builder<TModel>  $query
+     * @return Builder<TModel> limited to the person's projects
+     */
+    private function visible(Builder $query, User $user): Builder
+    {
+        $limit = $this->access->limitedTo($user);
+
+        return $query->when($limit !== null, fn ($inner) => $inner->whereIn('project_code', GlProject::query()->whereIn('legacy_account_id', $limit ?? [])->select('code')));
     }
 
     /**
