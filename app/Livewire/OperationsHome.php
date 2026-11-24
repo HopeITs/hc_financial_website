@@ -48,7 +48,7 @@ class OperationsHome extends Component
         ],
         'income' => [
             'instalments' => ['screen' => 'payments', 'icon' => 'banknotes'],
-            'revenues' => ['screen' => 'receipt', 'icon' => 'arrow-down-circle', 'action' => ScreenAction::Create],
+            'revenues' => ['screen' => 'revenues', 'icon' => 'arrow-down-circle'],
         ],
     ];
 

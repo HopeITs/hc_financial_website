@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Voucher;
 use App\Models\VoucherAudit;
 use App\Services\Approvals\ApprovalChain;
+use App\Services\Entries\ProjectRevenues;
 use App\Services\Ledger\Rules\ApproverIsNotPreparer;
 use App\Services\Loans\MicroLoans;
 use App\Services\Payroll\Payrolls;
@@ -111,6 +112,10 @@ class VoucherApprovals
             // A rejected payroll voucher puts its payroll back to "approved".
             if (Schema::hasTable('gl_payrolls')) {
                 app(Payrolls::class)->forgetVoucher($voucher);
+            }
+            // A rejected day's takings no longer count in the project revenues.
+            if (Schema::hasTable('gl_revenue_sheets')) {
+                app(ProjectRevenues::class)->forgetVoucher($voucher);
             }
             $voucher->delete();
         });

@@ -20,6 +20,7 @@ beforeEach(function () {
     (require database_path('migrations/2026_10_25_090000_create_request_module_tables.php'))->up();
     (require database_path('migrations/2026_11_25_090000_create_gl_recurring_payments_table.php'))->up();
     (require database_path('migrations/2026_11_25_100000_create_payroll_tables.php'))->up();
+    (require database_path('migrations/2026_11_25_110000_create_project_revenues.php'))->up();
     seedChartWithTestProjects();
     Carbon::setTestNow('2026-12-01 07:00:00');
 });

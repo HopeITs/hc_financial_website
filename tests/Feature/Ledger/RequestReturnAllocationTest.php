@@ -28,6 +28,7 @@ beforeEach(function () {
     (require database_path('migrations/2026_11_24_100000_create_purchase_files.php'))->up();
     (require database_path('migrations/2026_11_25_090000_create_gl_recurring_payments_table.php'))->up();
     (require database_path('migrations/2026_11_25_100000_create_payroll_tables.php'))->up();
+    (require database_path('migrations/2026_11_25_110000_create_project_revenues.php'))->up();
     (require database_path('migrations/2026_11_02_090000_add_return_reason_to_gl_requests.php'))->up();
     (new ChartOfAccountsSeeder)->run();
 
