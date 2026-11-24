@@ -257,3 +257,15 @@ it('speaks Arabic', function () {
 
     builderPage()->assertSee('سند جديد')->assertSee('الفحوصات')->assertSee('إضافة سطر');
 });
+
+it('opens a new voucher copied from another one, dated today', function () {
+    fillReceipt(builderPage())->set('description', 'Monthly grant')->call('save');
+    $source = Voucher::query()->latest('id')->firstOrFail();
+
+    Livewire::withQueryParams(['copy' => $source->id])->actingAs(builderUser(RoleId::Accountant, 'Bea'))->test(VoucherBuilder::class)
+        ->assertSet('editing', null)
+        ->assertSet('description', 'Monthly grant')
+        ->assertSet('date', now()->toDateString())
+        ->assertSet('lines.0.account', '1111')
+        ->assertSet('lines.1.account', '4001');
+});

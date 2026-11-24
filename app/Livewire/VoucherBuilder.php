@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Enums\AccountLevel;
 use App\Enums\FundSource;
+use App\Enums\ScreenAction;
 use App\Enums\VoucherType;
 use App\Livewire\Concerns\HasFormDraft;
 use App\Models\GlAccount;
@@ -90,7 +91,28 @@ class VoucherBuilder extends Component
 
         if ($voucher !== null) {
             $this->openForEdit($voucher);
+        } elseif (is_string($copy = request()->query('copy')) && $copy !== '') {
+            $this->copyFrom($copy);
         }
+    }
+
+    /**
+     * A new voucher made from another one (role review of 2026-11-26): its type, description and lines, dated today,
+     * for an entry that repeats or one rejected to record again once corrected. Nothing is saved until the person saves.
+     */
+    private function copyFrom(string $number): void
+    {
+        $user = auth()->user();
+        abort_unless($user instanceof User && $user->canOnScreen('vouchers', ScreenAction::View), 403);
+        $source = Voucher::withTrashed()->find($number);
+
+        if ($source === null) {
+            return;
+        }
+
+        $this->type = $source->type->value;
+        $this->description = (string) $source->description;
+        $this->lines = array_map(fn (array $row): array => array_merge(self::BLANK, $row), app(PendingVoucherChanges::class)->rows($source));
     }
 
     /** Opens a voucher that waits for approval, to change its date, description, request and lines. */

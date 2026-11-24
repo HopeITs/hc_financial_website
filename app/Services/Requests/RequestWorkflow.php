@@ -365,6 +365,42 @@ class RequestWorkflow
     }
 
     /**
+     * What is left of each budget line, in its own currency, from the approved vouchers (role review of 2026-11-26:
+     * shown beside each line while a request is written).
+     *
+     * @param  iterable<GlBudgetLine>  $budgetLines
+     * @return array<string, array{budget: string, spent: string, left: string, currency: string}> budget line key => figures
+     */
+    public function remaining(iterable $budgetLines): array
+    {
+        $lines = collect($budgetLines);
+
+        if ($lines->isEmpty()) {
+            return [];
+        }
+
+        $spent = DB::table('gl_voucher_lines as l')
+            ->join('gl_vouchers as v', 'v.id', '=', 'l.voucher_id')
+            ->whereIn('l.budget_line_key', $lines->pluck('key')->all())
+            ->where('v.status', 'approved')
+            ->whereNull('v.deleted_at')
+            ->groupBy('l.budget_line_key', 'l.currency')
+            ->selectRaw('l.budget_line_key as line_key, l.currency as currency, coalesce(sum(l.debit_orig) - sum(l.credit_orig), 0) as spent')
+            ->get();
+
+        $figures = [];
+
+        foreach ($lines as $budgetLine) {
+            $used = $spent->first(fn (object $row): bool => $row->line_key === $budgetLine->key && $row->currency === $budgetLine->currency);
+            $usedAmount = Money::normalize($used !== null && is_numeric($used->spent) ? (string) $used->spent : null);
+            $budget = Money::normalize($budgetLine->budget);
+            $figures[(string) $budgetLine->key] = ['budget' => $budget, 'spent' => $usedAmount, 'left' => bcsub($budget, $usedAmount, 2), 'currency' => (string) $budgetLine->currency];
+        }
+
+        return $figures;
+    }
+
+    /**
      * Budget lines this request would take past their budget: a warning only, never a refusal.
      *
      * @return list<array{key: string, budget: string, spent: string, requested: string, currency: string}>

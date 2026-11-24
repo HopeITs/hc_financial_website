@@ -139,6 +139,9 @@
         <x-ui.page-header :title="$voucher->id" :subtitle="$voucher->description ?: __('vouchers.no_description')">
             <x-slot:actions>
                 <a href="{{ route('entries.vouchers.print', ['voucher' => $voucher->id]) }}" target="_blank" rel="noopener" class="page-action" data-test="print-voucher">{{ __('vouchers.print') }}</a>
+                @can('screen', ['vouchers', 'create'])
+                    <x-ui.button tone="action" icon="document-duplicate" :href="route('entries.vouchers.create', ['copy' => $voucher->id])" wire:navigate data-test="copy-voucher">{{ __('vouchers.copy') }}</x-ui.button>
+                @endcan
                 <x-ui.status-badge size="lg" :status="$badge" :label="__('vouchers.status.'.$badge)" final data-test="voucher-status" />
             </x-slot:actions>
         </x-ui.page-header>
