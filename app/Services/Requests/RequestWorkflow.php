@@ -80,10 +80,6 @@ class RequestWorkflow
 
             $clean = $this->validated($header, $lines, $request);
 
-            if ($request->state() === RequestStatus::Submitted) {
-                $this->assertQuotes($clean['header']['category'], $request->quotes()->count());
-            }
-
             $before = $this->snapshot($request);
             $request->update($clean['header'] + ['amount' => $clean['total']]);
             $request->lines()->delete();
@@ -155,10 +151,6 @@ class RequestWorkflow
             return;
         }
 
-        if ($request->state() === RequestStatus::Submitted) {
-            $this->assertQuotes($request->category, $request->quotes()->count() - 1);
-        }
-
         Storage::disk('local')->delete($quote->stored_path);
         $quote->delete();
         $this->audit($request, $by, 'quote_remove', 'quotes', $quote->original_name, null);
@@ -187,11 +179,8 @@ class RequestWorkflow
                 $problems[] = __('requests.problem.no_lines');
             }
 
-            $quotes = $request->quotes()->count();
-            $category = $request->categoryType();
-            if ($category !== null && ($quotes < RequestCategory::MIN_QUOTES || $quotes > RequestCategory::MAX_QUOTES)) {
-                $problems[] = __('requests.problem.quotes_needed', ['category' => $category->label(), 'min' => RequestCategory::MIN_QUOTES, 'max' => RequestCategory::MAX_QUOTES]);
-            }
+            // The price quotes are gathered in the purchase file once the request is approved (finance decision of
+            // 2026-11-24): a request is submitted without them; any attached here are for information only.
 
             if ($problems !== []) {
                 throw new RequestException($problems);
@@ -579,15 +568,6 @@ class RequestWorkflow
     {
         if ($request->state() !== RequestStatus::Submitted) {
             throw new RequestException([__('requests.problem.not_submitted')]);
-        }
-    }
-
-    private function assertQuotes(?string $category, int $quotes): void
-    {
-        $category = $category !== null ? RequestCategory::tryFrom($category) : null;
-
-        if ($category !== null && ($quotes < RequestCategory::MIN_QUOTES || $quotes > RequestCategory::MAX_QUOTES)) {
-            throw new RequestException([__('requests.problem.quotes_needed', ['category' => $category->label(), 'min' => RequestCategory::MIN_QUOTES, 'max' => RequestCategory::MAX_QUOTES])]);
         }
     }
 
