@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $project_code
  * @property string|null $donor
  * @property string $name
+ * @property string|null $category the budget category it belongs to, as the donor's budget groups lines (2026-11-26)
  * @property string $account_code
  * @property string $budget
  * @property string $currency
@@ -28,7 +29,7 @@ class GlBudgetLine extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'key', 'project_code', 'donor', 'name', 'account_code', 'budget', 'currency', 'legacy_budget_line_id',
+        'key', 'project_code', 'donor', 'name', 'category', 'account_code', 'budget', 'currency', 'legacy_budget_line_id',
     ];
 
     protected function casts(): array

@@ -36,6 +36,16 @@
         <div class="sm:col-span-2 lg:col-span-4">
             <x-ui.form-textarea wire:model.blur="description" :label="__('ledger.builder.description')" rows="2" />
         </div>
+        <x-ui.form-select wire:model="documentType" :label="__('voucher_documents.type')" data-test="document-type">
+            <option value="">—</option>
+            @foreach (\App\Services\Ledger\VoucherDocuments::TYPES as $documentOption)
+                <option value="{{ $documentOption }}">{{ __('voucher_documents.types.'.$documentOption) }}</option>
+            @endforeach
+        </x-ui.form-select>
+        <x-ui.form-input wire:model.blur="documentNumber" dir="ltr" :label="__('voucher_documents.number')" data-test="document-number" />
+        <div class="sm:col-span-2">
+            <x-ui.form-input wire:model.blur="descriptionEn" dir="ltr" :label="__('voucher_documents.description_en')" :help="__('voucher_documents.description_en_help')" data-test="description-en" />
+        </div>
     </x-ui.panel>
 
     <section class="flex flex-col gap-3">

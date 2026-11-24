@@ -12,6 +12,7 @@ use App\Services\Ledger\LedgerRuleException;
 use App\Services\Ledger\PendingVoucherChanges;
 use App\Services\Ledger\ReverseVoucher;
 use App\Services\Ledger\VoucherApprovals;
+use App\Services\Ledger\VoucherDocuments;
 use App\Services\Ledger\VoucherExport;
 use App\Support\Money;
 use Illuminate\Contracts\View\View;
@@ -213,6 +214,46 @@ class Vouchers extends Component
     public function closeReject(): void
     {
         $this->showReject = false;
+    }
+
+    /** The open voucher's supporting document, being changed (finance request of 2026-11-26). */
+    public bool $editDocument = false;
+
+    public string $documentType = '';
+
+    public string $documentNumber = '';
+
+    public string $descriptionEn = '';
+
+    public function openDocument(): void
+    {
+        Gate::authorize('screen', ['vouchers', 'create']);
+        $voucher = $this->shownVoucher();
+        $this->documentType = (string) $voucher->getAttribute('document_type');
+        $this->documentNumber = (string) $voucher->getAttribute('document_number');
+        $this->descriptionEn = (string) $voucher->getAttribute('description_en');
+        $this->failures = [];
+        $this->editDocument = true;
+    }
+
+    /** Saves the document details; they never change an amount, so an approved or rejected voucher takes them too. */
+    public function saveDocument(VoucherDocuments $documents): void
+    {
+        Gate::authorize('screen', ['vouchers', 'create']);
+        $this->failures = $documents->change($this->shownVoucher(), $this->user(), $this->documentType, $this->documentNumber, $this->descriptionEn);
+
+        if ($this->failures === []) {
+            $this->editDocument = false;
+            $this->notice = __('voucher_documents.saved');
+        }
+    }
+
+    private function shownVoucher(): Voucher
+    {
+        $voucher = $this->number !== null ? Voucher::withTrashed()->find($this->number) : null;
+        abort_if($voucher === null, 404);
+
+        return $voucher;
     }
 
     public function openDelete(): void

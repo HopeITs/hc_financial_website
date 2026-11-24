@@ -8,6 +8,7 @@ use App\Models\Voucher;
 use App\Services\Entries\Advances;
 use App\Services\Entries\CashVouchers;
 use App\Services\Entries\EntryException;
+use App\Services\Ledger\VoucherDocuments;
 use App\Support\Money;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
@@ -116,6 +117,8 @@ class PurchasePayments
         }
 
         $purchase->update(['voucher_id' => $voucher->id, 'payment_method' => $form['method'], 'stage' => Purchase::PAID]);
+        // The supplier's invoice is the document the donor's report lists (finance request of 2026-11-26).
+        app(VoucherDocuments::class)->record($voucher, 'invoice', (string) $purchase->invoice_number, null);
 
         return $voucher;
     }

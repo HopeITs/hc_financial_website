@@ -25,6 +25,9 @@ use Illuminate\Support\Carbon;
  * @property string|null $reversal_reason
  * @property Carbon $date
  * @property string|null $description
+ * @property string|null $document_type the supporting document: invoice, receipt, payslip or other (2026-11-26)
+ * @property string|null $document_number the invoice's or receipt's number
+ * @property string|null $description_en the description in English, for the donor's report
  * @property VoucherStatus $status
  * @property int $prepared_by
  * @property int|null $approved_by
@@ -45,7 +48,7 @@ class Voucher extends Model implements Approvable
     protected $keyType = 'string';
 
     protected $fillable = [
-        'id', 'type', 'transfer_kind', 'request_id', 'micro_loan_id', 'reverses_id', 'reversal_reason', 'date', 'description', 'status', 'prepared_by', 'approved_by', 'approved_at',
+        'id', 'type', 'transfer_kind', 'request_id', 'micro_loan_id', 'reverses_id', 'reversal_reason', 'date', 'description', 'document_type', 'document_number', 'description_en', 'status', 'prepared_by', 'approved_by', 'approved_at',
         'is_carry_forward', 'is_temporary', 'source', 'legacy_action_id',
     ];
 
