@@ -86,7 +86,7 @@ it('shows each role the work waiting for it, with the same rules as the bell', f
     $rejected = app(PostVoucher::class)->post(ledgerReceipt(['preparedBy' => $accountant->getKey()]));
     app(VoucherApprovals::class)->reject($rejected, $manager, 'No invoice');
 
-    expect(wtWaiting($manager))->toMatchArray(['approve' => 1])
+    expect(wtWaiting($manager))->toMatchArray(['inbox' => 1])->not->toHaveKey('approve')
         ->and(wtWaiting($accountant))->toMatchArray(['rejected' => 1])
         ->and(wtWaiting($accountant))->not->toHaveKey('approve')
         ->and(wtWaiting($employee))->toBe([]);
@@ -100,7 +100,7 @@ it('counts requests to decide and the person\'s own requests still waiting', fun
 
     $workflow->submit($pm, $workflow->create($pm, ['project' => 'F2F', 'type' => 'monthly', 'month' => '2026-11'], [['budget_line' => 'F2F|Maintenance', 'amount' => '300.00', 'currency' => 'USD']]));
 
-    expect(wtWaiting($program))->toMatchArray(['decide' => 1])
+    expect(wtWaiting($program))->toMatchArray(['inbox' => 1])->not->toHaveKey('decide')
         ->and(wtWaiting($pm))->toMatchArray(['my_requests' => 1]);
 });
 
@@ -112,8 +112,9 @@ it('puts the panel on the home page with links to the filtered lists, and leaves
 
     Livewire::withoutLazyLoading()->actingAs($manager)->test(HomeWaiting::class)
         ->assertSeeHtml('data-test="home-waiting"')
-        ->assertSeeHtml('data-test="waiting-approve"')
-        ->assertSee(route(Navigation::routeName('vouchers'), ['status' => 'pending_approval']), false);
+        ->assertSeeHtml('data-test="waiting-inbox"')
+        ->assertDontSeeHtml('data-test="waiting-approve"')
+        ->assertSee(route(Navigation::routeName('inbox')), false);
 
     Livewire::withoutLazyLoading()->actingAs(wtUser(RoleId::Employee, 'Emp'))->test(HomeWaiting::class)->assertDontSeeHtml('data-test="home-waiting"');
 });

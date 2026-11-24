@@ -26,12 +26,13 @@ $everyScreen = array_merge(...array_values((require __DIR__.'/navigation.php')['
 $screens = static fn (array $slugs, array $actions): array => array_fill_keys($slugs, $actions);
 
 // `reports` is the reports' own page (2026-11-25).
-$reports = ['reports', 'rexp','rcash', 'rdonor', 'rrev', 'rfixed', 'rattach', 'tb', 'statement', 'statements', 'recon', 'mapprovals', 'uncomp', 'xreserve', 'advances', 'loans'];
+// The old program's monthly approvals left on 2026-11-26 (role review); Head Office keeps every screen.
+$reports = ['reports', 'rexp', 'rcash', 'rdonor', 'rrev', 'rfixed', 'rattach', 'tb', 'statement', 'statements', 'recon', 'uncomp', 'xreserve', 'advances', 'loans'];
 $treasury = ['tills', 'treasury', 'alloc', 'transfers', 'currency'];
 $monthEnd = ['monthend'];
-// `single` is the payment voucher and `receipt` the receipt voucher. `multiatt` and `bonds` are old screens that left
-// the menu; their keys stay until their code is removed.
-$entries = ['single', 'receipt', 'journal', 'advance', 'multi', 'multiatt', 'microfiles', 'payments', 'loanfunds', 'vouchers', 'bonds', 'purchases', 'recurring', 'revenues'];
+// `single` is the payment voucher and `receipt` the receipt voucher. The old `multiatt` and `bonds` screens left the
+// menu and stay with Head Office only until their code is removed (role review of 2026-11-26).
+$entries = ['single', 'receipt', 'journal', 'advance', 'multi', 'microfiles', 'payments', 'loanfunds', 'vouchers', 'purchases', 'recurring', 'revenues'];
 // The micro-projects section's own page, for everyone who works on micro projects (2026-11-23).
 $microHome = ['microhome'];
 // The financial operations' page (2026-11-24): each of its parts shows only to those who see its screen.
@@ -49,7 +50,7 @@ return [
         RoleId::HeadOffice->value => $screens(['home', 'requests', 'project-money', 'multiatt', 'bonds', ...$everyScreen], $all),
 
         RoleId::FinancialManager->value => array_merge(
-            $screens(['home', 'chart', 'project-money', ...$treasury, ...$reports, 'employees', 'salaries', 'users', 'log', 'auditlog', 'single', 'receipt', 'advance', 'multi', 'multiatt', 'payments', 'bonds', 'recurring', 'revenues', $operations, $inbox, ...$microHome], $view),
+            $screens(['home', 'chart', 'project-money', ...$treasury, ...$reports, 'salaries', 'users', 'auditlog', 'single', 'receipt', 'advance', 'multi', 'payments', 'recurring', 'revenues', $operations, $inbox, ...$microHome], $view),
             $screens(['vouchers', 'approval', 'requests'], ['view', 'approve']),
             // The Financial Manager approves the daily rates, and a rate they type themselves is approved at once.
             $screens(['alloc'], ['view', 'create', 'approve']),
@@ -70,7 +71,7 @@ return [
         ),
 
         RoleId::Accountant->value => array_merge(
-            $screens(['home', 'project-money', ...$reports, 'currency', 'donors', 'employees', 'requests', $operations, ...$microHome], $view),
+            $screens(['home', 'project-money', ...$reports, 'currency', 'donors', 'requests', $operations, ...$microHome], $view),
             // `tills` is the daily cash count, `treasury` the liquidity position with the month's revaluation.
             $screens(['chart', ...$entries, 'alloc', 'transfers', 'tills', 'treasury', 'salaries', 'payroll', 'contracts'], $prepare),
         ),

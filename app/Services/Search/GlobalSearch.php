@@ -132,7 +132,7 @@ class GlobalSearch
 
         $like = $this->like($term);
 
-        return array_values(MicroLoan::query()
+        return array_values(MicroLoan::query()->visibleTo($user)
             ->where(fn ($query) => $query->where('beneficiary', 'like', '%'.$like.'%')->orWhere('project_number', 'like', $like.'%'))
             ->orderByDesc('id')
             ->limit(self::PER_GROUP)

@@ -49,6 +49,8 @@ class OperationsHome extends Component
         'income' => [
             'instalments' => ['screen' => 'payments', 'icon' => 'banknotes'],
             'revenues' => ['screen' => 'revenues', 'icon' => 'arrow-down-circle'],
+            // Money in with no operation of its own (role review of 2026-11-26): bank interest, a refund…
+            'other_receipts' => ['screen' => 'receipt', 'icon' => 'arrow-down-tray', 'action' => ScreenAction::Create],
         ],
     ];
 

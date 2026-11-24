@@ -22,7 +22,9 @@ class MicroFilePrintController extends Controller
     public function __invoke(int $file, string $form, MicroFiles $files, MicroPurchases $purchases, AmountInWords $words): View
     {
         abort_unless(in_array($form, self::FORMS, true), 404);
-        $found = MicroLoan::query()->with(['items', 'quotes', 'purchases', 'instalments', 'project'])->findOrFail($file);
+        $user = auth()->user();
+        abort_unless($user instanceof User, 403);
+        $found = MicroLoan::query()->visibleTo($user)->with(['items', 'quotes', 'purchases', 'instalments', 'project'])->findOrFail($file);
         $invoices = $found->purchases->where('kind', MicroPurchase::INVOICE)->values();
         $totals = $purchases->totals($found);
         $total = $found->stage === MicroLoan::ACTIVE ? (string) $found->trust_bond_amount : ($totals['invoiced'] !== '0.00' ? $totals['invoiced'] : $totals['approved']);

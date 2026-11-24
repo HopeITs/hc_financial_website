@@ -141,7 +141,7 @@ class ApprovalsInbox
                 'requests' => app(RequestWorkflow::class)->approve($user, LedgerRequest::query()->findOrFail((int) $id)),
                 'purchases' => app(PurchaseFiles::class)->approve($user, Purchase::query()->findOrFail((int) $id)),
                 'payrolls' => app(Payrolls::class)->approve($user, Payroll::query()->findOrFail((int) $id)),
-                'micro' => app(MicroFiles::class)->approve($user, MicroLoan::query()->findOrFail((int) $id)),
+                'micro' => app(MicroFiles::class)->approve($user, MicroLoan::query()->visibleTo($user)->findOrFail((int) $id)),
                 default => throw new RuntimeException('Unknown kind'),
             };
         } catch (Throwable $refused) {

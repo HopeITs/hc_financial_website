@@ -16,9 +16,11 @@ use App\Services\Loans\LoanException;
 use App\Services\Loans\MicroFiles;
 use App\Services\Loans\MicroOverview;
 use App\Services\Loans\MicroPurchases;
+use App\Services\Projects\ProjectAccess;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
@@ -102,7 +104,7 @@ class MicroProjectFiles extends Component
 
         if ($this->file === 'new' && auth()->user() instanceof User && auth()->user()->canOnScreen('microfiles', ScreenAction::Create)) {
             $this->blank();
-        } elseif ($this->file !== '' && ($found = MicroLoan::query()->find((int) $this->file)) !== null) {
+        } elseif ($this->file !== '' && ($found = $this->files()->find((int) $this->file)) !== null) {
             $this->load($found);
         } else {
             $this->file = '';
@@ -121,7 +123,7 @@ class MicroProjectFiles extends Component
     public function select(int $id): void
     {
         $this->guard(ScreenAction::View);
-        $this->load(MicroLoan::query()->findOrFail($id));
+        $this->load($this->files()->findOrFail($id));
         $this->clearFeedback();
     }
 
@@ -158,6 +160,16 @@ class MicroProjectFiles extends Component
     {
         $user = $this->guard($this->file === 'new' ? ScreenAction::Create : ScreenAction::Edit);
         $current = $this->current();
+
+        // Only a project or fund the person may choose (a project manager's own projects).
+        $funding = (string) ($this->form['funding'] ?? '');
+        $unchanged = $current !== null && $funding === ($current->project_code !== null ? 'project:'.$current->project_code : 'fund:'.$current->funder.'|'.$current->city);
+
+        if ($funding !== '' && ! $unchanged && ! array_key_exists($funding, $this->fundings(app(InstalmentFunds::class), false))) {
+            $this->problems = [__('micro.problem.funding')];
+
+            return;
+        }
 
         $this->attempt(function () use ($files, $user, $current): void {
             $saved = $files->save($user, $current, $this->form, $this->items);
@@ -337,7 +349,7 @@ class MicroProjectFiles extends Component
         };
         $search = trim($this->search);
 
-        $list = MicroLoan::query()->whereNotNull('requested_amount')
+        $list = $this->files()->whereNotNull('requested_amount')
             ->when($stages !== null, fn ($query) => $query->whereIn('stage', $stages))
             ->when($search !== '', fn ($query) => $query->where(fn ($inner) => $inner
                 ->where('beneficiary', 'like', '%'.$search.'%')->orWhere('name_en', 'like', '%'.$search.'%')
@@ -458,19 +470,22 @@ class MicroProjectFiles extends Component
     }
 
     /** @return array<string, string> "project:CODE" or "fund:FUNDER|CITY" => label */
-    private function fundings(InstalmentFunds $funds): array
+    private function fundings(InstalmentFunds $funds, bool $keepCurrent = true): array
     {
         $choices = [];
 
-        foreach (GlProject::query()->where('is_general_account', false)->orderBy('code')->get(['code', 'name', 'donor']) as $project) {
+        $limit = auth()->user() instanceof User ? app(ProjectAccess::class)->limitedTo(auth()->user()) : null;
+
+        foreach (GlProject::query()->where('is_general_account', false)->when($limit !== null, fn ($query) => $query->whereIn('legacy_account_id', $limit ?? []))->orderBy('code')->get(['code', 'name', 'donor']) as $project) {
             $choices['project:'.$project->code] = $project->code.' · '.$project->name;
         }
 
-        foreach ($funds->choices(CarbonImmutable::today()) as $key => $label) {
+        // A fund's files belong to no project, so a person limited to projects does not make them.
+        foreach ($limit === null ? $funds->choices(CarbonImmutable::today()) : [] as $key => $label) {
             $choices['fund:'.$key] = __('loans.from_fund', ['fund' => $label]);
         }
 
-        if (($this->form['funding'] ?? '') !== '' && ! isset($choices[$this->form['funding']])) {
+        if ($keepCurrent && ($this->form['funding'] ?? '') !== '' && ! isset($choices[$this->form['funding']])) {
             $choices[$this->form['funding']] = str_replace(['project:', 'fund:', '|'], ['', '', ' · '], $this->form['funding']);
         }
 
@@ -492,7 +507,20 @@ class MicroProjectFiles extends Component
 
     private function current(): ?MicroLoan
     {
-        return ctype_digit($this->file) ? MicroLoan::query()->with(['items', 'quotes', 'project'])->find((int) $this->file) : null;
+        return ctype_digit($this->file) ? $this->files()->with(['items', 'quotes', 'project'])->find((int) $this->file) : null;
+    }
+
+    /**
+     * The files the person may see (MicroLoan::visibleTo).
+     *
+     * @return Builder<MicroLoan>
+     */
+    private function files(): Builder
+    {
+        $user = auth()->user();
+        abort_unless($user instanceof User, 403);
+
+        return MicroLoan::query()->visibleTo($user);
     }
 
     private function currentOrFail(): MicroLoan

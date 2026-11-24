@@ -34,6 +34,7 @@ it('shows the operations in one place, each card only to those who may open it, 
         ->assertSeeHtml('data-test="card-purchases"')
         ->assertSeeHtml('data-test="count-purchases"')
         ->assertSeeHtml('data-test="card-revenues"')
+        ->assertSeeHtml('data-test="card-other_receipts"')
         ->assertSeeHtml('data-test="card-transfers"');
 
     Livewire::actingAs(opUser(RoleId::Cashier, 'Carl'))->test(OperationsHome::class)
@@ -50,4 +51,5 @@ it('keeps the payment and receipt vouchers out of the menu, still open from the 
         ->and(Navigation::visibleGroups($ann)['operations'])->toContain('purchases');
 
     $this->actingAs($ann)->get(route(Navigation::routeName('single')))->assertOk();
+    $this->actingAs($ann)->get(route(Navigation::routeName('receipt')))->assertOk();
 });

@@ -41,11 +41,14 @@ class WaitingWork
         $items = [];
 
         // For those who approve, everything waiting for them comes first, in one place (finance decision of 2026-11-25).
-        if ($user->canOnScreen('inbox', ScreenAction::View)) {
+        // Those with the inbox see their approvals there only, not again card by card (role review of 2026-11-26).
+        $hasInbox = $user->canOnScreen('inbox', ScreenAction::View);
+
+        if ($hasInbox) {
             $items[] = ['key' => 'inbox', 'count' => app(ApprovalsInbox::class)->count($user), 'url' => route(Navigation::routeName('inbox'))];
         }
 
-        if ($user->canOnScreen('vouchers', ScreenAction::Approve)) {
+        if (! $hasInbox && $user->canOnScreen('vouchers', ScreenAction::Approve)) {
             $items[] = [
                 'key' => 'approve',
                 'count' => Voucher::query()->where('status', VoucherStatus::PendingApproval)->where('prepared_by', '!=', $id)->get()
@@ -54,7 +57,10 @@ class WaitingWork
             ];
         }
 
-        if (collect(['single', 'multi', 'vouchers'])->contains(fn (string $screen): bool => $user->canOnScreen($screen, ScreenAction::Create))) {
+        // The card opens the vouchers list, so only for those who may open it (role review of 2026-11-26: a cashier who
+        // may not got a refused page); the cashier sees their own vouchers on their till's page.
+        if ($user->canOnScreen('vouchers', ScreenAction::View)
+            && collect(['single', 'multi', 'vouchers'])->contains(fn (string $screen): bool => $user->canOnScreen($screen, ScreenAction::Create))) {
             $items[] = [
                 'key' => 'rejected',
                 'count' => Voucher::onlyTrashed()->where('prepared_by', $id)->where('deleted_at', '>=', now()->subDays(self::REJECTED_DAYS))->count(),
@@ -62,7 +68,7 @@ class WaitingWork
             ];
         }
 
-        if ($user->canOnScreen('requests', ScreenAction::Approve)) {
+        if (! $hasInbox && $user->canOnScreen('requests', ScreenAction::Approve)) {
             $items[] = [
                 'key' => 'decide',
                 'count' => $this->visibleRequests($user)->where('status', RequestStatus::Submitted->value)->get()
@@ -79,7 +85,7 @@ class WaitingWork
             ];
         }
 
-        return [...$items, ...$this->microProjects($user), ...$this->treasury($user)];
+        return [...$items, ...$this->microProjects($user, $hasInbox), ...$this->treasury($user)];
     }
 
     /**
@@ -88,7 +94,7 @@ class WaitingWork
      *
      * @return list<array{key: string, count: int, url: string}>
      */
-    private function microProjects(User $user): array
+    private function microProjects(User $user, bool $hasInbox): array
     {
         // Until the migration of 2026-11-23 has run there are no files.
         if (! Schema::hasColumn('gl_micro_loans', 'stage')) {
@@ -98,7 +104,7 @@ class WaitingWork
         $items = [];
         $waiting = null;
 
-        if ($user->canOnScreen('microfiles', ScreenAction::Approve)) {
+        if (! $hasInbox && $user->canOnScreen('microfiles', ScreenAction::Approve)) {
             $waiting = app(MicroOverview::class)->waitingFor($user);
             $items[] = ['key' => 'micro_approve', 'count' => $waiting['approve']->count(), 'url' => route(Navigation::routeName('microfiles'), ['show' => 'submitted'])];
         }
