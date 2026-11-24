@@ -1,0 +1,31 @@
+<?php
+
+return [
+    'intro' => 'Your day on one page: your city\'s cash balances, today\'s moves on them, and the vouchers you prepared with their state.',
+    'accounts' => 'The city\'s cash and bank accounts',
+    'accounts_hint' => 'Today\'s book balance, with the part still waiting for approval.',
+    'pending' => 'Of which pending',
+    'counted_today' => 'Counted today',
+    'counted' => 'Counted',
+    'not_counted' => 'Not counted',
+    'no_accounts' => 'No cash accounts in this city.',
+    'today' => 'Today\'s moves',
+    'description' => 'Description',
+    'in' => 'In',
+    'out' => 'Out',
+    'state' => 'State',
+    'date' => 'Date',
+    'no_moves' => 'No moves today.',
+    'mine' => 'My vouchers',
+    'mine_hint' => 'The vouchers you prepared in the last :days days.',
+    'no_mine' => 'You prepared no voucher in that time.',
+    'rejected_because' => 'Rejected because: :reason',
+    'actions' => [
+        'tills' => 'Daily cash count',
+        'single' => 'Other payment',
+        'receipt' => 'Other receipt',
+        'advance' => 'Advance',
+        'payments' => 'Receive an instalment',
+        'revenues' => 'Today\'s revenues',
+    ],
+];
