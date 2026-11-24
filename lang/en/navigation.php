@@ -4,9 +4,10 @@ return [
     'new' => 'New',
 
     'groups' => [
+        'operations' => 'Operations',
         'funding' => 'Funding',
         'micro' => 'Micro projects',
-        'entries' => 'Entries',
+        'entries' => 'Accounting',
         'treasury' => 'Treasury',
         'reports' => 'Reports',
         'chart' => 'Chart of accounts',
@@ -14,10 +15,11 @@ return [
     ],
 
     'screens' => [
+        'operations' => 'Financial operations',
         'chart' => 'Chart of accounts',
         'single' => 'Payment voucher',
         'receipt' => 'Receipt voucher',
-        'journal' => 'Journal entry',
+        'journal' => 'Manual entry',
         'advance' => 'Advances',
         'multi' => 'Import from Excel',
         'multiatt' => 'Multi attachments',
@@ -64,6 +66,7 @@ return [
     ],
 
     'descriptions' => [
+        'operations' => 'Every financial operation in one place: donors, transfers, spending and money received',
         'single' => 'Invoices and expenses paid from a cash or bank account, by project and budget line',
         'receipt' => 'Money received into a cash or bank account',
         'journal' => 'A manual entry: debit and credit on any account of the chart',

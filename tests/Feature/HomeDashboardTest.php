@@ -83,12 +83,12 @@ function hdWaiting(User $user): array
 it('gives each role the quick actions it may do, and none to a role that enters nothing', function () {
     Livewire::actingAs(hdUser(RoleId::Accountant, 'Ann'))->test(Home::class)
         ->assertSeeHtml('data-test="home-quick"')
-        ->assertSeeHtml('data-test="quick-single"')
+        ->assertSeeHtml('data-test="quick-purchases"')
         ->assertSeeHtml('data-test="quick-journal"')
         ->assertSeeHtml('data-test="quick-tills"');
 
     Livewire::actingAs(hdUser(RoleId::Cashier, 'Carl'))->test(Home::class)
-        ->assertSeeHtml('data-test="quick-receipt"')
+        ->assertSeeHtml('data-test="quick-advance"')
         ->assertDontSeeHtml('data-test="quick-journal"');
 
     Livewire::actingAs(hdUser(RoleId::Employee, 'Emp'))->test(Home::class)
@@ -99,11 +99,11 @@ it('offers a New menu in the top bar with only the entries the role may create',
     $html = $this->actingAs(hdUser(RoleId::Accountant, 'Ann'))->get(route('home'))->assertOk()->getContent();
 
     expect($html)->toContain('data-test="new-menu-button"')
-        ->and($html)->toContain('data-test="new-single"')
+        ->and($html)->toContain('data-test="new-purchases"')
         ->and($html)->toContain('data-test="new-journal"');
 
     $cashier = $this->actingAs(hdUser(RoleId::Cashier, 'Carl'))->get(route('home'))->getContent();
-    expect($cashier)->toContain('data-test="new-receipt"')
+    expect($cashier)->toContain('data-test="new-advance"')
         ->and($cashier)->not->toContain('data-test="new-journal"');
 
     expect($this->actingAs(hdUser(RoleId::Employee, 'Emp'))->get(route('home'))->getContent())

@@ -2,6 +2,7 @@
     // Each menu group's icon for its tabs; "other" for a page outside the menu.
     $tabIcons = [
         'home' => 'home',
+        'operations' => 'arrows-right-left',
         'funding' => 'banknotes',
         'entries' => 'document-text',
         'micro' => 'briefcase',
