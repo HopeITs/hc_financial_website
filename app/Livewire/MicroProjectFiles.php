@@ -258,7 +258,7 @@ class MicroProjectFiles extends Component
 
     public function payInvoice(MicroPurchases $purchases): void
     {
-        $user = $this->guard(ScreenAction::Create);
+        $user = $this->payer();
         $this->validate(['invoiceScan' => self::SCAN_RULES]);
         $file = $this->currentOrFail();
         $form = $this->invoice + ['is_seizure' => ($this->invoice['is_seizure'] ?? '') === '1'];
@@ -276,7 +276,7 @@ class MicroProjectFiles extends Component
 
     public function giveAdvance(MicroPurchases $purchases): void
     {
-        $user = $this->guard(ScreenAction::Create);
+        $user = $this->payer();
 
         $this->attempt(function () use ($purchases, $user): void {
             $saved = $purchases->giveAdvance($user, $this->currentOrFail(), $this->advance);
@@ -287,7 +287,7 @@ class MicroProjectFiles extends Component
 
     public function returnAdvance(int $id, MicroPurchases $purchases): void
     {
-        $user = $this->guard(ScreenAction::Create);
+        $user = $this->payer();
 
         $this->attempt(function () use ($purchases, $user, $id): void {
             $saved = $purchases->returnAdvance($user, $this->currentOrFail(), $id, ['date' => $this->invoice['date'] ?? '', 'amount' => $this->returnAmount[$id] ?? '']);
@@ -298,7 +298,7 @@ class MicroProjectFiles extends Component
 
     public function removePurchase(int $id, MicroPurchases $purchases): void
     {
-        $user = $this->guard(ScreenAction::Edit);
+        $user = $this->payer();
 
         $this->attempt(function () use ($purchases, $user, $id): void {
             $purchases->remove($user, $this->currentOrFail(), $id, $this->reason !== '' ? $this->reason : __('micro.removed_reason'));
@@ -308,7 +308,7 @@ class MicroProjectFiles extends Component
 
     public function close(MicroPurchases $purchases): void
     {
-        $user = $this->guard(ScreenAction::Create);
+        $user = $this->payer();
 
         $this->attempt(function () use ($purchases, $user): void {
             $file = $purchases->close($user, $this->currentOrFail(), ['signed_on' => $this->signedOn, 'trust_bond' => $this->trustBond, 'first_due' => $this->firstDue]);
@@ -373,6 +373,7 @@ class MicroProjectFiles extends Component
             'editable' => $current === null ? $this->file === 'new' : in_array($current->stage, MicroLoan::EDITABLE, true),
             'canEdit' => $user->canOnScreen('microfiles', ScreenAction::Edit) || $user->canOnScreen('microfiles', ScreenAction::Create),
             'canApprove' => $current !== null && $user->canOnScreen('microfiles', ScreenAction::Approve) && $files->mayApprove($user, $current),
+            'canPay' => $this->mayPay($user),
             'nextRole' => $current !== null ? $files->nextRole($current) : null,
             'usdValue' => $current !== null ? $files->usdValue($current) : null,
             'needsSeizure' => $current !== null && $files->needsSeizureFee($current),
@@ -547,6 +548,25 @@ class MicroProjectFiles extends Component
     {
         $this->notice = null;
         $this->problems = [];
+    }
+
+    /**
+     * Paying from the cash (invoices, advances and their returns, the closing entry) is the accountants' and cashiers'
+     * work, not the project manager's who prepares the file (role review of 2026-11-26): it needs the files' create
+     * permission and the payment voucher's or the advances'.
+     */
+    private function payer(): User
+    {
+        $user = $this->guard(ScreenAction::Create);
+        abort_unless($this->mayPay($user), 403);
+
+        return $user;
+    }
+
+    private function mayPay(User $user): bool
+    {
+        return $user->canOnScreen('microfiles', ScreenAction::Create)
+            && ($user->canOnScreen('single', ScreenAction::Create) || $user->canOnScreen('advance', ScreenAction::Create));
     }
 
     private function guard(ScreenAction $action): User

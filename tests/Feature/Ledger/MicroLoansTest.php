@@ -276,7 +276,9 @@ it('shows the loans screen to the financial manager but lets only the preparers 
         ->call('receive')
         ->assertForbidden();
 
-    $this->actingAs(loanUser(RoleId::Cashier, 'Carl'))->get(route('entries.micro-loans'))->assertForbidden();
+    // The cashier receives the instalments in cash (role review of 2026-11-26); an employee does not.
+    $this->actingAs(loanUser(RoleId::Cashier, 'Carl'))->get(route('entries.micro-loans'))->assertOk();
+    $this->actingAs(loanUser(RoleId::Employee, 'Emil'))->get(route('entries.micro-loans'))->assertForbidden();
     $this->actingAs(loanUser(RoleId::Accountant, 'Ann'))->get(route('entries.micro-loans'))->assertOk();
 });
 

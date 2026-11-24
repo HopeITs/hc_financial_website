@@ -21,7 +21,7 @@ class ReportsHome extends Component
     public const SECTIONS = [
         'financial' => ['tb' => 'scale', 'statements' => 'document-chart-bar', 'statement' => 'queue-list'],
         'projects' => ['rexp' => 'arrow-up-circle', 'rrev' => 'arrows-up-down', 'rfixed' => 'cube', 'rattach' => 'paper-clip', 'rdonor' => 'building-library'],
-        'followup' => ['recon' => 'arrows-right-left', 'uncomp' => 'exclamation-triangle', 'xreserve' => 'chart-bar', 'loans' => 'banknotes'],
+        'followup' => ['recon' => 'arrows-right-left', 'uncomp' => 'exclamation-triangle', 'xreserve' => 'chart-bar', 'advances' => 'hand-raised', 'loans' => 'banknotes'],
     ];
 
     public function render(): View

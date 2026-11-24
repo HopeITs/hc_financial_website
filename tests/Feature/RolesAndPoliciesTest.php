@@ -178,3 +178,25 @@ it('guards every signed-in route with a screen permission', function () {
 
     expect($guarded)->toBeGreaterThan(0);
 });
+
+it('splits the work as the role review of 2026-11-26 decided', function () {
+    $accountant = userWithRole(RoleId::Accountant, 'Acc');
+    $manager = userWithRole(RoleId::FinancialManager, 'Fm');
+    $cashier = userWithRole(RoleId::Cashier, 'Cash');
+    $projectManager = userWithRole(RoleId::ProjectManager, 'Pm');
+    $allows = fn (User $user, string $screen, string $action): bool => Gate::forUser($user)->allows('screen', [$screen, $action]);
+
+    // The accountant prepares the opening balances and counts the month's end; the Financial Manager closes it.
+    expect($allows($accountant, 'opening', 'create'))->toBeTrue()
+        ->and($allows($manager, 'opening', 'create'))->toBeFalse()
+        ->and($allows($manager, 'opening', 'view'))->toBeTrue()
+        ->and($allows($accountant, 'monthend', 'edit'))->toBeTrue()
+        ->and($allows($accountant, 'monthend', 'approve'))->toBeFalse()
+        ->and($allows($manager, 'monthend', 'approve'))->toBeTrue()
+        // The cashier receives the instalments.
+        ->and($allows($cashier, 'payments', 'create'))->toBeTrue()
+        // The project manager follows the open advances again; the retired screens stay with Head Office.
+        ->and(Navigation::visibleGroups($projectManager)['reports'] ?? [])->toContain('advances')
+        ->and($allows($manager, 'mapprovals', 'view'))->toBeFalse()
+        ->and($allows($accountant, 'bonds', 'view'))->toBeFalse();
+});
