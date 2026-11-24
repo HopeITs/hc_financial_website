@@ -140,6 +140,42 @@ class Requests extends Component
         $this->showForm = true;
     }
 
+    /**
+     * Fills a new request from the project's latest one of the same type (role review of 2026-11-26): its category,
+     * description and lines, for this month. Nothing is saved until the person saves.
+     */
+    public function copyLast(): void
+    {
+        $last = $this->lastRequest();
+
+        if ($this->editingId !== null || $last === null) {
+            return;
+        }
+
+        $this->fCategory = (string) $last->category;
+        $this->fDescription = (string) $last->description;
+        $this->fLines = $last->lines->map(fn ($line) => [
+            'budget_line' => $line->budget_line_key, 'amount' => (string) $line->amount, 'currency' => $line->currency,
+            'rate' => $line->currency !== 'USD' ? rtrim(rtrim((string) $line->rate, '0'), '.') : '', 'note' => (string) $line->note,
+        ])->values()->all() ?: [self::BLANK_LINE];
+        $this->notice = __('requests.copied', ['number' => $last->id]);
+    }
+
+    /** The project's latest request of the form's type, other than the one being changed. */
+    private function lastRequest(): ?LedgerRequest
+    {
+        if ($this->fProject === '') {
+            return null;
+        }
+
+        return $this->visible()->with('lines')
+            ->where('project_code', $this->fProject)
+            ->where('type', $this->fType)
+            ->when($this->editingId !== null, fn (Builder $query) => $query->whereKeyNot($this->editingId))
+            ->latest('id')
+            ->first();
+    }
+
     public function cancelForm(): void
     {
         $this->showForm = false;
@@ -341,8 +377,10 @@ class Requests extends Component
         $user = $this->user();
 
         if ($this->showForm) {
-            return view('livewire.requests', ['mode' => 'form', 'projects' => $this->projectChoices(), 'budgetLines' => $this->budgetLinesOf($this->fProject)]
-                + ['categories' => RequestCategory::cases(), 'current' => null]);
+            $budgetLines = $this->budgetLinesOf($this->fProject);
+
+            return view('livewire.requests', ['mode' => 'form', 'projects' => $this->projectChoices(), 'budgetLines' => $budgetLines]
+                + ['categories' => RequestCategory::cases(), 'current' => null, 'remaining' => $workflow->remaining($budgetLines), 'lastRequest' => $this->lastRequest()]);
         }
 
         if ($this->requestId !== null) {

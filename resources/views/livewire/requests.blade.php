@@ -20,7 +20,13 @@
             <button type="button" wire:click="cancelForm" class="text-sm text-secondary-medium hover:underline dark:text-ink-muted">{{ __('requests.back') }}</button>
         </div>
 
-        <x-ui.page-header :title="$editingId ? __('requests.edit_title', ['number' => $editingId]) : __('requests.new_title')" :subtitle="__('requests.form_intro')" />
+        <x-ui.page-header :title="$editingId ? __('requests.edit_title', ['number' => $editingId]) : __('requests.new_title')" :subtitle="__('requests.form_intro')">
+            @if (! $editingId && $lastRequest !== null)
+                <x-slot:actions>
+                    <x-ui.button icon="document-duplicate" wire:click="copyLast" data-test="copy-last-request">{{ __('requests.copy_last', ['number' => $lastRequest->id]) }}</x-ui.button>
+                </x-slot:actions>
+            @endif
+        </x-ui.page-header>
 
         <x-ui.panel class="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-4" data-test="request-header">
             <x-ui.form-select wire:model.live="fProject" :label="__('requests.project')" required>
@@ -67,6 +73,12 @@
                                             <option value="{{ $budgetLine->key }}">{{ $budgetLine->name }} · {{ $budgetLine->account_code }}</option>
                                         @endforeach
                                     </x-ui.form-select>
+                                    @if (($left = $remaining[$line['budget_line'] ?? ''] ?? null) !== null)
+                                        @php($over = ($line['currency'] ?? '') === $left['currency'] && preg_match('/^\d+(\.\d+)?$/', (string) ($line['amount'] ?? '')) === 1 && bccomp((string) $line['amount'], $left['left'], 2) > 0)
+                                        <p @class(['mt-1 text-xs', 'text-status-critical' => $over || bccomp($left['left'], '0', 2) < 0, 'text-secondary-medium dark:text-ink-muted' => ! $over && bccomp($left['left'], '0', 2) >= 0]) data-test="left-{{ $i }}">
+                                            {{ __('requests.budget_left', ['left' => number_format((float) $left['left'], 2), 'budget' => number_format((float) $left['budget'], 2), 'currency' => $left['currency']]) }}
+                                        </p>
+                                    @endif
                                 </td>
                                 <td><input type="text" inputmode="decimal" dir="ltr" wire:model.live.debounce.300ms="fLines.{{ $i }}.amount" class="{{ $cell }}" aria-label="{{ __('requests.amount') }}"></td>
                                 <td>

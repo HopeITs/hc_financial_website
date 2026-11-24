@@ -2,6 +2,7 @@
 
 return [
     'print' => 'Print',
+    'copy' => 'Copy as a new voucher',
     'print_rejected' => 'This voucher was rejected.',
     'received_by' => 'Received by',
     'intro' => 'Every voucher with its status. Open one to see its lines, files and history, and to approve or reject it.',

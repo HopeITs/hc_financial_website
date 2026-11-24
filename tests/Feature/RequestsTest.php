@@ -542,3 +542,22 @@ it('shows no late warning for a request submitted in time or for an extra reques
 
     Carbon\Carbon::setTestNow();
 });
+
+it('copies the project\'s last request into a new one and shows what is left of each budget line', function () {
+    $manager = rqManager();
+    $last = rqDraft($manager);
+
+    expect(rqWorkflow()->remaining(GlBudgetLine::query()->whereKey('F2F|Maintenance')->get()))
+        ->toHaveKey('F2F|Maintenance');
+
+    Livewire::actingAs($manager)->test(Requests::class)
+        ->call('newRequest')
+        ->set('fProject', 'F2F')
+        ->assertSeeHtml('data-test="copy-last-request"')
+        ->call('copyLast')
+        ->assertSet('fDescription', 'November costs')
+        ->assertSet('fLines.0.budget_line', 'F2F|Maintenance')
+        ->assertSet('fLines.0.amount', '300.00')
+        ->assertSee(__('requests.copied', ['number' => $last->id]))
+        ->assertSeeHtml('data-test="left-0"');
+});
