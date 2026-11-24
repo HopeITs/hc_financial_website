@@ -100,15 +100,16 @@ return [
      * the payment and receipt vouchers, made by the operations and the manual entry; the vouchers waiting for approval,
      * a tab of the vouchers; the salary split, a tab of the payroll; and screens another one covers: the old staff list
      * and log (the payroll's staff, the audit log), the cash balances (the liquidity position), the open advances (the
-     * advances screen) and the old program's monthly approvals.
+     * advances screen) and the old program's monthly approvals. The open advances came back on 2026-11-26 (role review):
+     * the project manager follows their projects' advances there.
      */
-    'hidden' => ['single', 'receipt', 'approval', 'salaries', 'employees', 'log', 'rcash', 'advances', 'mapprovals'],
+    'hidden' => ['single', 'receipt', 'approval', 'salaries', 'employees', 'log', 'rcash', 'mapprovals'],
 
     /*
      * Hidden screens another one fully covers (2026-11-26): they leave the users' permission list, so nobody is given
      * them any more. The payment and receipt vouchers, the approval and the salary split stay there: they still decide
      * who pays, receives, approves and splits salaries.
      */
-    'retired' => ['employees', 'log', 'rcash', 'advances', 'mapprovals'],
+    'retired' => ['employees', 'log', 'rcash', 'mapprovals'],
 
 ];

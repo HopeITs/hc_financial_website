@@ -50,7 +50,7 @@ return [
         RoleId::HeadOffice->value => $screens(['home', 'requests', 'project-money', 'multiatt', 'bonds', ...$everyScreen], $all),
 
         RoleId::FinancialManager->value => array_merge(
-            $screens(['home', 'chart', 'project-money', ...$treasury, ...$reports, 'salaries', 'users', 'auditlog', 'single', 'receipt', 'advance', 'multi', 'payments', 'recurring', 'revenues', $operations, $inbox, ...$microHome], $view),
+            $screens(['home', 'chart', 'project-money', ...$treasury, ...$reports, 'salaries', 'users', 'auditlog', 'opening', 'single', 'receipt', 'advance', 'multi', 'payments', 'recurring', 'revenues', $operations, $inbox, ...$microHome], $view),
             $screens(['vouchers', 'approval', 'requests'], ['view', 'approve']),
             // The Financial Manager approves the daily rates, and a rate they type themselves is approved at once.
             $screens(['alloc'], ['view', 'create', 'approve']),
@@ -74,6 +74,10 @@ return [
             $screens(['home', 'project-money', ...$reports, 'currency', 'donors', 'requests', $operations, ...$microHome], $view),
             // `tills` is the daily cash count, `treasury` the liquidity position with the month's revaluation.
             $screens(['chart', ...$entries, 'alloc', 'transfers', 'tills', 'treasury', 'salaries', 'payroll', 'contracts'], $prepare),
+            // Role review of 2026-11-26: the accountant prepares the opening balances and counts the month's end; the
+            // Financial Manager approves the opening voucher and closes the month (one prepares, another approves).
+            $screens(['opening'], ['view', 'create']),
+            $screens($monthEnd, ['view', 'edit']),
         ),
 
         RoleId::ProjectManager->value => array_merge(
@@ -84,7 +88,8 @@ return [
 
         RoleId::Cashier->value => array_merge(
             $screens(['home', 'treasury', 'rcash', 'purchases', 'recurring', $operations], $view),
-            $screens(['single', 'receipt', 'advance', 'tills', 'revenues'], ['view', 'create']),
+            // The cashier also receives the beneficiaries' instalments in cash (role review of 2026-11-26).
+            $screens(['single', 'receipt', 'advance', 'tills', 'revenues', 'payments'], ['view', 'create']),
         ),
 
         RoleId::Employee->value => $screens(['home'], $view),

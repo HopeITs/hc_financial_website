@@ -347,3 +347,20 @@ it('shows a project manager only the files of their own projects', function () {
 
     expect(MicroLoan::query()->visibleTo($pm)->pluck('id')->all())->toBe([$file->id]);
 });
+
+it('leaves paying from a file to the accountants, not the project manager who prepares it', function () {
+    $ready = mfApproved($this->accountant, $this->program, $this->manager);
+    $pm = mfUser(RoleId::ProjectManager, 'Pam');
+    $this->mock(ProjectAccess::class, fn ($mock) => $mock->shouldReceive('limitedTo')->andReturn(null));
+
+    Livewire::actingAs($pm)->test(MicroProjectFiles::class)
+        ->call('select', $ready->id)
+        ->assertDontSeeHtml('data-test="invoice-form"')
+        ->assertDontSeeHtml('data-test="close-form"')
+        ->call('payInvoice')
+        ->assertForbidden();
+
+    Livewire::actingAs($this->accountant)->test(MicroProjectFiles::class)
+        ->call('select', $ready->id)
+        ->assertSeeHtml('data-test="invoice-form"');
+});
