@@ -20,7 +20,7 @@ class ReportsHome extends Component
     /** The parts and their reports (screen slug => icon), in the order they show. */
     public const SECTIONS = [
         'financial' => ['tb' => 'scale', 'statements' => 'document-chart-bar', 'statement' => 'queue-list'],
-        'projects' => ['rexp' => 'arrow-up-circle', 'rrev' => 'arrows-up-down', 'rfixed' => 'cube', 'rattach' => 'paper-clip', 'rdonor' => 'building-library'],
+        'projects' => ['rexp' => 'arrow-up-circle', 'rrev' => 'arrows-up-down', 'rfixed' => 'cube', 'rattach' => 'paper-clip', 'rdonor' => 'building-library', 'rdonorfin' => 'document-currency-dollar'],
         'followup' => ['recon' => 'arrows-right-left', 'uncomp' => 'exclamation-triangle', 'xreserve' => 'chart-bar', 'advances' => 'hand-raised', 'loans' => 'banknotes'],
     ];
 

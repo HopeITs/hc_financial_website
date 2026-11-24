@@ -33,7 +33,8 @@ return [
         // receipt vouchers are made by the operations and stay out of the menu (see `hidden`).
         'entries' => ['vouchers', 'journal', 'multi', 'approval', 'single', 'receipt'],
         // The reports' own page, in three parts (ReportsHome), then each report.
-        'reports' => ['reports', 'tb', 'statements', 'statement', 'rexp', 'rrev', 'rfixed', 'rattach', 'recon', 'uncomp', 'xreserve', 'rcash', 'advances', 'mapprovals'],
+        // The donor's financial reports by period (finance request of 2026-11-26) come after the expenses report.
+        'reports' => ['reports', 'tb', 'statements', 'statement', 'rexp', 'rdonorfin','rrev', 'rfixed', 'rattach', 'recon', 'uncomp', 'xreserve', 'rcash', 'advances', 'mapprovals'],
         'chart' => ['chart'],
         'settings' => ['users', 'currency', 'opening', 'auditlog', 'employees', 'log'],
     ],
@@ -75,6 +76,7 @@ return [
         'currency' => 'treasury/currencies',
 
         'rexp' => 'reports/expenses',
+        'rdonorfin' => 'reports/donor-financial',
         'rcash' => 'reports/cash-balances',
         'rrev' => 'reports/revenue',
         'rfixed' => 'reports/fixed-assets',
