@@ -30,7 +30,7 @@ $treasury = ['tills', 'treasury', 'alloc', 'transfers', 'cities', 'currency', 'd
 $monthEnd = ['monthend'];
 // `single` is the payment voucher and `receipt` the receipt voucher. `multiatt` and `bonds` are old screens that left
 // the menu; their keys stay until their code is removed.
-$entries = ['single', 'receipt', 'journal', 'advance', 'multi', 'multiatt', 'microfiles', 'payments', 'loanfunds', 'vouchers', 'bonds'];
+$entries = ['single', 'receipt', 'journal', 'advance', 'multi', 'multiatt', 'microfiles', 'payments', 'loanfunds', 'vouchers', 'bonds', 'purchases'];
 // The micro-projects section's own page, for everyone who works on micro projects (2026-11-23).
 $microHome = ['microhome'];
 
@@ -56,6 +56,8 @@ return [
             // Micro-project files: the payment order is approved by the Program Manager, the Financial Manager and,
             // above the threshold, the General Manager (2026-11-23).
             $screens(['microfiles'], ['view', 'approve']),
+            // Purchase files: the Financial Manager approves the purchase order, the General Manager after above the threshold (2026-11-24).
+            $screens(['purchases'], ['view', 'approve']),
             $screens(['currency'], $prepare),
             $screens($monthEnd, ['view', 'edit', 'approve']),
         ),
@@ -69,11 +71,11 @@ return [
         RoleId::ProjectManager->value => array_merge(
             $screens(['home', 'rexp', 'advances', 'loans', 'donors', 'contracts', ...$microHome], $view),
             // The project manager prepares the micro-project files and their payment orders.
-            $screens(['requests', 'microfiles'], $prepare),
+            $screens(['requests', 'microfiles', 'purchases'], $prepare),
         ),
 
         RoleId::Cashier->value => array_merge(
-            $screens(['home', 'treasury', 'rcash'], $view),
+            $screens(['home', 'treasury', 'rcash', 'purchases'], $view),
             $screens(['single', 'receipt', 'advance', 'tills'], ['view', 'create']),
         ),
 
@@ -83,11 +85,11 @@ return [
 
         RoleId::GeneralManager->value => array_merge(
             $screens(['home', 'chart', 'project-money', ...$treasury, ...$reports, 'donors', ...$microHome], $view),
-            $screens(['requests', 'vouchers', 'approval', 'contracts', 'microfiles'], ['view', 'approve']),
+            $screens(['requests', 'vouchers', 'approval', 'contracts', 'microfiles', 'purchases'], ['view', 'approve']),
         ),
 
         RoleId::ProgramManager->value => array_merge(
-            $screens(['home', 'project-money', 'donors', 'contracts', ...$microHome], $view),
+            $screens(['home', 'project-money', 'donors', 'contracts', 'purchases', ...$microHome], $view),
             $screens(['requests', 'microfiles'], ['view', 'approve']),
         ),
 

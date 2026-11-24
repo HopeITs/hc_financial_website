@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\MicroFileDocumentController;
 use App\Http\Controllers\MicroFilePrintController;
+use App\Http\Controllers\PurchasePrintController;
+use App\Http\Controllers\PurchaseQuoteController;
 use App\Http\Controllers\RequestQuoteController;
 use App\Http\Controllers\SwitchLocaleController;
 use App\Http\Controllers\VoucherPrintController;
@@ -27,6 +29,7 @@ use App\Livewire\OperationalReport;
 use App\Livewire\PaymentVoucher;
 use App\Livewire\ReceiptVoucher;
 use App\Livewire\ReferenceList;
+use App\Livewire\Purchases;
 use App\Livewire\Requests;
 use App\Livewire\Salaries;
 use App\Livewire\StaffAdvances;
@@ -99,6 +102,10 @@ Route::middleware('auth')->group(function () {
     $screen('approval', Approval::class);
 
     $screen('requests', Requests::class);
+    // Purchase files (finance request of 2026-11-24): the procurement cycle of an approved request, and its forms.
+    $screen('purchases', Purchases::class);
+    Route::get('entries/purchases/{purchase}/print/{form}', PurchasePrintController::class)->whereNumber('purchase')->defaults('screen', 'purchases')->middleware('screen')->name('entries.purchases.print');
+    Route::get('entries/purchases/quotes/{quote}', PurchaseQuoteController::class)->whereNumber('quote')->defaults('screen', 'purchases')->middleware('screen')->name('entries.purchases.quote');
     Route::get('entries/requests/quotes/{quote}', RequestQuoteController::class)->whereNumber('quote')->defaults('screen', 'requests')->middleware('screen')->name('entries.requests.quote');
 
     // One treasury (finance decision of 2026-11-20): the liquidity position and the daily cash count take the place of

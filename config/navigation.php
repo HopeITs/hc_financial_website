@@ -21,7 +21,7 @@ return [
 
     'groups' => [
         'funding' => ['donors', 'contracts', 'rdonor'],
-        'entries' => ['single', 'receipt', 'journal', 'advance', 'vouchers', 'approval', 'requests', 'salaries', 'multi'],
+        'entries' => ['single', 'receipt', 'journal', 'advance', 'vouchers', 'approval', 'requests', 'purchases', 'salaries', 'multi'],
         // Micro projects in one place (finance request of 2026-11-23).
         'micro' => ['microhome', 'microfiles', 'payments', 'loanfunds', 'loans'],
         'treasury' => ['treasury', 'tills', 'transfers', 'alloc', 'monthend', 'opening', 'currency', 'denoms'],
@@ -47,6 +47,7 @@ return [
         'vouchers' => 'entries/vouchers',
         'approval' => 'entries/approval',
         'requests' => 'entries/requests',
+        'purchases' => 'entries/purchases',
         'salaries' => 'entries/salaries',
 
         'tills' => 'treasury/daily-count',

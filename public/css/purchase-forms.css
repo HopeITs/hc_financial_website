@@ -1,0 +1,175 @@
+/*
+ * The procurement forms of a purchase file (finance request of 2026-11-24), on the organisation's letterhead
+ * (public/images/micro-forms/letterhead.jpg): the same titles, tables, red heading cells and signature blocks as the
+ * Word templates of the procurement process.
+ *
+ * A plain stylesheet served as it is (resources/views/purchases/print.blade.php links it), so the forms print right
+ * without a new build of the site's styles.
+ */
+
+:root {
+    --pf-ink: #1f2937;
+    --pf-line: #6b7280;
+    --pf-red: #c00000;
+}
+
+@page {
+    size: A4;
+    margin: 0;
+}
+
+html,
+body.pf-sheet {
+    margin: 0;
+    padding: 6mm 0;
+    background: #e5e7eb;
+    font-family: Tahoma, Arial, sans-serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+@media print {
+    html,
+    body.pf-sheet {
+        padding: 0;
+        background: white;
+    }
+
+    .pf-bar {
+        display: none !important;
+    }
+}
+
+.pf-bar {
+    width: 210mm;
+    margin: 0 auto 4mm;
+}
+
+.pf-page {
+    position: relative;
+    width: 210mm;
+    height: 297mm;
+    margin: 0 auto 8mm;
+    overflow: hidden;
+    background: white;
+    color: var(--pf-ink);
+    font-size: 8.5pt;
+    line-height: 1.25;
+    box-shadow: 0 2px 12px rgb(0 0 0 / 0.15);
+    break-after: page;
+}
+
+.pf-page:last-of-type {
+    break-after: auto;
+}
+
+@media print {
+    .pf-page {
+        margin: 0;
+        box-shadow: none;
+    }
+}
+
+.pf-bg {
+    position: absolute;
+    inset: 0;
+    width: 210mm;
+    height: 297mm;
+}
+
+.pf-body {
+    position: absolute;
+    top: 30mm;
+    left: 11mm;
+    right: 11mm;
+    bottom: 22mm;
+    display: flex;
+    flex-direction: column;
+    gap: 4mm;
+}
+
+.pf-title {
+    margin: 0 0 1mm;
+    text-align: center;
+    color: var(--pf-red);
+    font-size: 14pt;
+    font-weight: 400;
+}
+
+.pf-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.pf-table th,
+.pf-table td {
+    border: 0.25mm solid var(--pf-line);
+    padding: 0.6mm 1.2mm;
+    vertical-align: middle;
+    overflow: hidden;
+    word-wrap: break-word;
+}
+
+.pf-table td {
+    height: 4.2mm;
+}
+
+.pf-table th,
+.pf-head {
+    background: var(--pf-red);
+    color: white;
+    font-weight: 400;
+    text-align: center;
+}
+
+.pf-label {
+    background: var(--pf-red);
+    color: white;
+    width: 27mm;
+}
+
+.pf-num {
+    text-align: right;
+    direction: ltr;
+    white-space: nowrap;
+}
+
+.pf-center {
+    text-align: center;
+}
+
+.pf-strong {
+    font-weight: 700;
+}
+
+.pf-ar {
+    display: block;
+    direction: rtl;
+}
+
+.pf-text {
+    margin: 0;
+}
+
+.pf-signs td {
+    height: 18mm;
+    vertical-align: top;
+    white-space: pre-line;
+}
+
+.pf-small {
+    width: 9mm;
+}
+
+.pf-mid {
+    width: 16mm;
+}
+
+.pf-wide {
+    width: 40mm;
+}
+
+.pf-gap {
+    margin-top: 2mm;
+}
