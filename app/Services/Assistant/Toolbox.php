@@ -5,13 +5,19 @@ namespace App\Services\Assistant;
 use App\Models\User;
 use App\Services\Assistant\Tools\AccountBalancesTool;
 use App\Services\Assistant\Tools\AccountStatementTool;
+use App\Services\Assistant\Tools\ExchangeRatesTool;
 use App\Services\Assistant\Tools\FindAccounts;
+use App\Services\Assistant\Tools\FindMicroFiles;
 use App\Services\Assistant\Tools\FindProjects;
+use App\Services\Assistant\Tools\FindPurchases;
+use App\Services\Assistant\Tools\FindRequests;
 use App\Services\Assistant\Tools\FindVouchers;
 use App\Services\Assistant\Tools\GetVoucher;
+use App\Services\Assistant\Tools\PayrollTool;
 use App\Services\Assistant\Tools\ProjectBudgetTool;
 use App\Services\Assistant\Tools\ProposeEntry;
 use App\Services\Assistant\Tools\TreasuryTool;
+use App\Services\Assistant\Tools\WaitingApprovals;
 use Throwable;
 
 /**
@@ -24,13 +30,19 @@ class Toolbox
     public const TOOLS = [
         AccountBalancesTool::class,
         AccountStatementTool::class,
+        ExchangeRatesTool::class,
         FindAccounts::class,
+        FindMicroFiles::class,
         FindProjects::class,
+        FindPurchases::class,
+        FindRequests::class,
         FindVouchers::class,
         GetVoucher::class,
+        PayrollTool::class,
         ProjectBudgetTool::class,
         ProposeEntry::class,
         TreasuryTool::class,
+        WaitingApprovals::class,
     ];
 
     /** @return list<AssistantTool> */

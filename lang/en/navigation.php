@@ -1,7 +1,6 @@
 <?php
 
 return [
-    'new' => 'New',
 
     'groups' => [
         'operations' => 'Operations',

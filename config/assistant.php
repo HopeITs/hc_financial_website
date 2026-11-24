@@ -27,17 +27,17 @@ return [
         'model' => env('GEMINI_MODEL', 'gemini-3.5-flash'),
     ],
 
-    // Haiku is the cheapest Claude model. Set ASSISTANT_MODEL=claude-opus-5-5 for the most accurate answers (about 40x the price).
-    // Haiku has no server-side refusal fallback: a declined request stays declined and the panel says so.
-    'model' => env('ASSISTANT_MODEL', 'claude-haiku-5-5'),
+    // Sonnet answers the finance team's questions well at a moderate price (finance request of 2026-11-26: a smart
+    // assistant). Set ASSISTANT_MODEL=claude-opus-5-5 for the most accurate answers, or claude-haiku-5-5 for the cheapest.
+    'model' => env('ASSISTANT_MODEL', 'claude-sonnet-5-5'),
 
     // low | medium | high | xhigh | max: how much the model thinks before it answers.
-    'effort' => env('ASSISTANT_EFFORT', 'low'),
+    'effort' => env('ASSISTANT_EFFORT', 'medium'),
 
     'max_tokens' => 16000,
 
     // Model calls in one answer (each tool round is one call); the answer stops with a notice past this.
-    'max_rounds' => 8,
+    'max_rounds' => 12,
 
     // Messages a person may send per minute.
     'per_minute' => 10,

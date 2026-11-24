@@ -98,18 +98,8 @@ it('gives each role the quick actions it may do, and none to a role that enters 
         ->assertDontSeeHtml('data-test="home-quick"');
 });
 
-it('offers a New menu in the top bar with only the entries the role may create', function () {
-    $html = $this->actingAs(hdUser(RoleId::Accountant, 'Ann'))->get(route('home'))->assertOk()->getContent();
-
-    expect($html)->toContain('data-test="new-menu-button"')
-        ->and($html)->toContain('data-test="new-purchases"')
-        ->and($html)->toContain('data-test="new-journal"');
-
-    $cashier = $this->actingAs(hdUser(RoleId::Cashier, 'Carl'))->get(route('home'))->getContent();
-    expect($cashier)->toContain('data-test="new-advance"')
-        ->and($cashier)->not->toContain('data-test="new-journal"');
-
-    expect($this->actingAs(hdUser(RoleId::Employee, 'Emp'))->get(route('home'))->getContent())
+it('has no New menu in the top bar (finance decision of 2026-11-26: the home page\'s quick actions and the operations page cover it)', function () {
+    expect($this->actingAs(hdUser(RoleId::Accountant, 'Ann'))->get(route('home'))->assertOk()->getContent())
         ->not->toContain('data-test="new-menu-button"');
 });
 

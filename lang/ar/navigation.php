@@ -1,7 +1,6 @@
 <?php
 
 return [
-    'new' => 'جديد',
 
     'groups' => [
         'operations' => 'العمليات المالية',

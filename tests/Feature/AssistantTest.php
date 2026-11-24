@@ -88,6 +88,14 @@ function lastToolResult(ScriptedGateway $gateway): array
 
 const INCOME = ['kind' => 'income', 'date' => '2026-03-10', 'project' => 'F2F', 'cash' => '1111', 'account' => '4001', 'amount' => '250', 'description' => 'Grant'];
 
+it('offers the tools of the operations to the roles that work on them', function () {
+    $names = fn (RoleId $role, string $who) => array_map(fn ($tool) => $tool->name(), app(Toolbox::class)->for(assistantUser($role, $who)));
+
+    expect($names(RoleId::FinancialManager, 'Fay'))->toContain('waiting_for_my_approval', 'find_purchases', 'find_requests', 'payrolls', 'find_micro_files', 'exchange_rates')
+        ->and($names(RoleId::Accountant, 'Ann'))->toContain('payrolls', 'find_requests', 'exchange_rates')->not->toContain('waiting_for_my_approval')
+        ->and($names(RoleId::ProjectManager, 'Pam'))->toContain('find_purchases', 'find_requests', 'find_micro_files')->not->toContain('payrolls', 'exchange_rates');
+});
+
 it('offers each role only the tools its screens allow', function () {
     $names = fn (RoleId $role, string $who) => array_map(fn ($tool) => $tool->name(), app(Toolbox::class)->for(assistantUser($role, $who)));
 
