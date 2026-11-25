@@ -59,6 +59,9 @@ class MicroPurchases
     /** The purchasing officer's advances (operational advances). */
     public const ADVANCES_ACCOUNT = '1201';
 
+    /** The cash a file's purchases are paid from, whatever the loan's currency (finance decision of 2026-11-28). */
+    public const PAY_CURRENCIES = ['USD', 'SYP'];
+
     public function __construct(
         private readonly PostVoucher $posting,
         private readonly MonthlyRates $monthlyRates,
@@ -75,7 +78,7 @@ class MicroPurchases
     public function payInvoice(User $by, MicroLoan $file, array $form, ?UploadedFile $scan = null): MicroPurchase
     {
         $this->assertApproved($file);
-        [$date, $cash, $amount, $rate, $problems] = $this->cashMovement($file, $form, $file->currency === 'USD' ? ['USD', 'SYP'] : ['SYP']);
+        [$date, $cash, $amount, $rate, $problems] = $this->cashMovement($file, $form, self::PAY_CURRENCIES);
         $problems = [...$problems, ...$this->invoiceProblems($form), ...$this->grantLineProblems($file)];
 
         if ($problems !== []) {
@@ -87,7 +90,7 @@ class MicroPurchases
         /** @var numeric-string $amount */
         /** @var numeric-string $rate */
         $usd = $this->toUsd($amount, (string) $cash->currency, $rate);
-        $loanAmount = $this->inLoanCurrency($file, $amount, (string) $cash->currency, $usd);
+        $loanAmount = $this->inLoanCurrency($file, $amount, (string) $cash->currency, $usd, $rate);
         $tags = $this->tags($file);
         $project = $this->project($file);
 
@@ -120,7 +123,7 @@ class MicroPurchases
     public function giveAdvance(User $by, MicroLoan $file, array $form): MicroPurchase
     {
         $this->assertApproved($file);
-        [$date, $cash, $amount, $rate, $problems] = $this->cashMovement($file, $form, $file->currency === 'USD' ? ['USD', 'SYP'] : ['SYP']);
+        [$date, $cash, $amount, $rate, $problems] = $this->cashMovement($file, $form, self::PAY_CURRENCIES);
         $person = trim((string) ($form['person'] ?? ''));
 
         if ($person === '') {
@@ -185,7 +188,7 @@ class MicroPurchases
         /** @var numeric-string $amount */
         $rate = Money::normalize($advance->rate, 6);
         $usd = $this->toUsd($amount, $advance->currency, $rate);
-        $loanAmount = $this->inLoanCurrency($file, $amount, $advance->currency, $usd);
+        $loanAmount = $this->inLoanCurrency($file, $amount, $advance->currency, $usd, $rate);
         $tags = $this->tags($file);
         $project = $this->project($file);
 
@@ -567,11 +570,14 @@ class MicroPurchases
             $problems[] = __('micro.problem.amount');
         }
 
-        if ($cash !== null && $cash->currency === 'USD') {
+        // Dollars for a dollar loan need no rate. Whenever pounds come in, paid or lent, the pounds' rate is the one
+        // typed or the month's: a pound loan paid in dollars takes it to count the invoice in the loan's pounds.
+        if ($cash !== null && $cash->currency === 'USD' && $file->currency === 'USD') {
             $rate = '1.000000';
         } elseif ($cash !== null && $date !== null) {
+            $pounds = $cash->currency === 'USD' ? $file->currency : (string) $cash->currency;
             $typed = str_replace([',', ' '], '', trim((string) ($form['rate'] ?? '')));
-            $rate = $typed !== '' ? (preg_match('/^\d+(\.\d+)?$/', $typed) === 1 && bccomp($typed, '0', 6) > 0 ? Money::normalize($typed, 6) : null) : ($this->monthlyRates->forDay((string) $cash->currency, $date)['rate'] ?? null);
+            $rate = $typed !== '' ? (preg_match('/^\d+(\.\d+)?$/', $typed) === 1 && bccomp($typed, '0', 6) > 0 ? Money::normalize($typed, 6) : null) : ($this->monthlyRates->forDay($pounds, $date)['rate'] ?? null);
             if ($rate === null) {
                 $problems[] = __('loans.problem.rate');
             }
@@ -651,15 +657,22 @@ class MicroPurchases
     }
 
     /**
-     * What an amount paid in a currency adds to the loan, in the loan's currency.
+     * What an amount paid in a currency adds to the loan, in the loan's currency (finance decision of 2026-11-28: the
+     * loan is fixed in its agreed currency, and paid in either): as paid in the same currency; a dollar loan paid in
+     * pounds at their dollars; a pound loan paid in dollars at the pounds' rate, the month's or the one typed.
      *
      * @param  numeric-string  $amount
      * @param  numeric-string  $usd
+     * @param  numeric-string  $rate  the pounds' rate
      * @return numeric-string
      */
-    private function inLoanCurrency(MicroLoan $file, string $amount, string $currency, string $usd): string
+    private function inLoanCurrency(MicroLoan $file, string $amount, string $currency, string $usd, string $rate): string
     {
-        return $file->currency === $currency ? Money::normalize($amount) : $usd;
+        if ($file->currency === $currency) {
+            return Money::normalize($amount);
+        }
+
+        return $file->currency === 'USD' ? $usd : Money::normalize(bcmul($usd, $rate, 6));
     }
 
     /**

@@ -138,7 +138,7 @@ return [
     'paid_from_advance' => 'From :person\'s advance (:open :currency open)',
     'invoice_date' => 'Invoice date',
     'invoice_rate' => 'Rate',
-    'invoice_rate_help' => 'For pounds: the month\'s rate by default, like every invoice.',
+    'invoice_rate_help' => 'The pound\'s rate: the month\'s by default, or type it. Used when paying in pounds, or when a pound loan is paid from a dollar cash, to count the amount in the loan\'s pounds.',
     'invoice_kind' => 'Invoice for',
     'description_ar' => 'Description (Arabic)',
     'description_en' => 'Description (English)',
