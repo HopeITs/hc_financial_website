@@ -106,7 +106,8 @@ it('pays the purchases of an approved file only, the file standing for the reque
 
     $file = mfApproved($this->accountant, $this->program, $this->manager);
 
-    // 9,000,000 SYP at the month's 15,000 adds 600 USD to the loan, above the 500 USD limit, with no request.
+    // 9,000,000 SYP at the month's 15,000 is a 600 USD invoice, above the 500 USD limit, with no request. A project's
+    // invoice is spent in full on the grants, on the project's budget line (finance decision of 2026-11-25).
     $invoice = $purchases->payInvoice($this->accountant, $file, [
         'date' => '2026-05-10', 'cash_account' => '1112', 'amount' => '9,000,000', 'merchant' => 'Abu Sami', 'number' => 'F-1', 'description_ar' => 'ماكينة خياطة',
     ]);
@@ -115,9 +116,9 @@ it('pays the purchases of an approved file only, the file standing for the reque
     expect($voucher->type)->toBe(VoucherType::Payment)
         ->and($voucher->micro_loan_id)->toBe($file->id)
         ->and($voucher->request_id)->toBeNull()
-        ->and($voucher->lines->map(fn ($line): array => [$line->account_code, $line->currency, (string) $line->debit_orig, (string) $line->credit_orig, (string) $line->debit_usd, (string) $line->credit_usd])->all())->toBe([
-            ['1204', 'USD', '600.00', '0.00', '600.00', '0.00'],
-            ['1112', 'SYP', '0.00', '9000000.00', '0.00', '600.00'],
+        ->and($voucher->lines->map(fn ($line): array => [$line->account_code, $line->budget_line_key, $line->currency, (string) $line->debit_orig, (string) $line->credit_orig, (string) $line->debit_usd, (string) $line->credit_usd])->all())->toBe([
+            ['5413', 'F2F|Micro grants', 'USD', '600.00', '0.00', '600.00', '0.00'],
+            ['1112', null, 'SYP', '0.00', '9000000.00', '0.00', '600.00'],
         ])
         ->and((string) $invoice->loan_amount)->toBe('600.00');
 });
@@ -144,10 +145,13 @@ it('buys through an advance, takes back what is left, and opens the loan when th
     expect($file->stage)->toBe(MicroLoan::ACTIVE)
         ->and([(string) $file->loan_amount, (string) $file->grant_amount, (string) $file->book_usd])->toBe(['500.00', '500.00', '500.00'])
         ->and($file->loan_date->toDateString())->toBe('2026-05-12')
+        // The 50 % to repay moves from the grants to the loan; the grants' credit has no budget line, so the donor's
+        // report keeps the 1,000 USD of invoices in full.
         ->and($grant->lines->map(fn ($line): array => [$line->account_code, $line->budget_line_key, (string) $line->debit_usd, (string) $line->credit_usd])->all())->toBe([
-            ['5413', 'F2F|Micro grants', '500.00', '0.00'],
-            ['1204', null, '0.00', '500.00'],
+            ['1204', null, '500.00', '0.00'],
+            ['5413', null, '0.00', '500.00'],
         ])
+        ->and(DB::table('gl_voucher_lines')->where('budget_line_key', 'F2F|Micro grants')->sum('debit_usd'))->toEqual(1000)
         ->and($file->instalments()->count())->toBe(10)
         ->and($file->instalments()->first()->due_date->toDateString())->toBe('2026-08-01');
 
@@ -363,4 +367,29 @@ it('leaves paying from a file to the accountants, not the project manager who pr
     Livewire::actingAs($this->accountant)->test(MicroProjectFiles::class)
         ->call('select', $ready->id)
         ->assertSeeHtml('data-test="invoice-form"');
+});
+
+it('closes a file whose invoices were booked on the loan before 2026-11-25 by moving the grant share to the grants', function () {
+    $purchases = app(MicroPurchases::class);
+    $file = mfApproved($this->accountant, $this->program, $this->manager);
+    $invoice = $purchases->payInvoice($this->accountant, $file, ['date' => '2026-05-10', 'cash_account' => '1111', 'amount' => '400', 'merchant' => 'Abu Sami', 'number' => 'F-1', 'description_ar' => 'ماكينة']);
+
+    // As the earlier rule booked it: the whole invoice on the loan, with no budget line.
+    DB::table('gl_voucher_lines')->where('voucher_id', $invoice->voucher_id)->where('account_code', '5413')->update(['account_code' => '1204', 'budget_line_key' => null, 'fund_source' => 'donor_grant']);
+
+    $file = $purchases->close($this->accountant, $file, ['signed_on' => '2026-06-01']);
+    $closing = Voucher::query()->with('lines')->findOrFail($file->closing_voucher_id);
+
+    expect($closing->lines->map(fn ($line): array => [$line->account_code, $line->budget_line_key, (string) $line->debit_usd, (string) $line->credit_usd])->all())->toBe([
+        ['5413', 'F2F|Micro grants', '200.00', '0.00'],
+        ['1204', null, '0.00', '200.00'],
+    ])->and((string) $file->loan_amount)->toBe('200.00');
+});
+
+it('refuses a project\'s invoice when the project has no grants budget line', function () {
+    $file = mfApproved($this->accountant, $this->program, $this->manager);
+    GlBudgetLine::query()->whereKey('F2F|Micro grants')->delete();
+
+    expect(fn () => app(MicroPurchases::class)->payInvoice($this->accountant, $file, ['date' => '2026-05-10', 'cash_account' => '1111', 'amount' => '400', 'merchant' => 'Abu Sami', 'number' => 'F-1', 'description_ar' => 'ماكينة']))
+        ->toThrow(LoanException::class);
 });

@@ -176,6 +176,7 @@ return [
         'advance' => 'Micro project of :beneficiary: advance to :person for the purchases',
         'return' => 'Micro project of :beneficiary: what was left of :person\'s advance',
         'grant' => 'Micro project of :beneficiary: the grant part, beyond the :percent % to repay',
+        'loan' => 'Micro project of :beneficiary: the :percent % to repay moved from the grants to the loan',
     ],
     'problem' => [
         'not_editable' => 'The file can no longer be changed.',
