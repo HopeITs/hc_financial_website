@@ -8,6 +8,7 @@ use App\Models\GlBudgetLine;
 use App\Models\GlProject;
 use App\Models\User;
 use App\Services\Ledger\DonorFinancialReports;
+use App\Services\Ledger\MonthlyProjectReport;
 use App\Services\Ledger\TableExport;
 use App\Services\Projects\ProjectAccess;
 use Carbon\CarbonImmutable;
@@ -29,7 +30,11 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 #[Layout('components.layouts.app')]
 class DonorFinancialReport extends Component
 {
-    public const TABS = ['info', 'summary', 'expenses', 'bva', 'funds'];
+    public const TABS = ['info', 'summary', 'expenses', 'bva', 'funds', 'monthly'];
+
+    /** The monthly report's month (finance form of 2026-11-28), `Y-m`; the month the period ends in when empty. */
+    #[Url(except: '')]
+    public string $month = '';
 
     public const PRESETS = ['this_month', 'last_month', 'this_quarter', 'last_quarter', 'this_year', 'project'];
 
@@ -61,6 +66,11 @@ class DonorFinancialReport extends Component
 
         if ($this->day($this->from) === null || $this->day($this->to) === null) {
             $this->preset('project');
+        }
+
+        // The monthly report opens on the month the period ends in.
+        if (preg_match('/^\d{4}-\d{2}$/', $this->month) !== 1) {
+            $this->month = (string) $this->day($this->to)?->format('Y-m');
         }
     }
 
@@ -105,6 +115,50 @@ class DonorFinancialReport extends Component
         $this->notice = __('donor_financial.note_saved', ['line' => $line->name]);
     }
 
+    /** Writes why a line is over, near its limit or spent with no budget, for the monthly report's month. */
+    public function saveMonthlyNote(string $key, string $note, DonorFinancialReports $reports): void
+    {
+        abort_unless($this->user()->canOnScreen('rdonorfin', ScreenAction::Edit) && $reports->notesAvailable(), 403);
+        $project = $this->current();
+        $month = $this->reportMonth();
+        abort_if($project === null || $month === null, 404);
+        $line = GlBudgetLine::query()->whereKey($key)->where('project_code', $project->code)->firstOrFail();
+
+        $reports->saveNote($line, $month->startOfMonth(), $month->endOfMonth(), $note, (int) $this->user()->getAuthIdentifier());
+        $this->notice = __('donor_financial.note_saved', ['line' => $line->name]);
+    }
+
+    /**
+     * The monthly report as the finance form has it: one Excel workbook (report, monthly breakdown, beneficiaries) or
+     * one PDF on the letterhead with the donor's logo and the three signatures.
+     */
+    public function exportMonthly(string $format, MonthlyProjectReport $monthly, TableExport $export): StreamedResponse
+    {
+        abort_unless(in_array($format, ['xlsx', 'pdf'], true), 404);
+        $project = $this->current();
+        $month = $this->reportMonth();
+        abort_if($project === null || $month === null, 404);
+
+        $parts = $this->monthlyParts($project, $month, $monthly);
+        $rtl = app()->getLocale() === 'ar';
+        $name = 'HC_'.$project->code.'_FinReport_'.$month->format('Y-m');
+
+        if ($format === 'pdf') {
+            $content = $export->pdfBook($parts, $rtl, [__('donor_financial.monthly.prepared'), __('donor_financial.monthly.reviewed'), __('donor_financial.monthly.approved')], Donor::named($project->donor)?->logoFile());
+
+            return response()->streamDownload(function () use ($content) {
+                echo $content;
+            }, $name.'.pdf', ['Content-Type' => 'application/pdf']);
+        }
+
+        $path = $export->xlsxBook($parts, $rtl);
+
+        return response()->streamDownload(function () use ($path) {
+            readfile($path);
+            @unlink($path);
+        }, $name.'.xlsx', ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']);
+    }
+
     public function export(string $format, DonorFinancialReports $reports, TableExport $export): StreamedResponse
     {
         abort_unless(in_array($format, ['xlsx', 'pdf'], true), 404);
@@ -132,13 +186,15 @@ class DonorFinancialReport extends Component
         }, $name.'.xlsx', ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']);
     }
 
-    public function render(DonorFinancialReports $reports): View
+    public function render(DonorFinancialReports $reports, MonthlyProjectReport $monthly): View
     {
         abort_unless($this->user()->canOnScreen('rdonorfin', ScreenAction::View), 403);
         $project = $this->current();
         [$from, $to] = $this->period();
         $ready = $project !== null && $from !== null && $to !== null && $from->lte($to);
         $shows = fn (string $tab): bool => $ready && $this->tab === $tab;
+        $month = $this->reportMonth();
+        $showsMonthly = $project !== null && $month !== null && $this->tab === 'monthly';
 
         return view('livewire.donor-financial-report', [
             'projects' => $this->projects(),
@@ -149,6 +205,12 @@ class DonorFinancialReport extends Component
             'expenses' => $shows('expenses') ? $reports->expenses($project, $from, $to) : null,
             'bva' => $shows('bva') ? $reports->budgetVsActual($project, $from, $to) : null,
             'funds' => $shows('funds') ? $reports->funds($project, $from, $to) : null,
+            'monthly' => $showsMonthly ? [
+                'report' => $monthly->build($project, $month),
+                'breakdown' => $monthly->breakdown($project, $month),
+                'beneficiaries' => $monthly->beneficiaries($project, $month),
+            ] : null,
+            'reportMonth' => $month?->format('Y-m') ?? '',
             'heading' => $ready ? $this->heading($project, $from, $to) : [],
             'canNote' => $this->user()->canOnScreen('rdonorfin', ScreenAction::Edit) && $reports->notesAvailable(),
         ]);
@@ -231,6 +293,72 @@ class DonorFinancialReport extends Component
                 [$t('funds.receipts'), [$t('col.date'), $t('col.voucher'), $t('col.description'), $currency, 'USD'], $receiptRows, false],
             ]],
         ];
+    }
+
+    /**
+     * The monthly report's pages for the exports: the report (key figures, A by category, B by line), the monthly
+     * breakdown and the micro-project beneficiaries.
+     *
+     * @return list<array{title: string, sheet: string, lines: list<string>, sections: list<array{0: string, 1: list<string>, 2: list<list<string|null>>, 3: bool}>}>
+     */
+    private function monthlyParts(GlProject $project, CarbonImmutable $month, MonthlyProjectReport $monthly): array
+    {
+        $t = fn (string $key, array $replace = []): string => (string) __('donor_financial.monthly.'.$key, $replace);
+        $report = $monthly->build($project, $month);
+        $breakdown = $monthly->breakdown($project, $month);
+        $beneficiaries = $monthly->beneficiaries($project, $month);
+        $pct = fn (?string $share): string => $share === null ? '' : bcmul($share, '100', 1).'%';
+        $status = fn (string $code): string => $t('status.'.$code);
+
+        $lines = [
+            $t('project').': '.$project->name.' ('.$project->code.')',
+            $t('donor').': '.($project->donor ?? '—'),
+            $t('governorate').': '.($project->city ?? '—'),
+            $t('reporting_month').': '.$month->format('m/Y').' · '.$t('period').': '.$report['from']->toDateString().' – '.$report['to']->toDateString(),
+            $t('elapsed').': '.($report['months_elapsed'] !== null ? $t('elapsed_of', ['done' => $report['months_elapsed'], 'total' => $report['months_total']]).' ('.$pct($report['time']).')' : '—'),
+        ];
+
+        $totals = $report['totals'];
+        $kpis = [[$totals['budget'], $totals['month'], $totals['to_date'], $totals['remaining'], $pct($totals['burn']), $pct($report['time'])]];
+        $columns = [$t('col.budget'), $t('col.previous'), $t('col.month'), $t('col.to_date'), $t('col.remaining'), $t('col.burn'), $t('col.status')];
+
+        $categoryRows = array_map(fn (array $row): array => [$row['category'], $row['budget'], $row['previous'], $row['month'], $row['to_date'], $row['remaining'], $pct($row['burn']), $status($row['status'])], $report['categories']);
+        $categoryRows[] = [$t('total_categories'), $totals['budget'], $totals['previous'], $totals['month'], $totals['to_date'], $totals['remaining'], $pct($totals['burn']), $status($totals['status'])];
+
+        $lineRows = array_map(fn (array $row): array => [$row['key'], $row['category'], $row['name'], $row['budget'], $row['previous'], $row['month'], $row['to_date'], $row['remaining'], $pct($row['burn']), $status($row['status']), $row['note']], $report['lines']);
+        $lineRows[] = [$t('total_lines'), '', '', $totals['budget'], $totals['previous'], $totals['month'], $totals['to_date'], $totals['remaining'], $pct($totals['burn']), '', ''];
+
+        $monthHeadings = array_map(fn (string $key): string => CarbonImmutable::parse($key.'-01')->format('m/Y'), $breakdown['months']);
+        $breakdownRows = array_map(fn (array $row): array => [$row['key'], $row['category'], $row['name'], $row['budget'], $row['spent'], $row['remaining'], $pct($row['burn']), ...array_values($row['by_month'])], $breakdown['rows']);
+        $breakdownRows[] = [$t('total_lines'), '', '', '', '', '', '', ...array_values($breakdown['totals'])];
+
+        $beneficiaryRows = array_map(fn (array $row, int $index): array => [(string) ($index + 1), $row['number'], $row['name'], $row['syp'], $row['usd']], $beneficiaries, array_keys($beneficiaries));
+
+        return [
+            ['title' => $t('title'), 'sheet' => $t('sheets.report'), 'lines' => $lines, 'sections' => [
+                [$t('key_figures'), [$t('col.budget'), $t('col.month'), $t('col.to_date'), $t('col.remaining'), $t('col.burn'), $t('col.time')], $kpis, false],
+                [$t('by_category'), [$t('col.category'), ...$columns], $categoryRows, true],
+                [$t('by_line'), [$t('col.code'), $t('col.category'), $t('col.line'), ...$columns, $t('col.explanation')], $lineRows, true],
+            ]],
+            ['title' => $t('breakdown'), 'sheet' => $t('sheets.breakdown'), 'lines' => $lines, 'sections' => [
+                [$t('breakdown'), [$t('col.code'), $t('col.category'), $t('col.line'), $t('col.budget'), $t('col.spent'), $t('col.remaining'), $t('col.burn'), ...$monthHeadings], $breakdownRows, true],
+            ]],
+            ['title' => $t('beneficiaries'), 'sheet' => $t('sheets.beneficiaries'), 'lines' => $lines, 'sections' => [
+                [$t('beneficiaries'), ['#', $t('col.beneficiary_no'), $t('col.beneficiary'), $t('col.syp'), $t('col.usd')], $beneficiaryRows, false],
+            ]],
+        ];
+    }
+
+    /** The monthly report's month: the one picked, or the month the period ends in. */
+    private function reportMonth(): ?CarbonImmutable
+    {
+        if (preg_match('/^\d{4}-\d{2}$/', $this->month) === 1) {
+            $month = CarbonImmutable::createFromFormat('!Y-m-d', $this->month.'-01');
+
+            return $month === false ? null : $month;
+        }
+
+        return $this->day($this->to)?->startOfMonth();
     }
 
     /** @return list<string> the project, its donor and agreement, its funding period and the report's period */
