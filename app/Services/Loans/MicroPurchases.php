@@ -33,9 +33,9 @@ use Illuminate\Support\Str;
  * The purchases of an approved micro-project file and its closing (finance decisions of 2026-11-23). The centre buys
  * the equipment itself; the beneficiary gets no cash.
  *
- * - An invoice paid directly to the merchant: a payment voucher crediting the cash. A project's file debits the whole
- *   invoice to the grants (5413) on the project's budget line, so the donor's report lists each invoice in full
- *   (finance decision of 2026-11-25); a file of an instalment fund debits the loan (1204).
+ * - An invoice paid directly to the merchant: a payment voucher crediting the cash and debiting the whole invoice to
+ *   the grants (5413) (finance decisions of 2026-11-25): on the project's budget line for a project's file, so the
+ *   donor's report lists each invoice in full; with the funder and city for a file of an instalment fund.
  * - An advance to the purchasing officer: a payment voucher on 1201 for the officer. Its invoices are journal vouchers
  *   from 1201 to the same debit, at the advance's rate; what is left goes back to the cash with a receipt voucher.
  * - Pounds take the invoice's rate, the month's by default. A loan in dollars bought in pounds takes the pounds' dollars;
@@ -43,8 +43,7 @@ use Illuminate\Support\Str;
  * - The file's approval stands for the request a payment above the limit needs (rule 14).
  * - Closing, when the beneficiary signs the receipt protocol: the loan is the recovery share of the invoices' total. A
  *   journal voucher moves it from the grants to 1204 (with no budget line, so the donor's report keeps the full
- *   spending); for invoices booked on 1204 (a fund's, or a project's before 2026-11-25) it moves the grant share to the
- *   grants instead. The instalments start two months after the signature by default.
+ *   spending); for invoices booked on 1204 before 2026-11-25 it moves the grant share to the grants instead. The instalments start two months after the signature by default.
  */
 class MicroPurchases
 {
@@ -418,9 +417,9 @@ class MicroPurchases
         $loanUsd = bccomp($total, '0', 2) > 0 ? Money::normalize(bcdiv(bcmul($totalUsd, $loan, 6), $total, 6)) : '0.00';
         $bookRate = $file->currency === 'USD' ? '1.000000' : Money::normalize(bcdiv($total, $totalUsd, 6), 6);
 
-        // What the invoices already put on the loans: all of it for a fund's file, and for a project's invoices booked
-        // before 2026-11-25; nothing for a project's invoices since, which went in full to the grants. The closing
-        // moves the difference so that the loans hold the repayable share and the grants the rest.
+        // What the invoices already put on the loans: all of it for invoices booked before 2026-11-25, nothing for those
+        // since, which went in full to the grants. The closing moves the difference so that the loans hold the
+        // repayable share and the grants the rest.
         $onLoans = $this->onLoans($invoices);
         $move = bcsub($loan, $onLoans['amount'], 2);
         $moveUsd = bcsub($loanUsd, $onLoans['usd'], 2);
@@ -633,10 +632,10 @@ class MicroPurchases
     }
 
     /**
-     * The debit of a purchase, in the loan's currency (finance decision of 2026-11-25). A project's file spends the
-     * whole invoice on the grants (5413), on the project's budget line, so the donor's report lists every invoice in
-     * full; the repayable share moves to the loans (1204) when the protocol is signed. A file of an instalment fund has
-     * no donor and no budget: its invoice stays on the loans as before.
+     * The debit of a purchase, in the loan's currency (finance decisions of 2026-11-25): every invoice is spent in full on
+     * the grants (5413), and the repayable share moves to the loans (1204) when the protocol is signed. A project's
+     * invoice carries the project's grants budget line, so the donor's report lists it in full; an instalment fund's
+     * file has no budget, so its invoice carries the fund's funder and city only.
      *
      * @param  array{projectCode: string|null, donor: string|null, restriction: string|null, donorCurrency: string|null, city: string|null}  $tags
      */
@@ -644,18 +643,10 @@ class MicroPurchases
     {
         $grantLine = $project !== null ? $this->grantLine($project) : null;
 
-        if ($grantLine !== null) {
-            return new LineDraft(
-                ...$tags,
-                accountCode: $grantLine->account_code, currency: $file->currency, debit: $loanAmount, rate: $file->currency === 'USD' ? '1.000000' : $rate, debitUsd: $usd,
-                budgetLineKey: $grantLine->key, contact: $file->beneficiary, debitDonor: $this->donorAmount($usd, $project),
-            );
-        }
-
         return new LineDraft(
             ...$tags,
-            accountCode: MicroLoans::LOANS_ACCOUNT, currency: $file->currency, debit: $loanAmount, rate: $file->currency === 'USD' ? '1.000000' : $rate, debitUsd: $usd,
-            fundSource: $this->fundSource($file), contact: $file->beneficiary, debitDonor: $this->donorAmount($usd, $project),
+            accountCode: MicroLoans::GRANTS_ACCOUNT, currency: $file->currency, debit: $loanAmount, rate: $file->currency === 'USD' ? '1.000000' : $rate, debitUsd: $usd,
+            budgetLineKey: $grantLine?->key, contact: $file->beneficiary, debitDonor: $this->donorAmount($usd, $project),
         );
     }
 

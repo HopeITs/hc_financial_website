@@ -393,3 +393,28 @@ it('refuses a project\'s invoice when the project has no grants budget line', fu
     expect(fn () => app(MicroPurchases::class)->payInvoice($this->accountant, $file, ['date' => '2026-05-10', 'cash_account' => '1111', 'amount' => '400', 'merchant' => 'Abu Sami', 'number' => 'F-1', 'description_ar' => 'ماكينة']))
         ->toThrow(LoanException::class);
 });
+
+it('spends an instalment fund\'s invoice in full on the grants too, and moves the share to repay at closing', function () {
+    $purchases = app(MicroPurchases::class);
+    $file = mfApproved($this->accountant, $this->program, $this->manager);
+    // The same file funded from Caritas's fund in Aleppo, which holds 1,000 USD of repayments.
+    $file->update(['project_code' => null, 'funder' => 'Caritas', 'city' => 'Aleppo']);
+    ledgerApprovedVoucher(['date' => CarbonImmutable::parse('2026-05-01'), 'type' => VoucherType::Receipt, 'description' => 'Repayments'], [
+        new \App\Services\Ledger\LineDraft('1111', 'USD', debit: 1000, donor: 'Caritas', restriction: \App\Services\Ledger\NetAssets::RESTRICTED, fundSource: \App\Enums\FundSource::RecoveredLoans),
+        new \App\Services\Ledger\LineDraft('1204', 'USD', credit: 1000, donor: 'Caritas', restriction: \App\Services\Ledger\NetAssets::RESTRICTED, fundSource: \App\Enums\FundSource::RecoveredLoans, contact: 'Earlier beneficiaries'),
+    ]);
+
+    $invoice = $purchases->payInvoice($this->accountant, $file->fresh(), ['date' => '2026-05-10', 'cash_account' => '1111', 'amount' => '400', 'merchant' => 'Abu Sami', 'number' => 'F-1', 'description_ar' => 'ماكينة']);
+
+    expect(Voucher::query()->with('lines')->findOrFail($invoice->voucher_id)->lines->map(fn ($line): array => [$line->account_code, $line->budget_line_key, $line->donor, (string) $line->debit_usd, (string) $line->credit_usd])->all())->toBe([
+        ['5413', null, 'Caritas', '400.00', '0.00'],
+        ['1111', null, 'Caritas', '0.00', '400.00'],
+    ]);
+
+    $file = $purchases->close($this->accountant, $file->fresh(), ['signed_on' => '2026-06-01']);
+
+    expect(Voucher::query()->with('lines')->findOrFail($file->closing_voucher_id)->lines->map(fn ($line): array => [$line->account_code, (string) $line->debit_usd, (string) $line->credit_usd])->all())->toBe([
+        ['1204', '200.00', '0.00'],
+        ['5413', '0.00', '200.00'],
+    ])->and((string) $file->loan_amount)->toBe('200.00');
+});
