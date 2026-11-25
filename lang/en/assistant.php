@@ -3,6 +3,9 @@
 return [
     'title' => 'AI assistant',
     'close' => 'Close the assistant',
+    'move' => 'Drag to move the assistant; double-click to put it back',
+    'resize' => 'Drag to make the window bigger or smaller',
+    'reset_place' => 'Back to the original place and size',
     'new' => 'New conversation',
     'placeholder' => 'Ask about balances, vouchers, budgets, or describe an operation to record',
     'guide_placeholder' => 'Ask how to do anything in the program',

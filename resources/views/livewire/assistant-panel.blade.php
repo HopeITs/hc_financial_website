@@ -3,7 +3,13 @@
         {{-- Positioning is plain CSS here, not utility classes, so the corner and the round button work without a front-end rebuild. --}}
         <style>
             .hc-assistant { position: fixed; right: 1rem; bottom: 1rem; z-index: 45; display: flex; flex-direction: column; align-items: flex-end; gap: .75rem; }
-            .hc-assistant__panel { width: min(28rem, calc(100vw - 2rem)); height: min(36rem, calc(100dvh - 6rem)); }
+            .hc-assistant__panel { position: relative; width: min(28rem, calc(100vw - 2rem)); height: min(36rem, calc(100dvh - 6rem)); min-width: 18rem; min-height: 16rem; max-width: calc(100vw - 1rem); max-height: calc(100dvh - 5rem); }
+            .hc-assistant__grip { cursor: move; touch-action: none; user-select: none; }
+            .hc-assistant__fab { touch-action: none; }
+            .hc-assistant.is-moving, .hc-assistant.is-moving * { user-select: none; }
+            /* The corner to pull: top-left, as the window grows towards it from its bottom-right corner. */
+            .hc-assistant__resize { position: absolute; top: 0; left: 0; z-index: 2; width: 1.1rem; height: 1.1rem; cursor: nwse-resize; touch-action: none; background: linear-gradient(135deg, var(--color-primary) 0 2px, transparent 2px 5px, var(--color-primary) 5px 7px, transparent 7px); opacity: .55; border-top-left-radius: .75rem; }
+            .hc-assistant__resize:hover { opacity: 1; }
             .hc-assistant__fab { display: grid; place-items: center; width: 3.5rem; height: 3.5rem; padding: 0; border: 0; border-radius: 9999px; cursor: pointer; color: #fff; background: var(--color-primary); box-shadow: 0 6px 18px rgb(0 0 0 / .28); transition: transform .15s ease, background-color .15s ease; }
             .hc-assistant__fab:hover { transform: scale(1.06); }
             .hc-assistant__fab:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 3px; }
@@ -12,20 +18,101 @@
             @media (prefers-reduced-motion: reduce) { .hc-assistant__fab { transition: none; } .hc-assistant__fab:hover { transform: none; } }
         </style>
 
-        <div x-data="{ pending: '' }" class="hc-assistant" data-test="assistant">
+        {{-- Moved by its title bar or its round button, and sized from its top-left corner (finance request of 2026-11-29).
+             Where it sits and its size are kept in this browser only. --}}
+        <div
+            x-data="{
+                pending: '',
+                right: null, bottom: null, width: null, height: null,
+                moving: false, moved: false,
+                key: 'hc.assistant.box',
+                init() {
+                    try { Object.assign(this, JSON.parse(localStorage.getItem(this.key) || '{}')); } catch (e) {}
+                    this.clamp();
+                    window.addEventListener('resize', () => this.clamp());
+                },
+                keep() {
+                    try { localStorage.setItem(this.key, JSON.stringify({ right: this.right, bottom: this.bottom, width: this.width, height: this.height })); } catch (e) {}
+                },
+                clamp() {
+                    if (this.right === null || this.bottom === null) { return; }
+                    const box = this.$root.getBoundingClientRect();
+                    this.right = Math.min(Math.max(this.right, 0), Math.max(window.innerWidth - Math.min(box.width, window.innerWidth) , 0));
+                    this.bottom = Math.min(Math.max(this.bottom, 0), Math.max(window.innerHeight - Math.min(box.height, window.innerHeight), 0));
+                },
+                place() {
+                    return this.right === null ? '' : `right: ${this.right}px; bottom: ${this.bottom}px;`;
+                },
+                size() {
+                    return this.width === null ? '' : `width: ${this.width}px; height: ${this.height}px;`;
+                },
+                move(event) {
+                    if (event.button !== undefined && event.button !== 0) { return; }
+                    if (event.target.closest('button:not(.hc-assistant__fab), a, textarea, input')) { return; }
+                    const box = this.$root.getBoundingClientRect();
+                    const start = { x: event.clientX, y: event.clientY, right: window.innerWidth - box.right, bottom: window.innerHeight - box.bottom };
+                    this.moved = false;
+                    const follow = (e) => {
+                        const dx = e.clientX - start.x, dy = e.clientY - start.y;
+                        if (! this.moved && Math.abs(dx) + Math.abs(dy) < 5) { return; }
+                        this.moved = true; this.moving = true;
+                        this.right = start.right - dx; this.bottom = start.bottom - dy;
+                        this.clamp();
+                    };
+                    const stop = () => {
+                        window.removeEventListener('pointermove', follow);
+                        window.removeEventListener('pointerup', stop);
+                        this.moving = false;
+                        if (this.moved) { this.keep(); }
+                    };
+                    window.addEventListener('pointermove', follow);
+                    window.addEventListener('pointerup', stop);
+                },
+                resize(event) {
+                    event.preventDefault();
+                    const panel = event.target.closest('.hc-assistant__panel').getBoundingClientRect();
+                    const start = { x: event.clientX, y: event.clientY, width: panel.width, height: panel.height };
+                    this.moving = true;
+                    const follow = (e) => {
+                        this.width = Math.round(Math.min(Math.max(start.width - (e.clientX - start.x), 288), window.innerWidth - 16));
+                        this.height = Math.round(Math.min(Math.max(start.height - (e.clientY - start.y), 256), window.innerHeight - 80));
+                    };
+                    const stop = () => {
+                        window.removeEventListener('pointermove', follow);
+                        window.removeEventListener('pointerup', stop);
+                        this.moving = false;
+                        this.clamp();
+                        this.keep();
+                    };
+                    window.addEventListener('pointermove', follow);
+                    window.addEventListener('pointerup', stop);
+                },
+                reset() {
+                    this.right = this.bottom = this.width = this.height = null;
+                    try { localStorage.removeItem(this.key); } catch (e) {}
+                },
+            }"
+            class="hc-assistant"
+            :class="{ 'is-moving': moving }"
+            :style="place()"
+            data-test="assistant"
+        >
             @if ($open)
                 <section
                     class="hc-assistant__panel flex flex-col overflow-hidden rounded-xl border border-secondary-soft bg-white shadow-xl dark:border-line dark:bg-surface-1"
+                    :style="size()"
                     role="dialog"
                     aria-labelledby="assistant-title"
                     data-test="assistant-panel"
                 >
-                    <header class="flex items-center gap-2 border-b border-secondary-soft px-4 py-3 dark:border-line">
+                    <span class="hc-assistant__resize" x-on:pointerdown="resize($event)" title="{{ __('assistant.resize') }}" aria-hidden="true" data-test="assistant-resize"></span>
+                    <header class="hc-assistant__grip flex items-center gap-2 border-b border-secondary-soft px-4 py-3 dark:border-line" x-on:pointerdown="move($event)" x-on:dblclick="reset()" title="{{ __('assistant.move') }}" data-test="assistant-grip">
                         <flux:icon.sparkles variant="mini" class="size-4 text-primary dark:text-brand" />
                         <h2 id="assistant-title" class="flex-1 text-sm font-semibold text-secondary-dark dark:text-ink">{{ __('assistant.title') }}</h2>
                         @if ($hasHistory)
                             <x-ui.button tone="ghost" size="sm" wire:click="startOver" data-test="assistant-new">{{ __('assistant.new') }}</x-ui.button>
                         @endif
+                        <x-ui.button tone="ghost" size="sm" icon="arrows-pointing-in" x-show="right !== null || width !== null" x-on:click="reset()" :aria-label="__('assistant.reset_place')" :title="__('assistant.reset_place')" data-test="assistant-reset" />
                         <x-ui.button tone="ghost" size="sm" icon="x-mark" wire:click="toggle" :aria-label="__('assistant.close')" />
                     </header>
 
@@ -216,7 +303,8 @@
             <button
                 type="button"
                 class="hc-assistant__fab"
-                wire:click="toggle"
+                x-on:pointerdown="move($event)"
+                x-on:click="if (moved) { moved = false; return; } $wire.toggle()"
                 aria-label="{{ __('assistant.title') }}"
                 title="{{ __('assistant.title') }}"
                 aria-expanded="{{ $open ? 'true' : 'false' }}"
