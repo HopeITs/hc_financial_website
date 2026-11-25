@@ -288,3 +288,33 @@ it('never writes to a legacy table from a reference screen', function () {
 
     expect($counts())->toBe($before);
 });
+
+it('keeps a person\'s details, renames their sign-in, finds them by name and gives a group of screens at once', function () {
+    (require database_path('migrations/2026_11_29_090000_create_web_user_profiles_table.php'))->up();
+    $head = masterUser(RoleId::HeadOffice, 'Hoa');
+    $target = masterUser(RoleId::Accountant, 'Ann');
+    masterUser(RoleId::Cashier, 'Taken');
+
+    $page = Livewire::actingAs($head)->test(Users::class)
+        ->call('selectUser', $target->getKey())
+        ->assertSeeHtml('data-test="profile-form"')
+        ->set('username', 'Taken')->call('saveProfile')
+        ->assertHasErrors('username')
+        ->set('username', 'ann.haddad')->set('fullName', 'Ann Haddad')->set('jobTitle', 'Senior accountant')->set('email', 'ann@example.org')
+        ->call('saveProfile')
+        ->assertHasNoErrors()
+        ->assertSet('notice', __('master.users.profile_saved', ['name' => 'ann.haddad']))
+        ->assertSee('Ann Haddad');
+
+    expect(DB::table('user')->where('ID', $target->getKey())->value('Username'))->toBe('ann.haddad')
+        ->and(App\Models\WebUserProfile::query()->find($target->getKey())?->only(['full_name', 'job_title', 'email']))
+        ->toBe(['full_name' => 'Ann Haddad', 'job_title' => 'Senior accountant', 'email' => 'ann@example.org'])
+        ->and(DB::table('log')->where('title', 'USER_RENAMED')->value('details'))->toBe('Ann → ann.haddad');
+
+    Livewire::actingAs($head)->test(Users::class)->set('search', 'Haddad')->assertSee('ann.haddad')->assertDontSee('Taken');
+
+    $page->call('grantGroup', 'reports', true);
+    expect($page->get('permissions'))->toContain('tb.view');
+    $page->call('grantGroup', 'reports', false);
+    expect($page->get('permissions'))->not->toContain('tb.view');
+});

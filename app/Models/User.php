@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 /**
@@ -98,6 +99,16 @@ class User extends Authenticatable
     public function webPermissions(): HasMany
     {
         return $this->hasMany(WebUserPermission::class, 'user_id', 'ID');
+    }
+
+    /**
+     * The person's details beside their sign-in (finance request of 2026-11-29).
+     *
+     * @return HasOne<WebUserProfile, $this>
+     */
+    public function profile(): HasOne
+    {
+        return $this->hasOne(WebUserProfile::class, 'user_id', 'ID');
     }
 
     /**
