@@ -9,12 +9,12 @@ use App\Models\User;
 use App\Models\Voucher;
 use App\Models\VoucherAudit;
 use App\Models\WebUserRole;
-use App\Services\Access\LegacyDataScope;
 use App\Services\Approvals\ApprovalChain;
 use App\Services\Ledger\LedgerRuleException;
 use App\Services\Ledger\LineDraft;
 use App\Services\Ledger\PostVoucher;
 use App\Services\Ledger\VoucherApprovals;
+use App\Services\Projects\ProjectAccess;
 use Carbon\CarbonImmutable;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Support\Facades\DB;
@@ -74,7 +74,7 @@ it('opens every screen, sees all data and takes every approval step when on', fu
 
     expect($super->isSuperUser())->toBeTrue()
         ->and($super->canOnScreen('users', ScreenAction::Delete))->toBeTrue()
-        ->and(app(LegacyDataScope::class)->for($super)->unrestricted)->toBeTrue()
+        ->and(app(ProjectAccess::class)->limitedTo($super))->toBeNull()
         ->and(app(ApprovalChain::class)->mayApproveNext('5000.00', [RoleId::FinancialManager], $super->roleIds()))->toBeTrue();
 });
 

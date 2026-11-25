@@ -2,10 +2,10 @@
 
 namespace App\Livewire;
 
-use App\Contracts\ProjectBalanceSource;
-use App\Data\ProjectBalance;
+use App\Data\ProjectCash;
 use App\Livewire\Concerns\DefersLoading;
 use App\Models\User;
+use App\Services\Projects\ActiveProjectBalances;
 use App\Services\Projects\ProjectAccess;
 use App\Support\Navigation;
 use Illuminate\Contracts\View\View;
@@ -16,64 +16,57 @@ use Livewire\Attributes\Url;
 use Livewire\Component;
 
 /**
- * The landing page: active projects with their balances in SYP and USD, a city filter and the key totals; the projects tree lives in the main sidebar.
+ * The landing page: active projects with the cash they hold in SYP and USD (from the ledger), a city filter and the key totals.
  */
 #[Layout('components.layouts.app')]
 class Home extends Component
 {
     use DefersLoading;
 
-    #[Url(as: 'city')]
-    public ?int $cityId = null;
+    #[Url(as: 'city', except: '')]
+    public string $city = '';
 
-    public function filterCity(?int $cityId): void
-    {
-        $this->cityId = $cityId === $this->cityId ? null : $cityId;
-    }
-
-    public function render(ProjectBalanceSource $balances, ProjectAccess $access): View
+    public function render(ActiveProjectBalances $balances, ProjectAccess $access): View
     {
         $user = auth()->user();
 
         // The home page follows the role (finance decision of 2026-11-25): the projects' balances only for those who
         // see the projects' money; the others get what waits for them and their quick actions, without that read.
         if (! $user instanceof User || ! $access->seesMoney($user)) {
-            return view('livewire.home', ['showMoney' => false, 'projects' => collect(), 'cities' => collect(), 'cityId' => null, 'actions' => $this->quickActions()]);
+            return view('livewire.home', ['showMoney' => false, 'projects' => collect(), 'cities' => collect(), 'actions' => $this->quickActions()]);
         }
 
         $limit = $access->limitedTo($user);
         $scope = md5((string) json_encode($limit));
         $cities = collect(Cache::remember('home.cities.'.$scope, self::CACHE_SECONDS, fn (): array => $balances->cities($limit)->all()));
 
-        // A city that has no active project is not a filter; an unknown id shows everything.
-        $cityId = $this->cityId !== null && $cities->has($this->cityId) ? $this->cityId : null;
+        // A city that has no active project is not a filter; an unknown one shows everything.
+        $city = $this->city !== '' && $cities->has($this->city) ? $this->city : null;
 
         return view('livewire.home', [
             'showMoney' => true,
-            'projects' => $this->activeProjects($balances, $cityId, $limit, $scope),
+            'projects' => $this->activeProjects($balances, $city, $limit, $scope),
             'cities' => $cities,
-            'cityId' => $cityId,
             'actions' => $this->quickActions(),
         ]);
     }
 
     /**
-     * The active projects' balances, kept for a minute: they come from the old program's `cash_balances` view, the
-     * slowest read of the page, and the page asks again at every click (finance request of 2026-11-24). The cache
-     * holds plain arrays only, as the cache store unserializes no classes.
+     * The active projects' cash, kept for a minute: the page asks again at every click (finance request of
+     * 2026-11-24). The cache holds plain arrays only, as the cache store unserializes no classes.
      *
-     * @param  array<int, int>|null  $limit
-     * @return Collection<int, ProjectBalance>
+     * @param  list<string>|null  $limit
+     * @return Collection<int, ProjectCash>
      */
-    private function activeProjects(ProjectBalanceSource $balances, ?int $cityId, ?array $limit, string $scope): Collection
+    private function activeProjects(ActiveProjectBalances $balances, ?string $city, ?array $limit, string $scope): Collection
     {
         $rows = Cache::remember(
-            'home.projects.'.$scope.'.'.($cityId ?? 'all'),
+            'home.projects.'.$scope.'.'.md5($city ?? ''),
             self::CACHE_SECONDS,
-            fn (): array => $balances->activeProjects($cityId, $limit)->map(fn (ProjectBalance $balance): array => get_object_vars($balance))->all(),
+            fn (): array => $balances->activeProjects($city, $limit)->map(fn (ProjectCash $balance): array => get_object_vars($balance))->all(),
         );
 
-        return collect($rows)->map(fn (array $row): ProjectBalance => new ProjectBalance(...$row))->values();
+        return collect($rows)->map(fn (array $row): ProjectCash => new ProjectCash(...$row))->values();
     }
 
     /** How long the balances stay before they are read again, in seconds. */

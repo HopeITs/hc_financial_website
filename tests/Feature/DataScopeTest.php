@@ -1,37 +1,28 @@
 <?php
 
+use App\Enums\FundSource;
 use App\Enums\RoleId;
 use App\Livewire\Home;
+use App\Livewire\Users;
 use App\Models\User;
 use App\Models\WebUserRole;
-use App\Services\Access\LegacyDataScope;
-use App\Services\Projects\LegacyProjectBalanceSource;
+use App\Services\Ledger\LineDraft;
+use App\Services\Projects\ActiveProjectBalances;
+use App\Services\Projects\ProjectAccess;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 
+/*
+ * Which projects a person sees, kept by the web program since it left the Windows program (finance decision of
+ * 2026-11-27): the projects given on the users screen, by code.
+ */
+
 beforeEach(function () {
-    config(['finance.scoped_roles' => ['ProjectManager', 'FinancialManager', 'Cashier', 'Accountant', 'Employee']]);
+    config(['finance.scoped_roles' => ['ProjectManager', 'FinancialManager']]);
     createFinanceSchema();
     createLegacyHomeSchema();
-    $legacy = DB::connection('legacy');
-
-    $legacy->table('accounttype')->insert([['id' => 1, 'name' => 'Project'], ['id' => 2, 'name' => 'Exchange'], ['id' => 3, 'name' => 'Personal']]);
-    $legacy->table('account')->insert([
-        ['ID' => 10, 'SubProject_ID' => 1, 'Name' => 'Alpha', 'Accounttype_id' => 1],
-        ['ID' => 11, 'SubProject_ID' => 1, 'Name' => 'Alpha two', 'Accounttype_id' => 1],
-        ['ID' => 20, 'SubProject_ID' => 2, 'Name' => 'Beta', 'Accounttype_id' => 1],
-        ['ID' => 90, 'SubProject_ID' => 0, 'Name' => 'Exchange desk', 'Accounttype_id' => 2],
-        ['ID' => 91, 'SubProject_ID' => 0, 'Name' => 'Rana personal', 'Accounttype_id' => 3],
-    ]);
-
-    $row = fn (int $cash, int $account, string $name, float $syp) => $legacy->table('cash_balances')->insert([
-        'CashAccount_id' => $cash, 'City_ID' => 1, 'City_Name' => 'Aleppo', 'Subproject_Name' => 'x',
-        'Account_ID' => $account, 'Account_Name' => $name, 'Account_Net' => $syp, 'Account_Net_USD' => 0, 'Account_Net_New' => 0,
-    ]);
-    $row(1, 10, 'Alpha', 100);
-    $row(2, 10, 'Alpha', 200);
-    $row(1, 11, 'Alpha two', 50);
-    $row(1, 20, 'Beta', 500);
+    seedChartWithTestProjects();
 });
 
 function scopedUser(RoleId $role, string $name = 'scoped'): User
@@ -46,102 +37,110 @@ function scopedUser(RoleId $role, string $name = 'scoped'): User
     return User::query()->findOrFail($id);
 }
 
-function giveSubProject(User $user, int $subProject): void
-{
-    DB::connection('legacy')->table('user_accounts')->insert(['user_id' => $user->getKey(), 'subproject_id' => $subProject]);
-}
-
-function giveAccount(User $user, int $account): void
-{
-    DB::connection('legacy')->table('user_accounts')->insert(['user_id' => $user->getKey(), 'account_id' => $account]);
-}
-
-function giveCash(User $user, int $cashAccount): void
-{
-    DB::connection('legacy')->table('user_cashaccounts')->insert(['user_id' => $user->getKey(), 'cashaccount_id' => $cashAccount]);
-}
-
 it('applies no limit to head office, the general manager and donors', function (RoleId $role) {
-    expect(app(LegacyDataScope::class)->for(scopedUser($role))->unrestricted)->toBeTrue();
+    expect(app(ProjectAccess::class)->limitedTo(scopedUser($role)))->toBeNull();
 })->with([RoleId::HeadOffice, RoleId::GeneralManager, RoleId::Donor]);
 
-it('gives a financial manager, a project manager and a cashier the project accounts of their sub-projects', function (RoleId $role) {
-    $user = scopedUser($role);
-    giveSubProject($user, 1);
-    giveCash($user, 2);
+it('limits a project manager to the projects given to them, and to nothing when none is given', function () {
+    $pam = scopedUser(RoleId::ProjectManager, 'Pam');
+    giveProjects((int) $pam->getKey(), ['SZ', 'F2F']);
+    $access = app(ProjectAccess::class);
 
-    $scope = app(LegacyDataScope::class)->for($user);
+    expect($access->limitedTo($pam))->toBe(['F2F', 'SZ'])
+        ->and($access->canOpen($pam, 'SZ'))->toBeTrue()
+        ->and($access->canOpen($pam, 'CORE'))->toBeFalse()
+        ->and($access->limitedTo(scopedUser(RoleId::ProjectManager, 'Nobody')))->toBe([]);
 
-    expect($scope->unrestricted)->toBeFalse()
-        ->and($scope->projectAccountIds)->toEqualCanonicalizing([10, 11])
-        ->and($scope->cashAccountIds)->toBe([2])
-        ->and($scope->allowsProject(20))->toBeFalse()
-        ->and($scope->allowsCashAccount(1))->toBeFalse();
-})->with([RoleId::FinancialManager, RoleId::ProjectManager, RoleId::Cashier]);
-
-it('gives an accountant only the project accounts named for them, not the whole sub-project', function () {
-    $user = scopedUser(RoleId::Accountant);
-    giveSubProject($user, 2);
-    giveAccount($user, 10);
-    giveAccount($user, 90);
-    giveAccount($user, 91);
-
-    $scope = app(LegacyDataScope::class)->for($user);
-
-    expect($scope->projectAccountIds)->toBe([10])
-        ->and($scope->exchangeAccountIds)->toBe([90])
-        ->and($scope->personalAccountIds)->toBe([91]);
+    // Giving again replaces the list.
+    $access->give((int) $pam->getKey(), ['CORE']);
+    expect($access->limitedTo($pam))->toBe(['CORE']);
 });
 
-it('gives an employee no project accounts', function () {
-    $user = scopedUser(RoleId::Employee);
-    giveSubProject($user, 1);
-    giveAccount($user, 10);
-
-    expect(app(LegacyDataScope::class)->for($user)->projectAccountIds)->toBe([]);
-});
-
-it('keeps the projects a manager was given on the web next to the Windows program\'s own', function () {
-    $user = scopedUser(RoleId::ProjectManager);
-    giveSubProject($user, 2);
-    DB::table('web_project_managers')->insert(['user_id' => $user->getKey(), 'account_id' => 10]);
-
-    expect(app(LegacyDataScope::class)->for($user)->projectAccountIds)->toEqualCanonicalizing([20, 10]);
-});
-
-it('joins the scopes of a person with two roles', function () {
-    $user = scopedUser(RoleId::Accountant);
-    WebUserRole::create(['user_id' => $user->getKey(), 'role_id' => RoleId::ProjectManager]);
-    giveAccount($user, 10);
-    giveSubProject($user, 2);
-
-    expect(app(LegacyDataScope::class)->for($user)->projectAccountIds)->toEqualCanonicalizing([10, 20]);
-});
-
-it('shows a limited person only their own projects on the home page and nothing when none is given', function () {
-    $user = scopedUser(RoleId::FinancialManager);
-    giveSubProject($user, 2);
-
-    Livewire::actingAs($user)->test(Home::class)->assertSee('Beta')->assertDontSee('Alpha');
-    Livewire::actingAs(scopedUser(RoleId::FinancialManager, 'nobody'))->test(Home::class)->assertDontSee('Beta')->assertDontSee('Alpha');
-    Livewire::actingAs(scopedUser(RoleId::HeadOffice, 'boss'))->test(Home::class)->assertSee('Beta')->assertSee('Alpha');
-});
-
-it('filters the balance source by the given project and cash accounts', function () {
-    $source = app(LegacyProjectBalanceSource::class);
-
-    expect($source->activeProjects(null, [20])->pluck('accountId')->all())->toBe([20])
-        ->and($source->activeProjects(null, [])->all())->toBe([])
-        ->and($source->activeProjects()->pluck('accountId')->all())->toBe([10, 11, 20])
-        ->and($source->byCashAccount(10, [2])->pluck('cashAccountId')->all())->toBe([2])
-        ->and($source->byCashAccount(10)->pluck('cashAccountId')->all())->toBe([1, 2])
-        ->and($source->cities([])->all())->toBe([]);
-});
-
-it('limits only project managers until the other roles are switched on', function () {
+it('limits only the roles switched on, and a second role that is not limited lifts the limit', function () {
     config(['finance.scoped_roles' => ['ProjectManager']]);
+    $access = app(ProjectAccess::class);
+    $both = scopedUser(RoleId::ProjectManager, 'Both');
+    WebUserRole::create(['user_id' => $both->getKey(), 'role_id' => RoleId::Accountant]);
 
-    expect(app(LegacyDataScope::class)->for(scopedUser(RoleId::FinancialManager))->unrestricted)->toBeTrue()
-        ->and(app(LegacyDataScope::class)->for(scopedUser(RoleId::Accountant, 'acc'))->unrestricted)->toBeTrue()
-        ->and(app(LegacyDataScope::class)->for(scopedUser(RoleId::ProjectManager, 'pm'))->unrestricted)->toBeFalse();
+    expect($access->limitedTo(scopedUser(RoleId::FinancialManager, 'Fadi')))->toBeNull()
+        ->and($access->limitedTo(scopedUser(RoleId::ProjectManager, 'Pam')))->toBe([])
+        ->and($access->limitedTo($both))->toBeNull();
+});
+
+it('shows each active project\'s cash from the approved vouchers, and a limited person only their own', function () {
+    ledgerApprovedVoucher();
+    ledgerApprovedVoucher(lines: [
+        new LineDraft('1111', 'USD', debit: 250, projectCode: 'SZ', fundSource: FundSource::DonorGrant),
+        new LineDraft('4001', 'USD', credit: 250, projectCode: 'SZ'),
+    ]);
+
+    $rows = app(ActiveProjectBalances::class)->activeProjects()->keyBy('code');
+    expect($rows['F2F']->usd)->toBe('100.00')
+        ->and($rows['SZ']->usd)->toBe('250.00')
+        ->and($rows['F2F']->city)->toBe('Aleppo')
+        ->and(app(ActiveProjectBalances::class)->activeProjects(null, ['SZ'])->pluck('code')->all())->toBe(['SZ'])
+        ->and(app(ActiveProjectBalances::class)->activeProjects(null, [])->all())->toBe([]);
+
+    $fadi = scopedUser(RoleId::FinancialManager, 'Fadi');
+    giveProjects((int) $fadi->getKey(), ['SZ']);
+
+    Livewire::actingAs($fadi)->test(Home::class)->assertSee('Study Zone')->assertSee('250.00')->assertDontSee('Family to Family');
+    Livewire::actingAs(scopedUser(RoleId::FinancialManager, 'Nobody'))->test(Home::class)->assertDontSee('Study Zone')->assertDontSee('Family to Family');
+    Livewire::actingAs(scopedUser(RoleId::HeadOffice, 'Boss'))->test(Home::class)->assertSee('Study Zone')->assertSee('Family to Family');
+});
+
+it('gives a person their projects on the users screen, and refuses a project that does not exist', function () {
+    $head = scopedUser(RoleId::HeadOffice, 'Hoa');
+    $pam = scopedUser(RoleId::ProjectManager, 'Pam');
+
+    Livewire::actingAs($head)->test(Users::class)
+        ->call('selectUser', $pam->getKey())
+        ->assertSeeHtml('data-test="user-projects"')
+        ->set('projectCodes', ['F2F', 'NOPE'])->call('saveAccess')
+        ->assertSet('failures', [__('master.users.bad_project')])
+        ->set('projectCodes', ['F2F'])->call('saveAccess')
+        ->assertSet('failures', []);
+
+    expect(app(ProjectAccess::class)->given((int) $pam->getKey()))->toBe(['F2F']);
+});
+
+it('copies the Windows program\'s links into the web\'s own list once, by project code', function () {
+    DB::table('gl_projects')->where('code', 'F2F')->update(['legacy_account_id' => 10]);
+    DB::table('gl_projects')->where('code', 'SZ')->update(['legacy_account_id' => 20]);
+    DB::table('gl_projects')->where('code', 'CORE')->update(['legacy_account_id' => 30]);
+
+    // The Windows program's tables, in the same database as the web's.
+    Schema::create('accounttype', function ($table) {
+        $table->integer('id');
+        $table->string('name');
+    });
+    Schema::create('account', function ($table) {
+        $table->integer('ID');
+        $table->integer('SubProject_ID')->nullable();
+        $table->integer('Accounttype_id')->nullable();
+    });
+    Schema::create('user_accounts', function ($table) {
+        $table->integer('user_id');
+        $table->integer('subproject_id')->nullable();
+        $table->integer('account_id')->nullable();
+    });
+    DB::table('accounttype')->insert([['id' => 1, 'name' => 'Project']]);
+    DB::table('account')->insert([['ID' => 10, 'SubProject_ID' => 1, 'Accounttype_id' => 1], ['ID' => 20, 'SubProject_ID' => 2, 'Accounttype_id' => 1], ['ID' => 30, 'SubProject_ID' => 3, 'Accounttype_id' => 1]]);
+
+    $pam = scopedUser(RoleId::ProjectManager, 'Pam');
+    $ann = scopedUser(RoleId::Accountant, 'Ann');
+    DB::table('user_accounts')->insert([
+        ['user_id' => $pam->getKey(), 'subproject_id' => 1, 'account_id' => null],
+        // A named account counts only for an accountant.
+        ['user_id' => $pam->getKey(), 'subproject_id' => null, 'account_id' => 30],
+        ['user_id' => $ann->getKey(), 'subproject_id' => null, 'account_id' => 30],
+    ]);
+    DB::table('web_project_managers')->insert(['user_id' => $pam->getKey(), 'account_id' => 20]);
+
+    $migration = require database_path('migrations/2026_11_28_090000_create_web_user_projects_table.php');
+    $migration->up();
+    $migration->up();
+
+    expect(app(ProjectAccess::class)->given((int) $pam->getKey()))->toBe(['F2F', 'SZ'])
+        ->and(app(ProjectAccess::class)->given((int) $ann->getKey()))->toBe(['CORE']);
 });

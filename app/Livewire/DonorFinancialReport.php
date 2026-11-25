@@ -250,7 +250,7 @@ class DonorFinancialReport extends Component
         $limit = app(ProjectAccess::class)->limitedTo($this->user());
 
         return GlProject::query()->where('is_general_account', false)
-            ->when($limit !== null, fn ($query) => $query->whereIn('legacy_account_id', $limit ?? []))
+            ->when($limit !== null, fn ($query) => $query->whereIn('code', $limit ?? []))
             ->orderBy('code')->get();
     }
 

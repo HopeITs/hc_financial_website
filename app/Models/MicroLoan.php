@@ -135,7 +135,7 @@ class MicroLoan extends Model
         $limit = app(ProjectAccess::class)->limitedTo($user);
 
         if ($limit !== null) {
-            $query->whereIn('project_code', GlProject::query()->whereIn('legacy_account_id', $limit)->select('code'));
+            $query->whereIn('project_code', $limit);
         }
     }
 

@@ -7,7 +7,6 @@ use App\Enums\ScreenAction;
 use App\Enums\VoucherStatus;
 use App\Models\CashCount;
 use App\Models\DailyRate;
-use App\Models\GlProject;
 use App\Models\LedgerRequest;
 use App\Models\MonthClose;
 use App\Models\Payroll;
@@ -170,7 +169,7 @@ class WaitingWork
     {
         $limit = $this->access->limitedTo($user);
 
-        return $query->when($limit !== null, fn ($inner) => $inner->whereIn('project_code', GlProject::query()->whereIn('legacy_account_id', $limit ?? [])->select('code')));
+        return $query->when($limit !== null, fn ($inner) => $inner->whereIn('project_code', $limit ?? []));
     }
 
     /**
@@ -238,9 +237,6 @@ class WaitingWork
     {
         $limit = $this->access->limitedTo($user);
 
-        return LedgerRequest::query()->when($limit !== null, fn ($query) => $query->whereIn(
-            'project_code',
-            GlProject::query()->whereIn('legacy_account_id', $limit ?? [])->select('code'),
-        ));
+        return LedgerRequest::query()->when($limit !== null, fn ($query) => $query->whereIn('project_code', $limit ?? []));
     }
 }

@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Enums\RoleId;
 use App\Enums\ScreenAction;
-use App\Models\GlProject;
 use App\Models\LedgerRequest;
 use App\Models\User;
 use App\Services\Approvals\ApprovalChain;
@@ -73,14 +72,6 @@ class RequestPolicy
 
     private function ownsProject(User $user, string $projectCode): bool
     {
-        $limit = $this->access->limitedTo($user);
-
-        if ($limit === null) {
-            return true;
-        }
-
-        $account = GlProject::query()->whereKey($projectCode)->value('legacy_account_id');
-
-        return is_numeric($account) && in_array((int) $account, $limit, true);
+        return $this->access->canOpen($user, $projectCode);
     }
 }

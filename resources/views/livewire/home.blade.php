@@ -28,7 +28,7 @@
     @if ($showMoney)
     <div class="grid grid-cols-2 gap-3 xl:grid-cols-4" data-test="home-totals">
         <x-ui.stat-tile :label="__('home.stat_projects')" :value="number_format($projects->count())" icon="folder" />
-        <x-ui.stat-tile :label="__('home.stat_cities')" :value="number_format($projects->pluck('cityName')->unique()->count())" icon="map-pin" />
+        <x-ui.stat-tile :label="__('home.stat_cities')" :value="number_format($projects->pluck('city')->filter()->unique()->count())" icon="map-pin" />
         <x-ui.stat-tile :label="__('home.stat_usd')" :value="number_format((float) $projects->sum(fn ($p) => (float) $p->usd), 2)" unit="USD" icon="banknotes" tone="good" />
         <x-ui.stat-tile :label="__('home.stat_syp')" :value="number_format((float) $projects->sum(fn ($p) => (float) $p->syp), 2)" unit="SYP" icon="banknotes" />
     </div>
@@ -38,10 +38,10 @@
             <x-ui.panel :title="__('home.active_projects')" :count="$projects->count()">
                 <x-slot:toolbar>
                     <div class="w-full sm:w-56">
-                        <x-ui.form-select wire:model.live="cityId" :label="__('home.city')" :placeholder="__('home.all_cities')" data-test="city-filter">
+                        <x-ui.form-select wire:model.live="city" :label="__('home.city')" :placeholder="__('home.all_cities')" data-test="city-filter">
                             <option value="">{{ __('home.all_cities') }}</option>
-                            @foreach ($cities as $id => $name)
-                                <option value="{{ $id }}">{{ $name }}</option>
+                            @foreach ($cities as $name)
+                                <option value="{{ $name }}">{{ $name }}</option>
                             @endforeach
                         </x-ui.form-select>
                     </div>
@@ -59,18 +59,18 @@
                     </thead>
                     <tbody>
                         @forelse ($projects as $project)
-                            <tr wire:key="project-{{ $project->accountId }}">
+                            <tr wire:key="project-{{ $project->code }}">
                                 <td class="font-medium text-secondary-dark dark:text-ink">
                                     {{ $project->name }}
                                 </td>
-                                <td class="text-secondary-medium dark:text-ink-muted">{{ $project->cityName }}</td>
+                                <td class="text-secondary-medium dark:text-ink-muted">{{ $project->city }}</td>
+                                <td class="fin-num"><x-money :amount="$project->syp" currency="SYP" /></td>
                                 <td class="fin-num">
-                                    <x-money :amount="$project->syp" currency="SYP" />
-                                    @if ((float) $project->sypNew !== 0.0)
-                                        <span class="block text-xs text-secondary-medium dark:text-ink-muted" dir="ltr">{{ __('home.new_lira', ['amount' => number_format((float) $project->sypNew, 2)]) }}</span>
+                                    <x-money :amount="$project->usd" currency="USD" />
+                                    @if ((float) $project->otherUsd !== 0.0)
+                                        <span class="block text-xs text-secondary-medium dark:text-ink-muted">{{ __('home.other_currency') }} <x-money :amount="$project->otherUsd" currency="USD" /></span>
                                     @endif
                                 </td>
-                                <td class="fin-num"><x-money :amount="$project->usd" currency="USD" /></td>
                             </tr>
                         @empty
                             <tr>

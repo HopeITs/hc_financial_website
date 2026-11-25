@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\GlProject;
 use App\Models\Purchase;
 use App\Models\User;
 use App\Services\Projects\ProjectAccess;
@@ -49,9 +48,6 @@ class PurchasePrintController extends Controller
     {
         $user = auth()->user();
         abort_unless($user instanceof User, 403);
-        $accountId = GlProject::query()->where('code', $purchase->project_code)->value('legacy_account_id');
-        $limit = app(ProjectAccess::class)->limitedTo($user);
-
-        abort_unless($limit === null || ($accountId !== null && in_array((int) $accountId, $limit, true)), 403);
+        abort_unless(app(ProjectAccess::class)->canOpen($user, $purchase->project_code), 403);
     }
 }

@@ -9,7 +9,7 @@ return [
     'project' => 'Project',
     'balance_syp' => 'Balance (SYP)',
     'balance_usd' => 'Balance (USD)',
-    'new_lira' => ':amount new lira',
+    'other_currency' => 'and in another currency (euros) worth',
     'no_projects' => 'No active projects.',
     'resize_tree' => 'Resize the projects tree',
     'stat_projects' => 'Active projects',

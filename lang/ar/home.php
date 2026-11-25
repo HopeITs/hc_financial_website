@@ -9,7 +9,7 @@ return [
     'project' => 'المشروع',
     'balance_syp' => 'الرصيد (ل.س)',
     'balance_usd' => 'الرصيد (دولار)',
-    'new_lira' => ':amount ليرة جديدة',
+    'other_currency' => 'وبعملة أخرى (يورو) بما يعادل',
     'no_projects' => 'لا توجد مشاريع فعّالة.',
     'resize_tree' => 'تغيير عرض شجرة المشاريع',
     'stat_projects' => 'المشاريع الفعّالة',

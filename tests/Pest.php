@@ -94,6 +94,7 @@ function createFinanceSchema(): void
     (require database_path('migrations/2026_11_22_090000_create_instalment_funds.php'))->up();
     (require database_path('migrations/2026_11_23_090000_add_micro_project_files.php'))->up();
     (require database_path('migrations/2026_11_24_090000_add_speed_indexes_to_gl_vouchers.php'))->up();
+    (require database_path('migrations/2026_11_28_090000_create_web_user_projects_table.php'))->up();
 
     Schema::create('log', function ($table) {
         $table->increments('id');
@@ -107,6 +108,16 @@ function createFinanceSchema(): void
         $table->date('date');
         $table->string('user');
     });
+}
+
+/**
+ * Gives a person these projects, as the users screen does (a project manager then sees only them).
+ *
+ * @param  list<string>  $projectCodes
+ */
+function giveProjects(int $userId, array $projectCodes): void
+{
+    app(App\Services\Projects\ProjectAccess::class)->give($userId, $projectCodes);
 }
 
 /**

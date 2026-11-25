@@ -117,7 +117,7 @@ it('limits a project manager to their own projects', function () {
     followVoucher('M-2', '2026-01-05', [['account' => '1201', 'debit' => 70, 'contact' => 'Omar', 'project' => 'F2F']]);
 
     $id = createFinanceUser('pm', 'secret pass', RoleId::ProjectManager->name, RoleId::ProjectManager->value);
-    DB::table('web_project_managers')->insert(['user_id' => $id, 'account_id' => $sz]);
+    giveProjects($id, ['SZ']);
     $manager = User::query()->findOrFail($id);
 
     $component = Livewire::actingAs($manager)->test(FollowUpReport::class, ['screen' => 'advances']);

@@ -5,7 +5,6 @@ namespace App\Services\Home;
 use App\Enums\RequestStatus;
 use App\Enums\ScreenAction;
 use App\Enums\VoucherStatus;
-use App\Models\GlProject;
 use App\Models\LedgerRequest;
 use App\Models\MicroLoan;
 use App\Models\Payroll;
@@ -67,7 +66,7 @@ class ApprovalsInbox
         if ($user->canOnScreen('requests', ScreenAction::Approve) && Schema::hasTable('gl_requests')) {
             $limit = $this->access->limitedTo($user);
             $requests = LedgerRequest::query()->where('status', RequestStatus::Submitted->value)
-                ->when($limit !== null, fn ($query) => $query->whereIn('project_code', GlProject::query()->whereIn('legacy_account_id', $limit ?? [])->select('code')))
+                ->when($limit !== null, fn ($query) => $query->whereIn('project_code', $limit ?? []))
                 ->orderBy('id')->get()->filter(fn (LedgerRequest $request): bool => Gate::forUser($user)->allows('decide', $request));
 
             foreach ($requests as $request) {

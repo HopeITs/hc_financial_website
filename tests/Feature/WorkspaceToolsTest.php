@@ -94,7 +94,7 @@ it('shows each role the work waiting for it, with the same rules as the bell', f
 
 it('counts requests to decide and the person\'s own requests still waiting', function () {
     $pm = wtUser(RoleId::ProjectManager, 'Pam');
-    DB::table('web_project_managers')->insert(['user_id' => $pm->getKey(), 'account_id' => 77]);
+    giveProjects((int) $pm->getKey(), ['F2F']);
     $program = wtUser(RoleId::ProgramManager, 'Paula');
     $workflow = app(RequestWorkflow::class);
 
@@ -156,7 +156,7 @@ it('never shows what the person may not see', function () {
 
     // A project manager limited to F2F does not find the Homs project.
     $pm = wtUser(RoleId::ProjectManager, 'Pam');
-    DB::connection('legacy')->table('user_accounts')->insert(['user_id' => $pm->getKey(), 'account_id' => 77]);
+    giveProjects((int) $pm->getKey(), ['F2F']);
     $projects = collect(app(GlobalSearch::class)->search($pm, 'E')['projects'] ?? [])->pluck('label')->all();
     expect($projects)->not->toContain('EDU · Education Homs');
 });
