@@ -477,7 +477,7 @@ class MicroProjectFiles extends Component
 
         $limit = auth()->user() instanceof User ? app(ProjectAccess::class)->limitedTo(auth()->user()) : null;
 
-        foreach (GlProject::query()->where('is_general_account', false)->when($limit !== null, fn ($query) => $query->whereIn('legacy_account_id', $limit ?? []))->orderBy('code')->get(['code', 'name', 'donor']) as $project) {
+        foreach (GlProject::query()->where('is_general_account', false)->when($limit !== null, fn ($query) => $query->whereIn('code', $limit ?? []))->orderBy('code')->get(['code', 'name', 'donor']) as $project) {
             $choices['project:'.$project->code] = $project->code.' · '.$project->name;
         }
 

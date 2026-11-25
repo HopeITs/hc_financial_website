@@ -2,7 +2,6 @@
 
 namespace App\Livewire;
 
-use App\Models\GlProject;
 use App\Models\User;
 use App\Services\Ledger\TillOwners;
 use App\Services\Projects\ProjectAccess;
@@ -24,7 +23,7 @@ class Tills extends Component
         abort_unless($user instanceof User, 403);
 
         $limit = $access->limitedTo($user);
-        $codes = $limit === null ? null : array_values(GlProject::query()->whereIn('legacy_account_id', $limit)->pluck('code')->all());
+        $codes = $limit;
 
         $tills = $owners->tills($codes);
 

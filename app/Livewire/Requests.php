@@ -441,10 +441,7 @@ class Requests extends Component
     {
         $limit = app(ProjectAccess::class)->limitedTo($this->user());
 
-        return LedgerRequest::query()->when($limit !== null, fn (Builder $query) => $query->whereIn(
-            'project_code',
-            GlProject::query()->whereIn('legacy_account_id', $limit ?? [])->select('code'),
-        ));
+        return LedgerRequest::query()->when($limit !== null, fn (Builder $query) => $query->whereIn('project_code', $limit ?? []));
     }
 
     /** @return array<string, string> project code => "CODE · name" */
@@ -454,7 +451,7 @@ class Requests extends Component
 
         $choices = [];
 
-        foreach (GlProject::query()->when($limit !== null, fn (Builder $query) => $query->whereIn('legacy_account_id', $limit ?? []))->orderBy('code')->get(['code', 'name']) as $project) {
+        foreach (GlProject::query()->when($limit !== null, fn (Builder $query) => $query->whereIn('code', $limit ?? []))->orderBy('code')->get(['code', 'name']) as $project) {
             $choices[$project->code] = $project->code.' · '.$project->name;
         }
 

@@ -5,10 +5,12 @@ namespace App\Livewire;
 use App\Enums\RoleId;
 use App\Enums\ScreenAction;
 use App\Livewire\Concerns\HasFormDraft;
+use App\Models\GlProject;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\WebUserPermission;
 use App\Models\WebUserRole;
+use App\Services\Projects\ProjectAccess;
 use App\Support\FinancePassword;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\QueryException;
@@ -27,7 +29,8 @@ use Livewire\WithPagination;
  * What is written, and where:
  *  - the password, the primary role (`Role`) and the state (`State`) in the old program's `user` table, the password the way the
  *    old program writes it (FinancePassword::make), so the person signs in to both programs;
- *  - further roles in `web_user_roles` and permissions given to one person in `web_user_permissions`, which only this app reads.
+ *  - further roles in `web_user_roles` and permissions given to one person in `web_user_permissions`, which only this app reads;
+ *  - the projects given to the person in `web_user_projects` (ProjectAccess), which limit what a project manager sees.
  * Adding and removing a person writes the `user` table too. Every change is noted in the `log` table, never with a password.
  * Each action authorizes itself through the `users` screen: view to look, edit to change, create to add, delete to remove.
  */
@@ -66,6 +69,9 @@ class Users extends Component
 
     /** @var array<int, string> `screen.action` */
     public array $permissions = [];
+
+    /** @var array<int, string> the codes of the projects given to the person (finance decision of 2026-11-27) */
+    public array $projectCodes = [];
 
     public string $password = '';
 
@@ -151,6 +157,7 @@ class Users extends Component
         // Grants on screens that left the list are dropped, so saving the person never fails on them.
         $this->permissions = $person->webPermissions->map(fn (WebUserPermission $row): string => $row->screen.'.'.$row->action)
             ->intersect($this->permissionKeys())->sort()->values()->all();
+        $this->projectCodes = app(ProjectAccess::class)->given((int) $person->getKey());
         $this->resetPasswordForm();
     }
 
@@ -193,6 +200,11 @@ class Users extends Component
             $this->failures[] = __('master.users.bad_permission');
         }
 
+        $projects = collect($this->projectCodes)->map(fn (mixed $code): string => (string) $code)->unique()->values();
+        if ($projects->diff(array_keys($this->projectChoices()))->isNotEmpty()) {
+            $this->failures[] = __('master.users.bad_project');
+        }
+
         if ($person->getKey() === auth()->id() && ! $this->active) {
             $this->failures[] = __('master.users.not_yourself');
         }
@@ -211,7 +223,7 @@ class Users extends Component
             return;
         }
 
-        DB::transaction(function () use ($person, $extra, $granted) {
+        DB::transaction(function () use ($person, $extra, $granted, $projects) {
             $changes = [];
 
             if ((int) $person->getAttribute('Role') !== $this->primaryRoleId) {
@@ -236,6 +248,8 @@ class Users extends Component
                 [$screen, $action] = explode('.', $key, 2);
                 WebUserPermission::query()->create(['user_id' => $person->getKey(), 'screen' => $screen, 'action' => $action]);
             }
+
+            app(ProjectAccess::class)->give((int) $person->getKey(), $projects->all());
 
             $this->record('ACCESS_CHANGED', $person, $person->username);
         });
@@ -377,6 +391,7 @@ class Users extends Component
             DB::transaction(function () use ($person) {
                 WebUserRole::query()->where('user_id', $person->getKey())->delete();
                 WebUserPermission::query()->where('user_id', $person->getKey())->delete();
+                DB::table('web_user_projects')->where('user_id', $person->getKey())->delete();
                 User::query()->whereKey($person->getKey())->delete();
                 DB::table('log')->insert($this->logRow('USER_DELETED', (string) $person->getKey(), $person->username));
             });
@@ -402,7 +417,7 @@ class Users extends Component
     /** Never a password or its confirmation. */
     protected function draftFields(): array
     {
-        return ['editing', 'primaryRoleId', 'extraRoleIds', 'active', 'permissions', 'showCreate', 'newUsername', 'newRoleId'];
+        return ['editing', 'primaryRoleId', 'extraRoleIds', 'active', 'permissions', 'projectCodes', 'showCreate', 'newUsername', 'newRoleId'];
     }
 
     protected function draftScreen(): string
@@ -472,7 +487,20 @@ class Users extends Component
             'roleRows' => $this->tab === 'roles' ? $this->roleRows() : [],
             'roleDetail' => $this->tab === 'roles' ? $this->roleDetail() : null,
             'min' => self::MIN_LENGTH,
+            'projectChoices' => $picked !== null ? $this->projectChoices() : [],
+            'seesAllProjects' => ! app(ProjectAccess::class)->limits(array_values($heldRoles->all())),
         ]);
+    }
+
+    /**
+     * The projects that can be given to a person: code => name.
+     *
+     * @return array<string, string>
+     */
+    private function projectChoices(): array
+    {
+        return GlProject::query()->where('is_general_account', false)->orderBy('code')->pluck('name', 'code')
+            ->map(fn (mixed $name): string => (string) $name)->all();
     }
 
     /**

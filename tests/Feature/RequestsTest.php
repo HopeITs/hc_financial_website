@@ -54,19 +54,19 @@ function rqUser(RoleId $role, string $name): User
         WebUserRole::create(['user_id' => $id, 'role_id' => $role]);
     }
 
-    // The Windows program limits a financial manager to the sub-projects given to them.
+    // A financial manager, when limited, sees the projects given to them.
     if ($role === RoleId::FinancialManager) {
-        DB::connection('legacy')->table('user_accounts')->insert(['user_id' => $id, 'subproject_id' => 7]);
+        giveProjects($id, ['F2F']);
     }
 
     return User::query()->findOrFail($id);
 }
 
-/** A project manager linked to the F2F project (legacy account 77). */
-function rqManager(string $name = 'Pam', int $account = 77): User
+/** A project manager given the F2F project. */
+function rqManager(string $name = 'Pam', string $project = 'F2F'): User
 {
     $user = rqUser(RoleId::ProjectManager, $name);
-    DB::table('web_project_managers')->insert(['user_id' => $user->getKey(), 'account_id' => $account]);
+    giveProjects((int) $user->getKey(), [$project]);
 
     return $user;
 }

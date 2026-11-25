@@ -126,6 +126,6 @@ class FollowUpReport extends Component
         $user = Auth::user();
         $limit = $user instanceof User ? app(ProjectAccess::class)->limitedTo($user) : null;
 
-        return $limit === null ? null : array_values(GlProject::query()->whereIn('legacy_account_id', $limit)->pluck('code')->all());
+        return $limit;
     }
 }

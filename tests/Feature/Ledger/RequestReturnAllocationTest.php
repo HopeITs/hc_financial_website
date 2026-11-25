@@ -46,7 +46,7 @@ function rtUser(RoleId $role, string $name): User
         WebUserRole::create(['user_id' => $id, 'role_id' => $role]);
     }
     if ($role === RoleId::FinancialManager) {
-        DB::connection('legacy')->table('user_accounts')->insert(['user_id' => $id, 'subproject_id' => 7]);
+        giveProjects($id, ['F2F']);
     }
 
     return User::query()->findOrFail($id);
@@ -56,7 +56,7 @@ function rtUser(RoleId $role, string $name): User
 function rtSubmitted(): array
 {
     $manager = rtUser(RoleId::ProjectManager, 'Pam');
-    DB::table('web_project_managers')->insert(['user_id' => $manager->getKey(), 'account_id' => 77]);
+    giveProjects((int) $manager->getKey(), ['F2F']);
     $workflow = app(RequestWorkflow::class);
     $request = $workflow->create($manager, ['project' => 'F2F', 'type' => 'monthly', 'month' => '2026-11', 'category' => null, 'description' => 'November'], [['budget_line' => 'F2F|Maintenance', 'amount' => '300.00', 'currency' => 'USD']]);
 

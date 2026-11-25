@@ -3,7 +3,6 @@
 namespace App\Services\Assistant\Tools;
 
 use App\Enums\ScreenAction;
-use App\Models\GlProject;
 use App\Models\User;
 use App\Services\Assistant\AssistantTool;
 use App\Services\Assistant\ToolInputException;
@@ -63,7 +62,7 @@ abstract class Tool implements AssistantTool
     {
         $limit = app(ProjectAccess::class)->limitedTo($user);
 
-        return $limit === null ? null : array_values(GlProject::query()->whereIn('legacy_account_id', $limit)->pluck('code')->all());
+        return $limit;
     }
 
     protected function mayOpenProject(User $user, string $code): bool

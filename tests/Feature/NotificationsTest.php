@@ -62,7 +62,7 @@ function ntUser(RoleId $role, string $name): User
     }
 
     if ($role === RoleId::FinancialManager) {
-        DB::connection('legacy')->table('user_accounts')->insert(['user_id' => $id, 'subproject_id' => 7]);
+        giveProjects($id, ['F2F']);
     }
 
     return User::query()->findOrFail($id);
@@ -71,7 +71,7 @@ function ntUser(RoleId $role, string $name): User
 function ntManager(): User
 {
     $user = ntUser(RoleId::ProjectManager, 'Pam');
-    DB::table('web_project_managers')->insert(['user_id' => $user->getKey(), 'account_id' => 77]);
+    giveProjects((int) $user->getKey(), ['F2F']);
 
     return $user;
 }

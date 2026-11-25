@@ -174,6 +174,19 @@
                                 </label>
                             </section>
 
+                            <section class="ud-sec" data-test="user-projects">
+                                <h3>{{ __('master.users.projects') }}</h3>
+                                <p class="ud-help">{{ $seesAllProjects ? __('master.users.projects_all') : __('master.users.projects_help') }}</p>
+                                <div class="ud-checks">
+                                    @foreach ($projectChoices as $code => $name)
+                                        <label class="ud-check" wire:key="project-{{ $code }}">
+                                            <input type="checkbox" wire:model="projectCodes" value="{{ $code }}" data-test="project-{{ $code }}">
+                                            <span dir="auto">{{ $code }} · {{ $name }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </section>
+
                             <section class="ud-sec">
                                 <h3>{{ __('master.users.direct') }}</h3>
                                 <p class="ud-help">{{ __('master.users.direct_help') }}</p>

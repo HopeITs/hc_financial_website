@@ -147,9 +147,7 @@ class GlobalSearch
     /** @return list<string>|null the project codes the person is limited to, or null when not limited */
     private function projectCodes(User $user): ?array
     {
-        $limit = $this->access->limitedTo($user);
-
-        return $limit === null ? null : GlProject::query()->whereIn('legacy_account_id', $limit)->pluck('code')->all();
+        return $this->access->limitedTo($user);
     }
 
     /** @return list<array{label: string, detail: string|null, url: string}> */
@@ -208,11 +206,11 @@ class GlobalSearch
         $limit = $this->access->limitedTo($user);
 
         return array_values(GlProject::query()
-            ->when($limit !== null, fn ($query) => $query->whereIn('legacy_account_id', $limit ?? []))
+            ->when($limit !== null, fn ($query) => $query->whereIn('code', $limit ?? []))
             ->where(fn ($query) => $query->where('code', 'like', $like.'%')->orWhere('name', 'like', '%'.$like.'%'))
             ->orderBy('code')
             ->limit(self::PER_GROUP)
-            ->get(['code', 'name', 'donor', 'legacy_account_id'])
+            ->get(['code', 'name', 'donor'])
             ->map(fn (GlProject $project): array => [
                 'label' => $project->code.' · '.$project->name,
                 'detail' => $project->donor,

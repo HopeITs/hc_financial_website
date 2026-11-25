@@ -4,7 +4,6 @@ namespace App\Livewire;
 
 use App\Enums\ScreenAction;
 use App\Models\GlBudgetLine;
-use App\Models\GlProject;
 use App\Models\LedgerRequest;
 use App\Models\Purchase;
 use App\Models\User;
@@ -392,17 +391,14 @@ class Purchases extends Component
     {
         $limit = app(ProjectAccess::class)->limitedTo($this->user());
 
-        return Purchase::query()->when($limit !== null, fn (Builder $query) => $query->whereIn(
-            'project_code',
-            GlProject::query()->whereIn('legacy_account_id', $limit ?? [])->select('code'),
-        ));
+        return Purchase::query()->when($limit !== null, fn (Builder $query) => $query->whereIn('project_code', $limit ?? []));
     }
 
     /** @return array<int, string> the approved requests of the person's projects: id => label */
     private function requestChoices(PurchaseFiles $files): array
     {
         $limit = app(ProjectAccess::class)->limitedTo($this->user());
-        $codes = $limit === null ? null : GlProject::query()->whereIn('legacy_account_id', $limit)->pluck('code')->all();
+        $codes = $limit;
         $choices = [];
 
         foreach ($files->openRequests() as $request) {

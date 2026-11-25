@@ -113,18 +113,15 @@ class Contract extends Model
      * only those that cover one of their projects.
      *
      * @param  Builder<Contract>  $query
-     * @param  list<int>|array<int, int>|null  $legacyAccountIds  null when the person is not limited
+     * @param  list<string>|null  $projectCodes  null when the person is not limited
      */
-    public function scopeVisibleTo(Builder $query, ?array $legacyAccountIds): void
+    public function scopeVisibleTo(Builder $query, ?array $projectCodes): void
     {
-        if ($legacyAccountIds === null) {
+        if ($projectCodes === null) {
             return;
         }
 
-        $query->whereHas('projects', fn (Builder $share) => $share->whereIn(
-            'project_code',
-            GlProject::query()->whereIn('legacy_account_id', $legacyAccountIds)->select('code'),
-        ));
+        $query->whereHas('projects', fn (Builder $share) => $share->whereIn('project_code', $projectCodes));
     }
 
     /** The next contract number of a year: CON-2026-001, CON-2026-002 ... */

@@ -1,93 +1,83 @@
 <?php
 
-use App\Contracts\ProjectBalanceSource;
+use App\Enums\FundSource;
 use App\Enums\RoleId;
 use App\Livewire\Home;
+use App\Models\GlProject;
 use App\Models\User;
-use App\Services\Projects\LegacyProjectBalanceSource;
+use App\Services\Ledger\LineDraft;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
 beforeEach(function () {
     createFinanceSchema();
     createLegacyHomeSchema();
+    seedChartWithTestProjects();
 
-    $row = fn (int $cash, int $account, string $name, int $city, string $cityName, float $syp, float $usd = 0, int $closed = 0, float $new = 0) => DB::connection('legacy')->table('cash_balances')->insert([
-        'CashAccount_id' => $cash, 'City_ID' => $city, 'City_Name' => $cityName, 'Subproject_Name' => "Sub $cityName",
-        'Account_ID' => $account, 'Account_Name' => $name, 'account_IsClosed' => $closed,
-        'Account_Net' => $syp, 'Account_Net_USD' => $usd, 'Account_Net_New' => $new,
+    $project = fn (string $code, string $name, string $city, ?string $end = null) => GlProject::query()->create([
+        'code' => $code, 'name' => $name, 'restriction' => 'With donor restrictions', 'city' => $city, 'end_date' => $end,
+        'donor_currency' => 'USD', 'donor_rate' => 1, 'is_general_account' => false,
     ]);
+    $project('EDU', 'Education Homs', 'Homs');
+    $project('OLD', 'Ended Empty', 'Homs', '2020-12-31');
+    $project('KEEP', 'Ended Holding', 'Homs', '2020-12-31');
 
-    // Project 10 holds money in two cash accounts: its balance is the sum.
-    $row(1, 10, 'Alpha Aleppo', 1, 'Aleppo', 1000.50, 0);
-    $row(2, 10, 'Alpha Aleppo', 1, 'Aleppo', 2000.25, 300.10, new: 5);
-    $row(1, 20, 'Beta Homs', 4, 'Homs', 500, 50);
-    $row(1, 30, 'Closed Homs', 4, 'Homs', 999, 999, closed: 1);
-
-    DB::connection('legacy')->table('tree_view')->insert([
-        ['CityID' => 1, 'CityName' => 'Aleppo', 'ProjectName' => 'Hope Center', 'SubprojectName' => 'HC Aleppo', 'AccountID' => 10, 'AccountName' => 'Alpha Aleppo', 'IsClosed' => 0],
-        ['CityID' => 1, 'CityName' => 'Aleppo', 'ProjectName' => 'Hope Center', 'SubprojectName' => 'HC Aleppo', 'AccountID' => 10, 'AccountName' => 'Alpha Aleppo', 'IsClosed' => 0],
-        ['CityID' => 4, 'CityName' => 'Homs', 'ProjectName' => 'Hope Center', 'SubprojectName' => 'HC Homs', 'AccountID' => 30, 'AccountName' => 'Closed Homs', 'IsClosed' => 1],
-    ]);
+    // The cash comes from the approved vouchers: F2F holds dollars and pounds, EDU dollars, KEEP still a little.
+    homeCash('F2F', 'USD', '300.10');
+    homeCash('F2F', 'SYP', '3000000', '15000');
+    homeCash('EDU', 'USD', '500');
+    homeCash('KEEP', 'USD', '7');
 });
+
+/** An approved receipt of cash for a project. */
+function homeCash(string $project, string $currency, string $amount, string $rate = '1'): void
+{
+    $usd = bcdiv($amount, $rate, 2);
+    $cash = $currency === 'SYP' ? '1112' : '1111';
+
+    ledgerApprovedVoucher(lines: [
+        new LineDraft($cash, $currency, debit: $amount, rate: $rate, debitUsd: $usd, projectCode: $project, fundSource: FundSource::DonorGrant),
+        new LineDraft('4001', $currency, credit: $amount, rate: $rate, creditUsd: $usd, projectCode: $project),
+    ]);
+}
 
 function homeUser(RoleId $role = RoleId::HeadOffice): User
 {
     return User::query()->findOrFail(createFinanceUser('person'.$role->value, 'secret pass', $role->name, $role->value));
 }
 
-it('lists the active projects with summed balances and hides closed ones', function () {
+it('lists the active projects with the cash they hold, and hides ended ones that hold nothing', function () {
     $this->actingAs(homeUser())->get('/home')
         ->assertOk()
-        ->assertSee('Alpha Aleppo')
-        ->assertSee('3,000.75')
+        ->assertSee('Family to Family')
+        ->assertSee('3,000,000.00')
         ->assertSee('300.10')
-        ->assertSee('Beta Homs')
-        ->assertDontSee('Closed Homs');
+        ->assertSee('Education Homs')
+        ->assertSee('Ended Holding')
+        ->assertDontSee('Ended Empty');
 });
 
 it('filters the projects by city', function () {
     Livewire::actingAs(homeUser())->test(Home::class)
-        ->assertSee('3,000.75')->assertSee('500.00')
-        ->set('cityId', 4)
-        ->assertSee('500.00')->assertDontSee('3,000.75')
-        ->call('filterCity', 4)
-        ->assertSee('3,000.75');
+        ->assertSee('300.10')->assertSee('500.00')
+        ->set('city', 'Homs')
+        ->assertSee('500.00')->assertDontSee('300.10');
 
     // A city without active projects (or unknown) filters nothing.
-    Livewire::actingAs(homeUser())->test(Home::class)->set('cityId', 99)->assertSee('3,000.75')->assertSee('500.00');
+    Livewire::actingAs(homeUser())->test(Home::class)->set('city', 'Nowhere')->assertSee('300.10')->assertSee('500.00');
 });
 
 it('keeps the project balances for a minute, then reads them again', function () {
     $user = homeUser();
     Livewire::actingAs($user)->test(Home::class)->assertSee('500.00');
 
-    DB::connection('legacy')->table('cash_balances')->where('Account_ID', 20)->update(['Account_Net' => 700]);
+    homeCash('EDU', 'USD', '200');
 
     Livewire::actingAs($user)->test(Home::class)->assertSee('500.00')->assertDontSee('700.00');
 
     $this->travel(61)->seconds();
 
     Livewire::actingAs($user)->test(Home::class)->assertSee('700.00');
-});
-
-it('keeps the balances behind the ProjectBalanceSource interface', function () {
-    expect(app(ProjectBalanceSource::class))->toBeInstanceOf(LegacyProjectBalanceSource::class);
-
-    $projects = app(ProjectBalanceSource::class)->activeProjects();
-
-    expect($projects->pluck('name')->all())->toBe(['Alpha Aleppo', 'Beta Homs'])
-        ->and($projects->first()->syp)->toBe('3000.75')
-        ->and($projects->first()->usd)->toBe('300.10')
-        ->and($projects->first()->sypNew)->toBe('5.00');
-});
-
-it('keeps the projects tree out of the sidebar, which holds only the chart of accounts', function () {
-    $html = $this->actingAs(homeUser())->get('/home')->getContent();
-
-    expect(substr_count($html, 'Alpha Aleppo'))->toBe(1) // the table row only
-        ->and($html)->not->toContain('HC Aleppo')
-        ->and($html)->toContain('data-test="chart-tree"');
 });
 
 it('opens home for every legacy role', function (RoleId $role) {
@@ -100,6 +90,8 @@ it('refuses a person who has no role', function () {
     $this->actingAs(User::query()->findOrFail($id))->get('/home')->assertForbidden();
 });
 
-it('links the logo to home', function () {
-    $this->actingAs(homeUser())->get('/home')->assertSee('data-test="home-link"', false)->assertSee(route('home'), false);
+it('links the logo to home and keeps the sidebar to the chart of accounts', function () {
+    $this->actingAs(homeUser())->get('/home')
+        ->assertSee('data-test="home-link"', false)->assertSee(route('home'), false)
+        ->assertSee('data-test="chart-tree"', false);
 });
