@@ -24,9 +24,10 @@ class AmountInWords
 
     private const EN_SCALES = ['', 'thousand', 'million', 'billion'];
 
-    private const CURRENCY_AR = ['USD' => 'دولار أمريكي', 'SYP' => 'ليرة سورية', 'EUR' => 'يورو'];
+    /** `SYP_NEW` is the new Syrian pound, a hundred old ones (the delivery protocol shows both). */
+    private const CURRENCY_AR = ['USD' => 'دولار أمريكي', 'SYP' => 'ليرة سورية', 'SYP_NEW' => 'ليرة سورية جديدة', 'EUR' => 'يورو'];
 
-    private const CURRENCY_EN = ['USD' => 'US dollars', 'SYP' => 'Syrian pounds', 'EUR' => 'euros'];
+    private const CURRENCY_EN = ['USD' => 'US dollars', 'SYP' => 'Syrian pounds', 'SYP_NEW' => 'new Syrian pounds', 'EUR' => 'euros'];
 
     /** "فقط ... دولار أمريكي لا غير" */
     public function arabic(string $amount, string $currency): string

@@ -5,6 +5,7 @@ use App\Enums\VoucherType;
 use App\Livewire\ExcelTools;
 use App\Livewire\MicroProjectFiles;
 use App\Livewire\MicroProjectsHome;
+use App\Models\Donor;
 use App\Models\GlBudgetLine;
 use App\Models\GlProject;
 use App\Models\MicroLoan;
@@ -24,6 +25,7 @@ use App\Services\Treasury\MonthlyRates;
 use App\Support\AmountInWords;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -207,6 +209,38 @@ it('creates a file from the screen, lets only the next approver approve, and pri
     $this->actingAs($this->accountant)->get(route('entries.micro-files.print', ['file' => $file->id, 'form' => 'bond']))
         ->assertOk()->assertSee('فقط ألفان دولار أمريكي لا غير');
     $this->actingAs(mfUser(RoleId::Cashier, 'Carl'))->get(route('entries.micro-files.print', ['file' => $file->id, 'form' => 'order']))->assertForbidden();
+});
+
+it('prints the delivery protocol on the organisation\'s form, with the donor\'s logo, the total in words and each invoice', function () {
+    Storage::fake('local');
+    (require database_path('migrations/2026_11_28_100000_add_logo_to_gl_donors.php'))->up();
+    Storage::disk('local')->put('donor-logos/cp.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='));
+    $donor = Donor::query()->create(['code' => 'CARPL', 'name_en' => 'Caritas Poland', 'name_ar' => 'كاريتاس بولندا', 'type' => 'church_agency', 'logo_path' => 'donor-logos/cp.png']);
+
+    $file = mfApproved($this->accountant, $this->program, $this->manager);
+    app(MicroPurchases::class)->payInvoice($this->accountant, $file, ['date' => '2026-05-10', 'cash_account' => '1111', 'amount' => '400', 'merchant' => 'Abu Sami', 'number' => '1450', 'description_ar' => 'مولدة 9000 واط', 'description_en' => '9000-watt generator']);
+
+    $this->withoutVite();
+    $this->actingAs($this->accountant)->get(route('entries.micro-files.print', ['file' => $file->id, 'form' => 'protocol']))
+        ->assertOk()
+        ->assertSee('data-test="delivery-protocol"', false)
+        ->assertSee($donor->logoUrl(), false)
+        ->assertSee('Protocol of Delivery')
+        ->assertSee('Huda Saleh')
+        ->assertSee('9000-watt generator')
+        ->assertSee('invoice 1450')
+        ->assertSee('فقط أربعمائة دولار أمريكي لا غير')
+        ->assertSee('funded by Caritas Poland')
+        ->assertSee('تموله كاريتاس بولندا');
+
+    $this->actingAs($this->accountant)->get($donor->logoUrl())->assertOk();
+});
+
+it('writes the new pound in words', function () {
+    $words = new AmountInWords;
+
+    expect($words->arabic('687400', 'SYP_NEW'))->toBe('فقط ستمائة وسبعة وثمانون ألف وأربعمائة ليرة سورية جديدة لا غير')
+        ->and($words->english('687400', 'SYP_NEW'))->toBe('Only six hundred eighty-seven thousand four hundred new Syrian pounds');
 });
 
 it('writes amounts in words in Arabic and English', function () {

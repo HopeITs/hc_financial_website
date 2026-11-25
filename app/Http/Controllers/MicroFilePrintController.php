@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Donor;
 use App\Models\MicroLoan;
 use App\Models\MicroPurchase;
 use App\Models\User;
 use App\Services\Loans\MicroFiles;
 use App\Services\Loans\MicroPurchases;
 use App\Support\AmountInWords;
+use App\Support\Money;
 use Illuminate\Contracts\View\View;
 
 /**
@@ -43,6 +45,27 @@ class MicroFilePrintController extends Controller
             'words' => ['ar' => $words->arabic($total, $found->currency), 'en' => $words->english($total, $found->currency)],
             'usdValue' => $files->usdValue($found),
             'names' => $names,
+            'donor' => Donor::named($found->project?->donor ?? $found->funder),
+            'delivered' => $this->delivered($totals['invoiced'], $found->currency, $words),
         ]);
+    }
+
+    /**
+     * The total the delivery protocol declares received (finance form of 2026-11-28): in the file's currency, and for
+     * pounds also in new pounds, each in figures and in words. The items' costs show in new pounds.
+     *
+     * @param  numeric-string  $invoiced
+     * @return list<array{amount: string, currency: string, ar: string, en: string}>
+     */
+    private function delivered(string $invoiced, string $currency, AmountInWords $words): array
+    {
+        $rows = [['amount' => $invoiced, 'currency' => $currency, 'ar' => $words->arabic($invoiced, $currency), 'en' => $words->english($invoiced, $currency)]];
+
+        if ($currency === 'SYP') {
+            $new = Money::normalize(bcdiv($invoiced, Money::NEW_SYP_DIVISOR, 4));
+            $rows[] = ['amount' => $new, 'currency' => 'SYP_NEW', 'ar' => $words->arabic($new, 'SYP_NEW'), 'en' => $words->english($new, 'SYP_NEW')];
+        }
+
+        return $rows;
     }
 }

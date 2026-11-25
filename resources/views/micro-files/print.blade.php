@@ -180,53 +180,104 @@
                 <img class="mf-bg" src="{{ $page('card-inside') }}" alt="">
             </section>
         @elseif ($form === 'protocol')
-            <section class="mf-page">
-                <img class="mf-bg" src="{{ $page('letterhead') }}" alt="">
-                <div class="mf-body">
-                    <h1 class="mf-title">{{ $ar('titles.protocol') }} <span dir="ltr">· {{ $en('titles.protocol') }}</span></h1>
-                    <div class="mf-info">
-                        <div>{{ $ar('beneficiary_name') }} <b>{{ $name }}</b> · <span dir="ltr">{{ $file->name_en }}</span></div>
-                        <div>{{ $ar('national_number') }} <b dir="ltr">{{ $file->national_number }}</b></div>
-                        <div>{{ $ar('project_number') }} <b dir="ltr">{{ $file->project_number }}</b></div>
-                        <div>{{ $ar('donor') }} <b>{{ $funder }}</b></div>
+            {{-- The delivery protocol on the organisation's own form (finance form of 2026-11-28): the donor's logo, the
+                 title and Hope's logo at the top, English on the left and Arabic on the right. Pounds are declared in
+                 old and new pounds, and the items cost in new pounds. --}}
+            @php
+                $donorEn = $donor?->name_en ?? $funder;
+                $donorAr = $donor?->name_ar ?? $funder;
+                $pounds = $file->currency === 'SYP';
+                $cost = fn ($amount): string => $pounds ? \App\Support\Money::normalize(bcdiv(\App\Support\Money::normalize($amount), \App\Support\Money::NEW_SYP_DIVISOR, 4)) : \App\Support\Money::normalize($amount);
+                $costCurrency = $pounds ? 'SYP_NEW' : $file->currency;
+                $label = fn (string $currency, string $locale): string => __('micro_print.currency.'.$currency, [], $locale);
+            @endphp
+            <section class="mf-page dp-page" data-test="delivery-protocol">
+                <header class="dp-head" dir="ltr">
+                    <div class="dp-logo">
+                        @if ($donor?->logoUrl() !== null)
+                            <img src="{{ $donor->logoUrl() }}" alt="{{ $donorEn }}" data-test="protocol-donor-logo">
+                        @endif
                     </div>
-                    <table class="mf-table" data-test="print-invoices">
-                        <thead>
+                    <h1 class="dp-title">{{ $en('titles.protocol_form') }}<br><span dir="rtl">{{ $ar('titles.protocol') }}</span></h1>
+                    <div class="dp-logo dp-logo-end"><img src="{{ asset('images/hope-logo.png') }}" alt="Hope Center"></div>
+                </header>
+
+                <table class="dp-table dp-declare" dir="ltr">
+                    <tr>
+                        <td class="dp-en">{{ $en('undersigned') }}</td>
+                        <td class="dp-val" colspan="2">{{ $file->name_en }}</td>
+                        <td class="dp-val" colspan="2" dir="rtl">{{ $name }}</td>
+                        <td class="dp-ar" dir="rtl">{{ $ar('undersigned') }}</td>
+                    </tr>
+                    <tr>
+                        <td class="dp-en">{{ $en('national_number_form') }}</td>
+                        <td class="dp-val" colspan="2">{{ $file->national_number }}</td>
+                        <td class="dp-val" colspan="2">{{ $file->national_number }}</td>
+                        <td class="dp-ar" dir="rtl">{{ $ar('national_number') }}</td>
+                    </tr>
+                    @foreach ($delivered as $row)
+                        <tr data-test="protocol-total-{{ $row['currency'] }}">
+                            <td class="dp-en">{{ $en('declare_received') }}</td>
+                            <td class="dp-num"><x-money :amount="$row['amount']" /></td>
+                            <td class="dp-cur">{{ $label($row['currency'], 'en') }}</td>
+                            <td class="dp-cur" dir="rtl">{{ $label($row['currency'], 'ar') }}</td>
+                            <td class="dp-num"><x-money :amount="$row['amount']" /></td>
+                            <td class="dp-ar" dir="rtl">{{ $ar('declare_received') }}</td>
+                        </tr>
+                        <tr>
+                            <td class="dp-words" colspan="3"><u>{{ $en('in_writing') }}</u> {{ $row['en'] }}</td>
+                            <td class="dp-words" colspan="3" dir="rtl"><u>{{ $ar('in_writing') }}</u> {{ $row['ar'] }}</td>
+                        </tr>
+                    @endforeach
+                    <tr>
+                        <td class="dp-words" colspan="3">{{ $en('use_properly', ['donor' => $donorEn]) }}</td>
+                        <td class="dp-words" colspan="3" dir="rtl">{{ $ar('use_properly', ['donor' => $donorAr]) }}</td>
+                    </tr>
+                </table>
+
+                <table class="dp-table dp-items" dir="ltr" data-test="print-invoices">
+                    <thead>
+                        <tr>
+                            <th>{{ $en('item') }}<br><span dir="rtl">{{ $ar('item') }}</span></th>
+                            <th>{{ $en('cost') }}<br><span dir="rtl">{{ $ar('cost') }}</span></th>
+                            <th>{{ $en('invoice_number') }}<br><span dir="rtl">{{ $ar('invoice_number') }}</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($invoices as $invoice)
                             <tr>
-                                <th>#</th>
-                                <th>{{ $ar('invoice_number') }}<br><span dir="ltr">{{ $en('invoice_number') }}</span></th>
-                                <th>{{ $ar('date') }}<br><span dir="ltr">{{ $en('date') }}</span></th>
-                                <th>{{ $ar('description') }}</th>
-                                <th dir="ltr">{{ $en('description') }}</th>
-                                <th>{{ $ar('amount') }}<br><span dir="ltr">{{ $en('amount') }}</span></th>
+                                <td class="dp-item">
+                                    {{ $invoice->description_en }}@if ($invoice->is_seizure) ({{ $en('seizure_invoice') }})@endif
+                                    <br><span dir="rtl">{{ $invoice->description_ar }}@if ($invoice->is_seizure) ({{ $ar('seizure_invoice') }})@endif</span>
+                                </td>
+                                <td class="dp-num"><x-money :amount="$cost($invoice->loan_amount)" /></td>
+                                <td class="dp-mid">{{ $en('invoice') }} {{ $invoice->number }}</td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($invoices as $index => $invoice)
-                                <tr>
-                                    <td>{{ $index + 1 }}</td>
-                                    <td dir="ltr">{{ $invoice->number }}</td>
-                                    <td dir="ltr">{{ $day($invoice->purchase_date) }}</td>
-                                    <td>{{ $invoice->description_ar }}@if ($invoice->is_seizure) ({{ $ar('seizure_invoice') }})@endif</td>
-                                    <td dir="ltr">{{ $invoice->description_en }}@if ($invoice->is_seizure) ({{ $en('seizure_invoice') }})@endif</td>
-                                    <td><x-money :amount="$invoice->loan_amount" :currency="$file->currency" /></td>
-                                </tr>
-                            @endforeach
-                            <tr class="mf-strong">
-                                <td colspan="5">{{ $ar('total') }} / {{ $en('total') }}</td>
-                                <td><x-money :amount="$totals['invoiced']" :currency="$file->currency" /></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <p class="mf-gap mf-strong">{{ $words['ar'] }}</p>
-                    <p class="mf-strong" dir="ltr">{{ $words['en'] }}</p>
-                    <p class="mf-gap">{{ $ar('received_all') }}<br><span dir="ltr">{{ $en('received_all') }}</span></p>
-                    <div class="mf-signs-row">
-                        <span class="mf-sign">{{ $ar('beneficiary') }} / {{ $en('beneficiary') }}</span>
-                        <span class="mf-sign">{{ $ar('project_manager') }} / {{ $en('project_manager') }}</span>
-                        <span class="mf-sign">{{ $ar('accounting') }} / {{ $en('accounting') }}</span>
+                        @endforeach
+                        <tr class="dp-total">
+                            <td>{{ $ar('total') }} / {{ $en('total') }}</td>
+                            <td class="dp-num"><x-money :amount="$cost($totals['invoiced'])" /> <span class="dp-small">{{ $label($costCurrency, 'en') }}</span></td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="dp-row" dir="ltr">
+                    <p class="dp-strong">{{ $en('lawyer') }}</p>
+                    <p class="dp-strong" dir="rtl">{{ $ar('lawyer') }}</p>
+                </div>
+                <div class="dp-row dp-signs" dir="ltr">
+                    <div class="dp-sign">
+                        <div class="dp-strong">{{ $en('date') }} / {{ $ar('date') }}</div>
+                        <div>{{ $day($file->protocol_signed_on ?? now()) }}</div>
+                    </div>
+                    <div class="dp-sign">
+                        <div class="dp-strong">{{ $en('signature') }} / {{ $ar('signature') }}</div>
+                        <div class="dp-line"></div>
                     </div>
                 </div>
+
+                <footer class="dp-foot" dir="ltr">{{ $en('website') }}</footer>
             </section>
         @endif
 

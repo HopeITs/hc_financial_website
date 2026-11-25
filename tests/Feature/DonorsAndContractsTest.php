@@ -370,3 +370,39 @@ it('downloads the signed contract and keeps the cashier out', function () {
         ->get(route('funding.agreements.file', ['contract' => $contract->id, 'kind' => 'signed']))
         ->assertForbidden();
 });
+
+it('keeps a logo for a donor, shows it, and takes it off', function () {
+    Storage::fake('local');
+    (require database_path('migrations/2026_11_28_100000_add_logo_to_gl_donors.php'))->up();
+    $donor = dcDonor();
+    $fadi = dcUser(RoleId::FinancialManager, 'Fadi');
+
+    Livewire::actingAs($fadi)->test(Donors::class)
+        ->call('edit', $donor->id)
+        ->set('logo', UploadedFile::fake()->image('caritas.png', 120, 80))
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $path = $donor->fresh()->logo_path;
+    expect($path)->toStartWith('donor-logos/')
+        ->and(Storage::disk('local')->exists($path))->toBeTrue()
+        ->and(Donor::named('Caritas Poland')?->id)->toBe($donor->id)
+        ->and(Donor::named('كاريتاس بولندا')?->id)->toBe($donor->id);
+
+    $this->actingAs($fadi)->get($donor->fresh()->logoUrl())->assertOk();
+
+    // A file that is not an image is refused.
+    Livewire::actingAs($fadi)->test(Donors::class)
+        ->call('edit', $donor->id)
+        ->set('logo', UploadedFile::fake()->create('logo.pdf', 10, 'application/pdf'))
+        ->call('save')
+        ->assertHasErrors('logo');
+
+    Livewire::actingAs($fadi)->test(Donors::class)
+        ->call('edit', $donor->id)
+        ->set('removeLogo', true)
+        ->call('save');
+
+    expect($donor->fresh()->logo_path)->toBeNull()
+        ->and(Storage::disk('local')->exists($path))->toBeFalse();
+});

@@ -9,6 +9,9 @@ use InvalidArgumentException;
  */
 final class Money
 {
+    /** The new Syrian pound is a hundred of the old ones the books keep (the delivery protocol shows both). */
+    public const NEW_SYP_DIVISOR = '100';
+
     /** @return numeric-string */
     public static function normalize(string|int|float|null $value, int $scale = 2): string
     {

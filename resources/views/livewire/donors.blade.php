@@ -48,6 +48,25 @@
 
                     <x-ui.form-textarea wire:model="notes" :label="__('donors.notes')" rows="2" />
 
+                    <x-ui.form-section :title="__('donors.logo')">
+                        <div class="flex flex-wrap items-center gap-4" data-test="donor-logo">
+                            @php($current = $editing !== null ? $donors->firstWhere('id', $editing)?->logoUrl() : null)
+                            @if ($logo !== null && $logo->isPreviewable())
+                                <img src="{{ $logo->temporaryUrl() }}" alt="{{ __('donors.logo') }}" class="h-16 w-auto rounded border border-secondary-soft bg-white p-1">
+                            @elseif ($current !== null && ! $removeLogo)
+                                <img src="{{ $current }}" alt="{{ __('donors.logo') }}" class="h-16 w-auto rounded border border-secondary-soft bg-white p-1" data-test="donor-logo-current">
+                            @endif
+                            <div class="flex flex-col gap-1">
+                                <input type="file" wire:model="logo" accept=".png,.jpg,.jpeg" class="text-sm" aria-label="{{ __('donors.logo') }}" data-test="donor-logo-upload">
+                                <p class="text-xs text-secondary-medium dark:text-ink-muted">{{ __('donors.logo_help') }}</p>
+                                @error('logo')<p class="text-sm text-status-critical" role="alert">{{ $message }}</p>@enderror
+                                @if ($current !== null)
+                                    <flux:checkbox wire:model.live="removeLogo" :label="__('donors.logo_remove')" data-test="donor-logo-remove" />
+                                @endif
+                            </div>
+                        </div>
+                    </x-ui.form-section>
+
                     <flux:checkbox wire:model="isActive" :label="__('donors.active')" data-test="donor-active" />
 
                     <div class="flex gap-2">
@@ -96,8 +115,15 @@
                     <tr wire:key="donor-{{ $donor->id }}">
                         <td class="font-medium text-secondary-dark dark:text-ink" dir="ltr">{{ $donor->code }}</td>
                         <td>
-                            <div>{{ $donor->name_ar }}</div>
-                            <div class="text-xs text-secondary-medium dark:text-ink-muted" dir="ltr">{{ $donor->name_en }}</div>
+                            <div class="flex items-center gap-2">
+                                @if ($donor->logo_path !== null)
+                                    <img src="{{ route('funding.donors.logo', ['donor' => $donor->id, 'v' => substr(md5($donor->logo_path), 0, 8)]) }}" alt="" class="h-6 w-auto" loading="lazy">
+                                @endif
+                                <div>
+                                    <div>{{ $donor->name_ar }}</div>
+                                    <div class="text-xs text-secondary-medium dark:text-ink-muted" dir="ltr">{{ $donor->name_en }}</div>
+                                </div>
+                            </div>
                         </td>
                         <td>{{ $donor->type->label() }}</td>
                         <td>{{ $donor->country ?? '—' }}</td>

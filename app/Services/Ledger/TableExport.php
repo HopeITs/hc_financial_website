@@ -145,8 +145,9 @@ class TableExport
      *
      * @param  list<array{title: string, sheet: string, lines: list<string>, sections: list<Section>}>  $parts
      * @param  list<string>  $signatures  the roles that sign, each over a line for the name, signature and date
+     * @param  string|null  $logo  the donor's logo file, shown over each part's title (finance request of 2026-11-28)
      */
-    public function pdfBook(array $parts, bool $rtl, array $signatures): string
+    public function pdfBook(array $parts, bool $rtl, array $signatures, ?string $logo = null): string
     {
         $dir = storage_path('app/mpdf');
         is_dir($dir) || mkdir($dir, 0775, true);
@@ -166,6 +167,10 @@ class TableExport
         foreach ($parts as $n => $part) {
             if ($n > 0) {
                 $html .= '<pagebreak />';
+            }
+
+            if ($logo !== null && is_file($logo)) {
+                $html .= '<div style="text-align:center;margin:0 0 4px"><img src="'.e($logo).'" style="height:16mm"></div>';
             }
 
             $html .= '<h2>'.e($part['title']).'</h2>';

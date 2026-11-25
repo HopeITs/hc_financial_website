@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * A donor, kept in its own list apart from the chart of accounts (all income goes to 4001 with the donor on the line).
@@ -23,6 +24,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $contact_phone
  * @property string|null $notes
  * @property bool $is_active
+ * @property string|null $logo_path the logo on the private disk (finance request of 2026-11-28)
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -32,7 +34,7 @@ class Donor extends Model
 
     protected $fillable = [
         'code', 'name_en', 'name_ar', 'type', 'country', 'currency',
-        'contact_name', 'contact_email', 'contact_phone', 'notes', 'is_active',
+        'contact_name', 'contact_email', 'contact_phone', 'notes', 'is_active', 'logo_path',
     ];
 
     protected function casts(): array
@@ -60,5 +62,37 @@ class Donor extends Model
     public function localizedName(): string
     {
         return app()->getLocale() === 'ar' ? $this->name_ar : $this->name_en;
+    }
+
+    /**
+     * The donor a project or a fund names (`gl_projects.donor`, `gl_micro_loans.funder`), by its English or Arabic
+     * name or its code; null when no donor in the list answers to it.
+     */
+    public static function named(?string $name): ?self
+    {
+        $name = trim((string) $name);
+
+        if ($name === '') {
+            return null;
+        }
+
+        return self::query()->where(fn (Builder $query) => $query->where('name_en', $name)->orWhere('name_ar', $name)->orWhere('code', $name))
+            ->orderByDesc('is_active')->first();
+    }
+
+    /** The logo's file on the server, or null when the donor has none. */
+    public function logoFile(): ?string
+    {
+        if ($this->logo_path === null || $this->logo_path === '' || ! Storage::disk('local')->exists($this->logo_path)) {
+            return null;
+        }
+
+        return Storage::disk('local')->path($this->logo_path);
+    }
+
+    /** Where a page shows the logo, or null when the donor has none. */
+    public function logoUrl(): ?string
+    {
+        return $this->logoFile() !== null ? route('funding.donors.logo', ['donor' => $this->id, 'v' => substr(md5((string) $this->logo_path), 0, 8)]) : null;
     }
 }
