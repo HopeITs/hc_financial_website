@@ -608,9 +608,10 @@ class MicroLoans
     }
 
     /**
-     * The disbursement: the loan on 1204 and the grant on its budget line (or on 5413 for a loan from an instalment
-     * fund), both in the loan's currency, and the cash out in the cash account's currency: the same amount, or, for a
-     * loan in dollars paid in pounds, its pounds at the invoice's rate.
+     * The disbursement, in the loan's currency, and the cash out in the cash account's currency: the same amount, or,
+     * for a loan in dollars paid in pounds, its pounds at the invoice's rate. A project's loan puts the loan on 1204 and
+     * the grant on its budget line. A loan from an instalment fund spends the whole amount on the grants (5413) and
+     * moves the share to repay to 1204 in the same voucher (finance decision of 2026-11-25).
      *
      * @param  numeric-string  $loan
      * @param  numeric-string  $grant
@@ -627,6 +628,41 @@ class MicroLoans
         $payCurrency = (string) $cash->currency;
         $name = trim($beneficiary);
         $lines = [];
+        $cashLine = new LineDraft(
+            ...$tags,
+            accountCode: $cash->code, currency: $payCurrency, credit: $this->paidAmount($total, $currency, $payCurrency, $rate), rate: $payCurrency === 'USD' ? '1.000000' : $rate, creditUsd: $totalUsd,
+            fundSource: $fundSource, creditDonor: $this->donorAmount($totalUsd, $project),
+        );
+
+        // A loan from an instalment fund is funded like a micro-project file (finance decision of 2026-11-25): the whole
+        // amount is spent on the grants, then the share to repay moves from the grants to the loan, in the same voucher.
+        if ($project === null) {
+            $lines[] = new LineDraft(
+                ...$tags,
+                accountCode: self::GRANTS_ACCOUNT, currency: $currency, debit: $total, rate: $lineRate, debitUsd: $totalUsd,
+                contact: $name, debitDonor: $this->donorAmount($totalUsd, $project),
+            );
+            $lines[] = $cashLine;
+
+            if (bccomp($loan, '0', 2) > 0) {
+                $lines[] = new LineDraft(
+                    ...$tags,
+                    accountCode: self::LOANS_ACCOUNT, currency: $currency, debit: $loan, rate: $lineRate, debitUsd: $loanUsd,
+                    fundSource: $fundSource, contact: $name, debitDonor: $this->donorAmount($loanUsd, $project),
+                );
+                $lines[] = new LineDraft(
+                    ...$tags,
+                    accountCode: self::GRANTS_ACCOUNT, currency: $currency, credit: $loan, rate: $lineRate, creditUsd: $loanUsd,
+                    contact: $name, creditDonor: $this->donorAmount($loanUsd, $project),
+                );
+            }
+
+            return new VoucherDraft(
+                type: VoucherType::Payment, date: $date, preparedBy: $preparedBy, lines: $lines,
+                description: __('loans.disbursement_description', ['beneficiary' => $name, 'project' => $tags['donor'].' · '.$tags['city']]),
+                requestId: $requestId,
+            );
+        }
 
         if (bccomp($loan, '0', 2) > 0) {
             $lines[] = new LineDraft(
@@ -644,11 +680,7 @@ class MicroLoans
             );
         }
 
-        $lines[] = new LineDraft(
-            ...$tags,
-            accountCode: $cash->code, currency: $payCurrency, credit: $this->paidAmount($total, $currency, $payCurrency, $rate), rate: $payCurrency === 'USD' ? '1.000000' : $rate, creditUsd: $totalUsd,
-            fundSource: $fundSource, creditDonor: $this->donorAmount($totalUsd, $project),
-        );
+        $lines[] = $cashLine;
 
         return new VoucherDraft(
             type: VoucherType::Payment, date: $date, preparedBy: $preparedBy, lines: $lines,

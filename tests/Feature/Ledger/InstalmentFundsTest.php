@@ -70,11 +70,15 @@ it('funds a new beneficiary from a fund with no project, and refuses more than i
 
     expect($loan->only(['project_code', 'funder', 'city']))->toBe(['project_code' => null, 'funder' => 'Caritas Poland', 'city' => 'Aleppo'])
         ->and($loan->label())->toBe('Caritas Poland · Aleppo')
+        // Funded like a micro-project file (finance decision of 2026-11-25): the whole 250 spent on the grants, then the
+        // 200 to repay moved from the grants to the loan.
         ->and($voucher->lines->map(fn ($line): array => [$line->account_code, $line->project_code, $line->donor, (string) $line->debit_usd, (string) $line->credit_usd])->all())->toBe([
-            ['1204', null, 'Caritas Poland', '200.00', '0.00'],
-            ['5413', null, 'Caritas Poland', '50.00', '0.00'],
+            ['5413', null, 'Caritas Poland', '250.00', '0.00'],
             ['1111', null, 'Caritas Poland', '0.00', '250.00'],
+            ['1204', null, 'Caritas Poland', '200.00', '0.00'],
+            ['5413', null, 'Caritas Poland', '0.00', '200.00'],
         ])
+        ->and($voucher->lines[1]->fund_source)->toBe(FundSource::RecoveredLoans)
         ->and($voucher->lines[2]->fund_source)->toBe(FundSource::RecoveredLoans)
         ->and(app(InstalmentFunds::class)->available('Caritas Poland', 'Aleppo', 'USD', CarbonImmutable::parse('2026-05-12')))->toBe('50.00');
 
@@ -88,8 +92,9 @@ it('pays a dollar loan from a fund\'s pounds at the invoice\'s rate', function (
     ['loan' => $loan, 'voucher' => $voucher] = fundPoolLoan('100', '0', 'USD', '1112', '15000');
 
     expect($loan->currency)->toBe('USD')
-        ->and([$voucher->lines[0]->account_code, $voucher->lines[0]->currency, (string) $voucher->lines[0]->debit_usd])->toBe(['1204', 'USD', '100.00'])
+        ->and([$voucher->lines[0]->account_code, $voucher->lines[0]->currency, (string) $voucher->lines[0]->debit_usd])->toBe(['5413', 'USD', '100.00'])
         ->and([$voucher->lines[1]->account_code, $voucher->lines[1]->currency, (string) $voucher->lines[1]->credit_orig, (string) $voucher->lines[1]->credit_usd])->toBe(['1112', 'SYP', '1500000.00', '100.00'])
+        ->and([$voucher->lines[2]->account_code, (string) $voucher->lines[2]->debit_usd])->toBe(['1204', '100.00'])
         ->and(app(InstalmentFunds::class)->available('Caritas Poland', 'Aleppo', 'SYP', CarbonImmutable::parse('2026-05-12')))->toBe('1500000.00');
 });
 
