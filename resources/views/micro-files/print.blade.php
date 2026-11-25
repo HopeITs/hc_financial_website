@@ -23,8 +23,8 @@
     $shown = isset($rooms[$form]) ? $rows->take($rooms[$form]) : $rows;
     $rest = isset($rooms[$form]) ? $rows->slice($rooms[$form])->values() : collect();
     $cell = 'mf-cell';
-    // The delivery protocol (finance form of 2026-11-28). Kept in this first block: Blade cannot read an @php block
-    // that comes after an @php(...) line, as the purchase list's below.
+    // The delivery protocol (finance form of 2026-11-28). Kept in this first block: Blade cannot read a PHP block that
+    // comes after a one-line PHP statement, as the purchase list's below.
     $donorEn = $donor?->name_en ?? $funder;
     $donorAr = $donor?->name_ar ?? $funder;
     $pounds = $file->currency === 'SYP';
