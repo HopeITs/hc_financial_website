@@ -18,10 +18,12 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Micro loans to and from Excel (finance request of 2026-11-21). Each imported row opens a new loan exactly as the
- * screen does: the beneficiary, the schedule and the disbursement voucher, waiting for approval. The check opens it
- * in a transaction it then undoes, so every rule of the loan and of the voucher is seen before anything is saved.
- * A pound loan with no rate takes the month's rate. The export adds what is still owed and late.
+ * Micro loans to Excel (finance request of 2026-11-21), with what is still owed and late.
+ *
+ * The import, which opened a loan straight from a project, is closed (finance decision of 2026-11-25): every loan to a
+ * beneficiary now goes through a micro-project file (quotes, payment order and its approvals, invoices, receipt
+ * protocol), so the donor's money is always spent and lent the same way. The checks below stay for the record of the
+ * columns; nothing calls them while the import is closed.
  */
 class MicroLoansExcel extends ExcelDataset
 {
@@ -29,6 +31,12 @@ class MicroLoansExcel extends ExcelDataset
         private readonly MicroLoans $loans,
         private readonly MonthlyRates $monthly,
     ) {}
+
+    /** Export only: a new loan is opened from a micro-project file. */
+    public function importable(): bool
+    {
+        return false;
+    }
 
     public function screen(): string
     {
