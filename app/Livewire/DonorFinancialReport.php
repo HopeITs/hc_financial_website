@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Enums\ScreenAction;
+use App\Models\Donor;
 use App\Models\GlBudgetLine;
 use App\Models\GlProject;
 use App\Models\User;
@@ -116,7 +117,7 @@ class DonorFinancialReport extends Component
         $name = 'donor-financial-'.$project->code.'-'.$from->toDateString().'-'.$to->toDateString();
 
         if ($format === 'pdf') {
-            $content = $export->pdfBook($parts, $rtl, [__('donor_financial.sign.prepared'), __('donor_financial.sign.reviewed'), __('donor_financial.sign.approved')]);
+            $content = $export->pdfBook($parts, $rtl, [__('donor_financial.sign.prepared'), __('donor_financial.sign.reviewed'), __('donor_financial.sign.approved')], Donor::named($project->donor)?->logoFile());
 
             return response()->streamDownload(function () use ($content) {
                 echo $content;

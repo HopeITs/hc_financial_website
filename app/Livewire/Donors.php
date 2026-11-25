@@ -10,10 +10,14 @@ use App\Services\Ledger\Currencies;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
 
 /**
  * The donor list (finance design of 2026-11-16): kept apart from the chart of accounts, chosen on a funding contract
@@ -23,6 +27,11 @@ use Livewire\Component;
 #[Layout('components.layouts.app')]
 class Donors extends Component
 {
+    use WithFileUploads;
+
+    /** Where the logos are kept on the private disk. */
+    private const LOGO_FOLDER = 'donor-logos';
+
     public string $search = '';
 
     public string $typeFilter = '';
@@ -54,6 +63,12 @@ class Donors extends Component
     public string $notes = '';
 
     public bool $isActive = true;
+
+    /** A new logo for the donor (finance request of 2026-11-28). */
+    public ?TemporaryUploadedFile $logo = null;
+
+    /** The donor's logo is taken off when saved. */
+    public bool $removeLogo = false;
 
     public ?string $notice = null;
 
@@ -111,6 +126,7 @@ class Donors extends Component
             'contactPhone' => ['nullable', 'string', 'max:64'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'isActive' => ['boolean'],
+            'logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg', 'max:2048'],
         ]);
 
         $attributes = [
@@ -129,10 +145,16 @@ class Donors extends Component
 
         $isNew = $this->editing === null;
 
-        if ($isNew) {
-            Donor::query()->create($attributes);
-        } else {
-            Donor::query()->findOrFail($this->editing)->update($attributes);
+        $donor = $isNew ? Donor::query()->create($attributes) : tap(Donor::query()->findOrFail($this->editing))->update($attributes);
+
+        if ($this->logo !== null || $this->removeLogo) {
+            $old = $donor->logo_path;
+            $path = $this->logo !== null ? $this->logo->storeAs(self::LOGO_FOLDER, $donor->id.'-'.Str::random(8).'.'.$this->logo->extension(), 'local') : null;
+            $donor->update(['logo_path' => $path]);
+
+            if ($old !== null && $old !== $path && str_starts_with($old, self::LOGO_FOLDER.'/')) {
+                Storage::disk('local')->delete($old);
+            }
         }
 
         $this->resetForm();
@@ -153,6 +175,10 @@ class Donors extends Component
             $this->notice = __('donors.delete_has_agreements', ['name' => $donor->name_en]);
 
             return;
+        }
+
+        if ($donor->logo_path !== null && str_starts_with($donor->logo_path, self::LOGO_FOLDER.'/')) {
+            Storage::disk('local')->delete($donor->logo_path);
         }
 
         $donor->delete();
@@ -207,7 +233,7 @@ class Donors extends Component
     private function resetForm(): void
     {
         $this->resetValidation();
-        $this->reset('editing', 'code', 'nameEn', 'nameAr', 'type', 'country', 'currency', 'contactName', 'contactEmail', 'contactPhone', 'notes', 'notice');
+        $this->reset('editing', 'code', 'nameEn', 'nameAr', 'type', 'country', 'currency', 'contactName', 'contactEmail', 'contactPhone', 'notes', 'notice', 'logo', 'removeLogo');
         $this->isActive = true;
     }
 
