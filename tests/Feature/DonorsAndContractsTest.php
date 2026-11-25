@@ -406,3 +406,21 @@ it('keeps a logo for a donor, shows it, and takes it off', function () {
     expect($donor->fresh()->logo_path)->toBeNull()
         ->and(Storage::disk('local')->exists($path))->toBeFalse();
 });
+
+it('finds a project\'s donor through its agreement, or by a name that is close to the donor\'s', function () {
+    $contract = dcContract();
+    $other = Donor::query()->create(['code' => 'ACN', 'name_en' => 'Aid to the Church in Need', 'name_ar' => 'عون الكنيسة المتألمة', 'type' => 'church_agency', 'is_active' => true]);
+
+    // F2F has no donor name, but its agreement is Caritas Poland's.
+    expect(Donor::forProject(GlProject::query()->findOrFail('F2F'))?->id)->toBe($contract->donor_id);
+
+    // A project with no agreement and a shorter name on it.
+    $project = GlProject::query()->create(['code' => 'EDU', 'name' => 'Education', 'donor' => 'Caritas', 'restriction' => 'With donor restrictions', 'donor_currency' => 'USD', 'donor_rate' => 1, 'is_general_account' => false]);
+    expect(Donor::forProject($project)?->id)->toBe($contract->donor_id)
+        ->and(Donor::named('caritas poland')?->id)->toBe($contract->donor_id)
+        ->and(Donor::named('ACN')?->id)->toBe($other->id)
+        ->and(Donor::named('Unknown donor'))->toBeNull();
+
+    // A fund's loan names its funder.
+    expect(Donor::forProject(null, 'Aid to the Church in Need')?->id)->toBe($other->id);
+});

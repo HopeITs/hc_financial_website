@@ -76,8 +76,47 @@ class Donor extends Model
             return null;
         }
 
-        return self::query()->where(fn (Builder $query) => $query->where('name_en', $name)->orWhere('name_ar', $name)->orWhere('code', $name))
+        $exact = self::query()->where(fn (Builder $query) => $query->where('name_en', $name)->orWhere('name_ar', $name)->orWhere('code', $name))
             ->orderByDesc('is_active')->first();
+
+        if ($exact !== null) {
+            return $exact;
+        }
+
+        // The name on a project is often shorter or longer than the donor's ("Caritas" for "Caritas Poland"): one donor
+        // whose name holds it, or is held in it, is the one meant.
+        $wanted = mb_strtolower($name);
+        $close = self::query()->get()->filter(function (self $donor) use ($wanted): bool {
+            foreach ([$donor->name_en, $donor->name_ar, $donor->code] as $candidate) {
+                $candidate = mb_strtolower(trim((string) $candidate));
+                if ($candidate !== '' && mb_strlen($candidate) >= 3 && (str_contains($candidate, $wanted) || str_contains($wanted, $candidate))) {
+                    return true;
+                }
+            }
+
+            return false;
+        });
+
+        return $close->count() === 1 ? $close->first() : null;
+    }
+
+    /**
+     * The donor of a project's papers (finance request of 2026-11-28): the donor of the project's latest agreement, else
+     * the one its donor name points to; for a loan from an instalment fund, the fund's funder.
+     */
+    public static function forProject(?GlProject $project, ?string $funder = null): ?self
+    {
+        if ($project !== null) {
+            $donorId = ContractProject::query()->where('project_code', $project->code)
+                ->join('gl_contracts as c', 'c.id', '=', 'gl_contract_projects.contract_id')
+                ->orderByDesc('c.id')->value('c.donor_id');
+
+            if ($donorId !== null && ($donor = self::query()->find($donorId)) !== null) {
+                return $donor;
+            }
+        }
+
+        return self::named($project?->donor ?? $funder);
     }
 
     /** The logo's file on the server, or null when the donor has none. */
