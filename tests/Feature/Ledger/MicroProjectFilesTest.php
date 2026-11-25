@@ -125,6 +125,32 @@ it('pays the purchases of an approved file only, the file standing for the reque
         ->and((string) $invoice->loan_amount)->toBe('600.00');
 });
 
+it('pays a pound loan in dollars at the month\'s rate or a typed one, the loan staying in pounds', function () {
+    $files = app(MicroFiles::class);
+    $file = $files->save($this->accountant, null, [
+        'beneficiary' => 'Rami', 'funding' => 'project:F2F', 'currency' => 'SYP', 'rate' => '15000',
+        'requested_amount' => '7500000', 'recovery_percent' => '50', 'instalment_amount' => '375000',
+    ], [['name' => 'Generator', 'kind' => '9 kW', 'quantity' => '1', 'condition' => 'new']]);
+    $files->addQuote($this->accountant, $file, 'Rami', MicroQuote::BENEFICIARY, '2026-05-01', '7500000', 'SYP', null);
+    $files->addQuote($this->accountant, $file, 'Abu Sami', MicroQuote::MERCHANT, '2026-05-02', '7800000', 'SYP', null);
+    $files->submit($file);
+    $files->approve($this->program, $file);
+    $file = $files->approve($this->manager, $file->fresh());
+
+    $purchases = app(MicroPurchases::class);
+    // 200 USD at May's 15,000 is 3,000,000 pounds of the loan; 100 USD at a typed 16,000 is 1,600,000.
+    $monthly = $purchases->payInvoice($this->accountant, $file, ['date' => '2026-05-10', 'cash_account' => '1111', 'amount' => '200', 'merchant' => 'Abu Sami', 'number' => 'F-1', 'description_ar' => 'مولدة']);
+    $typed = $purchases->payInvoice($this->accountant, $file, ['date' => '2026-05-11', 'cash_account' => '1111', 'amount' => '100', 'rate' => '16,000', 'merchant' => 'Abu Sami', 'number' => 'F-2', 'description_ar' => 'كابلات']);
+
+    expect([(string) $monthly->loan_amount, (string) $monthly->usd, $monthly->currency])->toBe(['3000000.00', '200.00', 'USD'])
+        ->and((string) $typed->loan_amount)->toBe('1600000.00')
+        ->and(Voucher::query()->with('lines')->findOrFail($monthly->voucher_id)->lines->map(fn ($line): array => [$line->account_code, $line->currency, (string) $line->debit_orig, (string) $line->credit_orig, (string) $line->debit_usd, (string) $line->credit_usd])->all())->toBe([
+            ['5413', 'SYP', '3000000.00', '0.00', '200.00', '0.00'],
+            ['1111', 'USD', '0.00', '200.00', '0.00', '200.00'],
+        ])
+        ->and($purchases->totals($file->fresh())['invoiced'])->toBe('4600000.00');
+});
+
 it('buys through an advance, takes back what is left, and opens the loan when the protocol is signed', function () {
     $purchases = app(MicroPurchases::class);
     $file = mfApproved($this->accountant, $this->program, $this->manager);

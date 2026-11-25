@@ -499,7 +499,8 @@ class MicroProjectFiles extends Component
         $arabic = app()->getLocale() === 'ar';
 
         return GlAccount::query()->where('is_cash', true)->where('is_active', true)
-            ->whereIn('currency', $file->currency === 'USD' ? ['USD', 'SYP'] : ['SYP'])
+            // Paid in either currency whatever the loan's (finance decision of 2026-11-28).
+            ->whereIn('currency', ['USD', 'SYP'])
             ->when($file->project_code === null, fn ($query) => $query->where('city', $file->city))
             ->whereRaw('code not like ?', ['11_3'])->whereRaw('code not like ?', ['11_4'])
             ->orderBy('code')->get()
