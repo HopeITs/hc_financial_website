@@ -5,10 +5,12 @@ namespace App\Livewire;
 use App\Enums\RoleId;
 use App\Enums\ScreenAction;
 use App\Livewire\Concerns\HasFormDraft;
+use App\Models\GlCity;
 use App\Models\GlProject;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\WebUserPermission;
+use App\Models\WebUserProfile;
 use App\Models\WebUserRole;
 use App\Services\Projects\ProjectAccess;
 use App\Support\FinancePassword;
@@ -16,6 +18,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
@@ -72,6 +75,27 @@ class Users extends Component
 
     /** @var array<int, string> the codes of the projects given to the person (finance decision of 2026-11-27) */
     public array $projectCodes = [];
+
+    /** The picked person's sign-in name and details (finance request of 2026-11-29). */
+    public string $username = '';
+
+    public string $fullName = '';
+
+    public string $jobTitle = '';
+
+    public string $email = '';
+
+    public string $phone = '';
+
+    public string $city = '';
+
+    public string $profileNotes = '';
+
+    public string $newFullName = '';
+
+    public string $newJobTitle = '';
+
+    public string $newEmail = '';
 
     public string $password = '';
 
@@ -159,6 +183,15 @@ class Users extends Component
         $this->permissions = $person->webPermissions->toBase()->map(fn (WebUserPermission $row): string => $row->screen.'.'.$row->action)
             ->intersect($this->permissionKeys())->sort()->values()->all();
         $this->projectCodes = app(ProjectAccess::class)->given((int) $person->getKey());
+        $profile = $this->profilesAvailable() ? WebUserProfile::query()->find($person->getKey()) : null;
+        $this->username = $person->username;
+        $this->fullName = (string) $profile?->full_name;
+        $this->jobTitle = (string) $profile?->job_title;
+        $this->email = (string) $profile?->email;
+        $this->phone = (string) $profile?->phone;
+        $this->city = (string) $profile?->city;
+        $this->profileNotes = (string) $profile?->notes;
+        $this->resetValidation();
         $this->resetPasswordForm();
     }
 
@@ -261,6 +294,75 @@ class Users extends Component
         $this->notice = __('master.users.access_saved', ['name' => $person->username]);
     }
 
+    /**
+     * Saves the picked person's sign-in name and details. A new sign-in name must not be taken; the person signs in
+     * with it from now on, in both programs.
+     */
+    public function saveProfile(): void
+    {
+        Gate::authorize('screen', ['users', 'edit']);
+        $this->failures = [];
+        $person = $this->picked();
+
+        if ($person === null) {
+            $this->failures = [__('master.users.unknown')];
+
+            return;
+        }
+
+        $this->username = trim($this->username);
+        $this->validate([
+            'username' => ['required', 'string', 'max:300', fn (string $attribute, mixed $value, \Closure $fail) => User::query()->where('Username', (string) $value)->whereKeyNot($person->getKey())->exists() ? $fail(__('master.users.taken')) : null],
+            'fullName' => ['nullable', 'string', 'max:255'],
+            'jobTitle' => ['nullable', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:64'],
+            'city' => ['nullable', 'string', 'max:255'],
+            'profileNotes' => ['nullable', 'string', 'max:2000'],
+        ], ['username.required' => __('master.users.name_required')]);
+
+        DB::transaction(function () use ($person): void {
+            if ($person->username !== $this->username) {
+                User::query()->whereKey($person->getKey())->update(['Username' => $this->username]);
+                $this->record('USER_RENAMED', $person, $person->username.' → '.$this->username);
+            }
+
+            if ($this->profilesAvailable()) {
+                WebUserProfile::query()->updateOrCreate(['user_id' => $person->getKey()], [
+                    'full_name' => $this->blankToNull($this->fullName), 'job_title' => $this->blankToNull($this->jobTitle),
+                    'email' => $this->blankToNull($this->email), 'phone' => $this->blankToNull($this->phone),
+                    'city' => $this->blankToNull($this->city), 'notes' => $this->blankToNull($this->profileNotes),
+                ]);
+                $this->record('PROFILE_CHANGED', $person, $this->username);
+            }
+        });
+
+        $this->dispatch('form-clean');
+        $this->pick((int) $person->getKey());
+        $this->notice = __('master.users.profile_saved', ['name' => $this->username]);
+    }
+
+    /**
+     * Gives or takes every action of a menu group's screens at once, leaving what the roles already give.
+     */
+    public function grantGroup(string $group, bool $on): void
+    {
+        Gate::authorize('screen', ['users', 'edit']);
+        $screens = $this->screenGroups()[$group] ?? null;
+        abort_if($screens === null, 404);
+
+        $keys = [];
+        foreach ($screens as $slug => $actions) {
+            foreach ($actions as $action) {
+                $keys[] = $slug.'.'.$action;
+            }
+        }
+
+        $this->permissions = $on
+            ? array_values(array_unique([...$this->permissions, ...$keys]))
+            : array_values(array_diff($this->permissions, $keys));
+    }
+
     public function save(): void
     {
         Gate::authorize('screen', ['users', 'edit']);
@@ -325,6 +427,9 @@ class Users extends Component
             'newUsername' => ['required', 'string', 'max:300', fn (string $attribute, mixed $value, \Closure $fail) => User::query()->where('Username', trim((string) $value))->exists() ? $fail(__('master.users.taken')) : null],
             'newPassword' => ['required', 'string', 'min:'.self::MIN_LENGTH],
             'newRoleId' => ['required', 'integer', 'in:'.implode(',', $this->legacyRoleIds())],
+            'newFullName' => ['nullable', 'string', 'max:255'],
+            'newJobTitle' => ['nullable', 'string', 'max:255'],
+            'newEmail' => ['nullable', 'email', 'max:255'],
         ], [
             'newUsername.required' => __('master.users.name_required'),
             'newPassword.required' => __('master.users.too_short', ['min' => self::MIN_LENGTH]),
@@ -343,6 +448,13 @@ class Users extends Component
                 'Role' => $this->newRoleId,
                 'State' => 1,
             ], 'ID');
+
+            if ($this->profilesAvailable() && (trim($this->newFullName) !== '' || trim($this->newJobTitle) !== '' || trim($this->newEmail) !== '')) {
+                WebUserProfile::query()->create([
+                    'user_id' => $id, 'full_name' => $this->blankToNull($this->newFullName),
+                    'job_title' => $this->blankToNull($this->newJobTitle), 'email' => $this->blankToNull($this->newEmail),
+                ]);
+            }
 
             DB::table('log')->insert($this->logRow('USER_CREATED', (string) $id, $username));
 
@@ -393,6 +505,9 @@ class Users extends Component
                 WebUserRole::query()->where('user_id', $person->getKey())->delete();
                 WebUserPermission::query()->where('user_id', $person->getKey())->delete();
                 DB::table('web_user_projects')->where('user_id', $person->getKey())->delete();
+                if ($this->profilesAvailable()) {
+                    WebUserProfile::query()->whereKey($person->getKey())->delete();
+                }
                 User::query()->whereKey($person->getKey())->delete();
                 DB::table('log')->insert($this->logRow('USER_DELETED', (string) $person->getKey(), $person->username));
             });
@@ -418,7 +533,7 @@ class Users extends Component
     /** Never a password or its confirmation. */
     protected function draftFields(): array
     {
-        return ['editing', 'primaryRoleId', 'extraRoleIds', 'active', 'permissions', 'projectCodes', 'showCreate', 'newUsername', 'newRoleId'];
+        return ['editing', 'primaryRoleId', 'extraRoleIds', 'active', 'permissions', 'projectCodes', 'username', 'fullName', 'jobTitle', 'email', 'phone', 'city', 'profileNotes', 'showCreate', 'newUsername', 'newRoleId', 'newFullName', 'newJobTitle', 'newEmail'];
     }
 
     protected function draftScreen(): string
@@ -453,6 +568,16 @@ class Users extends Component
             array_filter(is_array($payload['permissions'] ?? null) ? $payload['permissions'] : [], 'is_string'),
             $this->permissionKeys(),
         ));
+        foreach (['username', 'fullName', 'jobTitle', 'email', 'phone', 'city', 'profileNotes', 'newFullName', 'newJobTitle', 'newEmail'] as $field) {
+            $this->{$field} = is_string($payload[$field] ?? null) ? mb_substr($payload[$field], 0, 2000) : '';
+        }
+        if ($this->username === '' && $this->editing !== null) {
+            $this->username = (string) User::query()->whereKey($this->editing)->value('Username');
+        }
+        $this->projectCodes = array_values(array_intersect(
+            array_filter(is_array($payload['projectCodes'] ?? null) ? $payload['projectCodes'] : [], 'is_string'),
+            array_keys($this->projectChoices()),
+        ));
         $this->resetPasswordForm();
         $this->newPassword = '';
     }
@@ -462,8 +587,13 @@ class Users extends Component
         $user = $this->actor();
         $term = trim($this->search);
 
-        $people = User::query()->with(['roleRecord', 'webRoles'])
-            ->when($term !== '', fn ($query) => $query->where('Username', 'like', '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $term).'%'))
+        $profiles = $this->profilesAvailable();
+        $like = '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $term).'%';
+
+        $people = User::query()->with(['roleRecord', 'webRoles', ...($profiles ? ['profile'] : [])])
+            ->when($term !== '', fn ($query) => $query->where(fn ($inner) => $inner
+                ->where('Username', 'like', $like)
+                ->when($profiles, fn ($named) => $named->orWhereIn('ID', WebUserProfile::query()->where('full_name', 'like', $like)->orWhere('job_title', 'like', $like)->orWhere('email', 'like', $like)->select('user_id')))))
             ->when($this->role !== '', fn ($query) => $query->where(fn ($inner) => $inner
                 ->where('Role', (int) $this->role)
                 ->orWhereIn('ID', WebUserRole::query()->where('role_id', (int) $this->role)->select('user_id'))))
@@ -489,6 +619,10 @@ class Users extends Component
             'roleDetail' => $this->tab === 'roles' ? $this->roleDetail() : null,
             'min' => self::MIN_LENGTH,
             'projectChoices' => $picked !== null ? $this->projectChoices() : [],
+            'profiles' => $profiles,
+            'cities' => $picked !== null ? GlCity::query()->orderBy('name')->pluck('name')->all() : [],
+            'pickedRoles' => $heldRoles->values()->all(),
+            'counts' => $this->tab === 'users' ? ['all' => User::query()->count(), 'active' => User::query()->where('State', 1)->count()] : ['all' => 0, 'active' => 0],
             'seesAllProjects' => ! app(ProjectAccess::class)->limits(array_values($heldRoles->all())),
         ]);
     }
@@ -646,6 +780,22 @@ class Users extends Component
         $this->newUsername = '';
         $this->newPassword = '';
         $this->newRoleId = null;
+        $this->newFullName = '';
+        $this->newJobTitle = '';
+        $this->newEmail = '';
+    }
+
+    /** Whether the details table is there yet (IT runs its migration after the deploy). */
+    private function profilesAvailable(): bool
+    {
+        return Schema::hasTable('web_user_profiles');
+    }
+
+    private function blankToNull(string $value): ?string
+    {
+        $value = trim($value);
+
+        return $value === '' ? null : $value;
     }
 
     private function record(string $title, User $person, string $details): void
