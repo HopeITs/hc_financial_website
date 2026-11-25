@@ -45,7 +45,7 @@ class MicroFilePrintController extends Controller
             'words' => ['ar' => $words->arabic($total, $found->currency), 'en' => $words->english($total, $found->currency)],
             'usdValue' => $files->usdValue($found),
             'names' => $names,
-            'donor' => Donor::named($found->project?->donor ?? $found->funder),
+            'donor' => Donor::forProject($found->project, $found->funder),
             'delivered' => $this->delivered($totals['invoiced'], $found->currency, $words),
         ]);
     }

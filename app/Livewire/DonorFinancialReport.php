@@ -144,7 +144,7 @@ class DonorFinancialReport extends Component
         $name = 'HC_'.$project->code.'_FinReport_'.$month->format('Y-m');
 
         if ($format === 'pdf') {
-            $content = $export->pdfBook($parts, $rtl, [__('donor_financial.monthly.prepared'), __('donor_financial.monthly.reviewed'), __('donor_financial.monthly.approved')], Donor::named($project->donor)?->logoFile());
+            $content = $export->pdfBook($parts, $rtl, [__('donor_financial.monthly.prepared'), __('donor_financial.monthly.reviewed'), __('donor_financial.monthly.approved')], Donor::forProject($project)?->logoFile());
 
             return response()->streamDownload(function () use ($content) {
                 echo $content;
@@ -171,7 +171,7 @@ class DonorFinancialReport extends Component
         $name = 'donor-financial-'.$project->code.'-'.$from->toDateString().'-'.$to->toDateString();
 
         if ($format === 'pdf') {
-            $content = $export->pdfBook($parts, $rtl, [__('donor_financial.sign.prepared'), __('donor_financial.sign.reviewed'), __('donor_financial.sign.approved')], Donor::named($project->donor)?->logoFile());
+            $content = $export->pdfBook($parts, $rtl, [__('donor_financial.sign.prepared'), __('donor_financial.sign.reviewed'), __('donor_financial.sign.approved')], Donor::forProject($project)?->logoFile());
 
             return response()->streamDownload(function () use ($content) {
                 echo $content;
