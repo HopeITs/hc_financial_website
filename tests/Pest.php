@@ -96,6 +96,8 @@ function createFinanceSchema(): void
     (require database_path('migrations/2026_11_24_090000_add_speed_indexes_to_gl_vouchers.php'))->up();
     (require database_path('migrations/2026_11_28_090000_create_web_user_projects_table.php'))->up();
     (require database_path('migrations/2026_11_29_100000_create_web_role_permissions_and_user_denials.php'))->up();
+    (require database_path('migrations/2026_11_29_090000_create_web_user_profiles_table.php'))->up();
+    (require database_path('migrations/2026_11_30_090000_add_limit_projects_to_web_user_profiles.php'))->up();
 
     Schema::create('log', function ($table) {
         $table->increments('id');

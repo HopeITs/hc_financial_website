@@ -12,6 +12,7 @@ use App\Models\GlBudgetLine;
 use App\Models\GlCity;
 use App\Models\GlProject;
 use App\Models\User;
+use App\Services\Projects\ProjectAccess;
 use App\Services\Ledger\LedgerRuleException;
 use App\Services\Ledger\OperationEntry;
 use App\Services\Ledger\PostVoucher;
@@ -263,7 +264,9 @@ class Operations extends Component
             'types' => $this->allowedTypes(),
             'modes' => self::MODES[$this->type] ?? [],
             'cities' => $this->cityOptions($rates),
-            'projects' => GlProject::query()->where('is_general_account', false)->orderBy('code')->get(['code', 'name']),
+            'projects' => GlProject::query()->where('is_general_account', false)
+                ->when(($limit = auth()->user() instanceof User ? app(ProjectAccess::class)->limitedTo(auth()->user()) : null) !== null, fn ($query) => $query->whereIn('code', $limit ?? []))
+                ->orderBy('code')->get(['code', 'name']),
             'budgetLines' => GlBudgetLine::query()->when($this->project !== '', fn ($query) => $query->where('project_code', $this->project))->orderBy('key')->get(['key', 'project_code', 'account_code']),
             'incomeAccounts' => $this->postingAccounts('income'),
             'expenseAccounts' => $this->postingAccounts('expenses'),

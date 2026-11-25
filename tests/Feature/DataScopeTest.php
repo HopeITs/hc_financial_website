@@ -6,7 +6,10 @@ use App\Livewire\Home;
 use App\Livewire\Users;
 use App\Models\User;
 use App\Models\WebUserRole;
+use App\Services\Entries\CashVouchers;
+use App\Services\Ledger\LedgerRuleException;
 use App\Services\Ledger\LineDraft;
+use App\Services\Ledger\PostVoucher;
 use App\Services\Projects\ActiveProjectBalances;
 use App\Services\Projects\ProjectAccess;
 use Illuminate\Support\Facades\DB;
@@ -87,6 +90,46 @@ it('shows each active project\'s cash from the approved vouchers, and a limited 
     Livewire::actingAs($fadi)->test(Home::class)->assertSee('Study Zone')->assertSee('250.00')->assertDontSee('Family to Family');
     Livewire::actingAs(scopedUser(RoleId::FinancialManager, 'Nobody'))->test(Home::class)->assertDontSee('Study Zone')->assertDontSee('Family to Family');
     Livewire::actingAs(scopedUser(RoleId::HeadOffice, 'Boss'))->test(Home::class)->assertSee('Study Zone')->assertSee('Family to Family');
+});
+
+it('limits an accountant switched on for it to their projects, in the pickers and when a voucher is saved', function () {
+    $head = scopedUser(RoleId::HeadOffice, 'Hoa');
+    $ann = scopedUser(RoleId::Accountant, 'Ann');
+    giveProjects((int) $ann->getKey(), ['SZ']);
+
+    // Linked to a project but not switched on: still sees and enters every project.
+    expect(app(ProjectAccess::class)->limitedTo($ann))->toBeNull();
+    app(PostVoucher::class)->post(ledgerReceipt(['preparedBy' => (int) $ann->getKey()]));
+
+    Livewire::actingAs($head)->test(Users::class)
+        ->call('selectUser', $ann->getKey())
+        ->assertSeeHtml('data-test="limit-projects-box"')
+        ->set('limitProjects', true)->call('saveAccess')
+        ->assertSet('failures', []);
+
+    app()->forgetInstance(ProjectAccess::class);
+    $ann = $ann->fresh();
+    expect(app(ProjectAccess::class)->limitedTo($ann))->toBe(['SZ']);
+
+    $this->actingAs($ann);
+    expect(app(CashVouchers::class)->projects()->keys()->all())->toBe(['SZ'])
+        ->and(fn () => app(PostVoucher::class)->post(ledgerReceipt(['preparedBy' => (int) $ann->getKey()])))->toThrow(LedgerRuleException::class);
+
+    app(PostVoucher::class)->post(ledgerReceipt(['preparedBy' => (int) $ann->getKey()], [
+        new LineDraft('1111', 'USD', debit: 40, projectCode: 'SZ', fundSource: FundSource::DonorGrant),
+        new LineDraft('4001', 'USD', credit: 40, projectCode: 'SZ'),
+    ]));
+});
+
+it('never limits head office, whatever is switched on for them', function () {
+    $boss = scopedUser(RoleId::HeadOffice, 'Boss');
+    giveProjects((int) $boss->getKey(), ['SZ']);
+    app(ProjectAccess::class)->switchTo((int) $boss->getKey(), true);
+
+    expect(app(ProjectAccess::class)->limitedTo($boss->fresh()))->toBeNull();
+    Livewire::actingAs(scopedUser(RoleId::HeadOffice, 'Hoa'))->test(Users::class)
+        ->call('selectUser', $boss->getKey())
+        ->assertDontSeeHtml('data-test="limit-projects-box"');
 });
 
 it('gives a person their projects on the users screen, and refuses a project that does not exist', function () {

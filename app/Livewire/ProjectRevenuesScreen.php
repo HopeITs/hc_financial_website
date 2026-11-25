@@ -7,6 +7,7 @@ use App\Models\GlProject;
 use App\Models\RevenueItem;
 use App\Models\RevenueSheet;
 use App\Models\User;
+use App\Services\Projects\ProjectAccess;
 use App\Services\Entries\CashVouchers;
 use App\Services\Entries\EntryException;
 use App\Services\Entries\ProjectRevenues;
@@ -148,7 +149,9 @@ class ProjectRevenuesScreen extends Component
         $month = CarbonImmutable::createFromFormat('!Y-m', $this->month) ?: CarbonImmutable::today();
 
         return view('livewire.project-revenues', [
-            'projects' => GlProject::query()->where('is_general_account', false)->orderBy('code')->get()->mapWithKeys(fn (GlProject $project): array => [$project->code => $project->code.' · '.$project->name])->all(),
+            'projects' => GlProject::query()->where('is_general_account', false)
+                ->when(($limit = auth()->user() instanceof User ? app(ProjectAccess::class)->limitedTo(auth()->user()) : null) !== null, fn ($query) => $query->whereIn('code', $limit ?? []))
+                ->orderBy('code')->get()->mapWithKeys(fn (GlProject $project): array => [$project->code => $project->code.' · '.$project->name])->all(),
             'cashAccounts' => $vouchers->cashAccounts()->map(fn ($account): string => $account->code.' · '.($arabic ? $account->name_ar : $account->name_en).' ('.$account->currency.')')->all(),
             'priceList' => ($this->sheet['project'] ?? '') === '' ? collect() : RevenueItem::query()->where('project_code', $this->sheet['project'])->where('active', true)->orderBy('kind')->orderBy('name')->get(),
             'items' => $this->tab === 'items' ? RevenueItem::query()->orderBy('project_code')->orderByDesc('active')->orderBy('name')->get() : collect(),

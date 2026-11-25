@@ -263,7 +263,18 @@
 
                                 <section class="ud-sec" x-show="pane === 'projects'" x-data="{ find: '' }" data-test="user-projects">
                                     <h3>{{ __('master.users.projects') }} <span class="ud-chip">{{ count($projectCodes) }} / {{ count($projectChoices) }}</span></h3>
-                                    <p class="ud-help">{{ $seesAllProjects ? __('master.users.projects_all') : __('master.users.projects_help') }}</p>
+                                    @if ($neverLimited)
+                                        <p class="ud-help">{{ __('master.users.projects_never') }}</p>
+                                    @elseif (! $seesAllProjects)
+                                        <p class="ud-help">{{ __('master.users.projects_help') }}</p>
+                                    @elseif ($switchAvailable)
+                                        <label class="ud-check" data-test="limit-projects">
+                                            <input type="checkbox" wire:model.live="limitProjects" data-test="limit-projects-box">
+                                            <span><strong>{{ __('master.users.limit_projects') }}</strong> — {{ $limitProjects ? __('master.users.projects_help') : __('master.users.projects_all') }}</span>
+                                        </label>
+                                    @else
+                                        <p class="ud-help">{{ __('master.users.projects_all') }}</p>
+                                    @endif
                                     <div class="ud-tools">
                                         <div class="ud-grow"><x-ui.input type="search" icon="magnifying-glass" x-model="find" :label="__('master.users.find_project')" :placeholder="__('master.users.find_project')" /></div>
                                         <button type="button" class="ud-link" wire:click="$set('projectCodes', @js(array_keys($projectChoices)))" data-test="projects-all">{{ __('master.users.select_all') }}</button>
