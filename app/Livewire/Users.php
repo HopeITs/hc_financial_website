@@ -155,7 +155,8 @@ class Users extends Component
         $this->extraRoleIds = $person->webRoles->map(fn (WebUserRole $row): int => $row->role_id->value)->values()->all();
         $this->active = $person->isActive();
         // Grants on screens that left the list are dropped, so saving the person never fails on them.
-        $this->permissions = $person->webPermissions->map(fn (WebUserPermission $row): string => $row->screen.'.'.$row->action)
+        // A plain collection: the model collection's intersect compares models by key, and these are strings.
+        $this->permissions = $person->webPermissions->toBase()->map(fn (WebUserPermission $row): string => $row->screen.'.'.$row->action)
             ->intersect($this->permissionKeys())->sort()->values()->all();
         $this->projectCodes = app(ProjectAccess::class)->given((int) $person->getKey());
         $this->resetPasswordForm();
