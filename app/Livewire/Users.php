@@ -10,7 +10,9 @@ use App\Models\GlProject;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\WebUserPermission;
+use App\Models\WebUserDenial;
 use App\Models\WebUserProfile;
+use App\Services\Access\RolePermissions;
 use App\Models\WebUserRole;
 use App\Services\Projects\ProjectAccess;
 use App\Support\FinancePassword;
@@ -127,9 +129,15 @@ class Users extends Component
     #[Locked]
     public ?int $selectedRoleId = null;
 
+    /** @var array<int, string> the picked role's permissions as edited, `screen.action` (finance request of 2026-11-29) */
+    public array $rolePermissions = [];
+
+    /** @var array<int, string> what the picked person's roles allow but is taken from them, `screen.action` */
+    public array $denied = [];
+
     public function mount(): void
     {
-        $this->selectedRoleId = RoleId::cases()[0]->value;
+        $this->selectRole(RoleId::cases()[0]->value);
     }
 
     public function updatedSearch(): void
@@ -156,9 +164,73 @@ class Users extends Component
 
     public function selectRole(int $id): void
     {
-        abort_if(RoleId::tryFrom($id) === null, 404);
+        $role = RoleId::tryFrom($id);
+        abort_if($role === null, 404);
 
         $this->selectedRoleId = $id;
+        $this->rolePermissions = $this->keysOf(app(RolePermissions::class)->of($role));
+        $this->failures = [];
+    }
+
+    /**
+     * Saves what the picked role allows (finance request of 2026-11-29). Only those who may delete users change roles;
+     * Head Office always keeps the users screen, so nobody is locked out. Screens kept out of the list stay as they were.
+     */
+    public function saveRole(): void
+    {
+        Gate::authorize('screen', ['users', 'edit']);
+        abort_unless($this->actor()?->canOnScreen('users', ScreenAction::Delete), 403);
+        $role = $this->selectedRoleId !== null ? RoleId::tryFrom($this->selectedRoleId) : null;
+        abort_if($role === null || $role === RoleId::SuperUser, 404);
+        $this->failures = [];
+
+        $roles = app(RolePermissions::class);
+        abort_unless($roles->available(), 409);
+        $shown = $this->permissionKeys();
+        $chosen = collect($this->rolePermissions)->map(fn (mixed $key): string => (string) $key)->unique()->values();
+
+        if ($chosen->diff($shown)->isNotEmpty()) {
+            $this->failures = [__('master.users.bad_permission')];
+
+            return;
+        }
+
+        if ($role === RoleId::HeadOffice) {
+            $chosen = $chosen->merge(['users.view', 'users.edit', 'users.delete'])->unique()->values();
+        }
+
+        $hidden = array_values(array_diff($this->keysOf($roles->of($role)), $shown));
+        $roles->replace($role, [...$chosen->all(), ...$hidden], (int) $this->actor()?->getAuthIdentifier());
+        DB::table('log')->insert($this->logRow('ROLE_CHANGED', (string) $role->value, $role->label()));
+
+        $this->selectRole($role->value);
+        $this->notice = __('master.users.role_saved', ['role' => $role->label()]);
+    }
+
+    /** Gives the picked role back its permissions as the program set them. */
+    public function resetRole(): void
+    {
+        Gate::authorize('screen', ['users', 'edit']);
+        abort_unless($this->actor()?->canOnScreen('users', ScreenAction::Delete), 403);
+        $role = $this->selectedRoleId !== null ? RoleId::tryFrom($this->selectedRoleId) : null;
+        abort_if($role === null, 404);
+
+        app(RolePermissions::class)->reset($role);
+        DB::table('log')->insert($this->logRow('ROLE_RESET', (string) $role->value, $role->label()));
+
+        $this->selectRole($role->value);
+        $this->notice = __('master.users.role_reset', ['role' => $role->label()]);
+    }
+
+    /** Takes from the picked person, or gives back, an action one of their roles allows. Saved with their access. */
+    public function toggleDenied(string $key): void
+    {
+        Gate::authorize('screen', ['users', 'edit']);
+        abort_unless(in_array($key, $this->permissionKeys(), true), 404);
+
+        $this->denied = in_array($key, $this->denied, true)
+            ? array_values(array_diff($this->denied, [$key]))
+            : [...$this->denied, $key];
     }
 
     public function selectUser(int $id): void
@@ -183,6 +255,9 @@ class Users extends Component
         $this->permissions = $person->webPermissions->toBase()->map(fn (WebUserPermission $row): string => $row->screen.'.'.$row->action)
             ->intersect($this->permissionKeys())->sort()->values()->all();
         $this->projectCodes = app(ProjectAccess::class)->given((int) $person->getKey());
+        $this->denied = User::denialsAvailable()
+            ? $person->webDenials()->get()->toBase()->map(fn (WebUserDenial $row): string => $row->screen.'.'.$row->action)->sort()->values()->all()
+            : [];
         $profile = $this->profilesAvailable() ? WebUserProfile::query()->find($person->getKey()) : null;
         $this->username = $person->username;
         $this->fullName = (string) $profile?->full_name;
@@ -239,7 +314,7 @@ class Users extends Component
             $this->failures[] = __('master.users.bad_project');
         }
 
-        if ($person->getKey() === auth()->id() && ! $this->active) {
+        if ($person->getKey() === auth()->id() && (! $this->active || collect($this->denied)->contains(fn (mixed $key): bool => str_starts_with((string) $key, 'users.')))) {
             $this->failures[] = __('master.users.not_yourself');
         }
 
@@ -284,6 +359,14 @@ class Users extends Component
             }
 
             app(ProjectAccess::class)->give((int) $person->getKey(), $projects->all());
+
+            if (User::denialsAvailable()) {
+                WebUserDenial::query()->where('user_id', $person->getKey())->delete();
+                foreach (collect($this->denied)->map(fn (mixed $key): string => (string) $key)->unique()->intersect($this->permissionKeys()) as $key) {
+                    [$screen, $action] = explode('.', $key, 2);
+                    WebUserDenial::query()->create(['user_id' => $person->getKey(), 'screen' => $screen, 'action' => $action]);
+                }
+            }
 
             $this->record('ACCESS_CHANGED', $person, $person->username);
         });
@@ -505,6 +588,9 @@ class Users extends Component
                 WebUserRole::query()->where('user_id', $person->getKey())->delete();
                 WebUserPermission::query()->where('user_id', $person->getKey())->delete();
                 DB::table('web_user_projects')->where('user_id', $person->getKey())->delete();
+                if (User::denialsAvailable()) {
+                    WebUserDenial::query()->where('user_id', $person->getKey())->delete();
+                }
                 if ($this->profilesAvailable()) {
                     WebUserProfile::query()->whereKey($person->getKey())->delete();
                 }
@@ -622,6 +708,8 @@ class Users extends Component
             'profiles' => $profiles,
             'cities' => $picked !== null ? GlCity::query()->orderBy('name')->pluck('name')->all() : [],
             'pickedRoles' => $heldRoles->values()->all(),
+            'canEditRoles' => $user instanceof User && $user->canOnScreen('users', ScreenAction::Edit) && $user->canOnScreen('users', ScreenAction::Delete) && app(RolePermissions::class)->available(),
+            'roleChanged' => $this->selectedRoleId !== null && RoleId::tryFrom($this->selectedRoleId) !== null && app(RolePermissions::class)->isChanged(RoleId::from($this->selectedRoleId)),
             'counts' => $this->tab === 'users' ? ['all' => User::query()->count(), 'active' => User::query()->where('State', 1)->count()] : ['all' => 0, 'active' => 0],
             'seesAllProjects' => ! app(ProjectAccess::class)->limits(array_values($heldRoles->all())),
         ]);
@@ -651,7 +739,8 @@ class Users extends Component
         return array_map(fn (RoleId $role): array => [
             'role' => $role,
             'people' => (int) ($role->isWebOnly() ? 0 : ($legacy[$role->value] ?? 0)) + (int) ($web[$role->value] ?? 0),
-            'screens' => count(config("permissions.roles.{$role->value}", [])),
+            'screens' => count(app(RolePermissions::class)->of($role)),
+            'changed' => app(RolePermissions::class)->isChanged($role),
         ], RoleId::cases());
     }
 
@@ -673,7 +762,7 @@ class Users extends Component
                 fn ($query) => $query->whereIn('ID', WebUserRole::query()->where('role_id', $role->value)->select('user_id')))
             ->orderBy('Username')->pluck('Username')->map(fn (mixed $name): string => (string) $name)->values()->all();
 
-        return ['role' => $role, 'people' => $people, 'screens' => array_diff_key(config("permissions.roles.{$role->value}", []), array_flip(config('navigation.retired', [])))];
+        return ['role' => $role, 'people' => $people, 'screens' => array_diff_key(app(RolePermissions::class)->of($role), array_flip(config('navigation.retired', [])))];
     }
 
     /**
@@ -699,9 +788,10 @@ class Users extends Component
     {
         $used = ['view'];
 
+        $roles = app(RolePermissions::class);
         foreach (RoleId::cases() as $role) {
             if ($role !== RoleId::HeadOffice) {
-                $used = [...$used, ...config("permissions.roles.{$role->value}.{$slug}", [])];
+                $used = [...$used, ...($roles->defaults($role)[$slug] ?? []), ...($roles->of($role)[$slug] ?? [])];
             }
         }
 
@@ -737,10 +827,24 @@ class Users extends Component
         $keys = [];
 
         foreach ($roles as $role) {
-            foreach (config("permissions.roles.{$role->value}", []) as $slug => $actions) {
-                foreach ($actions as $action) {
-                    $keys[$slug.'.'.$action] = true;
-                }
+            foreach ($this->keysOf(app(RolePermissions::class)->of($role)) as $key) {
+                $keys[$key] = true;
+            }
+        }
+
+        return $keys;
+    }
+
+    /**
+     * @param  array<string, list<string>>  $screens  screen slug => actions
+     * @return list<string> as `screen.action`
+     */
+    private function keysOf(array $screens): array
+    {
+        $keys = [];
+        foreach ($screens as $slug => $actions) {
+            foreach ((array) $actions as $action) {
+                $keys[] = $slug.'.'.$action;
             }
         }
 

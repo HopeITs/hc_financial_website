@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\RoleId;
 use App\Enums\ScreenAction;
 use App\Models\Scopes\WithoutProfilePicture;
+use App\Services\Access\RolePermissions;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * A row of the Windows program's `user` table (id, username, password, role).
@@ -112,7 +114,18 @@ class User extends Authenticatable
     }
 
     /**
-     * Whether a role of the person (config/permissions.php) or a permission given to them alone allows the action on the screen.
+     * Actions a role allows that are taken from this one person (finance request of 2026-11-29).
+     *
+     * @return HasMany<WebUserDenial, $this>
+     */
+    public function webDenials(): HasMany
+    {
+        return $this->hasMany(WebUserDenial::class, 'user_id', 'ID');
+    }
+
+    /**
+     * Whether a role of the person (RolePermissions: config/permissions.php or as changed on the users page) or a
+     * permission given to them alone allows the action on the screen, unless it was taken from this person.
      */
     public function canOnScreen(string $slug, ScreenAction $action = ScreenAction::View): bool
     {
@@ -120,15 +133,24 @@ class User extends Authenticatable
             return true;
         }
 
-        foreach ($this->roleIds() as $role) {
-            $actions = config("permissions.roles.{$role->value}.{$slug}", []);
+        if (self::denialsAvailable() && $this->webDenials->contains(fn (WebUserDenial $denial): bool => $denial->screen === $slug && $denial->action === $action->value)) {
+            return false;
+        }
 
-            if (in_array($action->value, $actions, true)) {
+        $roles = app(RolePermissions::class);
+        foreach ($this->roleIds() as $role) {
+            if ($roles->allows($role, $slug, $action->value)) {
                 return true;
             }
         }
 
         return $this->webPermissions->contains(fn (WebUserPermission $permission): bool => $permission->screen === $slug && $permission->action === $action->value);
+    }
+
+    /** Whether the table of permissions taken from one person is there yet (IT runs its migration after the deploy). */
+    public static function denialsAvailable(): bool
+    {
+        return once(static fn (): bool => Schema::hasTable('web_user_denials'));
     }
 
     /**

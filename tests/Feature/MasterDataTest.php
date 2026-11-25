@@ -289,6 +289,62 @@ it('never writes to a legacy table from a reference screen', function () {
     expect($counts())->toBe($before);
 });
 
+it('changes what a role allows for everyone who holds it, and gives it back as the program set it', function () {
+    $head = masterUser(RoleId::HeadOffice, 'Hoa');
+    $cashier = masterUser(RoleId::Cashier, 'Carl');
+    expect($cashier->fresh()->canOnScreen('tb'))->toBeFalse();
+
+    $page = Livewire::actingAs($head)->test(Users::class)->call('showTab', 'roles')->call('selectRole', RoleId::Cashier->value)
+        ->assertSeeHtml('data-test="role-form"');
+    $page->set('rolePermissions', [...$page->get('rolePermissions'), 'tb.view'])->call('saveRole')
+        ->assertSet('failures', [])
+        ->assertSet('notice', __('master.users.role_saved', ['role' => RoleId::Cashier->label()]));
+
+    expect($cashier->fresh()->canOnScreen('tb'))->toBeTrue()
+        ->and(app(App\Services\Access\RolePermissions::class)->isChanged(RoleId::Cashier))->toBeTrue();
+
+    // Head Office never loses the users screen, even when everything is cleared.
+    Livewire::actingAs($head)->test(Users::class)->call('showTab', 'roles')->call('selectRole', RoleId::HeadOffice->value)
+        ->set('rolePermissions', [])->call('saveRole');
+    expect($head->fresh()->canOnScreen('users', ScreenAction::Delete))->toBeTrue()
+        ->and($head->fresh()->canOnScreen('tb'))->toBeFalse();
+
+    Livewire::actingAs($head)->test(Users::class)->call('showTab', 'roles')->call('selectRole', RoleId::HeadOffice->value)->call('resetRole');
+    $page->call('resetRole');
+    expect($cashier->fresh()->canOnScreen('tb'))->toBeFalse()
+        ->and($head->fresh()->canOnScreen('tb'))->toBeTrue();
+
+    // Someone who may not delete users may not change a role.
+    Livewire::actingAs(masterUser(RoleId::Accountant, 'Ann'))->test(Users::class)->call('selectRole', RoleId::Cashier->value)->call('saveRole')->assertForbidden();
+});
+
+it('takes from one person a permission their role gives, and not from the others', function () {
+    $head = masterUser(RoleId::HeadOffice, 'Hoa');
+    $ann = masterUser(RoleId::Accountant, 'Ann');
+    $amy = masterUser(RoleId::Accountant, 'Amy');
+    expect($ann->fresh()->canOnScreen('vouchers'))->toBeTrue();
+
+    Livewire::actingAs($head)->test(Users::class)
+        ->call('selectUser', $ann->getKey())
+        ->assertSeeHtml('data-test="role-perm-vouchers.view"')
+        ->call('toggleDenied', 'vouchers.view')
+        ->assertSet('denied', ['vouchers.view'])
+        ->call('saveAccess')
+        ->assertSet('failures', []);
+
+    expect($ann->fresh()->canOnScreen('vouchers'))->toBeFalse()
+        ->and($amy->fresh()->canOnScreen('vouchers'))->toBeTrue();
+
+    Livewire::actingAs($head)->test(Users::class)->call('selectUser', $ann->getKey())->assertSet('denied', ['vouchers.view'])
+        ->call('toggleDenied', 'vouchers.view')->call('saveAccess');
+    expect($ann->fresh()->canOnScreen('vouchers'))->toBeTrue();
+
+    // Nobody takes the users screen from themselves.
+    Livewire::actingAs($head)->test(Users::class)->call('selectUser', $head->getKey())
+        ->call('toggleDenied', 'users.view')->call('saveAccess')
+        ->assertSet('failures', [__('master.users.not_yourself')]);
+});
+
 it('keeps a person\'s details, renames their sign-in, finds them by name and gives a group of screens at once', function () {
     (require database_path('migrations/2026_11_29_090000_create_web_user_profiles_table.php'))->up();
     $head = masterUser(RoleId::HeadOffice, 'Hoa');
