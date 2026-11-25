@@ -27,9 +27,9 @@
                 @if ($summary !== null)
                     <dl class="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4" data-test="legacy-micro-summary">
                         <div><dt class="text-secondary-medium dark:text-ink-muted">{{ __('legacy_micro.summary.file') }}</dt><dd class="font-medium" dir="auto">{{ $fileName }}</dd></div>
-                        <div><dt class="text-secondary-medium dark:text-ink-muted">{{ __('legacy_micro.summary.new') }}</dt><dd class="font-medium tabular-nums">{{ number_format($summary['new']) }} / {{ number_format($summary['projects']) }}</dd></div>
-                        <div><dt class="text-secondary-medium dark:text-ink-muted">{{ __('legacy_micro.summary.skipped') }}</dt><dd class="font-medium tabular-nums">{{ number_format($summary['skipped']) }}</dd></div>
-                        <div><dt class="text-secondary-medium dark:text-ink-muted">{{ __('legacy_micro.summary.instalments') }}</dt><dd class="font-medium tabular-nums">{{ number_format($summary['instalments']) }}</dd></div>
+                        <div><dt class="text-secondary-medium dark:text-ink-muted">{{ __('legacy_micro.summary.new') }}</dt><dd class="font-medium tabular-nums">{{ $summary['new'] }} / {{ $summary['projects'] }}</dd></div>
+                        <div><dt class="text-secondary-medium dark:text-ink-muted">{{ __('legacy_micro.summary.skipped') }}</dt><dd class="font-medium tabular-nums">{{ $summary['skipped'] }}</dd></div>
+                        <div><dt class="text-secondary-medium dark:text-ink-muted">{{ __('legacy_micro.summary.instalments') }}</dt><dd class="font-medium tabular-nums">{{ $summary['instalments'] }}</dd></div>
                         @foreach ($summary['owed'] as $currency => $amount)
                             <div><dt class="text-secondary-medium dark:text-ink-muted">{{ __('legacy_micro.summary.owed', ['currency' => $currency]) }}</dt><dd class="font-medium" data-test="legacy-micro-owed-{{ $currency }}"><x-money :amount="$amount" /></dd></div>
                         @endforeach
@@ -47,7 +47,7 @@
                     @elseif ($summary['new'] === 0)
                         <p class="text-sm font-medium text-status-warn" data-test="legacy-micro-nothing">{{ __('legacy_micro.nothing_new') }}</p>
                     @else
-                        <p class="text-sm font-medium text-status-good" data-test="legacy-micro-ready">{{ trans_choice('legacy_micro.ready', $summary['new'], ['count' => number_format($summary['new'])]) }}</p>
+                        <p class="text-sm font-medium text-status-good" data-test="legacy-micro-ready">{{ trans_choice('legacy_micro.ready', $summary['new'], ['count' => $summary['new']]) }}</p>
                     @endif
                 @endif
 
