@@ -280,10 +280,9 @@
 
         {{-- 6. The monthly report on the finance form: budget against actual in dollars, by category and by line --}}
         @if ($tab === 'monthly')
-            @php
-                $pct = fn (?string $share): string => $share === null ? '—' : bcmul($share, '100', 1).'%';
-                $tone = fn (string $status): string => match ($status) { 'over', 'unbudgeted' => 'rejected', 'near', 'slow' => 'pending', 'ok' => 'done', default => 'draft' };
-            @endphp
+            {{-- One-line PHP only: this view already has a one-line PHP statement above, and Blade cannot read a PHP block after one. --}}
+            @php($pct = fn (?string $share): string => $share === null ? '—' : bcmul($share, '100', 1).'%')
+            @php($tone = fn (string $status): string => match ($status) { 'over', 'unbudgeted' => 'rejected', 'near', 'slow' => 'pending', 'ok' => 'done', default => 'draft' })
             <div class="flex flex-wrap items-end gap-4">
                 <x-ui.form-input type="month" wire:model.live="month" :label="__('donor_financial.monthly.reporting_month')" data-test="df-month" />
                 <p class="text-sm text-secondary-medium dark:text-ink-muted">{{ __('donor_financial.monthly.hint') }}</p>

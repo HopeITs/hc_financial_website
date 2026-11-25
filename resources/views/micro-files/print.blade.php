@@ -23,6 +23,14 @@
     $shown = isset($rooms[$form]) ? $rows->take($rooms[$form]) : $rows;
     $rest = isset($rooms[$form]) ? $rows->slice($rooms[$form])->values() : collect();
     $cell = 'mf-cell';
+    // The delivery protocol (finance form of 2026-11-28). Kept in this first block: Blade cannot read a PHP block that
+    // comes after a one-line PHP statement, as the purchase list's below.
+    $donorEn = $donor?->name_en ?? $funder;
+    $donorAr = $donor?->name_ar ?? $funder;
+    $pounds = $file->currency === 'SYP';
+    $cost = fn ($amount): string => $pounds ? \App\Support\Money::normalize(bcdiv(\App\Support\Money::normalize($amount), \App\Support\Money::NEW_SYP_DIVISOR, 4)) : \App\Support\Money::normalize($amount);
+    $costCurrency = $pounds ? 'SYP_NEW' : $file->currency;
+    $label = fn (string $currency, string $locale): string => __('micro_print.currency.'.$currency, [], $locale);
 @endphp
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -182,15 +190,7 @@
         @elseif ($form === 'protocol')
             {{-- The delivery protocol on the organisation's own form (finance form of 2026-11-28): the donor's logo, the
                  title and Hope's logo at the top, English on the left and Arabic on the right. Pounds are declared in
-                 old and new pounds, and the items cost in new pounds. --}}
-            @php
-                $donorEn = $donor?->name_en ?? $funder;
-                $donorAr = $donor?->name_ar ?? $funder;
-                $pounds = $file->currency === 'SYP';
-                $cost = fn ($amount): string => $pounds ? \App\Support\Money::normalize(bcdiv(\App\Support\Money::normalize($amount), \App\Support\Money::NEW_SYP_DIVISOR, 4)) : \App\Support\Money::normalize($amount);
-                $costCurrency = $pounds ? 'SYP_NEW' : $file->currency;
-                $label = fn (string $currency, string $locale): string => __('micro_print.currency.'.$currency, [], $locale);
-            @endphp
+                 old and new pounds, and the items cost in new pounds (the values are set in the block at the top). --}}
             <section class="mf-page dp-page" data-test="delivery-protocol">
                 <header class="dp-head" dir="ltr">
                     <div class="dp-logo">
