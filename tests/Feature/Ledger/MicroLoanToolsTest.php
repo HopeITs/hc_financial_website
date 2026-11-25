@@ -144,26 +144,20 @@ it('opens a loan card to change the beneficiary\'s details and to pay off the lo
     expect($loan->fresh()->mobile)->toBe('+963 944 000 111');
 });
 
-it('imports loans from Excel, checking each against every rule before saving all of them', function () {
+it('exports the loans to Excel but opens no loan from it: a loan goes through a micro-project file', function () {
     $ann = mlUser(RoleId::Accountant, 'Ann');
-    $good = ['Samir', '', '0944123456', '', 'F2F', 'USD', '300', '0', '', '2026-03-01', '3', '2026-04-01', '1', '1111', '', 'donor_grant', ''];
-    $bad = ['', '', '', '', 'F2F', 'USD', '0', '0', '', 'soon', '3', '2026-04-01', '1', '1111', '', 'donor_grant', ''];
-
+    // The direct loan from a project is closed (finance decision of 2026-11-25): no import button, and a forced save
+    // opens nothing.
     Livewire::actingAs($ann)->test(ExcelTools::class, ['kind' => 'micro_loans'])
-        ->set('rows', [['row' => 2, 'cells' => $good], ['row' => 3, 'cells' => $bad]])
-        ->assertSee(__('excel.bad_day').' ('.__('excel.col.date').')')
-        ->call('save')->assertNotDispatched('excel-imported');
+        ->assertDontSeeHtml('data-test="excel-import-micro_loans"')
+        ->call('save')
+        ->assertForbidden();
 
     expect(MicroLoan::query()->count())->toBe(0)
         ->and(Voucher::query()->count())->toBe(0);
 
     Livewire::actingAs($ann)->test(ExcelTools::class, ['kind' => 'micro_loans'])
-        ->set('rows', [['row' => 2, 'cells' => $good]])
-        ->call('save')->assertDispatched('excel-imported');
-
-    expect(MicroLoan::query()->sole())->toMatchArray(['beneficiary' => 'Samir', 'loan_amount' => '300.00'])
-        ->and(MicroLoan::query()->sole()->instalments()->count())->toBe(3)
-        ->and(Voucher::query()->count())->toBe(1);
+        ->call('export')->assertFileDownloaded('micro-loans-'.now()->format('Y-m-d').'.xlsx');
 
     Livewire::actingAs($ann)->test(ExcelTools::class, ['kind' => 'loan_schedule'])
         ->assertDontSeeHtml('data-test="excel-import-loan_schedule"')
