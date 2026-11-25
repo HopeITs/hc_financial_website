@@ -48,7 +48,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $protocol_signed_on
  * @property Carbon|null $loan_date the date of the last invoice
  * @property string|null $book_usd what the repayable part is worth on 1204, in dollars
- * @property string|null $closing_voucher_id the journal voucher that moved the grant from 1204 to 5413
+ * @property string|null $closing_voucher_id the closing's journal voucher: the repayable share from 5413 to 1204 (or, for invoices booked on 1204, the grant share the other way)
  * @property int|null $created_by
  * @property Carbon $created_at
  */

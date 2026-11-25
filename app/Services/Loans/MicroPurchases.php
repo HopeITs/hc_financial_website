@@ -33,15 +33,18 @@ use Illuminate\Support\Str;
  * The purchases of an approved micro-project file and its closing (finance decisions of 2026-11-23). The centre buys
  * the equipment itself; the beneficiary gets no cash.
  *
- * - An invoice paid directly to the merchant: a payment voucher, the loan (1204) debited and the cash credited.
+ * - An invoice paid directly to the merchant: a payment voucher crediting the cash. A project's file debits the whole
+ *   invoice to the grants (5413) on the project's budget line, so the donor's report lists each invoice in full
+ *   (finance decision of 2026-11-25); a file of an instalment fund debits the loan (1204).
  * - An advance to the purchasing officer: a payment voucher on 1201 for the officer. Its invoices are journal vouchers
- *   from 1201 to the loan, at the advance's rate; what is left goes back to the cash with a receipt voucher.
+ *   from 1201 to the same debit, at the advance's rate; what is left goes back to the cash with a receipt voucher.
  * - Pounds take the invoice's rate, the month's by default. A loan in dollars bought in pounds takes the pounds' dollars;
  *   a loan in pounds is bought in pounds.
  * - The file's approval stands for the request a payment above the limit needs (rule 14).
- * - Closing, when the beneficiary signs the receipt protocol: the loan is the invoices' total, the recovery share stays
- *   on 1204 and the rest moves to the grants (5413) with a journal voucher; the instalments start two months after the
- *   signature by default.
+ * - Closing, when the beneficiary signs the receipt protocol: the loan is the recovery share of the invoices' total. A
+ *   journal voucher moves it from the grants to 1204 (with no budget line, so the donor's report keeps the full
+ *   spending); for invoices booked on 1204 (a fund's, or a project's before 2026-11-25) it moves the grant share to the
+ *   grants instead. The instalments start two months after the signature by default.
  */
 class MicroPurchases
 {
@@ -74,7 +77,7 @@ class MicroPurchases
     {
         $this->assertApproved($file);
         [$date, $cash, $amount, $rate, $problems] = $this->cashMovement($file, $form, $file->currency === 'USD' ? ['USD', 'SYP'] : ['SYP']);
-        $problems = [...$problems, ...$this->invoiceProblems($form)];
+        $problems = [...$problems, ...$this->invoiceProblems($form), ...$this->grantLineProblems($file)];
 
         if ($problems !== []) {
             throw new LoanException($problems);
@@ -102,7 +105,7 @@ class MicroPurchases
                     ),
                 ],
             ), $file);
-            app(VoucherDocuments::class)->record($voucher, 'invoice', (string) ($form['number'] ?? ''), null);
+            app(VoucherDocuments::class)->record($voucher, 'invoice', (string) ($form['number'] ?? ''), (string) ($form['description_en'] ?? ''));
 
             return $this->record($by, $file, $voucher, MicroPurchase::INVOICE, $date, (string) $cash->currency, $amount, $rate, $loanAmount, $usd, $form, $scan, ['cash_account' => $cash->code]);
         });
@@ -173,7 +176,7 @@ class MicroPurchases
         $this->assertApproved($file);
         $advance = $this->advanceOf($file, $advanceId);
         [$date, $amount, $problems] = $this->advanceAmount($advance, $form);
-        $problems = [...$problems, ...$this->invoiceProblems($form)];
+        $problems = [...$problems, ...$this->invoiceProblems($form), ...$this->grantLineProblems($file)];
 
         if ($problems !== []) {
             throw new LoanException($problems);
@@ -200,7 +203,7 @@ class MicroPurchases
                     ),
                 ],
             ), $file);
-            app(VoucherDocuments::class)->record($voucher, 'invoice', (string) ($form['number'] ?? ''), null);
+            app(VoucherDocuments::class)->record($voucher, 'invoice', (string) ($form['number'] ?? ''), (string) ($form['description_en'] ?? ''));
 
             return $this->record($by, $file, $voucher, MicroPurchase::INVOICE, $date, $advance->currency, $amount, $rate, $loanAmount, $usd, $form, $scan, ['advance_id' => $advance->id, 'person' => $advance->person]);
         });
@@ -361,9 +364,9 @@ class MicroPurchases
     }
 
     /**
-     * Closes the purchases when the beneficiary signs the receipt protocol: the loan opens at the invoices' total, the
-     * recovery share stays on 1204 and the rest moves to the grants (5413); the instalments start two months after the
-     * signature by default and the trust bond must match the total.
+     * Closes the purchases when the beneficiary signs the receipt protocol: the loan opens at the recovery share of the
+     * invoices' total, moved to 1204 (see the class's notes); the instalments start two months after the signature by
+     * default and the trust bond must match the total.
      *
      * @param  array{signed_on?: string, trust_bond?: string, first_due?: string}  $form
      *
@@ -407,8 +410,22 @@ class MicroPurchases
         }
 
         $project = $this->project($file);
-        $grantLine = $project !== null ? GlBudgetLine::query()->where('project_code', $project->code)->where('account_code', MicroLoans::GRANTS_ACCOUNT)->orderBy('key')->first() : null;
-        if (bccomp($grant, '0', 2) > 0 && $project !== null && $grantLine === null) {
+        $grantLine = $project !== null ? $this->grantLine($project) : null;
+
+        /** @var CarbonImmutable $signed */
+        /** @var CarbonImmutable $firstDue */
+        $totalUsd = $totals['invoiced_usd'];
+        $loanUsd = bccomp($total, '0', 2) > 0 ? Money::normalize(bcdiv(bcmul($totalUsd, $loan, 6), $total, 6)) : '0.00';
+        $bookRate = $file->currency === 'USD' ? '1.000000' : Money::normalize(bcdiv($total, $totalUsd, 6), 6);
+
+        // What the invoices already put on the loans: all of it for a fund's file, and for a project's invoices booked
+        // before 2026-11-25; nothing for a project's invoices since, which went in full to the grants. The closing
+        // moves the difference so that the loans hold the repayable share and the grants the rest.
+        $onLoans = $this->onLoans($invoices);
+        $move = bcsub($loan, $onLoans['amount'], 2);
+        $moveUsd = bcsub($loanUsd, $onLoans['usd'], 2);
+
+        if (bccomp($move, '0', 2) < 0 && $project !== null && $grantLine === null) {
             $problems[] = __('loans.problem.no_grant_line', ['project' => $project->code, 'account' => MicroLoans::GRANTS_ACCOUNT]);
         }
 
@@ -416,32 +433,49 @@ class MicroPurchases
             throw new LoanException($problems);
         }
 
-        /** @var CarbonImmutable $signed */
-        /** @var CarbonImmutable $firstDue */
-        $totalUsd = $totals['invoiced_usd'];
-        $loanUsd = bccomp($total, '0', 2) > 0 ? Money::normalize(bcdiv(bcmul($totalUsd, $loan, 6), $total, 6)) : '0.00';
-        $grantUsd = bcsub($totalUsd, $loanUsd, 2);
-        $bookRate = $file->currency === 'USD' ? '1.000000' : Money::normalize(bcdiv($total, $totalUsd, 6), 6);
         $lastInvoice = $invoices->max(fn (MicroPurchase $purchase): string => $purchase->purchase_date->toDateString());
         $tags = $this->tags($file);
 
-        return DB::transaction(function () use ($by, $file, $signed, $firstDue, $total, $loan, $grant, $loanUsd, $grantUsd, $bookRate, $lastInvoice, $tags, $project, $grantLine, $instalment, $count): MicroLoan {
+        return DB::transaction(function () use ($by, $file, $signed, $firstDue, $total, $loan, $grant, $loanUsd, $move, $moveUsd, $bookRate, $lastInvoice, $tags, $project, $grantLine, $instalment, $count): MicroLoan {
             $voucher = null;
+            $percent = rtrim(rtrim(Money::normalize($file->recovery_percent), '0'), '.');
 
-            if (bccomp($grant, '0', 2) > 0) {
+            if (bccomp($move, '0', 2) > 0) {
+                // The repayable share leaves the grants for the loans. The grants' credit carries no budget line: the
+                // donor's report keeps every invoice spent in full.
                 $voucher = $this->post(new VoucherDraft(
                     type: VoucherType::Journal, date: $signed, preparedBy: (int) $by->getAuthIdentifier(),
-                    description: __('micro.voucher.grant', ['beneficiary' => $file->beneficiary, 'percent' => rtrim(rtrim(Money::normalize($file->recovery_percent), '0'), '.')]),
+                    description: __('micro.voucher.loan', ['beneficiary' => $file->beneficiary, 'percent' => $percent]),
                     lines: [
                         new LineDraft(
                             ...$tags,
-                            accountCode: $grantLine?->account_code ?? MicroLoans::GRANTS_ACCOUNT, currency: $file->currency, debit: $grant, rate: $bookRate, debitUsd: $grantUsd,
-                            budgetLineKey: $grantLine?->key, contact: $file->beneficiary, debitDonor: $this->donorAmount($grantUsd, $project),
+                            accountCode: MicroLoans::LOANS_ACCOUNT, currency: $file->currency, debit: $move, rate: $bookRate, debitUsd: $moveUsd,
+                            fundSource: $this->fundSource($file), contact: $file->beneficiary, debitDonor: $this->donorAmount($moveUsd, $project),
                         ),
                         new LineDraft(
                             ...$tags,
-                            accountCode: MicroLoans::LOANS_ACCOUNT, currency: $file->currency, credit: $grant, rate: $bookRate, creditUsd: $grantUsd,
-                            fundSource: $this->fundSource($file), contact: $file->beneficiary, creditDonor: $this->donorAmount($grantUsd, $project),
+                            accountCode: MicroLoans::GRANTS_ACCOUNT, currency: $file->currency, credit: $move, rate: $bookRate, creditUsd: $moveUsd,
+                            contact: $file->beneficiary, creditDonor: $this->donorAmount($moveUsd, $project),
+                        ),
+                    ],
+                ), $file);
+            } elseif (bccomp($move, '0', 2) < 0) {
+                // Invoices booked on the loans: the grant share moves to the grants, on the budget line.
+                $back = bcmul($move, '-1', 2);
+                $backUsd = bcmul($moveUsd, '-1', 2);
+                $voucher = $this->post(new VoucherDraft(
+                    type: VoucherType::Journal, date: $signed, preparedBy: (int) $by->getAuthIdentifier(),
+                    description: __('micro.voucher.grant', ['beneficiary' => $file->beneficiary, 'percent' => $percent]),
+                    lines: [
+                        new LineDraft(
+                            ...$tags,
+                            accountCode: $grantLine?->account_code ?? MicroLoans::GRANTS_ACCOUNT, currency: $file->currency, debit: $back, rate: $bookRate, debitUsd: $backUsd,
+                            budgetLineKey: $grantLine?->key, contact: $file->beneficiary, debitDonor: $this->donorAmount($backUsd, $project),
+                        ),
+                        new LineDraft(
+                            ...$tags,
+                            accountCode: MicroLoans::LOANS_ACCOUNT, currency: $file->currency, credit: $back, rate: $bookRate, creditUsd: $backUsd,
+                            fundSource: $this->fundSource($file), contact: $file->beneficiary, creditDonor: $this->donorAmount($backUsd, $project),
                         ),
                     ],
                 ), $file);
@@ -599,12 +633,25 @@ class MicroPurchases
     }
 
     /**
-     * The 1204 line of a purchase: the loan grows by the invoice, in the loan's currency.
+     * The debit of a purchase, in the loan's currency (finance decision of 2026-11-25). A project's file spends the
+     * whole invoice on the grants (5413), on the project's budget line, so the donor's report lists every invoice in
+     * full; the repayable share moves to the loans (1204) when the protocol is signed. A file of an instalment fund has
+     * no donor and no budget: its invoice stays on the loans as before.
      *
      * @param  array{projectCode: string|null, donor: string|null, restriction: string|null, donorCurrency: string|null, city: string|null}  $tags
      */
     private function loanLine(MicroLoan $file, string $loanAmount, string $rate, string $usd, array $tags, ?GlProject $project): LineDraft
     {
+        $grantLine = $project !== null ? $this->grantLine($project) : null;
+
+        if ($grantLine !== null) {
+            return new LineDraft(
+                ...$tags,
+                accountCode: $grantLine->account_code, currency: $file->currency, debit: $loanAmount, rate: $file->currency === 'USD' ? '1.000000' : $rate, debitUsd: $usd,
+                budgetLineKey: $grantLine->key, contact: $file->beneficiary, debitDonor: $this->donorAmount($usd, $project),
+            );
+        }
+
         return new LineDraft(
             ...$tags,
             accountCode: MicroLoans::LOANS_ACCOUNT, currency: $file->currency, debit: $loanAmount, rate: $file->currency === 'USD' ? '1.000000' : $rate, debitUsd: $usd,
@@ -667,6 +714,41 @@ class MicroPurchases
         if ($file->stage !== MicroLoan::APPROVED) {
             throw new LoanException([__('micro.problem.not_approved')]);
         }
+    }
+
+    /**
+     * What the file's invoices debited to the loans (1204), in the loan's currency and in dollars.
+     *
+     * @param  iterable<MicroPurchase>  $invoices
+     * @return array{amount: numeric-string, usd: numeric-string}
+     */
+    private function onLoans(iterable $invoices): array
+    {
+        $ids = collect($invoices)->pluck('voucher_id')->filter()->values()->all();
+        $row = DB::table('gl_voucher_lines')->whereIn('voucher_id', $ids)->where('account_code', MicroLoans::LOANS_ACCOUNT)
+            ->selectRaw('sum(debit_orig) - sum(credit_orig) as amount, sum(debit_usd) - sum(credit_usd) as usd')->first();
+
+        return ['amount' => Money::normalize($row?->amount ?? '0'), 'usd' => Money::normalize($row?->usd ?? '0')];
+    }
+
+    /** The project's budget line on the micro-project grants (5413), the first by key when there are several. */
+    private function grantLine(GlProject $project): ?GlBudgetLine
+    {
+        return GlBudgetLine::query()->where('project_code', $project->code)->where('account_code', MicroLoans::GRANTS_ACCOUNT)->orderBy('key')->first();
+    }
+
+    /**
+     * A project's invoice needs the project's grants budget line to be spent on.
+     *
+     * @return list<string>
+     */
+    private function grantLineProblems(MicroLoan $file): array
+    {
+        $project = $this->project($file);
+
+        return $project !== null && $this->grantLine($project) === null
+            ? [__('loans.problem.no_grant_line', ['project' => $project->code, 'account' => MicroLoans::GRANTS_ACCOUNT])]
+            : [];
     }
 
     private function project(MicroLoan $file): ?GlProject

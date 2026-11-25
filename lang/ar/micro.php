@@ -176,6 +176,7 @@ return [
         'advance' => 'المشروع الصغير لـ :beneficiary: سلفة لـ :person للمشتريات',
         'return' => 'المشروع الصغير لـ :beneficiary: باقي سلفة :person',
         'grant' => 'المشروع الصغير لـ :beneficiary: جزء المنحة بعد :percent% للاسترداد',
+        'loan' => 'المشروع الصغير لـ :beneficiary: تحويل :percent% المستردة من المنح إلى القرض',
     ],
     'problem' => [
         'not_editable' => 'لم يعد بالإمكان تعديل الملف.',
