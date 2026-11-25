@@ -49,6 +49,8 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $loan_date the date of the last invoice
  * @property string|null $book_usd what the repayable part is worth on 1204, in dollars
  * @property string|null $closing_voucher_id the closing's journal voucher: the repayable share from 5413 to 1204 (or, for invoices booked on 1204, the grant share the other way)
+ * @property Carbon|null $imported_at when an old project was imported for follow-up (finance request of 2026-11-27); null for a loan opened in the program
+ * @property string $legacy_paid what an imported loan's beneficiary had repaid before the import, in the loan's currency
  * @property int|null $created_by
  * @property Carbon $created_at
  */
@@ -82,6 +84,7 @@ class MicroLoan extends Model
         'stage', 'name_en', 'project_number', 'profession', 'address', 'rate', 'requested_amount', 'seizure_fee', 'extra_amount',
         'extra_reason', 'recovery_percent', 'instalment_amount', 'fund_source', 'approvals', 'submitted_at', 'approved_at',
         'return_reason', 'trust_bond_amount', 'protocol_signed_on', 'loan_date', 'book_usd', 'closing_voucher_id', 'created_by',
+        'imported_at', 'legacy_paid',
     ];
 
     protected function casts(): array
@@ -105,6 +108,8 @@ class MicroLoan extends Model
             'protocol_signed_on' => 'date',
             'loan_date' => 'date',
             'book_usd' => 'decimal:2',
+            'imported_at' => 'datetime',
+            'legacy_paid' => 'decimal:2',
             'created_by' => 'integer',
         ];
     }

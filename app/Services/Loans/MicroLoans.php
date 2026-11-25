@@ -545,6 +545,12 @@ class MicroLoans
         if (bccomp($amount, $owed, 2) === 0) {
             $taken = array_reduce(MicroPayment::query()->where('loan_id', $loan->id)->pluck('usd')->all(), fn (string $sum, mixed $usd): string => bcadd($sum, (string) $usd, 2), '0.00');
 
+            // An old project imported for follow-up was partly repaid before the program, with no voucher here: that
+            // part left 1204 through the opening balances, at the loan's own rate.
+            if ($loan->imported_at !== null && bccomp(Money::normalize($loan->legacy_paid ?? '0'), '0', 2) > 0) {
+                $taken = bcadd($taken, $this->toUsd(Money::normalize($loan->legacy_paid), $loan->currency, $rate), 2);
+            }
+
             return ['rate' => $rate, 'usd' => bcsub(Money::normalize($book['usd']), $taken, 2)];
         }
 
