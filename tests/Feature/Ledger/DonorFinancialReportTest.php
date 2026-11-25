@@ -149,3 +149,50 @@ it('keeps a voucher\'s document details, changed by hand in its audit', function
         ->and(DB::table('gl_voucher_audit')->where('voucher_id', $workshop->id)->where('action', 'document')->count())->toBe(3)
         ->and(app(VoucherDocuments::class)->change($workshop, $accountant, 'bill', '', ''))->toBe([__('voucher_documents.bad_type')]);
 });
+
+it('makes the monthly report in dollars: by category and line, with each line\'s status and the months\' breakdown', function () {
+    $monthly = app(App\Services\Ledger\MonthlyProjectReport::class);
+    $march = CarbonImmutable::parse('2026-03-01');
+    $report = $monthly->build(dfProject(), $march);
+
+    // The euro line's 1,000 EUR is 1,150 USD at the project's 1.15; March is month 3 of 12.
+    expect([$report['months_elapsed'], $report['months_total'], $report['time']])->toBe([3, 12, '0.2500'])
+        ->and($report['totals'])->toMatchArray(['budget' => '1610.00', 'previous' => '0.00', 'month' => '330.00', 'to_date' => '330.00', 'remaining' => '1280.00'])
+        ->and(collect($report['lines'])->map(fn ($line) => [$line['name'], $line['budget'], $line['month'], $line['burn'], $line['status']])->all())->toBe([
+            ['Bank charges', '1150.00', '230.00', '0.2000', 'ok'],
+            ['Training', '460.00', '100.00', '0.2173', 'ok'],
+        ])
+        ->and(collect($report['categories'])->pluck('category')->all())->toBe(['Operations', 'Activities']);
+
+    // In December the same spending is far behind the time gone.
+    expect(collect($monthly->build(dfProject(), CarbonImmutable::parse('2026-12-01'))['lines'])->pluck('status')->all())->toBe(['slow', 'slow']);
+
+    $breakdown = $monthly->breakdown(dfProject(), $march);
+    expect($breakdown['months'])->toBe(['2026-01', '2026-02', '2026-03'])
+        ->and($breakdown['rows'][0]['by_month'])->toBe(['2026-01' => '0.00', '2026-02' => '0.00', '2026-03' => '230.00'])
+        ->and($breakdown['totals']['2026-03'])->toBe('330.00');
+
+    // Spending over the line's budget asks for an explanation.
+    ledgerApprovedVoucher(['date' => CarbonImmutable::parse('2026-03-20'), 'type' => VoucherType::Payment, 'description' => 'Second workshop'], [
+        new LineDraft('5501', 'USD', debit: 400, projectCode: 'F2F', budgetLineKey: 'F2F|Training'),
+        new LineDraft('1111', 'USD', credit: 400, projectCode: 'F2F', fundSource: FundSource::DonorGrant),
+    ]);
+    $over = $monthly->build(dfProject(), $march);
+    expect($over['lines'][1]['status'])->toBe('over')->and($over['to_explain'])->toBe(1);
+});
+
+it('shows the monthly report, keeps the month\'s explanation and exports it', function () {
+    $accountant = User::query()->findOrFail(createFinanceUser('Ann', 'secret pass', RoleId::Accountant->name, RoleId::Accountant->value));
+
+    $page = Livewire::actingAs($accountant)->withQueryParams(['project' => 'F2F', 'from' => '2026-01-01', 'to' => '2026-03-31', 'tab' => 'monthly'])
+        ->test(DonorFinancialReport::class)
+        ->assertSet('month', '2026-03')
+        ->assertSeeHtml('data-test="df-monthly-categories"')
+        ->assertSeeHtml('data-test="df-monthly-lines"')
+        ->assertSeeHtml('data-test="df-monthly-breakdown"');
+
+    $page->call('saveMonthlyNote', 'F2F|Training', 'Two workshops in March');
+    expect(BudgetLineNote::query()->where('budget_line_key', 'F2F|Training')->whereDate('period_from', '2026-03-01')->whereDate('period_to', '2026-03-31')->value('note'))->toBe('Two workshops in March');
+
+    $page->call('exportMonthly', 'xlsx')->assertFileDownloaded('HC_F2F_FinReport_2026-03.xlsx');
+});

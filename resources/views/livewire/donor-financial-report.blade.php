@@ -3,7 +3,10 @@
 
     <x-ui.page-header :title="__('navigation.screens.rdonorfin')" :subtitle="__('donor_financial.intro')">
         <x-slot:actions>
-            @if ($heading !== [])
+            @if ($monthly !== null)
+                <x-ui.button icon="table-cells" wire:click="exportMonthly('xlsx')" data-test="export-monthly-xlsx">{{ __('donor_financial.export_xlsx') }}</x-ui.button>
+                <x-ui.button tone="primary" icon="document-arrow-down" wire:click="exportMonthly('pdf')" data-test="export-monthly-pdf">{{ __('donor_financial.export_pdf') }}</x-ui.button>
+            @elseif ($heading !== [])
                 <x-ui.button icon="table-cells" wire:click="export('xlsx')" data-test="export-xlsx">{{ __('donor_financial.export_xlsx') }}</x-ui.button>
                 <x-ui.button tone="primary" icon="document-arrow-down" wire:click="export('pdf')" data-test="export-pdf">{{ __('donor_financial.export_pdf') }}</x-ui.button>
             @endif
@@ -273,6 +276,169 @@
                     </table>
                 </x-ui.scroll-table>
             </x-ui.panel>
+        @endif
+
+        {{-- 6. The monthly report on the finance form: budget against actual in dollars, by category and by line --}}
+        @if ($tab === 'monthly')
+            @php
+                $pct = fn (?string $share): string => $share === null ? '—' : bcmul($share, '100', 1).'%';
+                $tone = fn (string $status): string => match ($status) { 'over', 'unbudgeted' => 'rejected', 'near', 'slow' => 'pending', 'ok' => 'done', default => 'draft' };
+            @endphp
+            <div class="flex flex-wrap items-end gap-4">
+                <x-ui.form-input type="month" wire:model.live="month" :label="__('donor_financial.monthly.reporting_month')" data-test="df-month" />
+                <p class="text-sm text-secondary-medium dark:text-ink-muted">{{ __('donor_financial.monthly.hint') }}</p>
+            </div>
+
+            @if ($monthly !== null)
+                @php($report = $monthly['report'])
+                <div class="grid grid-cols-2 gap-3 lg:grid-cols-6" data-test="df-monthly-kpis">
+                    <x-ui.stat-tile :label="__('donor_financial.monthly.col.budget')" :value="number_format((float) $report['totals']['budget'], 2)" unit="USD" icon="banknotes" />
+                    <x-ui.stat-tile :label="__('donor_financial.monthly.col.month')" :value="number_format((float) $report['totals']['month'], 2)" unit="USD" icon="calendar" />
+                    <x-ui.stat-tile :label="__('donor_financial.monthly.col.to_date')" :value="number_format((float) $report['totals']['to_date'], 2)" unit="USD" icon="chart-bar" />
+                    <x-ui.stat-tile :label="__('donor_financial.monthly.col.remaining')" :value="number_format((float) $report['totals']['remaining'], 2)" unit="USD" icon="scale" />
+                    <x-ui.stat-tile :label="__('donor_financial.monthly.col.burn')" :value="$pct($report['totals']['burn'])" icon="fire" />
+                    <x-ui.stat-tile :label="__('donor_financial.monthly.col.time')" :value="$pct($report['time'])" icon="clock" />
+                </div>
+
+                @if ($report['to_explain'] > 0)
+                    <p class="rounded-lg border border-status-warn bg-status-warn-soft px-4 py-2 text-sm text-status-warn" role="alert" data-test="df-monthly-explain">{{ trans_choice('donor_financial.monthly.to_explain', $report['to_explain'], ['count' => $report['to_explain']]) }}</p>
+                @endif
+
+                <x-ui.panel :title="__('donor_financial.monthly.by_category')" data-test="df-monthly-categories">
+                    <x-ui.scroll-table :paginate="false">
+                        <table class="fin-table">
+                            <thead>
+                                <tr>
+                                    <th>{{ __('donor_financial.monthly.col.category') }}</th>
+                                    @foreach (['budget', 'previous', 'month', 'to_date', 'remaining', 'burn'] as $column)
+                                        <th class="fin-num">{{ __('donor_financial.monthly.col.'.$column) }}</th>
+                                    @endforeach
+                                    <th>{{ __('donor_financial.monthly.col.status') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($report['categories'] as $row)
+                                    <tr wire:key="mcat-{{ md5($row['category']) }}">
+                                        <td>{{ $row['category'] }}</td>
+                                        @foreach (['budget', 'previous', 'month', 'to_date', 'remaining'] as $column)
+                                            <td class="fin-num"><x-money :amount="$row[$column]" /></td>
+                                        @endforeach
+                                        <td class="fin-num">{{ $pct($row['burn']) }}</td>
+                                        <td><x-ui.status-badge :status="$tone($row['status'])" :label="__('donor_financial.monthly.status.'.$row['status'])" /></td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                            <tfoot>
+                                <tr class="font-semibold">
+                                    <td>{{ __('donor_financial.monthly.total_categories') }}</td>
+                                    @foreach (['budget', 'previous', 'month', 'to_date', 'remaining'] as $column)
+                                        <td class="fin-num"><x-money :amount="$report['totals'][$column]" /></td>
+                                    @endforeach
+                                    <td class="fin-num">{{ $pct($report['totals']['burn']) }}</td>
+                                    <td><x-ui.status-badge :status="$tone($report['totals']['status'])" :label="__('donor_financial.monthly.status.'.$report['totals']['status'])" /></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </x-ui.scroll-table>
+                </x-ui.panel>
+
+                <x-ui.panel :title="__('donor_financial.monthly.by_line')" :subtitle="__('donor_financial.monthly.explain_hint')" data-test="df-monthly-lines">
+                    <x-ui.scroll-table :paginate="false">
+                        <table class="fin-table">
+                            <thead>
+                                <tr>
+                                    <th>{{ __('donor_financial.monthly.col.line') }}</th>
+                                    @foreach (['budget', 'previous', 'month', 'to_date', 'remaining', 'burn'] as $column)
+                                        <th class="fin-num">{{ __('donor_financial.monthly.col.'.$column) }}</th>
+                                    @endforeach
+                                    <th>{{ __('donor_financial.monthly.col.status') }}</th>
+                                    <th class="min-w-64">{{ __('donor_financial.monthly.col.explanation') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($report['lines'] as $line)
+                                    <tr wire:key="mline-{{ md5($line['key']) }}">
+                                        <td>{{ $line['name'] }} <span class="type-meta text-secondary-medium dark:text-ink-muted">{{ $line['category'] }}</span></td>
+                                        @foreach (['budget', 'previous', 'month', 'to_date', 'remaining'] as $column)
+                                            <td class="fin-num"><x-money :amount="$line[$column]" /></td>
+                                        @endforeach
+                                        <td class="fin-num">{{ $pct($line['burn']) }}</td>
+                                        <td><x-ui.status-badge :status="$tone($line['status'])" :label="__('donor_financial.monthly.status.'.$line['status'])" /></td>
+                                        <td>
+                                            @if ($canNote)
+                                                <x-ui.input size="sm" :value="$line['note']" :placeholder="__('donor_financial.note_placeholder')" :aria-label="__('donor_financial.monthly.col.explanation')"
+                                                    wire:change="saveMonthlyNote(@js($line['key']), $event.target.value)" data-test="mnote-{{ md5($line['key']) }}" />
+                                            @else
+                                                {{ $line['note'] !== '' ? $line['note'] : '—' }}
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="9" class="fin-empty">{{ __('donor_financial.no_lines') }}</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </x-ui.scroll-table>
+                </x-ui.panel>
+
+                <x-ui.panel :title="__('donor_financial.monthly.breakdown')" data-test="df-monthly-breakdown">
+                    <x-ui.scroll-table :paginate="false">
+                        <table class="fin-table">
+                            <thead>
+                                <tr>
+                                    <th>{{ __('donor_financial.monthly.col.line') }}</th>
+                                    <th class="fin-num">{{ __('donor_financial.monthly.col.budget') }}</th>
+                                    <th class="fin-num">{{ __('donor_financial.monthly.col.spent') }}</th>
+                                    @foreach ($monthly['breakdown']['months'] as $key)
+                                        <th class="fin-num" dir="ltr">{{ \Carbon\CarbonImmutable::parse($key.'-01')->format('m/Y') }}</th>
+                                    @endforeach
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($monthly['breakdown']['rows'] as $row)
+                                    <tr wire:key="mbd-{{ md5($row['key']) }}">
+                                        <td>{{ $row['name'] }}</td>
+                                        <td class="fin-num"><x-money :amount="$row['budget']" /></td>
+                                        <td class="fin-num"><x-money :amount="$row['spent']" /></td>
+                                        @foreach ($row['by_month'] as $amount)
+                                            <td class="fin-num"><x-money :amount="$amount" /></td>
+                                        @endforeach
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </x-ui.scroll-table>
+                </x-ui.panel>
+
+                @if ($monthly['beneficiaries'] !== [])
+                    <x-ui.panel :title="__('donor_financial.monthly.beneficiaries')" :count="count($monthly['beneficiaries'])" data-test="df-monthly-beneficiaries">
+                        <x-ui.scroll-table :paginate="false">
+                            <table class="fin-table">
+                                <thead>
+                                    <tr>
+                                        <th>{{ __('donor_financial.monthly.col.beneficiary_no') }}</th>
+                                        <th>{{ __('donor_financial.monthly.col.beneficiary') }}</th>
+                                        <th class="fin-num">{{ __('donor_financial.monthly.col.syp') }}</th>
+                                        <th class="fin-num">{{ __('donor_financial.monthly.col.usd') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($monthly['beneficiaries'] as $index => $row)
+                                        <tr wire:key="mben-{{ $index }}">
+                                            <td dir="ltr">{{ $row['number'] }}</td>
+                                            <td>{{ $row['name'] }}</td>
+                                            <td class="fin-num"><x-money :amount="$row['syp']" /></td>
+                                            <td class="fin-num"><x-money :amount="$row['usd']" /></td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </x-ui.scroll-table>
+                    </x-ui.panel>
+                @endif
+
+                <p class="text-xs text-secondary-medium dark:text-ink-muted">{{ __('donor_financial.monthly.legend') }}</p>
+            @endif
         @endif
     @endif
 </div>
