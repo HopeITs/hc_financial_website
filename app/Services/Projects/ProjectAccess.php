@@ -5,6 +5,7 @@ namespace App\Services\Projects;
 use App\Enums\RoleId;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Which projects a person may open and whether they see their money.
@@ -13,6 +14,8 @@ use Illuminate\Support\Facades\DB;
  * from the Windows program's links until it was left (finance decision of 2026-11-27). Head Office, the General Manager,
  * the Donor and the Super User see everything, and so does anyone with a role that is not limited at all
  * (config finance.scoped_roles, the project manager by default). The others see only their own projects.
+ * Anyone else is limited too once switched on for it on the users page (finance request of 2026-11-30): they then see
+ * and enter only their projects, on every screen and in every voucher (rule 17, ProjectsOfThePreparer).
  */
 class ProjectAccess
 {
@@ -35,10 +38,59 @@ class ProjectAccess
 
         if (! array_key_exists($id, $this->known)) {
             // Someone with no role at all sees no project.
-            $this->known[$id] = $user->roleIds() === [] ? [] : ($this->isLimited($user) ? $this->given($id) : null);
+            $this->known[$id] = $user->roleIds() === [] ? [] : ($this->isLimited($user) || $this->switchedOn($user) ? $this->given($id) : null);
         }
 
         return $this->known[$id];
+    }
+
+    /**
+     * Whether the person was limited to their projects on the users page (finance request of 2026-11-30), whatever their
+     * role; Head Office, the General Manager, the Donor and the Super User are never limited.
+     */
+    public function switchedOn(User $user): bool
+    {
+        foreach ($user->roleIds() as $role) {
+            if (in_array($role, self::UNLIMITED, true)) {
+                return false;
+            }
+        }
+
+        return $this->isSwitchedOn((int) $user->getKey());
+    }
+
+    /**
+     * Whether a person holding these roles sees every project whatever is switched on for them.
+     *
+     * @param  list<RoleId>  $roles
+     */
+    public function neverLimited(array $roles): bool
+    {
+        return array_intersect(array_map(fn (RoleId $role): int => $role->value, $roles), array_map(fn (RoleId $role): int => $role->value, self::UNLIMITED)) !== [];
+    }
+
+    /** Whether the switch is on for this person, whatever their roles. */
+    public function isSwitchedOn(int $userId): bool
+    {
+        return self::switchAvailable() && (bool) DB::table('web_user_profiles')->where('user_id', $userId)->value('limit_projects');
+    }
+
+    /** Turns the switch on or off for a person. */
+    public function switchTo(int $userId, bool $on): void
+    {
+        if (! self::switchAvailable()) {
+            return;
+        }
+
+        $now = now();
+        DB::table('web_user_profiles')->updateOrInsert(['user_id' => $userId], ['limit_projects' => $on, 'updated_at' => $now]);
+        unset($this->known[$userId]);
+    }
+
+    /** Whether the switch's column is there yet (IT runs its migration after the deploy). */
+    public static function switchAvailable(): bool
+    {
+        return once(static fn (): bool => Schema::hasTable('web_user_profiles') && Schema::hasColumn('web_user_profiles', 'limit_projects'));
     }
 
     public function canOpen(User $user, ?string $projectCode): bool

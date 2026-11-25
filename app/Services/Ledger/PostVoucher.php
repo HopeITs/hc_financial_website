@@ -16,6 +16,7 @@ use App\Services\Ledger\Rules\MonthIsOpen;
 use App\Services\Ledger\Rules\NetAssetsAreComputed;
 use App\Services\Ledger\Rules\OnlyActivePostingAccounts;
 use App\Services\Ledger\Rules\PostingRule;
+use App\Services\Ledger\Rules\ProjectsOfThePreparer;
 use App\Services\Ledger\Rules\RequestRequiredAboveLimit;
 use App\Services\Ledger\Rules\RequiredTagsFilled;
 use Carbon\CarbonImmutable;
@@ -212,6 +213,7 @@ class PostVoucher
             new RequestRequiredAboveLimit,
             new HawalaReceiptIsConsistent,
             new NetAssetsAreComputed,
+            new ProjectsOfThePreparer,
         ];
     }
 }

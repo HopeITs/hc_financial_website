@@ -11,6 +11,7 @@ use App\Models\GlAccount;
 use App\Models\GlBudgetLine;
 use App\Models\GlProject;
 use App\Models\User;
+use App\Services\Projects\ProjectAccess;
 use App\Models\Voucher;
 use App\Models\VoucherAttachment;
 use App\Services\Ledger\Currencies;
@@ -386,7 +387,7 @@ class VoucherBuilder extends Component
             'accountGroups' => $accounts->groupBy(fn (GlAccount $account) => $account->class->value),
             'currencyCodes' => app(Currencies::class)->codes(),
             'fixedCurrency' => $accounts->filter(fn (GlAccount $account) => app(Currencies::class)->isActive((string) $account->currency))->pluck('currency', 'code')->all(),
-            'projects' => GlProject::query()->orderBy('code')->get(['code', 'name']),
+            'projects' => GlProject::query()->when($this->projectLimit() !== null, fn ($query) => $query->whereIn('code', $this->projectLimit() ?? []))->orderBy('code')->get(['code', 'name']),
             'projectRates' => GlProject::query()->where('donor_currency', '!=', 'USD')->where('donor_rate', '>', 0)->pluck('donor_rate', 'code')->all(),
             'budgetLines' => GlBudgetLine::query()->orderBy('key')->get(['key', 'project_code', 'account_code']),
             'types' => collect(VoucherType::cases())->reject(fn (VoucherType $case) => $case === VoucherType::Opening)->values()->all(),
@@ -430,6 +431,14 @@ class VoucherBuilder extends Component
                 $this->lines[$index]['rate'] = rtrim(rtrim($average, '0'), '.');
             }
         }
+    }
+
+    /** @return list<string>|null the projects the person is limited to (finance request of 2026-11-30), or null */
+    private function projectLimit(): ?array
+    {
+        $user = auth()->user();
+
+        return $user instanceof User ? app(ProjectAccess::class)->limitedTo($user) : null;
     }
 
     private function preparer(): int

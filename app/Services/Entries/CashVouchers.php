@@ -21,6 +21,7 @@ use App\Services\Ledger\Violation;
 use App\Services\Ledger\VoucherAttachments;
 use App\Services\Ledger\VoucherDraft;
 use App\Services\Ledger\VoucherWarnings;
+use App\Services\Projects\ProjectAccess;
 use App\Services\Treasury\MonthlyRates;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
@@ -94,7 +95,13 @@ class CashVouchers
     /** @return Collection<string, GlProject> the projects a line can name, by code (the old general accounts are not projects) */
     public function projects(): Collection
     {
-        return GlProject::query()->where('is_general_account', false)->orderBy('code')->get()->keyBy('code');
+        // A person limited to their projects picks only those (finance request of 2026-11-30).
+        $user = auth()->user();
+        $limit = $user instanceof User ? app(ProjectAccess::class)->limitedTo($user) : null;
+
+        return GlProject::query()->where('is_general_account', false)
+            ->when($limit !== null, fn ($query) => $query->whereIn('code', $limit ?? []))
+            ->orderBy('code')->get()->keyBy('code');
     }
 
     /** @return Collection<int, GlBudgetLine> */

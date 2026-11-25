@@ -9,6 +9,7 @@ use App\Models\AllocationRate;
 use App\Models\GlAccount;
 use App\Models\GlProject;
 use App\Models\User;
+use App\Services\Projects\ProjectAccess;
 use App\Services\Ledger\BuiltTransfer;
 use App\Services\Ledger\LedgerRuleException;
 use App\Services\Ledger\PostVoucher;
@@ -254,7 +255,12 @@ class Transfers extends Component
     /** @return Collection<int, GlProject> */
     private function projects(): Collection
     {
-        return GlProject::query()->where('is_general_account', false)->orderBy('code')->get();
+        $user = auth()->user();
+        $limit = $user instanceof User ? app(ProjectAccess::class)->limitedTo($user) : null;
+
+        return GlProject::query()->where('is_general_account', false)
+            ->when($limit !== null, fn ($query) => $query->whereIn('code', $limit ?? []))
+            ->orderBy('code')->get();
     }
 
     /** @return Collection<int, GlAccount> the city's cash accounts of the currency, in transit left out */

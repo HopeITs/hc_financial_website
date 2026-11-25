@@ -391,6 +391,7 @@ return [
         'legacy_id_missing' => 'A migrated voucher must keep the id of the Windows program operation it came from.',
         'legacy_id_duplicate' => 'Operation :id of the Windows program has already been migrated.',
         'request_not_approved' => 'Request :request is not an approved request.',
+        'project_not_yours' => 'You may enter vouchers only on your own projects, not on: :projects.',
         'micro_file_not_approved' => 'The payment order of micro-project file :file is not approved yet.',
         'hawala_only_receipt' => 'Euros, a rate and a commission belong only on a dollar debit to :account in a receipt.',
         'hawala_needs_rate' => 'A hawala receipt in euros needs the rate it was converted at.',

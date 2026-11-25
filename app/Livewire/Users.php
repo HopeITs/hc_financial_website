@@ -135,6 +135,9 @@ class Users extends Component
     /** @var array<int, string> what the picked person's roles allow but is taken from them, `screen.action` */
     public array $denied = [];
 
+    /** The picked person sees and enters only their projects, whatever their role (finance request of 2026-11-30). */
+    public bool $limitProjects = false;
+
     public function mount(): void
     {
         $this->selectRole(RoleId::cases()[0]->value);
@@ -255,6 +258,7 @@ class Users extends Component
         $this->permissions = $person->webPermissions->toBase()->map(fn (WebUserPermission $row): string => $row->screen.'.'.$row->action)
             ->intersect($this->permissionKeys())->sort()->values()->all();
         $this->projectCodes = app(ProjectAccess::class)->given((int) $person->getKey());
+        $this->limitProjects = app(ProjectAccess::class)->isSwitchedOn((int) $person->getKey());
         $this->denied = User::denialsAvailable()
             ? $person->webDenials()->get()->toBase()->map(fn (WebUserDenial $row): string => $row->screen.'.'.$row->action)->sort()->values()->all()
             : [];
@@ -359,6 +363,7 @@ class Users extends Component
             }
 
             app(ProjectAccess::class)->give((int) $person->getKey(), $projects->all());
+            app(ProjectAccess::class)->switchTo((int) $person->getKey(), $this->limitProjects);
 
             if (User::denialsAvailable()) {
                 WebUserDenial::query()->where('user_id', $person->getKey())->delete();
@@ -712,6 +717,8 @@ class Users extends Component
             'roleChanged' => $this->selectedRoleId !== null && RoleId::tryFrom($this->selectedRoleId) !== null && app(RolePermissions::class)->isChanged(RoleId::from($this->selectedRoleId)),
             'counts' => $this->tab === 'users' ? ['all' => User::query()->count(), 'active' => User::query()->where('State', 1)->count()] : ['all' => 0, 'active' => 0],
             'seesAllProjects' => ! app(ProjectAccess::class)->limits(array_values($heldRoles->all())),
+            'neverLimited' => app(ProjectAccess::class)->neverLimited(array_values($heldRoles->all())),
+            'switchAvailable' => ProjectAccess::switchAvailable(),
         ]);
     }
 

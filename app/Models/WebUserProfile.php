@@ -15,6 +15,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $phone
  * @property string|null $city
  * @property string|null $notes
+ * @property bool $limit_projects the person sees and enters only their projects (finance request of 2026-11-30)
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -26,5 +27,10 @@ class WebUserProfile extends Model
 
     public $incrementing = false;
 
-    protected $fillable = ['user_id', 'full_name', 'job_title', 'email', 'phone', 'city', 'notes'];
+    protected $fillable = ['user_id', 'full_name', 'job_title', 'email', 'phone', 'city', 'notes', 'limit_projects'];
+
+    protected function casts(): array
+    {
+        return ['limit_projects' => 'boolean'];
+    }
 }

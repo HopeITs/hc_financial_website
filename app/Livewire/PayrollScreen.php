@@ -8,6 +8,7 @@ use App\Models\Payroll;
 use App\Models\PayrollLine;
 use App\Models\StaffMember;
 use App\Models\User;
+use App\Services\Projects\ProjectAccess;
 use App\Services\Entries\CashVouchers;
 use App\Services\Ledger\LedgerRuleException;
 use App\Services\Payroll\PayrollException;
@@ -264,7 +265,9 @@ class PayrollScreen extends Component
             'payrolls' => Payroll::query()->with('project')->orderByDesc('month')->orderBy('project_code')->limit(120)->get(),
             'current' => $current,
             'totals' => $current !== null ? $payrolls->totals($current) : null,
-            'projects' => GlProject::query()->orderBy('code')->get()->mapWithKeys(fn (GlProject $project): array => [$project->code => $project->code.' · '.$project->name])->all(),
+            'projects' => GlProject::query()
+                ->when(($limit = auth()->user() instanceof User ? app(ProjectAccess::class)->limitedTo(auth()->user()) : null) !== null, fn ($query) => $query->whereIn('code', $limit ?? []))
+                ->orderBy('code')->get()->mapWithKeys(fn (GlProject $project): array => [$project->code => $project->code.' · '.$project->name])->all(),
             'members' => $this->tab === 'staff' ? StaffMember::query()->orderByDesc('active')->orderBy('project_code')->orderBy('name')->get() : collect(),
             'canCreate' => $user->canOnScreen('payroll', ScreenAction::Create),
             'canEdit' => $user->canOnScreen('payroll', ScreenAction::Edit),
