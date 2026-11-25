@@ -8,6 +8,7 @@ use App\Enums\VoucherStatus;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Models\VoucherAudit;
+use App\Services\Access\RolePermissions;
 use App\Services\Approvals\ApprovalChain;
 use App\Services\Entries\ProjectRevenues;
 use App\Services\Ledger\Rules\ApproverIsNotPreparer;
@@ -125,6 +126,6 @@ class VoucherApprovals
     private function hasLegacyApproval(User $user): bool
     {
         return collect($user->roleIds())->contains(fn (RoleId $role) => ! $role->isWebOnly()
-            && in_array(ScreenAction::Approve->value, (array) config("permissions.roles.{$role->value}.vouchers", []), true));
+            && app(RolePermissions::class)->allows($role, 'vouchers', ScreenAction::Approve->value));
     }
 }

@@ -281,7 +281,10 @@
 
                                 <section class="ud-sec" x-show="pane === 'permissions'">
                                     <h3>{{ __('master.users.direct') }}</h3>
-                                    <p class="ud-help">{{ __('master.users.direct_help') }}</p>
+                                    <p class="ud-help">{{ __('master.users.direct_help') }} {{ __('master.users.deny_help') }}</p>
+                                    @if ($denied !== [])
+                                        <p class="ud-info" data-test="denied-count">{{ trans_choice('master.users.denied_count', count($denied), ['count' => count($denied)]) }}</p>
+                                    @endif
 
                                     <div class="ud-perms">
                                         @foreach ($groups as $group => $screens)
@@ -300,7 +303,8 @@
                                                             @php($key = $slug.'.'.$action)
                                                             <label class="ud-act">
                                                                 @if (isset($inherited[$key]))
-                                                                    <input type="checkbox" checked disabled title="{{ __('master.users.from_role') }}">
+                                                                    {{-- From a role: unticking takes it from this person only. --}}
+                                                                    <input type="checkbox" @checked(! in_array($key, $denied, true)) wire:click="toggleDenied(@js($key))" title="{{ __('master.users.from_role_click') }}" @disabled(! $canEdit) data-test="role-perm-{{ $key }}">
                                                                 @else
                                                                     <input type="checkbox" wire:model="permissions" value="{{ $key }}" data-test="perm-{{ $key }}">
                                                                 @endif
@@ -359,6 +363,9 @@
                                 <span class="ud-chips">
                                     <span class="ud-chip">{{ __('master.users.people_count', ['count' => $row['people']]) }}</span>
                                     <span class="ud-chip">{{ __('master.users.screens_count', ['count' => $row['screens']]) }}</span>
+                                    @if ($row['changed'])
+                                        <span class="ud-chip is-main">{{ __('master.users.role_changed') }}</span>
+                                    @endif
                                 </span>
                             </span>
                         </button>
@@ -373,8 +380,59 @@
                         <div class="ud-grow">
                             <h2>{{ $roleDetail['role']->label() }}</h2>
                             <p>{{ $roleDetail['role']->isWebOnly() ? __('master.users.web_only') : __('master.users.from_old_program') }}</p>
+                            <div class="ud-chips">
+                                <span @class(['ud-badge', 'is-off' => ! $roleChanged]) data-test="role-state">{{ $roleChanged ? __('master.users.role_changed') : __('master.users.role_default') }}</span>
+                            </div>
                         </div>
+                        @if ($canEditRoles && $roleChanged)
+                            <x-ui.button tone="ghost" icon="arrow-uturn-left" wire:click="resetRole" wire:confirm="{{ __('master.users.role_reset_confirm') }}" data-test="reset-role">{{ __('master.users.role_reset_button') }}</x-ui.button>
+                        @endif
                     </div>
+
+                    @if ($failures !== [])
+                        <div class="ud-alert" role="alert" data-test="role-failures">
+                            @foreach ($failures as $message)
+                                <p>{{ $message }}</p>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    @if ($canEditRoles && $roleDetail['role'] !== \App\Enums\RoleId::SuperUser)
+                        {{-- What the role allows, changed here for everyone who holds it. --}}
+                        <form wire:submit="saveRole" data-test="role-form">
+                            <div class="ud-body">
+                                <section class="ud-sec">
+                                    <h3>{{ __('master.users.role_edit') }}</h3>
+                                    <p class="ud-help">{{ __('master.users.role_edit_help') }}</p>
+                                    <div class="ud-tools">
+                                        <button type="button" class="ud-link" wire:click="$set('rolePermissions', @js(collect($groups)->flatMap(fn ($screens, $group) => collect($screens)->flatMap(fn ($actions, $slug) => array_map(fn ($action) => $slug.'.'.$action, $actions)))->values()->all()))" data-test="role-all">{{ __('master.users.select_all') }}</button>
+                                        <button type="button" class="ud-link" wire:click="$set('rolePermissions', [])" data-test="role-none">{{ __('master.users.select_none') }}</button>
+                                    </div>
+                                    <div class="ud-perms">
+                                        @foreach ($groups as $group => $screens)
+                                            <fieldset class="ud-group" wire:key="role-group-{{ $group }}">
+                                                <div class="ud-group-head"><strong>{{ $group === 'general' ? __('master.users.general') : __('navigation.groups.'.$group) }}</strong></div>
+                                                @foreach ($screens as $slug => $actions)
+                                                    <div class="ud-screen" wire:key="role-screen-{{ $slug }}">
+                                                        <span>{{ $actionLabel($slug) }}</span>
+                                                        @foreach ($actions as $action)
+                                                            <label class="ud-act">
+                                                                <input type="checkbox" wire:model="rolePermissions" value="{{ $slug.'.'.$action }}" data-test="role-{{ $slug.'.'.$action }}">
+                                                                {{ __('master.users.actions.'.$action) }}
+                                                            </label>
+                                                        @endforeach
+                                                    </div>
+                                                @endforeach
+                                            </fieldset>
+                                        @endforeach
+                                    </div>
+                                </section>
+                            </div>
+                            <x-ui.action-bar>
+                                <x-ui.button type="submit" tone="primary" icon="check" wire:confirm="{{ __('master.users.role_save_confirm', ['count' => count($roleDetail['people'])]) }}" data-test="save-role">{{ __('master.users.role_save') }}</x-ui.button>
+                            </x-ui.action-bar>
+                        </form>
+                    @endif
 
                     <div class="ud-body">
                         <section class="ud-sec">
@@ -388,7 +446,7 @@
                             </div>
                         </section>
 
-                        <section class="ud-sec">
+                        <section class="ud-sec" @if ($canEditRoles && $roleDetail['role'] !== \App\Enums\RoleId::SuperUser) hidden @endif>
                             <h3>{{ __('master.users.role_screens') }}</h3>
                             <div class="ud-rolescreens">
                                 @foreach ($roleDetail['screens'] as $slug => $actions)

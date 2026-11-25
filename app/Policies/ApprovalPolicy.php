@@ -6,6 +6,7 @@ use App\Contracts\Approvable;
 use App\Enums\ScreenAction;
 use App\Models\User;
 use App\Models\Voucher;
+use App\Services\Access\RolePermissions;
 use App\Services\Approvals\ApprovalChain;
 
 /**
@@ -35,10 +36,9 @@ class ApprovalPolicy
             return $this->mayApproveDonorReceipt($user, $subject);
         }
 
+        $roles = app(RolePermissions::class);
         foreach ($user->roleIds() as $role) {
-            $actions = config("permissions.roles.{$role->value}.vouchers", []);
-
-            if (! $role->isWebOnly() && in_array(ScreenAction::Approve->value, $actions, true)) {
+            if (! $role->isWebOnly() && $roles->allows($role, 'vouchers', ScreenAction::Approve->value)) {
                 return true;
             }
         }
