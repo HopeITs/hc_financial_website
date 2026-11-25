@@ -3,6 +3,7 @@
         <x-slot:actions>
             <livewire:excel-tools kind="micro_loans" :key="'excel-micro-loans'" />
             <livewire:excel-tools kind="loan_schedule" :key="'excel-loan-schedule'" />
+            <livewire:legacy-micro-import :key="'legacy-micro-import'" />
         </x-slot:actions>
     </x-ui.page-header>
 
