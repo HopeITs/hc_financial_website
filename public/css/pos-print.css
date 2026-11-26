@@ -1,0 +1,132 @@
+/*
+ * The point of sale's papers (finance request of 2026-11-27): a receipt on an 80 mm till roll and the shift's
+ * end-of-day report. Kept here so it needs no build.
+ */
+.pos-paper {
+    margin: 0;
+    background: #f3f3f4;
+    color: #1c1d20;
+    font-family: "Somar Sans", "Lato", system-ui, sans-serif;
+}
+
+.pos-bar {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.pos-roll {
+    width: 80mm;
+    margin: 0 auto 2rem;
+    padding: 4mm;
+    background: #fff;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.pos-sheet {
+    width: 190mm;
+    margin: 0 auto 2rem;
+    padding: 12mm;
+    background: #fff;
+    font-size: 13px;
+}
+
+.pos-center {
+    text-align: center;
+}
+
+.pos-logo {
+    display: block;
+    height: 36px;
+    margin: 0 auto 4px;
+}
+
+.pos-title {
+    margin: 2px 0 6px;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: center;
+}
+
+.pos-meta {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1px 8px;
+    margin: 6px 0;
+}
+
+.pos-meta dd {
+    margin: 0;
+    text-align: end;
+}
+
+.pos-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 6px 0;
+}
+
+.pos-table th,
+.pos-table td {
+    padding: 3px 2px;
+    border-bottom: 1px dashed #939598;
+    text-align: start;
+    vertical-align: top;
+}
+
+.pos-table .num {
+    text-align: end;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    direction: ltr;
+}
+
+.pos-note {
+    color: #6d6e71;
+    font-size: 11px;
+}
+
+.pos-total {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 0;
+}
+
+.pos-total strong {
+    font-variant-numeric: tabular-nums;
+    direction: ltr;
+}
+
+.pos-grand {
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 2px solid #1c1d20;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.pos-thanks {
+    margin-top: 8px;
+    text-align: center;
+}
+
+@media print {
+    @page {
+        margin: 0;
+    }
+
+    .pos-paper {
+        background: #fff;
+    }
+
+    .pos-bar {
+        display: none;
+    }
+
+    .pos-roll,
+    .pos-sheet {
+        margin: 0;
+    }
+}

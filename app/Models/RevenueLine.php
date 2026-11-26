@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $quantity
  * @property string $unit_price
  * @property string $amount
+ * @property string|null $note a note on the line, on a point-of-sale order ("no sugar")
  */
 class RevenueLine extends Model
 {
@@ -23,7 +24,7 @@ class RevenueLine extends Model
 
     protected $table = 'gl_revenue_lines';
 
-    protected $fillable = ['sheet_id', 'ticket_id', 'item_id', 'kind', 'description', 'quantity', 'unit_price', 'amount'];
+    protected $fillable = ['sheet_id', 'ticket_id', 'item_id', 'kind', 'description', 'quantity', 'unit_price', 'amount', 'note'];
 
     protected function casts(): array
     {
