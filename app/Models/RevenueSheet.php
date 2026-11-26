@@ -16,13 +16,16 @@ use Illuminate\Support\Carbon;
  * @property string $cash_account
  * @property string $currency
  * @property string $total
- * @property string $status self::POSTED or self::REJECTED
+ * @property string $status self::OPEN, self::POSTED or self::REJECTED
  * @property string|null $voucher_id
  * @property string|null $notes
  * @property int $created_by
  */
 class RevenueSheet extends Model
 {
+    /** A point-of-sale shift still taking sales; closing it makes the voucher (finance request of 2026-11-26). */
+    public const OPEN = 'open';
+
     public const POSTED = 'posted';
 
     public const REJECTED = 'rejected';
@@ -44,5 +47,16 @@ class RevenueSheet extends Model
     public function lines(): HasMany
     {
         return $this->hasMany(RevenueLine::class, 'sheet_id')->orderBy('id');
+    }
+
+    /** @return HasMany<RevenueTicket, $this> */
+    public function tickets(): HasMany
+    {
+        return $this->hasMany(RevenueTicket::class, 'sheet_id')->orderByDesc('number');
+    }
+
+    public function isOpen(): bool
+    {
+        return $this->status === self::OPEN;
     }
 }

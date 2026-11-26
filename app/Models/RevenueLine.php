@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
  *
  * @property int $id
  * @property int $sheet_id
+ * @property int|null $ticket_id the point-of-sale sale it belongs to; its amount is then after the sale's discount
  * @property int|null $item_id
  * @property string $kind
  * @property string $description
@@ -22,11 +23,12 @@ class RevenueLine extends Model
 
     protected $table = 'gl_revenue_lines';
 
-    protected $fillable = ['sheet_id', 'item_id', 'kind', 'description', 'quantity', 'unit_price', 'amount'];
+    protected $fillable = ['sheet_id', 'ticket_id', 'item_id', 'kind', 'description', 'quantity', 'unit_price', 'amount'];
 
     protected function casts(): array
     {
         return [
+            'ticket_id' => 'integer',
             'item_id' => 'integer',
             'quantity' => 'decimal:2',
             'unit_price' => 'decimal:2',

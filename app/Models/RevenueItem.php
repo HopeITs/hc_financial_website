@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $project_code
  * @property string $name
  * @property string $kind one of self::KINDS
+ * @property string|null $category the group it is shown under on the sale screen (finance request of 2026-11-26)
  * @property string $unit_price
  * @property string $currency
  * @property bool $active
@@ -22,7 +23,7 @@ class RevenueItem extends Model
 
     protected $table = 'gl_revenue_items';
 
-    protected $fillable = ['project_code', 'name', 'kind', 'unit_price', 'currency', 'active'];
+    protected $fillable = ['project_code', 'name', 'kind', 'category', 'unit_price', 'currency', 'active'];
 
     protected function casts(): array
     {

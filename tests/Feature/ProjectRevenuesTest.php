@@ -17,6 +17,7 @@ beforeEach(function () {
     createFinanceSchema();
     seedChartWithTestProjects();
     (require database_path('migrations/2026_11_25_110000_create_project_revenues.php'))->up();
+    (require database_path('migrations/2026_12_01_090000_add_point_of_sale_to_project_revenues.php'))->up();
 });
 
 function revUser(RoleId $role, string $name): User
@@ -68,8 +69,62 @@ it('refuses takings with no line or an item priced in another currency', functio
         ->and(RevenueSheet::query()->count())->toBe(0);
 });
 
+it('sells from an open shift with a discount, cancels a wrong sale and books the shift as one voucher', function () {
+    $carl = revUser(RoleId::Cashier, 'Carl');
+    $revenues = app(ProjectRevenues::class);
+    $coffee = $revenues->saveItem(null, ['project' => 'F2F', 'name' => 'Coffee', 'kind' => 'sales', 'category' => 'Hot drinks', 'unit_price' => '2', 'currency' => 'USD']);
+    $course = $revenues->saveItem(null, ['project' => 'F2F', 'name' => 'Course', 'kind' => 'course', 'unit_price' => '20', 'currency' => 'USD']);
+
+    $shift = $revenues->openShift($carl, ['project' => 'F2F', 'cash_account' => '1111', 'day' => '2026-11-26']);
+    expect($revenues->openShift($carl, ['project' => 'F2F', 'cash_account' => '1111', 'day' => '2026-11-26'])->id)->toBe($shift->id)
+        ->and($coffee->category)->toBe('Hot drinks');
+
+    // 3 coffees and a course is 26; 10% off is 2.60, shared by each line's part of the sale.
+    $first = $revenues->sell($carl, $shift, [$coffee->id => '3', $course->id => '1'], ['discount_percent' => '10', 'paid' => '30']);
+    $wrong = $revenues->sell($carl, $shift, [$coffee->id => '1'], []);
+    expect($first->net)->toBe('23.40')
+        ->and($first->lines->pluck('amount')->all())->toBe(['5.40', '18.00'])
+        ->and($shift->refresh()->total)->toBe('25.40')
+        ->and(fn () => $revenues->sell($carl, $shift, [$coffee->id => '1'], ['discount' => '5']))->toThrow(EntryException::class)
+        ->and(fn () => $revenues->sell($carl, $shift, [$coffee->id => '1'], ['paid' => '1']))->toThrow(EntryException::class);
+
+    $revenues->voidTicket($wrong);
+    $closed = $revenues->closeShift($carl, $shift->refresh());
+
+    $lines = VoucherLine::query()->where('voucher_id', $closed->voucher_id)->get()
+        ->map(fn (VoucherLine $line) => [$line->account_code, $line->debit_orig, $line->credit_orig])->all();
+    expect($closed->status)->toBe(RevenueSheet::POSTED)
+        ->and($closed->total)->toBe('23.40')
+        ->and($lines)->toEqualCanonicalizing([['4002', '0.00', '5.40'], ['4002', '0.00', '18.00'], ['1111', '23.40', '0.00']])
+        ->and(fn () => $revenues->sell($carl, $closed, [$coffee->id => '1']))->toThrow(EntryException::class);
+});
+
+it('runs a sale on the point-of-sale screen, tile by tile', function () {
+    $carl = revUser(RoleId::Cashier, 'Carl');
+    $coffee = app(ProjectRevenues::class)->saveItem(null, ['project' => 'F2F', 'name' => 'Coffee', 'kind' => 'sales', 'unit_price' => '2', 'currency' => 'USD']);
+
+    $page = Livewire::actingAs($carl)->test(ProjectRevenuesScreen::class)
+        ->assertSet('tab', 'pos')
+        ->assertSeeHtml('data-test="pos-open"')
+        ->set('opening.project', 'F2F')->set('opening.cash_account', '1111')->call('openShift')
+        ->assertSeeHtml('data-test="pos-tile-'.$coffee->id.'"')
+        ->call('addItem', $coffee->id)->call('addItem', $coffee->id)
+        ->assertSet('basket', [$coffee->id => '2'])
+        ->set('payment.paid', '5')->assertSeeHtml('data-test="pos-change"')
+        ->call('sell')
+        ->assertSet('problems', [])->assertSet('basket', []);
+
+    expect(RevenueSheet::query()->sole()->total)->toBe('4.00');
+
+    // Another cashier does not see Carl's shift.
+    Livewire::actingAs(revUser(RoleId::Cashier, 'Cleo'))->test(ProjectRevenuesScreen::class)
+        ->assertDontSeeHtml('data-test="pos-resume-');
+    $page->set('closing', true)->call('closeShift')->assertSet('shiftId', null);
+});
+
 it('opens the revenues screen for the cashier and the accountant', function () {
     Livewire::actingAs(revUser(RoleId::Cashier, 'Carl'))->test(ProjectRevenuesScreen::class)
+        ->set('tab', 'record')
         ->assertSeeHtml('data-test="record-form"')
         ->set('tab', 'items')->assertSeeHtml('data-test="items"');
 

@@ -36,7 +36,7 @@ class FinanceFreshStart extends Command
         'gl_fund_exchanges',
         'gl_contract_audit', 'gl_contract_receipts', 'gl_contract_reports', 'gl_contract_instalments', 'gl_contract_projects', 'gl_contracts', 'gl_donors',
         'gl_payroll_splits', 'gl_payroll_lines', 'gl_payrolls', 'gl_staff', 'gl_recurring_payments',
-        'gl_revenue_lines', 'gl_revenue_items', 'gl_revenue_sheets',
+        'gl_revenue_lines', 'gl_revenue_tickets', 'gl_revenue_items', 'gl_revenue_sheets',
         'gl_budget_line_notes', 'gl_program_projects', 'gl_programs',
         'gl_import_issues', 'gl_import_batches', 'gl_legacy_map',
         'web_notifications', 'web_assistant_proposals', 'web_assistant_messages', 'web_form_drafts',
