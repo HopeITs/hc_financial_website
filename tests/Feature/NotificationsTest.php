@@ -174,6 +174,28 @@ it('shows a person only their own notifications, opens one and marks them read',
         ->and($theirs->refresh()->read_at)->toBeNull();
 });
 
+it('pops up a notification that arrives while the page is open, and none that were already there', function () {
+    $me = ntUser(RoleId::Accountant, 'Acc');
+    WebNotification::query()->create(['user_id' => $me->getKey(), 'kind' => NotificationKind::VoucherApproved, 'subject' => 'CRV-2026-0001', 'data' => []]);
+
+    $bell = Livewire::actingAs($me)->test(NotificationBell::class)->assertNotDispatched('notification-arrived');
+
+    $bell->call('$refresh')->assertNotDispatched('notification-arrived');
+
+    WebNotification::query()->create(['user_id' => $me->getKey(), 'kind' => NotificationKind::VoucherRejected, 'subject' => 'CRV-2026-0002', 'data' => ['reason' => 'No invoice']]);
+    $bell->call('$refresh')
+        ->assertDispatched('notification-arrived', count: 1)
+        ->assertDispatched('toast-show')
+        ->assertSeeHtml('data-test="bell-count">2<');
+});
+
+it('puts back, forward and refresh beside the logo', function () {
+    $this->actingAs(ntUser(RoleId::HeadOffice, 'Ho'))->get('/notifications')->assertOk()
+        ->assertSee('data-test="go-back"', false)
+        ->assertSee('data-test="go-forward"', false)
+        ->assertSee('data-test="reload-page"', false);
+});
+
 it('puts the bell in the top bar, with a link to every notification', function () {
     $this->actingAs(ntUser(RoleId::HeadOffice, 'Ho'))->get('/notifications')->assertOk()
         ->assertSee('data-test="notification-bell"', false)

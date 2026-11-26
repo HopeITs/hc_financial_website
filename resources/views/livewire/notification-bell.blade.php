@@ -1,4 +1,4 @@
-<div wire:poll.60s data-test="notification-bell">
+<div wire:poll.10s data-test="notification-bell">
     <flux:dropdown position="bottom" align="end">
         <flux:button
             variant="ghost"

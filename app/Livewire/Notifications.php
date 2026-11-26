@@ -63,6 +63,7 @@ class Notifications extends Component
 
     /** The bell marked them all read: show it here too. */
     #[On('notifications-read')]
+    #[On('notification-arrived')]
     public function refreshList(): void {}
 
     public function render(): View
