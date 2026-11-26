@@ -2,12 +2,15 @@
 
 use App\Enums\RoleId;
 use App\Enums\VoucherType;
+use App\Livewire\PointOfSale as PointOfSaleScreen;
 use App\Livewire\ProjectRevenuesScreen;
 use App\Models\RevenueSheet;
+use App\Models\RevenueTicket;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Models\VoucherLine;
 use App\Services\Entries\EntryException;
+use App\Services\Entries\PointOfSale;
 use App\Services\Entries\ProjectRevenues;
 use App\Services\Ledger\VoucherApprovals;
 use Carbon\CarbonImmutable;
@@ -18,6 +21,7 @@ beforeEach(function () {
     seedChartWithTestProjects();
     (require database_path('migrations/2026_11_25_110000_create_project_revenues.php'))->up();
     (require database_path('migrations/2026_12_01_090000_add_point_of_sale_to_project_revenues.php'))->up();
+    (require database_path('migrations/2026_12_02_090000_add_orders_to_point_of_sale.php'))->up();
 });
 
 function revUser(RoleId $role, string $name): User
@@ -69,63 +73,87 @@ it('refuses takings with no line or an item priced in another currency', functio
         ->and(RevenueSheet::query()->count())->toBe(0);
 });
 
-it('sells from an open shift with a discount, cancels a wrong sale and books the shift as one voucher', function () {
+it('runs tables like a restaurant: orders filled over time, paid with a discount, and the shift booked as one voucher', function () {
     $carl = revUser(RoleId::Cashier, 'Carl');
     $revenues = app(ProjectRevenues::class);
-    $coffee = $revenues->saveItem(null, ['project' => 'F2F', 'name' => 'Coffee', 'kind' => 'sales', 'category' => 'Hot drinks', 'unit_price' => '2', 'currency' => 'USD']);
+    $pos = app(PointOfSale::class);
+    $coffee = $revenues->saveItem(null, ['project' => 'F2F', 'code' => 'C1', 'name' => 'Coffee', 'kind' => 'sales', 'category' => 'Hot drinks', 'unit_price' => '2', 'currency' => 'USD']);
     $course = $revenues->saveItem(null, ['project' => 'F2F', 'name' => 'Course', 'kind' => 'course', 'unit_price' => '20', 'currency' => 'USD']);
 
-    $shift = $revenues->openShift($carl, ['project' => 'F2F', 'cash_account' => '1111', 'day' => '2026-11-26']);
-    expect($revenues->openShift($carl, ['project' => 'F2F', 'cash_account' => '1111', 'day' => '2026-11-26'])->id)->toBe($shift->id)
-        ->and($coffee->category)->toBe('Hot drinks');
+    $shift = $pos->openShift($carl, ['project' => 'F2F', 'cash_account' => '1111', 'day' => '2026-11-27']);
+    $table = $pos->openOrder($carl, $shift, ['table' => '5', 'persons' => '2', 'waiter' => 'Sami']);
+    expect($pos->openShift($carl, ['project' => 'F2F', 'cash_account' => '1111', 'day' => '2026-11-27'])->id)->toBe($shift->id)
+        ->and($pos->openOrder($carl, $shift, ['table' => '5'])->id)->toBe($table->id)
+        ->and(fn () => $pos->openOrder($carl, $shift, ['service' => 'hall']))->toThrow(EntryException::class)
+        ->and($pos->readQuickEntry($shift, '2*C1'))->sequence(fn ($item) => $item->id->toBe($coffee->id), fn ($quantity) => $quantity->toBe('2.00'));
 
-    // 3 coffees and a course is 26; 10% off is 2.60, shared by each line's part of the sale.
-    $first = $revenues->sell($carl, $shift, [$coffee->id => '3', $course->id => '1'], ['discount_percent' => '10', 'paid' => '30']);
-    $wrong = $revenues->sell($carl, $shift, [$coffee->id => '1'], []);
-    expect($first->net)->toBe('23.40')
-        ->and($first->lines->pluck('amount')->all())->toBe(['5.40', '18.00'])
-        ->and($shift->refresh()->total)->toBe('25.40')
-        ->and(fn () => $revenues->sell($carl, $shift, [$coffee->id => '1'], ['discount' => '5']))->toThrow(EntryException::class)
-        ->and(fn () => $revenues->sell($carl, $shift, [$coffee->id => '1'], ['paid' => '1']))->toThrow(EntryException::class);
+    // Items come in over time: the second coffee joins its line. 4 coffees and a course is 28; 10% off is 2.80.
+    $pos->addItems($table, [$coffee->id => '3', $course->id => '1']);
+    $pos->addItems($table, [$coffee->id => '1']);
+    $table = $pos->updateOrder($table, ['table' => '5', 'service' => 'hall', 'discount_percent' => '10', 'payment_method' => 'cash']);
+    expect($table->lines()->count())->toBe(2)
+        ->and($table->net)->toBe('25.20')
+        ->and(fn () => $pos->updateOrder($table, ['table' => '5', 'discount' => '50']))->toThrow(EntryException::class)
+        ->and(fn () => $pos->closeShift($carl, $shift))->toThrow(EntryException::class)
+        ->and(fn () => $pos->pay($table, '20'))->toThrow(EntryException::class);
 
-    $revenues->voidTicket($wrong);
-    $closed = $revenues->closeShift($carl, $shift->refresh());
+    $paid = $pos->pay($table, '30');
+    expect($paid->status)->toBe('paid')
+        ->and($paid->lines->pluck('amount')->all())->toBe(['7.20', '18.00'])
+        ->and(fn () => $pos->addItems($paid, [$coffee->id => '1']))->toThrow(EntryException::class);
 
+    // A wrong take-away is cancelled after it was paid: it leaves the shift's total.
+    $wrong = $pos->openOrder($carl, $shift, ['service' => 'takeaway']);
+    $pos->pay($pos->addItems($wrong, [$coffee->id => '1']));
+    expect($shift->refresh()->total)->toBe('27.20');
+    $pos->cancel($wrong->refresh());
+
+    $closed = $pos->closeShift($carl, $shift->refresh());
     $lines = VoucherLine::query()->where('voucher_id', $closed->voucher_id)->get()
         ->map(fn (VoucherLine $line) => [$line->account_code, $line->debit_orig, $line->credit_orig])->all();
     expect($closed->status)->toBe(RevenueSheet::POSTED)
-        ->and($closed->total)->toBe('23.40')
-        ->and($lines)->toEqualCanonicalizing([['4002', '0.00', '5.40'], ['4002', '0.00', '18.00'], ['1111', '23.40', '0.00']])
-        ->and(fn () => $revenues->sell($carl, $closed, [$coffee->id => '1']))->toThrow(EntryException::class);
+        ->and($closed->total)->toBe('25.20')
+        ->and($lines)->toEqualCanonicalizing([['4002', '0.00', '7.20'], ['4002', '0.00', '18.00'], ['1111', '25.20', '0.00']])
+        ->and($pos->report($closed)['net'])->toBe('25.20');
 });
 
-it('runs a sale on the point-of-sale screen, tile by tile', function () {
+it('works a table on the full-screen point of sale: open, add items, close and print', function () {
     $carl = revUser(RoleId::Cashier, 'Carl');
     $coffee = app(ProjectRevenues::class)->saveItem(null, ['project' => 'F2F', 'name' => 'Coffee', 'kind' => 'sales', 'unit_price' => '2', 'currency' => 'USD']);
 
-    $page = Livewire::actingAs($carl)->test(ProjectRevenuesScreen::class)
-        ->assertSet('tab', 'pos')
+    $page = Livewire::actingAs($carl)->test(PointOfSaleScreen::class)
         ->assertSeeHtml('data-test="pos-open"')
         ->set('opening.project', 'F2F')->set('opening.cash_account', '1111')->call('openShift')
+        ->assertSeeHtml('data-test="pos-tables"')
+        ->set('table.table', '7')->call('openTable')
+        ->assertSet('adding', true)
         ->assertSeeHtml('data-test="pos-tile-'.$coffee->id.'"')
-        ->call('addItem', $coffee->id)->call('addItem', $coffee->id)
-        ->assertSet('basket', [$coffee->id => '2'])
-        ->set('payment.paid', '5')->assertSeeHtml('data-test="pos-change"')
-        ->call('sell')
-        ->assertSet('problems', [])->assertSet('basket', []);
+        ->call('tapItem', $coffee->id)->call('tapItem', $coffee->id)
+        ->assertSet('pending', [$coffee->id => '2'])
+        ->call('savePending')
+        ->assertSet('adding', false)
+        ->assertSeeHtml('data-test="pos-lines"');
 
-    expect(RevenueSheet::query()->sole()->total)->toBe('4.00');
+    $order = RevenueTicket::query()->sole();
+    $this->actingAs($carl)->get(route('operations.revenues.pos.receipt', ['order' => $order->id]))->assertOk()->assertSee('Coffee');
+
+    $page->call('startPaying')->set('paid', '5')->assertSeeHtml('data-test="pos-change"')
+        ->call('pay')->assertSet('problems', [])->assertSet('orderId', null);
+    expect(RevenueSheet::query()->sole()->total)->toBe('4.00')
+        ->and($order->refresh()->printed_at)->not->toBeNull();
 
     // Another cashier does not see Carl's shift.
-    Livewire::actingAs(revUser(RoleId::Cashier, 'Cleo'))->test(ProjectRevenuesScreen::class)
-        ->assertDontSeeHtml('data-test="pos-resume-');
+    Livewire::actingAs(revUser(RoleId::Cashier, 'Cleo'))->test(PointOfSaleScreen::class)->assertDontSeeHtml('data-test="pos-resume-');
+
+    $this->actingAs($carl)->get(route('operations.revenues.pos.report', ['shift' => $order->sheet_id]))->assertOk();
     $page->set('closing', true)->call('closeShift')->assertSet('shiftId', null);
+    $this->actingAs(revUser(RoleId::Employee, 'Emp'))->get(route('operations.revenues.pos'))->assertForbidden();
 });
 
 it('opens the revenues screen for the cashier and the accountant', function () {
     Livewire::actingAs(revUser(RoleId::Cashier, 'Carl'))->test(ProjectRevenuesScreen::class)
-        ->set('tab', 'record')
         ->assertSeeHtml('data-test="record-form"')
+        ->assertSeeHtml('data-test="open-pos"')
         ->set('tab', 'items')->assertSeeHtml('data-test="items"');
 
     $this->actingAs(revUser(RoleId::Employee, 'Emp'))->get(route('operations.revenues'))->assertForbidden();

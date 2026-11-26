@@ -15,9 +15,12 @@
     };
 @endphp
 
-<button type="button" {{ $attributes->class(['relative flex min-h-20 touch-manipulation flex-col items-center justify-center gap-1 rounded-xl px-3 py-3 text-center text-white shadow-sm hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary', $toneClass]) }}>
-    <span class="text-sm font-semibold leading-snug">{{ $name }}</span>
-    <span class="text-sm tabular-nums opacity-90" dir="ltr"><x-money :amount="$price" :currency="$currency" class="text-white!" /></span>
+<button type="button" {{ $attributes->class(['relative flex min-h-16 touch-manipulation items-center gap-3 rounded-lg px-4 py-3 text-white shadow-sm hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary', $toneClass]) }}>
+    <flux:icon.calculator variant="solid" class="size-8 shrink-0 opacity-90" />
+    <span class="flex min-w-0 flex-1 flex-col items-center text-center">
+        <span class="text-sm font-semibold leading-snug">{{ $name }}</span>
+        <x-money :amount="$price" class="text-sm text-white! opacity-90" />
+    </span>
     @if ($count)
         <span class="absolute -top-2 end-2 inline-flex min-w-6 items-center justify-center rounded-full bg-white px-1.5 text-xs font-bold tabular-nums text-secondary-dark shadow">{{ $count }}</span>
     @endif

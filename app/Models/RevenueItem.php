@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
  *
  * @property int $id
  * @property string $project_code
+ * @property string|null $code the item's number, typed on the point of sale as "quantity*number"
  * @property string $name
  * @property string $kind one of self::KINDS
  * @property string|null $category the group it is shown under on the sale screen (finance request of 2026-11-26)
@@ -23,7 +24,7 @@ class RevenueItem extends Model
 
     protected $table = 'gl_revenue_items';
 
-    protected $fillable = ['project_code', 'name', 'kind', 'category', 'unit_price', 'currency', 'active'];
+    protected $fillable = ['project_code', 'code', 'name', 'kind', 'category', 'unit_price', 'currency', 'active'];
 
     protected function casts(): array
     {

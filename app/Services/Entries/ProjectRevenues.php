@@ -7,10 +7,8 @@ use App\Models\GlProject;
 use App\Models\RevenueItem;
 use App\Models\RevenueLine;
 use App\Models\RevenueSheet;
-use App\Models\RevenueTicket;
 use App\Models\User;
 use App\Models\Voucher;
-use App\Services\Projects\ProjectAccess;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -84,6 +82,7 @@ class ProjectRevenues
 
         if (self::pointOfSaleReady()) {
             $values['category'] = mb_substr(trim((string) ($form['category'] ?? '')), 0, 64) ?: null;
+            $values['code'] = mb_substr(trim((string) ($form['code'] ?? '')), 0, 32) ?: null;
         }
 
         if ($item === null) {
@@ -198,207 +197,11 @@ class ProjectRevenues
         });
     }
 
-    /**
-     * Opens a point-of-sale shift (finance request of 2026-11-26): the sales of one project into one cash account on a
-     * day, made one by one and booked together when the shift closes. The person's own open shift for the same project,
-     * account and day is carried on rather than a second one opened.
-     *
-     * @param  array<string, string>  $form  project, cash_account, day
-     *
-     * @throws EntryException
-     */
-    public function openShift(User $by, array $form): RevenueSheet
-    {
-        $project = GlProject::query()->where('is_general_account', false)->find((string) ($form['project'] ?? ''));
-        $account = $this->cash->cashAccounts()->get((string) ($form['cash_account'] ?? ''));
-        $day = $this->day((string) ($form['day'] ?? ''));
-        $problems = [];
-
-        if ($project === null || ! app(ProjectAccess::class)->canOpen($by, $project->code)) {
-            $problems[] = __('revenues.problem.project');
-        }
-
-        if ($account === null) {
-            $problems[] = __('revenues.problem.cash_account');
-        }
-
-        if ($day === null) {
-            $problems[] = __('revenues.problem.day');
-        }
-
-        if ($problems !== [] || $project === null || $account === null || $day === null) {
-            throw new EntryException($problems);
-        }
-
-        $values = ['project_code' => $project->code, 'cash_account' => $account->code, 'status' => RevenueSheet::OPEN, 'created_by' => (int) $by->getAuthIdentifier()];
-
-        return RevenueSheet::query()->where($values)->whereDate('day', $day->toDateString())->first()
-            ?? RevenueSheet::query()->create([...$values, 'day' => $day->toDateString(), 'currency' => $account->currency, 'total' => Money::zero()]);
-    }
-
-    /**
-     * Records one sale of an open shift: the items in the basket, less a discount given as a percent or an amount.
-     * Each line keeps its share of the sale after the discount, so the shift's voucher is what was really taken.
-     *
-     * @param  array<int|string, int|string>  $basket  item id => quantity
-     * @param  array<string, string>  $form  discount_percent, discount, paid, note
-     *
-     * @throws EntryException
-     */
-    public function sell(User $by, RevenueSheet $shift, array $basket, array $form = []): RevenueTicket
-    {
-        $this->mustBeOpen($shift);
-        $items = RevenueItem::query()->whereIn('id', array_map('intval', array_keys($basket)))->get()->keyBy('id');
-        $problems = [];
-        $lines = [];
-
-        foreach ($basket as $id => $quantityText) {
-            $item = $items->get((int) $id);
-            $quantity = $this->number((string) $quantityText);
-
-            if ($item === null || ! $item->active || $item->project_code !== $shift->project_code) {
-                $problems[] = __('revenues.problem.pos_item');
-
-                continue;
-            }
-
-            if ($item->currency !== $shift->currency) {
-                $problems[] = __('revenues.problem.pos_currency', ['item' => $item->name, 'currency' => $shift->currency]);
-
-                continue;
-            }
-
-            if ($quantity === null || bccomp($quantity, '0', 2) !== 1) {
-                $problems[] = __('revenues.problem.pos_quantity', ['item' => $item->name]);
-
-                continue;
-            }
-
-            $lines[] = ['item' => $item, 'quantity' => $quantity, 'gross' => Money::normalize(bcmul($quantity, Money::normalize($item->unit_price), 4))];
-        }
-
-        if ($lines === [] && $problems === []) {
-            $problems[] = __('revenues.problem.pos_empty');
-        }
-
-        $gross = array_reduce($lines, fn (string $sum, array $line): string => bcadd($sum, $line['gross'], 2), Money::zero());
-        $discount = $this->discount($gross, (string) ($form['discount_percent'] ?? ''), (string) ($form['discount'] ?? ''));
-        $paidText = trim((string) ($form['paid'] ?? ''));
-        $paid = $paidText === '' ? null : $this->number($paidText);
-
-        if ($discount === null) {
-            $problems[] = __('revenues.problem.pos_discount');
-        }
-
-        if ($paidText !== '' && $paid === null) {
-            $problems[] = __('revenues.problem.pos_paid');
-        }
-
-        if ($problems !== [] || $discount === null) {
-            throw new EntryException(array_values(array_unique($problems)));
-        }
-
-        $net = bcsub($gross, $discount, 2);
-
-        if ($paid !== null && bccomp($paid, $net, 2) === -1) {
-            throw new EntryException([__('revenues.problem.pos_paid_short')]);
-        }
-
-        return DB::transaction(function () use ($by, $shift, $lines, $gross, $discount, $net, $paid, $form): RevenueTicket {
-            $locked = RevenueSheet::query()->lockForUpdate()->findOrFail($shift->id);
-            $this->mustBeOpen($locked);
-
-            $ticket = RevenueTicket::query()->create([
-                'sheet_id' => $locked->id, 'number' => (int) RevenueTicket::query()->where('sheet_id', $locked->id)->max('number') + 1,
-                'gross' => $gross, 'discount' => $discount, 'net' => $net, 'paid' => $paid,
-                'note' => mb_substr(trim((string) ($form['note'] ?? '')), 0, 255) ?: null, 'created_by' => (int) $by->getAuthIdentifier(),
-            ]);
-
-            $left = $discount;
-            foreach ($lines as $index => $line) {
-                // The discount is shared by each line's part of the sale; the last line takes what rounding leaves.
-                $share = $index === array_key_last($lines) || bccomp($gross, '0', 2) === 0
-                    ? $left
-                    : Money::normalize(bcdiv(bcmul($discount, $line['gross'], 6), $gross, 6));
-                $share = bccomp($share, $line['gross'], 2) === 1 ? $line['gross'] : $share;
-                $left = bcsub($left, $share, 2);
-
-                RevenueLine::query()->create([
-                    'sheet_id' => $locked->id, 'ticket_id' => $ticket->id, 'item_id' => $line['item']->id, 'kind' => $line['item']->kind,
-                    'description' => mb_substr($line['item']->name, 0, 255), 'quantity' => $line['quantity'],
-                    'unit_price' => Money::normalize($line['item']->unit_price), 'amount' => bcsub($line['gross'], $share, 2),
-                ]);
-            }
-
-            $locked->update(['total' => bcadd(Money::normalize($locked->total), $net, 2)]);
-
-            return $ticket;
-        });
-    }
-
-    /**
-     * Takes a wrong sale out of its shift, while the shift is still open.
-     *
-     * @throws EntryException
-     */
-    public function voidTicket(RevenueTicket $ticket): void
-    {
-        DB::transaction(function () use ($ticket): void {
-            $shift = RevenueSheet::query()->lockForUpdate()->findOrFail($ticket->sheet_id);
-            $this->mustBeOpen($shift);
-
-            RevenueLine::query()->where('ticket_id', $ticket->id)->delete();
-            $ticket->delete();
-            $shift->update(['total' => bcsub(Money::normalize($shift->total), Money::normalize($ticket->net), 2)]);
-        });
-    }
-
-    /**
-     * Closes a shift: its sales become one receipt voucher on 4002 by kind, waiting for approval like any other. A
-     * shift with no sale is simply dropped.
-     *
-     * @param  array<string, string>  $form  rate, center, notes
-     *
-     * @throws EntryException
-     */
-    public function closeShift(User $by, RevenueSheet $shift, array $form = []): ?RevenueSheet
-    {
-        $this->mustBeOpen($shift);
-        $this->ensureAccount();
-
-        return DB::transaction(function () use ($by, $shift, $form): ?RevenueSheet {
-            $locked = RevenueSheet::query()->lockForUpdate()->findOrFail($shift->id);
-            $this->mustBeOpen($locked);
-
-            $byKind = RevenueLine::query()->where('sheet_id', $locked->id)->groupBy('kind')->orderBy('kind')
-                ->selectRaw('kind, sum(amount) as total')->pluck('total', 'kind')
-                ->map(fn ($total): string => Money::normalize($total))
-                ->filter(fn (string $total): bool => bccomp($total, '0', 2) === 1)->all();
-
-            if ($byKind === []) {
-                $locked->delete();
-
-                return null;
-            }
-
-            $project = GlProject::query()->findOrFail($locked->project_code);
-            $voucher = $this->receipt($by, $project, $locked->cash_account, $locked->currency, CarbonImmutable::instance($locked->day), $byKind, (string) ($form['rate'] ?? ''), (string) ($form['center'] ?? ''));
-            $notes = trim((string) ($form['notes'] ?? ''));
-
-            $locked->update([
-                'status' => RevenueSheet::POSTED, 'voucher_id' => $voucher->id,
-                'total' => array_reduce(array_values($byKind), fn (string $sum, string $amount): string => bcadd($sum, $amount, 2), Money::zero()),
-                'notes' => $notes !== '' ? mb_substr($notes, 0, 255) : $locked->notes,
-            ]);
-
-            return $locked->refresh();
-        });
-    }
-
-    /** Whether IT has run the point-of-sale migration (2026_12_01_090000). */
+    /** Whether IT has run the point-of-sale migrations (2026_12_01_090000 and 2026_12_02_090000); the sales themselves are in PointOfSale. */
     public static function pointOfSaleReady(): bool
     {
-        return once(static fn (): bool => Schema::hasTable('gl_revenue_tickets') && Schema::hasColumn('gl_revenue_items', 'category'));
+        return once(static fn (): bool => Schema::hasTable('gl_revenue_tickets') && Schema::hasColumn('gl_revenue_items', 'category')
+            && Schema::hasColumn('gl_revenue_tickets', 'status') && Schema::hasColumn('gl_revenue_items', 'code'));
     }
 
     /**
@@ -428,7 +231,7 @@ class ProjectRevenues
     }
 
     /** Adds the income account when the chart does not have it yet. */
-    private function ensureAccount(): void
+    public function ensureAccount(): void
     {
         if (! GlAccount::withTrashed()->whereKey(self::ACCOUNT)->exists() && GlAccount::query()->whereKey('4000')->exists()) {
             GlAccount::query()->create(array_merge(self::account(), ['required_tags' => ['Project']]));
@@ -436,11 +239,11 @@ class ProjectRevenues
     }
 
     /**
-     * The receipt voucher of a day's takings or a closed shift: one line on 4002 for each kind of revenue.
+     * The receipt voucher of a day's takings or a closed point-of-sale shift: one line on 4002 for each kind of revenue.
      *
      * @param  array<string, string>  $byKind  kind => amount
      */
-    private function receipt(User $by, GlProject $project, string $cashAccount, string $currency, CarbonImmutable $day, array $byKind, string $rate, string $center): Voucher
+    public function receipt(User $by, GlProject $project, string $cashAccount, string $currency, CarbonImmutable $day, array $byKind, string $rate, string $center): Voucher
     {
         $rate = trim($rate) !== '' ? $rate : (string) ($this->cash->defaultRate($currency, $day)['rate'] ?? '');
 
@@ -453,40 +256,6 @@ class ProjectRevenues
             'project' => $project->code, 'budget_line' => '', 'account' => self::ACCOUNT,
             'description' => __('revenues.kinds.'.$kind), 'amount' => $amount,
         ], array_keys($byKind), array_values($byKind)), [], $by);
-    }
-
-    /**
-     * The discount of a sale: an amount when one is given, else a percent of the sale; never more than the sale.
-     *
-     * @return numeric-string|null null when it cannot be read or is more than the sale
-     */
-    private function discount(string $gross, string $percentText, string $amountText): ?string
-    {
-        $amount = trim($amountText) === '' ? Money::zero() : $this->number($amountText);
-        $percent = trim($percentText) === '' ? Money::zero() : $this->number($percentText);
-
-        if ($amount === null || $percent === null || bccomp($percent, '100', 2) === 1) {
-            return null;
-        }
-
-        $discount = bccomp($amount, '0', 2) === 1 ? $amount : Money::normalize(bcdiv(bcmul($gross, $percent, 6), '100', 6));
-
-        return bccomp($discount, $gross, 2) === 1 ? null : $discount;
-    }
-
-    /** @throws EntryException */
-    private function mustBeOpen(RevenueSheet $shift): void
-    {
-        if (! $shift->isOpen()) {
-            throw new EntryException([__('revenues.problem.shift_closed')]);
-        }
-    }
-
-    private function day(string $text): ?CarbonImmutable
-    {
-        $day = preg_match('/^\d{4}-\d{2}-\d{2}$/', $text) === 1 ? CarbonImmutable::createFromFormat('!Y-m-d', $text) : false;
-
-        return $day instanceof CarbonImmutable ? $day : null;
     }
 
     /** @return numeric-string|null */
