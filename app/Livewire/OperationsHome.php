@@ -40,6 +40,7 @@ class OperationsHome extends Component
         'spending' => [
             'requests' => ['screen' => 'requests', 'icon' => 'clipboard-document-list'],
             'purchases' => ['screen' => 'purchases', 'icon' => 'shopping-cart'],
+            'assets' => ['screen' => 'assets', 'icon' => 'cube'],
             'recurring' => ['screen' => 'recurring', 'icon' => 'arrow-path'],
             'advances' => ['screen' => 'advance', 'icon' => 'hand-raised'],
             'micro' => ['screen' => 'microhome', 'icon' => 'briefcase'],

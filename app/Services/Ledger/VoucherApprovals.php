@@ -10,6 +10,7 @@ use App\Models\Voucher;
 use App\Models\VoucherAudit;
 use App\Services\Access\RolePermissions;
 use App\Services\Approvals\ApprovalChain;
+use App\Services\Assets\FixedAssets;
 use App\Services\Entries\ProjectRevenues;
 use App\Services\Ledger\Rules\ApproverIsNotPreparer;
 use App\Services\Loans\MicroLoans;
@@ -117,6 +118,10 @@ class VoucherApprovals
             // A rejected day's takings no longer count in the project revenues.
             if (Schema::hasTable('gl_revenue_sheets')) {
                 app(ProjectRevenues::class)->forgetVoucher($voucher);
+            }
+            // A rejected write-off or sale puts the fixed asset back (finance request of 2026-11-28).
+            if (Schema::hasTable('gl_assets')) {
+                app(FixedAssets::class)->forgetVoucher($voucher);
             }
             $voucher->delete();
         });

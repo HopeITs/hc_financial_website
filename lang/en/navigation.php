@@ -15,6 +15,7 @@ return [
 
     'screens' => [
         'revenues' => 'Project revenues',
+        'assets' => 'Warehouses and fixed assets',
         'inbox' => 'Waiting for my approval',
         'reports' => 'All reports',
         'operations' => 'Financial operations',
@@ -71,6 +72,7 @@ return [
 
     'descriptions' => [
         'revenues' => 'Sales, subscriptions, internet and paid courses: a day\'s takings and the price lists',
+        'assets' => 'The asset register, receiving and handing over, counts, depreciation, write-offs and sales',
         'inbox' => 'Vouchers, requests, purchase orders, payrolls and payment orders waiting for you, approved with one click',
         'reports' => 'Every report in one page: financial statements, projects and follow-up',
         'operations' => 'Every financial operation in one place: donors, transfers, spending and money received',

@@ -69,6 +69,8 @@ return [
             $screens(['currency'], $prepare),
             $screens($monthEnd, ['view', 'edit', 'approve']),
             $screens(['rdonorfin'], ['view', 'edit']),
+            // The fixed assets (2026-11-28): the Financial Manager books the month's depreciation, write-offs and sales.
+            $screens(['assets'], ['view', 'edit']),
         ),
 
         RoleId::Accountant->value => array_merge(
@@ -79,13 +81,17 @@ return [
             // Financial Manager approves the opening voucher and closes the month (one prepares, another approves).
             $screens(['opening'], ['view', 'create']),
             $screens(['mytill'], $view),
+            // The fixed assets (2026-11-28): the accountant registers, moves, counts and books them.
+            $screens(['assets'], $prepare),
             // The reasons of over- and under-spending in the donor's financial report (2026-11-26).
             $screens(['rdonorfin'], ['view', 'edit']),
             $screens($monthEnd, ['view', 'edit']),
         ),
 
         RoleId::ProjectManager->value => array_merge(
+            // A project manager sees their projects' fixed assets and hands them over, returns and counts them (2026-11-28).
             $screens(['home', 'rexp', 'advances', 'loans', 'donors', 'contracts', $operations, ...$microHome], $view),
+            $screens(['assets'], ['view', 'create']),
             // The project manager prepares the micro-project files and their payment orders.
             $screens(['requests', 'microfiles', 'purchases'], $prepare),
         ),
@@ -102,7 +108,7 @@ return [
         RoleId::Donor->value => $screens(['home'], $view),
 
         RoleId::GeneralManager->value => array_merge(
-            $screens(['home', 'chart', 'project-money', ...$treasury, ...$reports, 'donors', $operations, $inbox, ...$microHome], $view),
+            $screens(['home', 'chart', 'project-money', ...$treasury, ...$reports, 'donors', 'assets', $operations, $inbox, ...$microHome], $view),
             $screens(['requests', 'vouchers', 'approval', 'contracts', 'microfiles', 'purchases'], ['view', 'approve']),
         ),
 
