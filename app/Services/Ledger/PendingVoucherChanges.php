@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Voucher;
 use App\Models\VoucherAudit;
 use App\Models\VoucherLine;
+use App\Services\Assets\FixedAssets;
 use App\Services\Entries\ProjectRevenues;
 use App\Services\Ledger\Rules\MonthIsOpen;
 use App\Services\Loans\MicroLoans;
@@ -117,6 +118,10 @@ class PendingVoucherChanges
             }
             if (Schema::hasTable('gl_revenue_sheets')) {
                 app(ProjectRevenues::class)->forgetVoucher($voucher);
+            }
+            // A deleted write-off or sale puts the fixed asset back (finance request of 2026-11-28).
+            if (Schema::hasTable('gl_assets')) {
+                app(FixedAssets::class)->forgetVoucher($voucher);
             }
             $voucher->delete();
         });

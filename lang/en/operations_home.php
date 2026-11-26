@@ -15,6 +15,7 @@ return [
         'transfers' => ['title' => 'Transfers and exchange', 'hint' => 'Move money between banks, the transfer company and the cities\' cash.'],
         'requests' => ['title' => 'Project requests', 'hint' => 'The monthly request for running costs, or a request when an asset, repair or rent is needed.'],
         'purchases' => ['title' => 'Purchases', 'hint' => 'Quotes, purchase order, receiving with the invoice, and payment.'],
+        'assets' => ['title' => 'Warehouses and assets', 'hint' => 'Receiving and handing over assets, counts, depreciation, write-offs and sales.'],
         'recurring' => ['title' => 'Rent and recurring payments', 'hint' => 'Paid by themselves on their day.'],
         'advances' => ['title' => 'Advances', 'hint' => 'Give the purchasing officer or a staff member an advance, and settle it with the bills.'],
         'micro' => ['title' => 'Micro projects', 'hint' => 'The beneficiaries\' files, their purchases and loans or grants.'],

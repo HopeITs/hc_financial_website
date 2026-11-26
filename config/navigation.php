@@ -22,7 +22,8 @@ return [
     'groups' => [
         // The organisation's financial operations in one place (finance request of 2026-11-24): its page, then the
         // requests and purchases, the advances, the salaries and the moves between accounts.
-        'operations' => ['inbox', 'operations', 'requests', 'purchases', 'recurring', 'advance', 'payroll', 'salaries', 'transfers', 'revenues'],
+        // The warehouses and fixed assets (finance request of 2026-11-28) come after the purchases they are bought by.
+        'operations' => ['inbox', 'operations', 'requests', 'purchases', 'assets', 'recurring', 'advance', 'payroll', 'salaries', 'transfers', 'revenues'],
         // Micro projects in one place (finance request of 2026-11-23).
         'micro' => ['microhome', 'microfiles', 'payments', 'loanfunds', 'loans'],
         'funding' => ['donors', 'contracts', 'rdonor'],
@@ -44,6 +45,7 @@ return [
         'inbox' => 'my-approvals',
         'recurring' => 'operations/recurring',
         'revenues' => 'operations/revenues',
+        'assets' => 'operations/assets',
         'reports' => 'reports',
         'payroll' => 'operations/payroll',
 

@@ -38,6 +38,8 @@ class FinanceFreshStart extends Command
         'gl_payroll_splits', 'gl_payroll_lines', 'gl_payrolls', 'gl_staff', 'gl_recurring_payments',
         'gl_revenue_lines', 'gl_revenue_tickets', 'gl_revenue_items', 'gl_revenue_sheets',
         'gl_budget_line_notes', 'gl_program_projects', 'gl_programs',
+        // The fixed-asset register; its warehouses and kinds of asset are set-up and stay.
+        'gl_asset_count_lines', 'gl_asset_counts', 'gl_asset_movements', 'gl_assets',
         'gl_import_issues', 'gl_import_batches', 'gl_legacy_map',
         'web_notifications', 'web_assistant_proposals', 'web_assistant_messages', 'web_form_drafts',
     ];
