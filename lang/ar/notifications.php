@@ -23,6 +23,7 @@ return [
     'about_requests' => 'الطلبات',
     'empty_filtered_heading' => 'لا إشعارات مطابقة',
     'empty_filtered' => 'جرّب عرض كل الإشعارات، أو كل الأنواع.',
+    'arrived_more' => '(+:count إشعارات أخرى)',
 
     'titles' => [
         'voucher_pending' => 'سند بانتظار اعتمادك',

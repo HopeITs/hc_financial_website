@@ -22,6 +22,19 @@
         <img src="{{ asset('logo.png') }}" alt="{{ __('common.app_name') }}" class="h-9 w-auto" data-no-dim />
     </a>
 
+    {{-- Back, forward and refresh (finance request of 2026-11-26); refresh reloads the page in place, without a full browser reload. --}}
+    <div class="hidden shrink-0 items-center gap-0.5 sm:flex" role="group" aria-label="{{ __('common.page_moves') }}" data-test="page-moves">
+        <flux:button x-on:click="history.back()" variant="ghost" size="sm" square class="size-8! touch-manipulation text-secondary-medium! hover:text-secondary-dark! dark:text-ink-muted! dark:hover:text-ink!" :aria-label="__('common.go_back')" :tooltip="__('common.go_back')" data-test="go-back">
+            <flux:icon.arrow-left variant="outline" class="size-4.5! rtl:-scale-x-100" />
+        </flux:button>
+        <flux:button x-on:click="history.forward()" variant="ghost" size="sm" square class="size-8! touch-manipulation text-secondary-medium! hover:text-secondary-dark! dark:text-ink-muted! dark:hover:text-ink!" :aria-label="__('common.go_forward')" :tooltip="__('common.go_forward')" data-test="go-forward">
+            <flux:icon.arrow-right variant="outline" class="size-4.5! rtl:-scale-x-100" />
+        </flux:button>
+        <flux:button x-on:click="window.Livewire ? Livewire.navigate(window.location.href) : window.location.reload()" variant="ghost" size="sm" square class="size-8! touch-manipulation text-secondary-medium! hover:text-secondary-dark! dark:text-ink-muted! dark:hover:text-ink!" :aria-label="__('common.reload')" :tooltip="__('common.reload')" data-test="reload-page">
+            <flux:icon.arrow-path variant="outline" class="size-4.5!" />
+        </flux:button>
+    </div>
+
     <nav class="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto" aria-label="{{ __('common.app_name') }}" data-test="top-menu">
         @if ($chartVisible)
             <a href="{{ route('chart') }}" wire:navigate class="nav-pill" x-on:click="open = null" @if ($currentScreen === 'chart' || request()->routeIs('chart')) aria-current="page" @endif>{{ __('navigation.groups.chart') }}</a>

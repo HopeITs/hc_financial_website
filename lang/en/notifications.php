@@ -23,6 +23,7 @@ return [
     'about_requests' => 'Requests',
     'empty_filtered_heading' => 'No notifications match',
     'empty_filtered' => 'Try showing all notifications, or everything they are about.',
+    'arrived_more' => '(+:count more)',
 
     'titles' => [
         'voucher_pending' => 'Voucher waiting for your approval',
