@@ -63,6 +63,17 @@ it('writes the net assets of each owner itself, on 3101 or 3201 by its restricti
         ->and(app(NetAssets::class)->asAt())->toBe(['total' => '6800.00', 'restricted' => '800.00', 'unrestricted' => '6000.00']);
 });
 
+it('offers the cities of the list and of the chart even with no general account, and takes the month\'s rate when none is typed', function () {
+    DB::table('gl_cities')->insert(['name' => 'Daraa', 'name_ar' => 'درعا', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
+    DB::table('gl_projects')->where('is_general_account', true)->update(['city' => null]);
+    DB::table('gl_monthly_rates')->insert(['currency' => 'SYP', 'month' => '2026-01', 'rate' => '15000', 'set_by' => 1, 'created_at' => now(), 'updated_at' => now()]);
+    $openings = app(OpeningBalances::class);
+
+    expect($openings->cities())->toHaveKeys(['Aleppo', 'Daraa'])
+        ->and($openings->accounts('Daraa'))->not->toBeEmpty()
+        ->and($openings->build('Aleppo', '2026-01-01', [['account' => '1112', 'project' => 'GEN-ALP-SYP', 'amount' => '15000000', 'rate' => '']], 7)->problems)->toBe([]);
+});
+
 it('opens a city once', function () {
     $first = app(OpeningBalances::class)->build('Aleppo', '2026-01-01', aleppoRows(), 7);
     $voucher = app(PostVoucher::class)->post($first->draft);

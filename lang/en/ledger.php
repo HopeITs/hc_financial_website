@@ -575,6 +575,11 @@ return [
         'bad_rate' => 'Line :line: a balance in :currency needs its rate.',
         'suspense_not_zero' => 'Net assets of :amount USD belong to owners with no known restriction, so they would go to 3901, which must be zero. Set each owner\'s restriction first.',
         'net_note' => 'What this voucher writes on 3101 and 3201: each owner\'s assets minus its liabilities.',
+        'no_cities' => 'No city to open yet',
+        'no_cities_hint' => 'Add the cities on the chart of accounts screen (Cities), or give the cash accounts their city; they then show here.',
+        'pick_account' => 'Type a code or a name',
+        'pick_owner' => 'Project or general account',
+        'rate_help' => 'Empty takes the month\'s rate shown in grey.',
     ],
     'donor_report' => [
         'intro' => 'One project at a time: what the donor sent and how it was spent against each budget line, in the donor\'s currency and in dollars. From approved vouchers.',
