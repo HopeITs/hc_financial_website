@@ -8,12 +8,16 @@ use App\Enums\FundSource;
 use App\Enums\VoucherStatus;
 use App\Enums\VoucherType;
 use App\Models\GlAccount;
+use App\Models\GlCity;
 use App\Models\GlProject;
 use App\Models\Voucher;
+use App\Services\Treasury\MonthlyRates;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Lang;
+use Illuminate\Support\Facades\Schema;
 use InvalidArgumentException;
 
 /**
@@ -102,7 +106,8 @@ class OpeningBalances
             $abs = Money::abs($amount);
             $usd = $abs;
             if ($currency !== Currencies::BASE) {
-                $rate = $this->rate($row['rate'] ?? '');
+                // An empty rate takes the month's rate of the opening date.
+                $rate = trim($row['rate'] ?? '') === '' ? $this->monthlyRate($currency, $day) : $this->rate($row['rate'] ?? '');
                 if ($rate === null) {
                     $problems[] = __('ledger.opening.bad_rate', ['line' => $n, 'currency' => $currency]);
 
@@ -163,6 +168,32 @@ class OpeningBalances
             ->first();
     }
 
+    /**
+     * The cities that can be opened (finance report of 2026-11-27: the list was empty when no general account had a
+     * city): those of the cities list, of the chart's cash accounts and of the general accounts.
+     *
+     * @return array<string, string> name => the name to show
+     */
+    public function cities(): array
+    {
+        $names = collect(Schema::hasTable('gl_cities') ? GlCity::query()->where('is_active', true)->pluck('name')->all() : [])
+            ->merge(GlAccount::query()->whereNotNull('city')->where('city', '!=', '')->distinct()->pluck('city'))
+            ->merge(GlProject::query()->where('is_general_account', true)->whereNotNull('city')->where('city', '!=', '')->distinct()->pluck('city'))
+            ->map(fn ($name): string => (string) $name)->unique()->sort()->values();
+        $known = Schema::hasTable('gl_cities') ? GlCity::query()->whereIn('name', $names->all())->get()->keyBy('name') : collect();
+
+        return $names->mapWithKeys(function (string $name) use ($known): array {
+            $city = $known->get($name);
+            $label = $city instanceof GlCity ? $city->localizedName() : $name;
+
+            if ($label === $name && Lang::has('ledger.treasury.cities.'.$name)) {
+                $label = __('ledger.treasury.cities.'.$name);
+            }
+
+            return [$name => $label];
+        })->all();
+    }
+
     /** @return Collection<int, GlAccount> the asset and liability accounts a city can open: its own and those of no city */
     public function accounts(string $city): Collection
     {
@@ -217,6 +248,18 @@ class OpeningBalances
         } catch (InvalidArgumentException) {
             return null;
         }
+    }
+
+    /** @return numeric-string|null the month's rate of a currency on a day, when there is one */
+    public function monthlyRate(string $currency, CarbonImmutable $day): ?string
+    {
+        if (! Schema::hasTable('gl_monthly_rates')) {
+            return null;
+        }
+
+        $rate = app(MonthlyRates::class)->forDay($currency, $day)['rate'] ?? null;
+
+        return $rate !== null && bccomp(Money::normalize($rate, 6), '0', 6) > 0 ? Money::normalize($rate, 6) : null;
     }
 
     /** @return numeric-string|null */

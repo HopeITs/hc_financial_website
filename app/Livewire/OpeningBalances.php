@@ -9,7 +9,7 @@ use App\Services\Ledger\BuiltOpening;
 use App\Services\Ledger\LedgerRuleException;
 use App\Services\Ledger\OpeningBalances as Openings;
 use App\Services\Ledger\PostVoucher;
-use App\Services\Ledger\TransferRates;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Layout;
@@ -38,9 +38,9 @@ class OpeningBalances extends Component
     /** @var list<string> */
     public array $failures = [];
 
-    public function mount(TransferRates $rates): void
+    public function mount(Openings $openings): void
     {
-        $this->city = $rates->cities()[0] ?? '';
+        $this->city = array_key_first($openings->cities()) ?? '';
         $this->date = now()->toDateString();
         $this->rows = [self::BLANK, self::BLANK, self::BLANK];
     }
@@ -104,7 +104,7 @@ class OpeningBalances extends Component
         return ['opening', 'create'];
     }
 
-    public function render(Openings $openings, PostVoucher $posting, TransferRates $rates): View
+    public function render(Openings $openings, PostVoucher $posting): View
     {
         $typed = collect($this->rows)->contains(fn (array $row) => trim($row['amount']) !== '');
         $built = $typed ? $this->built($openings) : null;
@@ -112,7 +112,10 @@ class OpeningBalances extends Component
         $accounts = $this->city !== '' ? $openings->accounts($this->city) : collect();
 
         return view('livewire.opening-balances', [
-            'cities' => $rates->cities(),
+            'cities' => $openings->cities(),
+            // The month's rate each currency line takes when its rate is left empty.
+            'monthRates' => collect($accounts->pluck('currency')->unique()->filter(fn ($currency) => ! in_array($currency, ['USD', 'Any', null, ''], true)))
+                ->mapWithKeys(fn ($currency) => [$currency => preg_match('/^\d{4}-\d{2}-\d{2}$/', $this->date) === 1 ? $openings->monthlyRate((string) $currency, CarbonImmutable::parse($this->date)) : null])->all(),
             'existing' => $this->city !== '' ? $openings->existing($this->city) : null,
             'accounts' => $accounts,
             'currencies' => $accounts->mapWithKeys(fn (GlAccount $account) => [$account->code => $account->currency])->all(),

@@ -13,15 +13,17 @@
     @endif
 
     <x-ui.panel class="grid gap-4 p-4 sm:grid-cols-2" data-test="opening-header">
-        <x-ui.form-select wire:model.live="city" :label="__('ledger.transfers.city')" required>
-            @foreach ($cities as $name)
-                <option value="{{ $name }}">{{ __('ledger.treasury.cities.'.$name) }}</option>
+        <x-ui.form-select wire:model.live="city" :label="__('ledger.transfers.city')" required data-test="opening-city">
+            @foreach ($cities as $name => $label)
+                <option value="{{ $name }}">{{ $label }}</option>
             @endforeach
         </x-ui.form-select>
         <x-ui.form-input type="date" wire:model.live="date" :label="__('ledger.opening.date')" :help="__('ledger.opening.date_help')" required />
     </x-ui.panel>
 
-    @if ($existing)
+    @if ($cities === [])
+        <x-ui.empty-state icon="map-pin" :heading="__('ledger.opening.no_cities')" :body="__('ledger.opening.no_cities_hint')" data-test="opening-no-cities" />
+    @elseif ($existing)
         <div class="rounded-lg border border-secondary-light px-4 py-3 text-sm dark:border-line-strong" data-test="opening-exists">
             {{ __('ledger.opening.exists', ['voucher' => $existing->id]) }}
             <a href="{{ route('entries.vouchers', ['voucher' => $existing->id]) }}" wire:navigate class="ms-1 font-medium text-primary hover:underline dark:text-brand-text">{{ __('ledger.opening.open_voucher') }}</a>
@@ -51,20 +53,19 @@
                             @php($currency = $currencies[$row['account']] ?? null)
                             <tr wire:key="opening-row-{{ $n }}">
                                 <td class="min-w-56">
-                                    <select wire:model.live="rows.{{ $n }}.account" class="{{ $cell }}" aria-label="{{ __('ledger.builder.account') }} {{ $n + 1 }}" data-test="row-account-{{ $n }}">
-                                        <option value="">—</option>
+                                    {{-- Searchable: type a code or part of a name (finance report of 2026-11-27). --}}
+                                    <x-ui.form-select bare wire:model.live="rows.{{ $n }}.account" :label="__('ledger.builder.account').' '.($n + 1)" :placeholder="__('ledger.opening.pick_account')" data-test="row-account-{{ $n }}">
                                         @foreach ($accounts as $option)
                                             <option value="{{ $option->code }}">{{ $option->code }} · {{ $option->localizedName() }}</option>
                                         @endforeach
-                                    </select>
+                                    </x-ui.form-select>
                                 </td>
-                                <td class="min-w-44">
-                                    <select wire:model.live="rows.{{ $n }}.project" class="{{ $cell }}" aria-label="{{ __('operations.owner') }} {{ $n + 1 }}" data-test="row-project-{{ $n }}">
-                                        <option value="">—</option>
+                                <td class="min-w-56">
+                                    <x-ui.form-select bare wire:model.live="rows.{{ $n }}.project" :label="__('operations.owner').' '.($n + 1)" :placeholder="__('ledger.opening.pick_owner')" data-test="row-project-{{ $n }}">
                                         @foreach ($projects as $option)
-                                            <option value="{{ $option->code }}">{{ $option->code }}</option>
+                                            <option value="{{ $option->code }}">{{ $option->code }} · {{ $option->name }}</option>
                                         @endforeach
-                                    </select>
+                                    </x-ui.form-select>
                                 </td>
                                 <td class="min-w-36">
                                     <div class="flex items-center gap-1.5">
@@ -74,7 +75,7 @@
                                 </td>
                                 <td class="min-w-28">
                                     @if ($currency && ! in_array($currency, ['USD', 'Any'], true))
-                                        <input type="text" wire:model.live.debounce.400ms="rows.{{ $n }}.rate" inputmode="decimal" dir="ltr" class="{{ $cell }} text-end" aria-label="{{ __('ledger.builder.rate') }} {{ $n + 1 }}" data-test="row-rate-{{ $n }}">
+                                        <input type="text" wire:model.live.debounce.400ms="rows.{{ $n }}.rate" inputmode="decimal" dir="ltr" class="{{ $cell }} text-end" placeholder="{{ $monthRates[$currency] ?? '' }}" title="{{ __('ledger.opening.rate_help') }}" aria-label="{{ __('ledger.builder.rate') }} {{ $n + 1 }}" data-test="row-rate-{{ $n }}">
                                     @else
                                         <span class="text-ink-muted">—</span>
                                     @endif
